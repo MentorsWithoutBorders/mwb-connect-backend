@@ -5,6 +5,7 @@ import { Conn } from '../db/conn';
 import Tokens from '../models/tokens.model';
 import { Helpers } from '../utils/helpers';
 import { v4 as uuidv4 } from 'uuid';
+import User from '../models/user.model';
 
 const helpers: Helpers = new Helpers();
 const conn: Conn = new Conn();
@@ -16,7 +17,7 @@ export class Users {
   }
   
   async createUser(request: Request, response: Response): Promise<void> {
-    const { name, email, password }: { name: string, email: string, password: string } = request.body;
+    const { name, email, password }: User = request.body;
     if (!email || !password) {
       response.status(400).send({'message': 'Some values are missing'});
       return ;
@@ -88,7 +89,7 @@ export class Users {
   }
 
   async loginUser(request: Request, response: Response): Promise<void> {
-    const { email, password }: { email: string, password: string } = request.body;
+    const { email, password }: User = request.body;
     if (!email || !password) {
       response.status(400).send({'message': 'Some values are missing'});
       return ;

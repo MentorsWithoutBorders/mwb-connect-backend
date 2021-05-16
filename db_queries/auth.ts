@@ -5,6 +5,7 @@ import { Conn } from '../db/conn';
 import { Users } from './users';
 import Token from '../models/token.model';
 import Tokens from '../models/tokens.model';
+import User from '../models/user.model';
 
 const conn: Conn = new Conn();
 const pool = conn.pool;
@@ -12,6 +13,7 @@ const db: Users = new Users();
 
 export class Auth {
   async verifyAccessToken(request: Request, response: Response, next: NextFunction): Promise<void> {
+    const { name, email, password }: User = request.body;
     if (!request.headers.authorization) {
       response.status(400).send({'message': 'Token is not provided'});
       return ;
@@ -29,7 +31,7 @@ export class Auth {
         response.status(400).send({'message': 'The token you provided is invalid'});
         return ;
       }
-      request.user = { id: (decoded as Token).userId };
+      request.user = { id: (decoded as Token).userId, name: name, email: email, password: password };
       next();
     } catch (error) {
       response.status(400).send(error);
