@@ -53,6 +53,7 @@ export class Users {
     const refreshToken: string = helpers.generateRefreshToken(userId);
     await this.setRefreshToken(userId, refreshToken);
     return {
+      userId: userId,
       accessToken: accessToken,
       refreshToken: refreshToken
     }
