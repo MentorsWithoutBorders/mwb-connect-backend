@@ -125,14 +125,16 @@ export class Users {
   }
 
   async logoutUser(request: Request, response: Response): Promise<void> {
-    const userId: string = request.params.userId; 
+    const { id }: User = request.body;
     try {
-      await this.revokeRefreshToken(userId);
+      await this.revokeRefreshToken(id);
       response.status(200).json()
     } catch (error) {
       response.status(400).send(error);
     }    
   }
+
+
 
   async getUsers(request: Request, response: Response): Promise<void> {
     try {
