@@ -14,10 +14,10 @@ app.get('/', (request: express.Request, response: express.Response): void => {
   response.json({ info: 'Node.js, Express, and Postgres API' })
 })
 
-app.post('/api/v1/login', db.loginUser);
-app.post('/api/v1/signup', db.createUser);
+app.post('/api/v1/signup', auth.signUp);
+app.post('/api/v1/login', auth.login);
+app.post('/api/v1/logout', auth.logout);
 app.get('/api/v1/access_token', auth.getAccessToken);
-app.post('/api/v1/logout', db.logoutUser);
 app.get('/api/v1/users', auth.verifyAccessToken, db.getUsers);
 app.get('/api/v1/users/:id', db.getUserById);
 app.put('/api/v1/users/:id', db.updateUser);
