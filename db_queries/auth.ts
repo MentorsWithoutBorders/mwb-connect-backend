@@ -85,7 +85,6 @@ export class Auth {
   async setTokens(userId: string): Promise<Tokens> {
     const accessToken: string = helpers.generateAccessToken(userId);
     const refreshToken: string = helpers.generateRefreshToken(userId);
-    console.log(accessToken);
     await this.setRefreshToken(userId, refreshToken);
     return {
       userId: userId,
