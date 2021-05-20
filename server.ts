@@ -24,7 +24,7 @@ app.get('/api/v1/access_token', auth.getAccessToken);
 
 // Users
 app.get('/api/v1/users', auth.verifyAccessToken, users.getUsers);
-app.get('/api/v1/users/:id', users.getUserById);
+app.get('/api/v1/users/:id', auth.verifyAccessToken, users.getUserById);
 app.put('/api/v1/users/:id', auth.verifyAccessToken, users.updateUser);
 app.delete('/api/v1/users/:id', auth.verifyAccessToken, users.deleteUser);
 
