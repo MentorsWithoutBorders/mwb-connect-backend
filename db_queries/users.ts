@@ -2,12 +2,12 @@ import { Request, Response } from 'express';
 import autoBind from 'auto-bind';
 import pg from 'pg';
 import { Conn } from '../db/conn';
-import Tokens from '../models/tokens.model';
-import { Helpers } from '../utils/helpers';
+import { Auth } from './auth';
+import User from '../models/user.model';
 
-const helpers: Helpers = new Helpers();
 const conn: Conn = new Conn();
 const pool = conn.pool;
+const auth: Auth = new Auth();
 
 export class Users {
   constructor() {
@@ -37,7 +37,7 @@ export class Users {
 
   async updateUser(request: Request, response: Response): Promise<void> {
     const id: string = request.params.id;
-    const { name, email }: { name: string, email: string } = request.body
+    const { name, email }: User = request.body
     try {
       const updateQuery: string = 'UPDATE users SET name = $1, email = $2 WHERE id = $3';
       await pool.query(updateQuery, [name, email, id]);
@@ -52,6 +52,7 @@ export class Users {
     try {
       const deleteQuery: string = 'DELETE FROM users WHERE id = $1';
       await pool.query(deleteQuery, [id]);
+      await auth.revokeRefreshToken(id);
       response.status(200).send(`User deleted with ID: ${id}`);
     } catch (error) {
       response.status(400).send(error);
