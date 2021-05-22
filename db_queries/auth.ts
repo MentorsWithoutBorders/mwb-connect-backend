@@ -175,7 +175,7 @@ export class Auth {
         response.status(201).send(tokens);
       } else {
         this.revokeRefreshToken(userId);
-        response.status(400).send({'message': 'Refresh token is invalid'});
+        response.status(401).send({'message': 'Refresh token is invalid'});
       }      
     } catch (error) {
       response.status(400).send(error);
