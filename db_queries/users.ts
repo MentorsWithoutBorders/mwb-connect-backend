@@ -29,7 +29,7 @@ export class Users {
     try {
       const getQuery: string = 'SELECT * FROM users WHERE id = $1';
       const { rows }: pg.QueryResult = await pool.query(getQuery, [id]);
-      response.status(200).json(rows);
+      response.status(200).json(rows[0]);
     } catch (error) {
       response.status(400).send(error);
     }
