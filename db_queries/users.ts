@@ -25,7 +25,7 @@ export class Users {
   }
 
   async getUserById(request: Request, response: Response): Promise<void> {
-    const id: string = request.params.id;    
+    const id: string = request.params.id;
     try {
       const getQuery: string = 'SELECT * FROM users WHERE id = $1';
       const { rows }: pg.QueryResult = await pool.query(getQuery, [id]);
