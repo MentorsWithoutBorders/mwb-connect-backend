@@ -46,7 +46,7 @@ export class Auth {
       const { rows }: pg.QueryResult = await pool.query(createQuery, values);
       const userId: string = rows[0].id;
       const tokens: Tokens = await this.setTokens(userId);
-      response.status(201).send(tokens);
+      response.status(200).send(tokens);
     } catch (error) {
       response.status(400).send(error);
     }
@@ -76,7 +76,7 @@ export class Auth {
       }
       const userId: string = rows[0].id;
       const tokens: Tokens = await this.setTokens(userId);
-      response.status(201).send(tokens);
+      response.status(200).send(tokens);
     } catch (error) {
       response.status(400).send(error);
     }
@@ -172,7 +172,7 @@ export class Auth {
       const { rows }: pg.QueryResult = await pool.query(getQuery, [userId, refreshToken]);
       if (rows[0]) {
         const tokens: Tokens = await this.setTokens(userId);
-        response.status(201).send(tokens);
+        response.status(200).send(tokens);
       } else {
         this.revokeRefreshToken(userId);
         response.status(401).send({'message': 'Refresh token is invalid'});
