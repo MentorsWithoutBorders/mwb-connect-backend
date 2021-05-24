@@ -32,18 +32,42 @@ export class Auth {
     }
     
     try {
+      const usersQuery: string = 'SELECT * FROM users WHERE email = $1';
+      let { rows }: pg.QueryResult = await pool.query(usersQuery, [email]);
+      if (rows[0]) {
+        response.status(400).send({'message': 'User already exists.'});
+        return ;
+      }
+      
+      var approvedUser: User;
+      const approvedQuery: string = 'SELECT * FROM approved_users WHERE email = $1';
+      ({ rows } = await pool.query(approvedQuery, [email]));
+      if (!rows[0]) {
+        response.status(400).send({'message': 'You have to be a student from one of our partner NGOs or an employee of one of our partner companies.'});
+        return ;
+      } else {
+        approvedUser = {
+          field: rows[0].field,
+          organization: rows[0].organization,
+          isMentor: rows[0].is_mentor
+        };
+      }
+
       const hashPassword: string = helpers.hashPassword(password);  
       const createQuery: string = `INSERT INTO 
-        users (id, name, email, password) 
-        VALUES ($1, $2, $3, $4) 
+        users (id, name, email, password, field, organization, is_mentor) 
+        VALUES ($1, $2, $3, $4, $5, $6, $7) 
         returning *`;
       const values: Array<string> = [
         uuidv4(),
-        name,
+        name || '',
         email,
-        hashPassword
+        hashPassword,
+        approvedUser.field || '',
+        approvedUser.organization || '',
+        String(approvedUser.isMentor)
       ];
-      const { rows }: pg.QueryResult = await pool.query(createQuery, values);
+      ({ rows } = await pool.query(createQuery, values));
       const userId: string = rows[0].id;
       const tokens: Tokens = await this.setTokens(userId);
       response.status(200).send(tokens);
@@ -131,7 +155,7 @@ export class Auth {
   async logout(request: Request, response: Response): Promise<void> {
     const { id }: User = request.body;
     try {
-      await this.revokeRefreshToken(id);
+      await this.revokeRefreshToken(id || '');
       response.status(200).json()
     } catch (error) {
       response.status(400).send(error);
