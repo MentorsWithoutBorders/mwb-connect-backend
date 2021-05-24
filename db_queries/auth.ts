@@ -141,12 +141,12 @@ export class Auth {
   async verifyAccessToken(request: Request, response: Response, next: NextFunction): Promise<void> {
     const { name, email, password }: User = request.body;
     if (!request.headers.authorization) {
-      response.status(400).send({'message': 'Token is not provided'});
+      response.status(401).send({'message': 'Token is not provided'});
       return ;
     }  
     const token: string = request.headers.authorization.replace('Bearer ','');
     if (!token) {
-      response.status(400).send({'message': 'Token is not provided'});
+      response.status(401).send({'message': 'Token is not provided'});
       return ;
     }
     try {
@@ -154,13 +154,13 @@ export class Auth {
       const usersQuery: string = 'SELECT * FROM users WHERE id = $1';
       const { rows }: pg.QueryResult = await pool.query(usersQuery, [(decoded as Token).userId]);
       if (!rows[0]) {
-        response.status(400).send({'message': 'The token you provided is invalid'});
+        response.status(401).send({'message': 'The token you provided is invalid'});
         return ;
       }
       request.user = { id: (decoded as Token).userId, name: name, email: email, password: password };
       next();
     } catch (error) {
-      response.status(400).send(error);
+      response.status(401).send(error);
     }
   }
 
