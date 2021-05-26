@@ -30,10 +30,12 @@ export class Users {
   async getUserById(request: Request, response: Response): Promise<void> {
     const id: string = request.params.id;
     try {
-      const getUserQuery: string = `SELECT u.id, u.name, u.email, f.id AS field_id, f.name AS field_name, u.is_mentor
+      const getUserQuery: string = `SELECT u.id, u.name, u.email, o.name AS organization, f.id AS field_id, f.name AS field_name, u.is_mentor
         FROM users u
         INNER JOIN fields f
         ON u.field_id = f.id
+        INNER JOIN organizations o
+        ON u.organization_id = o.id
         WHERE u.id = $1`;
       const { rows }: pg.QueryResult = await pool.query(getUserQuery, [id]);
       const field: Field = {
@@ -44,6 +46,7 @@ export class Users {
         id: rows[0].id,
         name: rows[0].name,
         email: rows[0].email,
+        organization: rows[0].organization,
         field: field,
         isMentor: rows[0].is_mentor,
       }

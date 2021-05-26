@@ -10,6 +10,7 @@ import Token from '../models/token.model';
 import Tokens from '../models/tokens.model';
 import User from '../models/user.model';
 import Field from '../models/field.model';
+import Organization from '../models/organization.model';
 
 const helpers: Helpers = new Helpers();
 const conn: Conn = new Conn();
@@ -39,27 +40,16 @@ export class Auth {
         response.status(400).send({'message': 'User already exists.'});
         return ;
       }
-      
-      var approvedUser: User;
-      const approvedQuery: string = 'SELECT * FROM approved_users WHERE email = $1';
-      ({ rows } = await pool.query(approvedQuery, [email]));
-      if (!rows[0]) {
+
+      const approvedUser: User = await this.getApprovedUser(email);
+      if (approvedUser.email == undefined) {
         response.status(400).send({'message': 'You have to be a student from one of our partner NGOs or an employee of one of our partner companies.'});
         return ;
-      } else {
-        let field: Field = {
-          id: rows[0].field_id
-        }
-        approvedUser = {
-          field: field,
-          organization: rows[0].organization,
-          isMentor: rows[0].is_mentor
-        };
       }
 
       const hashPassword: string = helpers.hashPassword(password);  
       const createQuery: string = `INSERT INTO 
-        users (id, name, email, password, field_id, organization, is_mentor) 
+        users (id, name, email, password, field_id, organization_id, is_mentor) 
         VALUES ($1, $2, $3, $4, $5, $6, $7) 
         returning *`;
       const values: Array<string> = [
@@ -68,7 +58,7 @@ export class Auth {
         email,
         hashPassword,
         approvedUser.field != null ? approvedUser.field.id : '',
-        approvedUser.organization || '',
+        approvedUser.organization != null ? approvedUser.organization.id : '',
         String(approvedUser.isMentor)
       ];
       ({ rows } = await pool.query(createQuery, values));
@@ -78,6 +68,31 @@ export class Auth {
     } catch (error) {
       response.status(400).send(error);
     }
+  }
+
+  async getApprovedUser(email: string): Promise<User> {
+    let approvedUser: User = {
+      email: email
+    };
+    const approvedQuery: string = 'SELECT * FROM approved_users WHERE email = $1';
+    const { rows }: pg.QueryResult = await pool.query(approvedQuery, [email]);
+    if (!rows[0]) {
+      approvedUser.email = undefined;
+    } else {
+      const field: Field = {
+        id: rows[0].field_id
+      }
+      const organization: Organization = {
+        id: rows[0].organization_id
+      }      
+      approvedUser = {
+        email: email,
+        field: field,
+        organization: organization,
+        isMentor: rows[0].is_mentor
+      };
+    }
+    return approvedUser;
   }
 
   async login(request: Request, response: Response): Promise<void> {
