@@ -22,7 +22,7 @@ export class Helpers {
     return jwt.sign({
       userId: id
     },
-      process.env.JWT_SECRET_KEY as string, { expiresIn: '10s' }
+      process.env.JWT_SECRET_KEY as string, { expiresIn: '1h' }
     );
   }
 

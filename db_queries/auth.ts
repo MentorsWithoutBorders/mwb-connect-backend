@@ -9,6 +9,7 @@ import { Helpers } from '../utils/helpers';
 import Token from '../models/token.model';
 import Tokens from '../models/tokens.model';
 import User from '../models/user.model';
+import Field from '../models/field.model';
 
 const helpers: Helpers = new Helpers();
 const conn: Conn = new Conn();
@@ -46,8 +47,11 @@ export class Auth {
         response.status(400).send({'message': 'You have to be a student from one of our partner NGOs or an employee of one of our partner companies.'});
         return ;
       } else {
+        let field: Field = {
+          id: rows[0].field_id
+        }
         approvedUser = {
-          field: rows[0].field,
+          field: field,
           organization: rows[0].organization,
           isMentor: rows[0].is_mentor
         };
@@ -55,7 +59,7 @@ export class Auth {
 
       const hashPassword: string = helpers.hashPassword(password);  
       const createQuery: string = `INSERT INTO 
-        users (id, name, email, password, field, organization, is_mentor) 
+        users (id, name, email, password, field_id, organization, is_mentor) 
         VALUES ($1, $2, $3, $4, $5, $6, $7) 
         returning *`;
       const values: Array<string> = [
@@ -63,7 +67,7 @@ export class Auth {
         name || '',
         email,
         hashPassword,
-        approvedUser.field || '',
+        approvedUser.field != null ? approvedUser.field.id : '',
         approvedUser.organization || '',
         String(approvedUser.isMentor)
       ];
