@@ -200,7 +200,7 @@ export class Auth {
         response.status(401).send({'message': 'The token you provided is invalid'});
         return ;
       }
-      request.user = { id: (decoded as Token).userId, name: name, email: email, password: password };
+      request.user = { id: decoded.userId, name: name, email: email, password: password };
       next();
     } catch (error) {
       response.status(401).send(error);
