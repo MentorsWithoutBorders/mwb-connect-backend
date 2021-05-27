@@ -40,7 +40,8 @@ export class Users {
       const { rows }: pg.QueryResult = await pool.query(getUserQuery, [id]);
       const field: Field = {
         id: rows[0].field_id,
-        name: rows[0].field_name
+        name: rows[0].field_name,
+        subfields: await this.getUserSubfields(id)
       }
       const user: User = {
         id: rows[0].id,
@@ -50,7 +51,6 @@ export class Users {
         field: field,
         isMentor: rows[0].is_mentor,
       }
-      user.subfields = await this.getUserSubfields(id);
 
       response.status(200).json(user);
     } catch (error) {
