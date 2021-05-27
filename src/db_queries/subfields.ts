@@ -15,7 +15,7 @@ export class Subfields {
   async getSubfields(request: Request, response: Response): Promise<void> {
     const fieldId: string = request.params.field_id;
     try {
-      const getSubfieldsQuery: string = `SELECT s.id, s.name
+      const getSubfieldsQuery = `SELECT s.id, s.name
         FROM subfields s
         INNER JOIN fields_subfields fs
         ON fs.subfield_id = s.id

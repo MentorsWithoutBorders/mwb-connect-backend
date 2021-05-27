@@ -34,7 +34,7 @@ export class Auth {
     }
     
     try {
-      const usersQuery: string = 'SELECT * FROM users WHERE email = $1';
+      const usersQuery = 'SELECT * FROM users WHERE email = $1';
       let { rows }: pg.QueryResult = await pool.query(usersQuery, [email]);
       if (rows[0]) {
         response.status(400).send({'message': 'User already exists.'});
@@ -48,7 +48,7 @@ export class Auth {
       }
 
       const hashPassword: string = helpers.hashPassword(password);  
-      const createQuery: string = `INSERT INTO 
+      const createQuery = `INSERT INTO 
         users (id, name, email, password, field_id, organization_id, is_mentor) 
         VALUES ($1, $2, $3, $4, $5, $6, $7) 
         returning *`;
@@ -74,7 +74,7 @@ export class Auth {
     let approvedUser: User = {
       email: email
     };
-    const approvedQuery: string = 'SELECT * FROM approved_users WHERE email = $1';
+    const approvedQuery = 'SELECT * FROM approved_users WHERE email = $1';
     const { rows }: pg.QueryResult = await pool.query(approvedQuery, [email]);
     if (!rows[0]) {
       approvedUser.email = undefined;
@@ -107,7 +107,7 @@ export class Auth {
     }
     
     try {
-      const loginQuery: string = 'SELECT * FROM users WHERE email = $1';
+      const loginQuery = 'SELECT * FROM users WHERE email = $1';
       const { rows }: pg.QueryResult = await pool.query(loginQuery, [email]);
       if (!rows[0]) {
         response.status(400).send({'message': 'The credentials you provided are incorrect'});
@@ -127,7 +127,7 @@ export class Auth {
   
   async setTokens(userId: string): Promise<Tokens> {
     const accessToken: string = helpers.generateAccessToken(userId);
-    const refreshToken: string = helpers.generateRefreshToken(userId);
+    const refreshToken: string = helpers.generateRefreshToken();
     await this.setRefreshToken(userId, refreshToken);
     return {
       userId: userId,
@@ -137,7 +137,7 @@ export class Auth {
   }
 
   async setRefreshToken(userId: string, refreshToken: string): Promise<void> {
-    const getQuery: string = 'SELECT * FROM refresh_tokens WHERE user_id = $1';
+    const getQuery = 'SELECT * FROM refresh_tokens WHERE user_id = $1';
     const { rows }: pg.QueryResult = await pool.query(getQuery, [userId]);
     if (!rows[0]) {
       await this.insertRefreshToken(userId, refreshToken);
@@ -147,7 +147,7 @@ export class Auth {
   }
 
   async insertRefreshToken(userId: string, refreshToken: string): Promise<void> {
-    const insertQuery: string = `INSERT INTO 
+    const insertQuery = `INSERT INTO 
       refresh_tokens (user_id, refresh_token) 
       VALUES ($1, $2)`;
     const values: Array<string> = [
@@ -158,7 +158,7 @@ export class Auth {
   }
 
   async updateRefreshToken(userId: string, refreshToken: string): Promise<void> {
-    const updateQuery: string = `UPDATE refresh_tokens SET refresh_token = $1 WHERE user_id = $2`;
+    const updateQuery = `UPDATE refresh_tokens SET refresh_token = $1 WHERE user_id = $2`;
     const values: Array<string> = [
       refreshToken,
       userId
@@ -167,7 +167,7 @@ export class Auth {
   }
 
   async revokeRefreshToken(userId: string): Promise<void> {
-    const deleteQuery: string = 'DELETE FROM refresh_tokens WHERE user_id = $1';
+    const deleteQuery = 'DELETE FROM refresh_tokens WHERE user_id = $1';
     await pool.query(deleteQuery, [userId]);
   }  
 
@@ -193,9 +193,9 @@ export class Auth {
       return ;
     }
     try {
-      const decoded: string | object = await jwt.verify(token, process.env.JWT_SECRET_KEY as string);
-      const usersQuery: string = 'SELECT * FROM users WHERE id = $1';
-      const { rows }: pg.QueryResult = await pool.query(usersQuery, [(decoded as Token).userId]);
+      const decoded: Token = await jwt.verify(token, process.env.JWT_SECRET_KEY as string) as Token;
+      const usersQuery = 'SELECT * FROM users WHERE id = $1';
+      const { rows }: pg.QueryResult = await pool.query(usersQuery, [decoded.userId]);
       if (!rows[0]) {
         response.status(401).send({'message': 'The token you provided is invalid'});
         return ;
@@ -211,7 +211,7 @@ export class Auth {
     const userId: string = request.query.userId as string;
     const refreshToken: string = request.query.refreshToken as string;
     try {
-      const getQuery: string = 'SELECT * FROM refresh_tokens WHERE user_id = $1 AND refresh_token = $2';
+      const getQuery = 'SELECT * FROM refresh_tokens WHERE user_id = $1 AND refresh_token = $2';
       const { rows }: pg.QueryResult = await pool.query(getQuery, [userId, refreshToken]);
       if (rows[0]) {
         const tokens: Tokens = await this.setTokens(userId);

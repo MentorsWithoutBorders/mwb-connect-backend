@@ -15,7 +15,7 @@ export class Skills {
   async getSkills(request: Request, response: Response): Promise<void> {
     const subfieldId: string = request.params.subfield_id;
     try {
-      const getSkillsQuery: string = `SELECT s.id, s.name
+      const getSkillsQuery = `SELECT s.id, s.name
         FROM skills s
         INNER JOIN subfields_skills ss
         ON ss.skill_id = s.id

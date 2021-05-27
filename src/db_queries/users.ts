@@ -19,7 +19,7 @@ export class Users {
 
   async getUsers(request: Request, response: Response): Promise<void> {
     try {
-      const getQuery: string = 'SELECT * FROM users ORDER BY id ASC';
+      const getQuery = 'SELECT * FROM users ORDER BY id ASC';
       const { rows }: pg.QueryResult = await pool.query(getQuery);
       response.status(200).json(rows);
     } catch (error) {
@@ -30,7 +30,7 @@ export class Users {
   async getUserById(request: Request, response: Response): Promise<void> {
     const id: string = request.params.id;
     try {
-      const getUserQuery: string = `SELECT u.id, u.name, u.email, o.name AS organization, f.id AS field_id, f.name AS field_name, u.is_mentor
+      const getUserQuery = `SELECT u.id, u.name, u.email, o.name AS organization, f.id AS field_id, f.name AS field_name, u.is_mentor
         FROM users u
         INNER JOIN fields f
         ON u.field_id = f.id
@@ -42,7 +42,7 @@ export class Users {
         id: rows[0].field_id,
         name: rows[0].field_name
       }
-      var user: User = {
+      const user: User = {
         id: rows[0].id,
         name: rows[0].name,
         email: rows[0].email,
@@ -59,7 +59,7 @@ export class Users {
   }
 
   async getUserSubfields(userId: string): Promise<Array<Subfield>> {
-    const getSubfieldsQuery: string = `SELECT s.id, s.name
+    const getSubfieldsQuery = `SELECT s.id, s.name
       FROM subfields s
       INNER JOIN users_subfields us
       ON us.subfield_id = s.id
@@ -80,7 +80,7 @@ export class Users {
   }
 
   async getUserSkills(userId: string, subfieldId: string): Promise<Array<Skill>> {
-    const getSkillsQuery: string = `SELECT s.id, s.name
+    const getSkillsQuery = `SELECT s.id, s.name
       FROM skills s
       INNER JOIN users_skills us
       ON us.skill_id = s.id
@@ -102,7 +102,7 @@ export class Users {
     const id: string = request.params.id;
     const { name, email }: User = request.body
     try {
-      const updateQuery: string = 'UPDATE users SET name = $1, email = $2 WHERE id = $3';
+      const updateQuery = 'UPDATE users SET name = $1, email = $2 WHERE id = $3';
       await pool.query(updateQuery, [name, email, id]);
       response.status(200).send(`User modified with ID: ${id}`);
     } catch (error) {
@@ -113,7 +113,7 @@ export class Users {
   async deleteUser(request: Request, response: Response): Promise<void> {
     const id: string = request.params.id;
     try {
-      const deleteQuery: string = 'DELETE FROM users WHERE id = $1';
+      const deleteQuery = 'DELETE FROM users WHERE id = $1';
       await pool.query(deleteQuery, [id]);
       await auth.revokeRefreshToken(id);
       response.status(200).send(`User deleted with ID: ${id}`);

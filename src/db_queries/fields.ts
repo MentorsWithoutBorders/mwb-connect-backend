@@ -8,7 +8,7 @@ const pool = conn.pool;
 export class Fields {
   async getFields(request: Request, response: Response): Promise<void> {
     try {
-      const getQuery: string = 'SELECT * FROM fields ORDER BY id ASC';
+      const getQuery = 'SELECT * FROM fields ORDER BY id ASC';
       const { rows }: pg.QueryResult = await pool.query(getQuery);
       response.status(200).json(rows);
     } catch (error) {

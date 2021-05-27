@@ -1,11 +1,13 @@
 {
   "compilerOptions": {
     "module": "commonjs",
-    "esModuleInterop": true,
+    "isolatedModules": true,
+		"esModuleInterop": true,
     "allowJs": true,
-    "target": "es5",
+    "target": "es2018",
     "moduleResolution": "node",
     "sourceMap": true,
+    "noEmit": true,
     "strict": true,
     "noImplicitAny": true,
     "resolveJsonModule": true,
@@ -15,5 +17,7 @@
       "@types",
       "./node_modules/@types"
     ]     
-  }
+  },
+  "include": ["src/**/*.ts"],
+  "exclude": ["node_modules"],
 }

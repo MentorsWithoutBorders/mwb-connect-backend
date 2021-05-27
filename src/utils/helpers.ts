@@ -6,19 +6,19 @@ import { v4 as uuidv4 } from 'uuid';
 dotenv.config();
 
 export class Helpers {
-  hashPassword(password: string) {
+  hashPassword(password: string): string {
     return bcrypt.hashSync(password, bcrypt.genSaltSync(8));
   }
 
-  comparePassword(hashPassword: string, password: string) {
+  comparePassword(hashPassword: string, password: string): boolean {
     return bcrypt.compareSync(password, hashPassword);
   }
 
-  isValidEmail(email:string ) {
+  isValidEmail(email:string ): boolean {
     return /\S+@\S+\.\S+/.test(email);
   }
 
-  generateAccessToken(id: string) {
+  generateAccessToken(id: string): string {
     return jwt.sign({
       userId: id
     },
@@ -26,7 +26,7 @@ export class Helpers {
     );
   }
 
-  generateRefreshToken(id: string) {
+  generateRefreshToken(): string {
     return uuidv4();
   }
 }

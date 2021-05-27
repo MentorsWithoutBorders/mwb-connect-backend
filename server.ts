@@ -1,9 +1,9 @@
 import express from 'express';
-import { Auth } from './db_queries/auth';
-import { Users } from './db_queries/users';
-import { Fields } from './db_queries/fields';
-import { Subfields } from './db_queries/subfields';
-import { Skills } from './db_queries/skills';
+import { Auth } from './src/db_queries/auth';
+import { Users } from './src/db_queries/users';
+import { Fields } from './src/db_queries/fields';
+import { Subfields } from './src/db_queries/subfields';
+import { Skills } from './src/db_queries/skills';
 
 const port: number = 3000;
 const app: express.Express = express();
