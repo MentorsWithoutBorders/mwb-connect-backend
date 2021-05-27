@@ -4,6 +4,7 @@ import autoBind from 'auto-bind';
 import { Conn } from '../db/conn';
 import Field from '../models/field.model';
 import Subfield from '../models/subfield.model';
+import Skill from '../models/skill.model';
 
 const conn: Conn = new Conn();
 const pool = conn.pool;
@@ -44,11 +45,31 @@ export class Fields {
     for (const row of rows) {
       const subfield: Subfield = {
         id: row.id,
-        name: row.name
+        name: row.name,
+        skills: await this.getSkills(row.id)
       };
       subfields.push(subfield);
     }
     return subfields;
+  }
+  
+  async getSkills(subfieldId: string): Promise<Array<Skill>> {
+    const getSkillsQuery = `SELECT s.id, s.name
+      FROM skills s
+      INNER JOIN subfields_skills ss
+      ON ss.skill_id = s.id
+      WHERE ss.subfield_id = $1
+      ORDER BY ss.skill_index`;
+    const { rows }: pg.QueryResult = await pool.query(getSkillsQuery, [subfieldId]);
+    const skills: Array<Skill> = [];
+    for (const row of rows) {
+      const skill: Skill = {
+        id: row.id,
+        name: row.name
+      };
+      skills.push(skill);
+    }
+    return skills;
   }  
 }
 
