@@ -5,7 +5,7 @@ import { Fields } from './src/db_queries/fields';
 import { Subfields } from './src/db_queries/subfields';
 import { Skills } from './src/db_queries/skills';
 
-const port: number = 3000;
+const port = 3000;
 const app: express.Express = express();
 const auth: Auth = new Auth();
 const users: Users = new Users();
