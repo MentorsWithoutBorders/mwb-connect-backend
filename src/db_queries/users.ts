@@ -121,7 +121,9 @@ export class Users {
       const insertSubfieldQuery = `INSERT INTO users_subfields (user_id, subfield_index, subfield_id)
         VALUES ($1, $2, $3)`;
       await pool.query(insertSubfieldQuery, [userId, i+1, subfields[i].id]); 
-      await this.updateUserSkills(userId, subfields[i].id, subfields[i].skills as Array<Skill>);     
+      if (subfields[i].skills != null && (subfields[i].skills as Array<Skill>).length > 0) {
+        await this.updateUserSkills(userId, subfields[i].id, subfields[i].skills as Array<Skill>);
+      }
     }
   }
   
