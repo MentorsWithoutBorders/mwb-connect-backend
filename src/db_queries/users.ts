@@ -104,35 +104,42 @@ export class Users {
     try {
       const updateQuery = 'UPDATE users SET name = $1, email = $2, field_id = $3 WHERE id = $4';
       await pool.query(updateQuery, [name, email, field?.id, id]);
-      await this.updateUserSubfields(id, field?.id as string, field?.subfields as Array<Subfield>);
+      await this.updateUserSubfields(id, field?.subfields as Array<Subfield>);
       response.status(200).send(`User modified with ID: ${id}`);
     } catch (error) {
       response.status(400).send(error);
     }
   }
 
-  async updateUserSubfields(userId: string, fieldId: string, subfields: Array<Subfield>): Promise<void> {
-    const deleteSubfieldsQuery = `DELETE FROM users_subfields us
-      USING fields_subfields fs
-      WHERE us.subfield_id = fs.subfield_id AND us.user_id = $1 AND fs.field_id = $2`;
-    await pool.query(deleteSubfieldsQuery, [userId, fieldId]);
+  async deleteUserSubfields(userId: string): Promise<void> {
+    const deleteSubfieldsQuery = `DELETE FROM users_subfields
+      WHERE user_id = $1`;
+    await pool.query(deleteSubfieldsQuery, [userId]);
+  }
 
+  async updateUserSubfields(userId: string, subfields: Array<Subfield>): Promise<void> {
+    this.deleteUserSubfields(userId);
     for (let i = 0; i < subfields.length; i++) {
       const insertSubfieldQuery = `INSERT INTO users_subfields (user_id, subfield_index, subfield_id)
         VALUES ($1, $2, $3)`;
       await pool.query(insertSubfieldQuery, [userId, i+1, subfields[i].id]); 
       if (subfields[i].skills != null && (subfields[i].skills as Array<Skill>).length > 0) {
         await this.updateUserSkills(userId, subfields[i].id, subfields[i].skills as Array<Skill>);
+      } else {
+        this.deleteUserSkills(userId, subfields[i].id);
       }
     }
   }
-  
-  async updateUserSkills(userId: string, subfieldId: string, skills: Array<Skill>): Promise<void> {
+
+  async deleteUserSkills(userId: string, subfieldId: string): Promise<void> {
     const deleteSkillsQuery = `DELETE FROM users_skills us
       USING subfields_skills ss
       WHERE us.skill_id = ss.skill_id AND us.user_id = $1 AND ss.subfield_id = $2`;
-    await pool.query(deleteSkillsQuery, [userId, subfieldId]);
-
+    await pool.query(deleteSkillsQuery, [userId, subfieldId]);    
+  }
+  
+  async updateUserSkills(userId: string, subfieldId: string, skills: Array<Skill>): Promise<void> {
+    this.deleteUserSkills(userId, subfieldId);
     for (let i = 0; i < skills.length; i++) {
       const insertSkillQuery = `INSERT INTO users_skills (user_id, subfield_id, skill_index, skill_id)
         VALUES ($1, $2, $3, $4)`;
