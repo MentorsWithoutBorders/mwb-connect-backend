@@ -126,20 +126,19 @@ export class Users {
       if (subfields[i].skills != null && (subfields[i].skills as Array<Skill>).length > 0) {
         await this.updateUserSkills(userId, subfields[i].id, subfields[i].skills as Array<Skill>);
       } else {
-        this.deleteUserSkills(userId, subfields[i].id);
+        await this.deleteUserSkills(userId, subfields[i].id);
       }
     }
   }
 
   async deleteUserSkills(userId: string, subfieldId: string): Promise<void> {
-    const deleteSkillsQuery = `DELETE FROM users_skills us
-      USING subfields_skills ss
-      WHERE us.skill_id = ss.skill_id AND us.user_id = $1 AND ss.subfield_id = $2`;
+    const deleteSkillsQuery = `DELETE FROM users_skills
+      WHERE user_id = $1 AND subfield_id = $2`;
     await pool.query(deleteSkillsQuery, [userId, subfieldId]);    
   }
   
   async updateUserSkills(userId: string, subfieldId: string, skills: Array<Skill>): Promise<void> {
-    this.deleteUserSkills(userId, subfieldId);
+    await this.deleteUserSkills(userId, subfieldId);
     for (let i = 0; i < skills.length; i++) {
       const insertSkillQuery = `INSERT INTO users_skills (user_id, subfield_id, skill_index, skill_id)
         VALUES ($1, $2, $3, $4)`;
