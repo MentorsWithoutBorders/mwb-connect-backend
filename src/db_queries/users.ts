@@ -7,6 +7,8 @@ import User from '../models/user.model';
 import Field from '../models/field.model';
 import Subfield from '../models/subfield.model';
 import Skill from '../models/skill.model';
+import Availability from '../models/availability.model';
+import Time from '../models/time.model';
 
 const conn: Conn = new Conn();
 const pool = conn.pool;
@@ -51,6 +53,7 @@ export class Users {
         field: field,
         isMentor: rows[0].is_mentor,
         isAvailable: rows[0].is_available,
+        availabilities: await this.getUserAvailabilities(id)
       }
 
       response.status(200).json(user);
@@ -97,6 +100,25 @@ export class Users {
       skills.push(skill);
     });
     return skills;    
+  }
+  
+  async getUserAvailabilities(userId: string): Promise<Array<Availability>> {
+    const getAvailabilitiesQuery = `SELECT * FROM availabilities
+      WHERE user_id = $1`;
+    const { rows }: pg.QueryResult = await pool.query(getAvailabilitiesQuery, [userId]);
+    const availabilities: Array<Availability> = [];
+    for (const row of rows) {
+      const time: Time = {
+        from: row.time_from,
+        to: row.time_to
+      }
+      const availability: Availability = {
+        dayOfWeek: row.day_of_week,
+        time: time
+      };
+      availabilities.push(availability);
+    }
+    return availabilities;
   }  
 
   async updateUser(request: Request, response: Response): Promise<void> {
