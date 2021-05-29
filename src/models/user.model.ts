@@ -8,7 +8,8 @@ export default interface User {
   email?: string;
   password?: string;
   organization?: Organization;
-  isMentor?: boolean;  
+  isMentor?: boolean;
+  isAvailable?: boolean;
   field?: Field;
   subfields?: Array<Subfield>;
 }

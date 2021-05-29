@@ -4,6 +4,7 @@ import { Users } from './src/db_queries/users';
 import { Fields } from './src/db_queries/fields';
 import { Subfields } from './src/db_queries/subfields';
 import { Skills } from './src/db_queries/skills';
+import { Availabilities } from './src/db_queries/availabilities';
 
 const port = 3000;
 const app: express.Express = express();
@@ -12,6 +13,7 @@ const users: Users = new Users();
 const fields: Fields = new Fields();
 const subfields: Subfields = new Subfields();
 const skills: Skills = new Skills();
+const availabilities: Availabilities = new Availabilities();
 
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
@@ -40,6 +42,9 @@ app.get('/api/v1/subfields/:field_id', auth.verifyAccessToken, subfields.getSubf
 
 // Skills
 app.get('/api/v1/skills/:subfield_id', auth.verifyAccessToken, skills.getSkills);
+
+// Availabilities
+app.get('/api/v1/availabilities/:user_id', auth.verifyAccessToken, availabilities.getAvailabilities);
 
 app.listen(port, () => {
   console.log(`App running on port ${port}.`);
