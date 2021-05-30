@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import autoBind from 'auto-bind';
+import moment from 'moment'
 import pg from 'pg';
 import { Conn } from '../db/conn';
 import { Auth } from './auth';
@@ -53,7 +54,7 @@ export class Users {
         field: field,
         isMentor: rows[0].is_mentor,
         isAvailable: rows[0].is_available,
-        availableFrom: rows[0].available_from,
+        availableFrom: moment(rows[0].available_from).format('YYYY-MM-DD HH:MM:SS'),
         availabilities: await this.getUserAvailabilities(id)
       }
 

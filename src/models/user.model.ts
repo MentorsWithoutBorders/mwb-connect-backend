@@ -11,6 +11,6 @@ export default interface User {
   field?: Field;
   isMentor?: boolean;
   isAvailable?: boolean;
-  availableFrom?: Date;
+  availableFrom?: string;
   availabilities?: Array<Availability>;
 }
