@@ -105,7 +105,7 @@ export class Users {
   }
   
   async getUserAvailabilities(userId: string): Promise<Array<Availability>> {
-    const getAvailabilitiesQuery = `SELECT * FROM availabilities
+    const getAvailabilitiesQuery = `SELECT * FROM users_availabilities
       WHERE user_id = $1`;
     const { rows }: pg.QueryResult = await pool.query(getAvailabilitiesQuery, [userId]);
     const availabilities: Array<Availability> = [];
@@ -125,27 +125,18 @@ export class Users {
 
   async updateUser(request: Request, response: Response): Promise<void> {
     const id: string = request.params.id;
-    const { name, email, field }: User = request.body
+    const { name, email, field, isAvailable, availableFrom, availabilities }: User = request.body
     try {
-      const updateQuery = 'UPDATE users SET name = $1, email = $2, field_id = $3 WHERE id = $4';
-      await pool.query(updateQuery, [name, email, field?.id, id]);
+      const updateQuery = 'UPDATE users SET name = $1, email = $2, field_id = $3, is_available = $4, available_from = $5 WHERE id = $6';
+      await pool.query(updateQuery, [name, email, field?.id, isAvailable, availableFrom, id]);
       await this.deleteUserSubfields(id);
-      await this.deleteUserSkills(id);      
+      await this.deleteUserSkills(id);
+      await this.deleteUserAvailabilities(id);      
       await this.updateUserSubfields(id, field?.subfields as Array<Subfield>);
+      await this.updateUserAvailabilities(id, availabilities as Array<Availability>);
       response.status(200).send(`User modified with ID: ${id}`);
     } catch (error) {
       response.status(400).send(error);
-    }
-  }
-
-  async updateUserSubfields(userId: string, subfields: Array<Subfield>): Promise<void> {
-    for (let i = 0; i < subfields.length; i++) {
-      const insertSubfieldQuery = `INSERT INTO users_subfields (user_id, subfield_index, subfield_id)
-        VALUES ($1, $2, $3)`;
-      await pool.query(insertSubfieldQuery, [userId, i+1, subfields[i].id]); 
-      if (subfields[i].skills != null && (subfields[i].skills as Array<Skill>).length > 0) {
-        await this.updateUserSkills(userId, subfields[i].id, subfields[i].skills as Array<Skill>);
-      }
     }
   }
 
@@ -161,11 +152,36 @@ export class Users {
     await pool.query(deleteSkillsQuery, [userId]);    
   }
   
+  async deleteUserAvailabilities(userId: string): Promise<void> {
+    const deleteAvailabilitiesQuery = `DELETE FROM users_availabilities
+      WHERE user_id = $1`;
+    await pool.query(deleteAvailabilitiesQuery, [userId]);    
+  }  
+
+  async updateUserSubfields(userId: string, subfields: Array<Subfield>): Promise<void> {
+    for (let i = 0; i < subfields.length; i++) {
+      const insertSubfieldQuery = `INSERT INTO users_subfields (user_id, subfield_index, subfield_id)
+        VALUES ($1, $2, $3)`;
+      await pool.query(insertSubfieldQuery, [userId, i+1, subfields[i].id]); 
+      if (subfields[i].skills != null && (subfields[i].skills as Array<Skill>).length > 0) {
+        await this.updateUserSkills(userId, subfields[i].id, subfields[i].skills as Array<Skill>);
+      }
+    }
+  }
+  
   async updateUserSkills(userId: string, subfieldId: string, skills: Array<Skill>): Promise<void> {
     for (let i = 0; i < skills.length; i++) {
       const insertSkillQuery = `INSERT INTO users_skills (user_id, subfield_id, skill_index, skill_id)
         VALUES ($1, $2, $3, $4)`;
       await pool.query(insertSkillQuery, [userId, subfieldId, i+1, skills[i].id]);      
+    }
+  }
+  
+  async updateUserAvailabilities(userId: string, availabilities: Array<Availability>): Promise<void> {
+    for (let availability of availabilities) {
+      const insertAvailabilityQuery = `INSERT INTO users_availabilities (user_id, day_of_week, time_from, time_to)
+        VALUES ($1, $2, $3, $4)`;
+      await pool.query(insertAvailabilityQuery, [userId, availability.dayOfWeek, availability.time.from, availability.time.to]);      
     }
   }    
 
