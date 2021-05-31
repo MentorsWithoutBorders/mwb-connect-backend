@@ -1,5 +1,6 @@
 import Availability from "./availability.model";
 import Field from "./field.model";
+import LessonsAvailability from "./lessons_availability";
 import Organization from "./organization.model";
 
 export default interface User {
@@ -13,4 +14,5 @@ export default interface User {
   isAvailable?: boolean;
   availableFrom?: string;
   availabilities?: Array<Availability>;
+  lessonsAvailability?: LessonsAvailability
 }

@@ -10,6 +10,7 @@ import Subfield from '../models/subfield.model';
 import Skill from '../models/skill.model';
 import Availability from '../models/availability.model';
 import Time from '../models/time.model';
+import LessonsAvailability from '../models/lessons_availability';
 
 const conn: Conn = new Conn();
 const pool = conn.pool;
@@ -55,7 +56,8 @@ export class Users {
         isMentor: rows[0].is_mentor,
         isAvailable: rows[0].is_available,
         availableFrom: moment(rows[0].available_from).format('yyyy-MM-DD HH:mm:ss'),
-        availabilities: await this.getUserAvailabilities(id)
+        availabilities: await this.getUserAvailabilities(id),
+        lessonsAvailability: await this.getUserLessonsAvailability(id)
       }
 
       response.status(200).json(user);
@@ -121,7 +123,17 @@ export class Users {
       availabilities.push(availability);
     }
     return availabilities;
-  }  
+  }
+  
+  async getUserLessonsAvailability(userId: string): Promise<LessonsAvailability> {
+    const getLessonsAvailabilityQuery = `SELECT * FROM users_lessons_availabilities
+      WHERE user_id = $1`;
+    const { rows }: pg.QueryResult = await pool.query(getLessonsAvailabilityQuery, [userId]);
+    return {
+      minInterval: rows[0].min_interval,
+      minIntervalUnit: rows[0].min_interval_unit
+    };
+  }    
 
   async updateUser(request: Request, response: Response): Promise<void> {
     const id: string = request.params.id;
