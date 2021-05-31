@@ -137,15 +137,16 @@ export class Users {
 
   async updateUser(request: Request, response: Response): Promise<void> {
     const id: string = request.params.id;
-    const { name, email, field, isAvailable, availableFrom, availabilities }: User = request.body
+    const { name, email, field, isAvailable, availableFrom, availabilities, lessonsAvailability }: User = request.body
     try {
       const updateQuery = 'UPDATE users SET name = $1, email = $2, field_id = $3, is_available = $4, available_from = $5 WHERE id = $6';
       await pool.query(updateQuery, [name, email, field?.id, isAvailable, availableFrom, id]);
       await this.deleteUserSubfields(id);
       await this.deleteUserSkills(id);
       await this.deleteUserAvailabilities(id);      
-      await this.updateUserSubfields(id, field?.subfields as Array<Subfield>);
-      await this.updateUserAvailabilities(id, availabilities as Array<Availability>);
+      await this.insertUserSubfields(id, field?.subfields as Array<Subfield>);
+      await this.insertUserAvailabilities(id, availabilities as Array<Availability>);
+      await this.updateUserLessonsAvailability(id, lessonsAvailability as LessonsAvailability);
       response.status(200).send(`User modified with ID: ${id}`);
     } catch (error) {
       response.status(400).send(error);
@@ -170,7 +171,7 @@ export class Users {
     await pool.query(deleteAvailabilitiesQuery, [userId]);    
   }  
 
-  async updateUserSubfields(userId: string, subfields: Array<Subfield>): Promise<void> {
+  async insertUserSubfields(userId: string, subfields: Array<Subfield>): Promise<void> {
     for (let i = 0; i < subfields.length; i++) {
       const insertSubfieldQuery = `INSERT INTO users_subfields (user_id, subfield_index, subfield_id)
         VALUES ($1, $2, $3)`;
@@ -189,13 +190,20 @@ export class Users {
     }
   }
   
-  async updateUserAvailabilities(userId: string, availabilities: Array<Availability>): Promise<void> {
+  async insertUserAvailabilities(userId: string, availabilities: Array<Availability>): Promise<void> {
     for (let availability of availabilities) {
       const insertAvailabilityQuery = `INSERT INTO users_availabilities (user_id, day_of_week, time_from, time_to)
         VALUES ($1, $2, $3, $4)`;
       await pool.query(insertAvailabilityQuery, [userId, availability.dayOfWeek, availability.time.from, availability.time.to]);      
     }
-  }    
+  }
+
+  async updateUserLessonsAvailability(userId: string, lessonsAvailability: LessonsAvailability): Promise<void> {
+    const updateLessonsAvailabilityQuery = `UPDATE users_lessons_availabilities 
+      SET min_interval = $1, min_interval_unit = $2
+      WHERE user_id = $3`;
+    await pool.query(updateLessonsAvailabilityQuery, [lessonsAvailability.minInterval, lessonsAvailability.minIntervalUnit, userId]);
+  }  
 
   async deleteUser(request: Request, response: Response): Promise<void> {
     const id: string = request.params.id;
