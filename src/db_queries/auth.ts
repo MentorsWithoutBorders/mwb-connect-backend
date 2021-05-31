@@ -59,7 +59,7 @@ export class Auth {
         returning *`;
       const values: Array<string> = [
         uuidv4(),
-        name || '',
+        name || approvedUser.name || '',
         email,
         hashPassword,
         approvedUser.field != null ? approvedUser.field.id : '',
@@ -94,6 +94,7 @@ export class Auth {
       }      
       approvedUser = {
         email: email,
+        name: rows[0].name,
         field: field,
         organization: organization,
         isMentor: rows[0].is_mentor
