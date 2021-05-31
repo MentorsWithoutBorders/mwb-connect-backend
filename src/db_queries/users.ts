@@ -4,6 +4,7 @@ import moment from 'moment'
 import pg from 'pg';
 import { Conn } from '../db/conn';
 import { Auth } from './auth';
+import { constants } from '../utils/constants';
 import User from '../models/user.model';
 import Field from '../models/field.model';
 import Subfield from '../models/subfield.model';
@@ -55,7 +56,7 @@ export class Users {
         field: field,
         isMentor: rows[0].is_mentor,
         isAvailable: rows[0].is_available,
-        availableFrom: moment(rows[0].available_from).format('yyyy-MM-DD HH:mm:ss'),
+        availableFrom: moment(rows[0].available_from).format(constants.DATE_FORMAT),
         availabilities: await this.getUserAvailabilities(id),
         lessonsAvailability: await this.getUserLessonsAvailability(id)
       }
@@ -194,7 +195,7 @@ export class Users {
     for (let availability of availabilities) {
       const insertAvailabilityQuery = `INSERT INTO users_availabilities (user_id, day_of_week, time_from, time_to)
         VALUES ($1, $2, $3, $4)`;
-      await pool.query(insertAvailabilityQuery, [userId, availability.dayOfWeek, availability.time.from, availability.time.to]);      
+      await pool.query(insertAvailabilityQuery, [userId, availability.dayOfWeek, availability.time.from, availability.time.to]);
     }
   }
 

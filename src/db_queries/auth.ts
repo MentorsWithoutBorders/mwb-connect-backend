@@ -3,14 +3,19 @@ import jwt from 'jsonwebtoken';
 import pg from 'pg';
 import dotenv from 'dotenv';
 import autoBind from 'auto-bind';
+import moment from 'moment'
 import { v4 as uuidv4 } from 'uuid';
 import { Conn } from '../db/conn';
 import { Helpers } from '../utils/helpers';
+import { constants } from '../utils/constants';
 import Token from '../models/token.model';
 import Tokens from '../models/tokens.model';
 import User from '../models/user.model';
 import Field from '../models/field.model';
 import Organization from '../models/organization.model';
+import Availability from '../models/availability.model';
+import Time from '../models/time.model';
+import LessonsAvailability from '../models/lessons_availability';
 
 const helpers: Helpers = new Helpers();
 const conn: Conn = new Conn();
@@ -34,8 +39,8 @@ export class Auth {
     }
     
     try {
-      const usersQuery = 'SELECT * FROM users WHERE email = $1';
-      let { rows }: pg.QueryResult = await pool.query(usersQuery, [email]);
+      const getUsersQuery = 'SELECT * FROM users WHERE email = $1';
+      let { rows }: pg.QueryResult = await pool.query(getUsersQuery, [email]);
       if (rows[0]) {
         response.status(400).send({'message': 'User already exists.'});
         return ;
@@ -48,9 +53,9 @@ export class Auth {
       }
 
       const hashPassword: string = helpers.hashPassword(password);  
-      const createQuery = `INSERT INTO 
-        users (id, name, email, password, field_id, organization_id, is_mentor) 
-        VALUES ($1, $2, $3, $4, $5, $6, $7) 
+      const createUserQuery = `INSERT INTO 
+        users (id, name, email, password, field_id, organization_id, is_mentor, available_from) 
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8) 
         returning *`;
       const values: Array<string> = [
         uuidv4(),
@@ -59,10 +64,12 @@ export class Auth {
         hashPassword,
         approvedUser.field != null ? approvedUser.field.id : '',
         approvedUser.organization != null ? approvedUser.organization.id : '',
-        String(approvedUser.isMentor)
+        String(approvedUser.isMentor),
+        moment(new Date()).format(constants.DATE_FORMAT),
       ];
-      ({ rows } = await pool.query(createQuery, values));
+      ({ rows } = await pool.query(createUserQuery, values));
       const userId: string = rows[0].id;
+      await this.setDefaultUserProfile(userId);
       const tokens: Tokens = await this.setTokens(userId);
       response.status(200).send(tokens);
     } catch (error) {
@@ -74,8 +81,8 @@ export class Auth {
     let approvedUser: User = {
       email: email
     };
-    const approvedQuery = 'SELECT * FROM approved_users WHERE email = $1';
-    const { rows }: pg.QueryResult = await pool.query(approvedQuery, [email]);
+    const getApprovedUserQuery = 'SELECT * FROM approved_users WHERE email = $1';
+    const { rows }: pg.QueryResult = await pool.query(getApprovedUserQuery, [email]);
     if (!rows[0]) {
       approvedUser.email = undefined;
     } else {
@@ -94,6 +101,36 @@ export class Auth {
     }
     return approvedUser;
   }
+
+  async setDefaultUserProfile(userId: string): Promise<void> {
+    const getDefaultUserQuery = 'SELECT * FROM user_default_profile';
+    const { rows }: pg.QueryResult = await pool.query(getDefaultUserQuery);
+    const time: Time = {
+      from: rows[0].availability_time_from,
+      to: rows[0].availability_time_to
+    };
+    const availability: Availability = {
+      dayOfWeek: rows[0].availability_day_of_week,
+      time: time
+    };
+    const lessonsAvailability: LessonsAvailability = {
+      minInterval: rows[0].lessons_availability_min_interval,
+      minIntervalUnit: rows[0].lessons_availability_min_interval_unit
+    };
+    const defaultUser: User = {
+      isAvailable: rows[0].is_available,
+      availabilities: [availability],
+      lessonsAvailability: lessonsAvailability
+    };
+    const updateUserQuery = `UPDATE users SET is_available = $1 WHERE id = $2`;
+    await pool.query(updateUserQuery, [defaultUser.isAvailable, userId]);    
+    const insertUserAvailabilityQuery = `INSERT INTO users_availabilities (user_id, day_of_week, time_from, time_to)
+      VALUES ($1, $2, $3, $4)`;
+    await pool.query(insertUserAvailabilityQuery, [userId, availability.dayOfWeek, availability.time.from, availability.time.to]);
+    const insertUserLessonsAvailabilityQuery = `INSERT INTO users_lessons_availabilities (user_id, min_interval, min_interval_unit)
+      VALUES ($1, $2, $3)`;
+    await pool.query(insertUserLessonsAvailabilityQuery, [userId, lessonsAvailability.minInterval, lessonsAvailability.minIntervalUnit]);
+  }  
 
   async login(request: Request, response: Response): Promise<void> {
     const { email, password }: User = request.body;
@@ -137,8 +174,8 @@ export class Auth {
   }
 
   async setRefreshToken(userId: string, refreshToken: string): Promise<void> {
-    const getQuery = 'SELECT * FROM refresh_tokens WHERE user_id = $1';
-    const { rows }: pg.QueryResult = await pool.query(getQuery, [userId]);
+    const getRefreshTokenQuery = 'SELECT * FROM refresh_tokens WHERE user_id = $1';
+    const { rows }: pg.QueryResult = await pool.query(getRefreshTokenQuery, [userId]);
     if (!rows[0]) {
       await this.insertRefreshToken(userId, refreshToken);
     } else {
@@ -147,28 +184,28 @@ export class Auth {
   }
 
   async insertRefreshToken(userId: string, refreshToken: string): Promise<void> {
-    const insertQuery = `INSERT INTO 
+    const insertRefreshTokenQuery = `INSERT INTO 
       refresh_tokens (user_id, refresh_token) 
       VALUES ($1, $2)`;
     const values: Array<string> = [
       userId,
       refreshToken
     ];     
-    await pool.query(insertQuery, values);
+    await pool.query(insertRefreshTokenQuery, values);
   }
 
   async updateRefreshToken(userId: string, refreshToken: string): Promise<void> {
-    const updateQuery = `UPDATE refresh_tokens SET refresh_token = $1 WHERE user_id = $2`;
+    const updateRefreshTokenQuery = `UPDATE refresh_tokens SET refresh_token = $1 WHERE user_id = $2`;
     const values: Array<string> = [
       refreshToken,
       userId
     ];      
-    await pool.query(updateQuery, values);
+    await pool.query(updateRefreshTokenQuery, values);
   }
 
   async revokeRefreshToken(userId: string): Promise<void> {
-    const deleteQuery = 'DELETE FROM refresh_tokens WHERE user_id = $1';
-    await pool.query(deleteQuery, [userId]);
+    const deleteRefreshTokenQuery = 'DELETE FROM refresh_tokens WHERE user_id = $1';
+    await pool.query(deleteRefreshTokenQuery, [userId]);
   }  
 
   async logout(request: Request, response: Response): Promise<void> {
@@ -194,8 +231,8 @@ export class Auth {
     }
     try {
       const decoded: Token = await jwt.verify(token, process.env.JWT_SECRET_KEY as string) as Token;
-      const usersQuery = 'SELECT * FROM users WHERE id = $1';
-      const { rows }: pg.QueryResult = await pool.query(usersQuery, [decoded.userId]);
+      const getUsersQuery = 'SELECT * FROM users WHERE id = $1';
+      const { rows }: pg.QueryResult = await pool.query(getUsersQuery, [decoded.userId]);
       if (!rows[0]) {
         response.status(401).send({'message': 'The token you provided is invalid'});
         return ;
@@ -211,8 +248,8 @@ export class Auth {
     const userId: string = request.query.userId as string;
     const refreshToken: string = request.query.refreshToken as string;
     try {
-      const getQuery = 'SELECT * FROM refresh_tokens WHERE user_id = $1 AND refresh_token = $2';
-      const { rows }: pg.QueryResult = await pool.query(getQuery, [userId, refreshToken]);
+      const getRefreshTokenQuery = 'SELECT * FROM refresh_tokens WHERE user_id = $1 AND refresh_token = $2';
+      const { rows }: pg.QueryResult = await pool.query(getRefreshTokenQuery, [userId, refreshToken]);
       if (rows[0]) {
         const tokens: Tokens = await this.setTokens(userId);
         response.status(200).send(tokens);
