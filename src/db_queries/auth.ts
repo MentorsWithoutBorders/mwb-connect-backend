@@ -178,13 +178,13 @@ export class Auth {
     const getRefreshTokenQuery = 'SELECT * FROM refresh_tokens WHERE user_id = $1';
     const { rows }: pg.QueryResult = await pool.query(getRefreshTokenQuery, [userId]);
     if (!rows[0]) {
-      await this.insertRefreshToken(userId, refreshToken);
+      await this.addRefreshToken(userId, refreshToken);
     } else {
       await this.updateRefreshToken(userId, refreshToken);
     }
   }
 
-  async insertRefreshToken(userId: string, refreshToken: string): Promise<void> {
+  async addRefreshToken(userId: string, refreshToken: string): Promise<void> {
     const insertRefreshTokenQuery = `INSERT INTO 
       refresh_tokens (user_id, refresh_token) 
       VALUES ($1, $2)`;

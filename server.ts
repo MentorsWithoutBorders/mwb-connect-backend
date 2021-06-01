@@ -4,6 +4,7 @@ import { Users } from './src/db_queries/users';
 import { Fields } from './src/db_queries/fields';
 import { Subfields } from './src/db_queries/subfields';
 import { Skills } from './src/db_queries/skills';
+import { Goals } from './src/db_queries/goals';
 
 const port = 3000;
 const app: express.Express = express();
@@ -12,6 +13,7 @@ const users: Users = new Users();
 const fields: Fields = new Fields();
 const subfields: Subfields = new Subfields();
 const skills: Skills = new Skills();
+const goals: Goals = new Goals();
 
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
@@ -40,6 +42,13 @@ app.get('/api/v1/subfields/:field_id', auth.verifyAccessToken, subfields.getSubf
 
 // Skills
 app.get('/api/v1/skills/:subfield_id', auth.verifyAccessToken, skills.getSkills);
+
+// User goals
+app.get('/api/v1/goals/:user_id', auth.verifyAccessToken, goals.getGoals);
+app.get('/api/v1/goals/:user_id/:id', auth.verifyAccessToken, goals.getGoalById);
+app.post('/api/v1/goals/:user_id', auth.verifyAccessToken, goals.addGoal);
+app.put('/api/v1/goals/:id', auth.verifyAccessToken, goals.updateGoal);
+app.delete('/api/v1/goals/:id', auth.verifyAccessToken, goals.deleteGoal);
 
 app.listen(port, () => {
   console.log(`App running on port ${port}.`);

@@ -24,8 +24,8 @@ export class Users {
 
   async getUsers(request: Request, response: Response): Promise<void> {
     try {
-      const getQuery = 'SELECT * FROM users ORDER BY id ASC';
-      const { rows }: pg.QueryResult = await pool.query(getQuery);
+      const getUsersQuery = 'SELECT * FROM users ORDER BY id ASC';
+      const { rows }: pg.QueryResult = await pool.query(getUsersQuery);
       response.status(200).json(rows);
     } catch (error) {
       response.status(400).send(error);
@@ -73,7 +73,7 @@ export class Users {
       INNER JOIN users_subfields us
       ON us.subfield_id = s.id
       WHERE us.user_id = $1
-      ORDER BY us.subfield_index`;
+      ORDER BY us.subfield_index ASC`;
     const { rows }: pg.QueryResult = await pool.query(getSubfieldsQuery, [userId]);
     const subfields: Array<Subfield> = [];
     for (const row of rows) {
@@ -94,7 +94,7 @@ export class Users {
       INNER JOIN users_skills us
       ON us.skill_id = s.id
       WHERE us.user_id = $1 AND us.subfield_id = $2
-      ORDER BY us.skill_index`;
+      ORDER BY us.skill_index ASC`;
     const { rows }: pg.QueryResult = await pool.query(getSkillsQuery , [userId, subfieldId]);
     const skills: Array<Skill> = [];
     rows.forEach(function (row) {
@@ -140,8 +140,9 @@ export class Users {
     const id: string = request.params.id;
     const { name, email, field, isAvailable, availableFrom, availabilities, lessonsAvailability }: User = request.body
     try {
-      const updateQuery = 'UPDATE users SET name = $1, email = $2, field_id = $3, is_available = $4, available_from = $5 WHERE id = $6';
-      await pool.query(updateQuery, [name, email, field?.id, isAvailable, availableFrom, id]);
+      const updateUserQuery = 'UPDATE users SET name = $1, email = $2, field_id = $3, is_available = $4, available_from = $5 WHERE id = $6';
+      const values = [name, email, field?.id, isAvailable, availableFrom, id];
+      await pool.query(updateUserQuery, values);
       await this.deleteUserSubfields(id);
       await this.deleteUserSkills(id);
       await this.deleteUserAvailabilities(id);      
@@ -187,7 +188,8 @@ export class Users {
     for (let i = 0; i < skills.length; i++) {
       const insertSkillQuery = `INSERT INTO users_skills (user_id, subfield_id, skill_index, skill_id)
         VALUES ($1, $2, $3, $4)`;
-      await pool.query(insertSkillQuery, [userId, subfieldId, i+1, skills[i].id]);      
+      const values = [userId, subfieldId, i+1, skills[i].id];
+      await pool.query(insertSkillQuery, values);
     }
   }
   
@@ -195,7 +197,8 @@ export class Users {
     for (let availability of availabilities) {
       const insertAvailabilityQuery = `INSERT INTO users_availabilities (user_id, day_of_week, time_from, time_to)
         VALUES ($1, $2, $3, $4)`;
-      await pool.query(insertAvailabilityQuery, [userId, availability.dayOfWeek, availability.time.from, availability.time.to]);
+      const values = [userId, availability.dayOfWeek, availability.time.from, availability.time.to];
+      await pool.query(insertAvailabilityQuery, values);
     }
   }
 
@@ -203,7 +206,8 @@ export class Users {
     const updateLessonsAvailabilityQuery = `UPDATE users_lessons_availabilities 
       SET min_interval = $1, min_interval_unit = $2
       WHERE user_id = $3`;
-    await pool.query(updateLessonsAvailabilityQuery, [lessonsAvailability.minInterval, lessonsAvailability.minIntervalUnit, userId]);
+    const values = [lessonsAvailability.minInterval, lessonsAvailability.minIntervalUnit, userId];
+    await pool.query(updateLessonsAvailabilityQuery, values);
   }  
 
   async deleteUser(request: Request, response: Response): Promise<void> {
