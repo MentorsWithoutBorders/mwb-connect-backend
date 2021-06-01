@@ -67,7 +67,11 @@ export class Goals {
       const dateTime = moment(new Date()).format(constants.DATE_FORMAT);
       const values = [userId, text, goals.length + 1, dateTime];        
       let { rows }: pg.QueryResult = await pool.query(insertGoalQuery, values);
-      response.status(200).send(rows[0].id);
+      const goal: Goal = {
+        id: rows[0].id,
+        text: rows[0].text
+      };      
+      response.status(200).send(goal);
     } catch (error) {
       response.status(400).send(error);
     }
