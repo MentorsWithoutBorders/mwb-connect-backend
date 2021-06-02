@@ -5,6 +5,7 @@ import { Fields } from './src/db_queries/fields';
 import { Subfields } from './src/db_queries/subfields';
 import { Skills } from './src/db_queries/skills';
 import { Goals } from './src/db_queries/goals';
+import { Steps } from './src/db_queries/steps';
 
 const port = 3000;
 const app: express.Express = express();
@@ -14,6 +15,7 @@ const fields: Fields = new Fields();
 const subfields: Subfields = new Subfields();
 const skills: Skills = new Skills();
 const goals: Goals = new Goals();
+const steps: Steps = new Steps();
 
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
@@ -49,6 +51,13 @@ app.get('/api/v1/goals/:user_id/:id', auth.verifyAccessToken, goals.getGoalById)
 app.post('/api/v1/goals/:user_id', auth.verifyAccessToken, goals.addGoal);
 app.put('/api/v1/goals/:id', auth.verifyAccessToken, goals.updateGoal);
 app.delete('/api/v1/goals/:id', auth.verifyAccessToken, goals.deleteGoal);
+
+// User steps
+app.get('/api/v1/steps/:goal_id', auth.verifyAccessToken, steps.getSteps);
+app.get('/api/v1/steps/:goal_id/:id', auth.verifyAccessToken, steps.getStepById);
+app.post('/api/v1/steps/:user_id/:goal_id', auth.verifyAccessToken, steps.addStep);
+app.put('/api/v1/steps/:id', auth.verifyAccessToken, steps.updateStep);
+app.delete('/api/v1/steps/:id', auth.verifyAccessToken, steps.deleteStep);
 
 app.listen(port, () => {
   console.log(`App running on port ${port}.`);

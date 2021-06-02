@@ -4,10 +4,12 @@ import moment from 'moment'
 import pg from 'pg';
 import { Conn } from '../db/conn';
 import { constants } from '../utils/constants';
+import { Steps } from './steps';
 import Goal from '../models/goal.model';
 
 const conn: Conn = new Conn();
 const pool = conn.pool;
+const steps: Steps = new Steps();
 
 export class Goals {
   constructor() {
@@ -47,9 +49,11 @@ export class Goals {
       const getGoalQuery = `SELECT * FROM users_goals
         WHERE user_id = $1 AND id = $2`;
       const { rows }: pg.QueryResult = await pool.query(getGoalQuery, [userId, id]);
+      const stepsList = await steps.getStepsFromDB(id);
       const goal: Goal = {
         id: rows[0].id,
-        text: rows[0].text
+        text: rows[0].text,
+        steps: stepsList
       };
       response.status(200).json(goal);
     } catch (error) {
@@ -81,8 +85,9 @@ export class Goals {
     const id: string = request.params.id;
     const { text }: Goal = request.body
     try {
-      const updateQuery = 'UPDATE goals SET text = $1, date_time = $2 WHERE id = $3';
-      await pool.query(updateQuery, [text, id]);
+      const updateQuery = 'UPDATE users_goals SET text = $1, date_time = $2 WHERE id = $3';
+      const dateTime = moment(new Date()).format(constants.DATE_FORMAT);
+      await pool.query(updateQuery, [text, dateTime, id]);
       response.status(200).send(`Goal modified with ID: ${id}`);
     } catch (error) {
       response.status(400).send(error);
@@ -94,10 +99,16 @@ export class Goals {
     try {
       const deleteQuery = 'DELETE FROM users_goals WHERE id = $1';
       await pool.query(deleteQuery, [id]);
+      await this.deleteSteps(id);
       response.status(200).send(`Goal deleted with ID: ${id}`);
     } catch (error) {
       response.status(400).send(error);
     }    
   }
+
+  async deleteSteps(goalId: string): Promise<void> {
+    const deleteQuery = 'DELETE FROM users_steps WHERE goal_id = $1';
+    await pool.query(deleteQuery, [goalId]);
+  }  
 }
 
