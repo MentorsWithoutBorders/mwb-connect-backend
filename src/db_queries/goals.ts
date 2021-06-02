@@ -49,11 +49,9 @@ export class Goals {
       const getGoalQuery = `SELECT * FROM users_goals
         WHERE user_id = $1 AND id = $2`;
       const { rows }: pg.QueryResult = await pool.query(getGoalQuery, [userId, id]);
-      const stepsList = await steps.getStepsFromDB(id);
       const goal: Goal = {
         id: rows[0].id,
-        text: rows[0].text,
-        steps: stepsList
+        text: rows[0].text
       };
       response.status(200).json(goal);
     } catch (error) {

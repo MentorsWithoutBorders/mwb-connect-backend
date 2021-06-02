@@ -17,29 +17,24 @@ export class Steps {
   async getSteps(request: Request, response: Response): Promise<void> {
     const goalId: string = request.params.goal_id;
     try {
-      const steps: Array<Step> = await this.getStepsFromDB(goalId);
+      const getStepsQuery = `SELECT * FROM users_steps 
+        WHERE goal_id = $1`;
+      const { rows }: pg.QueryResult = await pool.query(getStepsQuery, [goalId]);
+      const steps: Array<Step> = [];
+      for (const row of rows) {
+        const step: Step = {
+          id: row.id,
+          text: row.text,
+          index: row.index,
+          level: row.level,
+          parentId: row.parent_id
+        };
+        steps.push(step);
+      }
       response.status(200).json(steps);
     } catch (error) {
       response.status(400).send(error);
     }   
-  }
-
-  async getStepsFromDB(goalId: string): Promise<Array<Step>> {
-    const getStepsQuery = `SELECT * FROM users_steps 
-      WHERE goal_id = $1`;
-    const { rows }: pg.QueryResult = await pool.query(getStepsQuery, [goalId]);
-    const steps: Array<Step> = [];
-    for (const row of rows) {
-      const step: Step = {
-        id: row.id,
-        text: row.text,
-        index: row.index,
-        level: row.level,
-        parentId: row.parent_id
-      };
-      steps.push(step);
-    }
-    return steps;
   }
 
   async getStepById(request: Request, response: Response): Promise<void> {
