@@ -3,5 +3,5 @@ export default interface Step {
   text: string;
   level?: number;
   index?: number;
-  parent?: string;
+  parentId?: string;
 }

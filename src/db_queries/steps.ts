@@ -35,7 +35,7 @@ export class Steps {
         text: row.text,
         index: row.index,
         level: row.level,
-        parent: row.parent
+        parentId: row.parent_id
       };
       steps.push(step);
     }
@@ -54,7 +54,7 @@ export class Steps {
         text: rows[0].text,
         index: rows[0].index,
         level: rows[0].level,
-        parent: rows[0].parent
+        parentId: rows[0].parent_id
       };
       response.status(200).json(step);
     } catch (error) {
@@ -65,19 +65,19 @@ export class Steps {
   async addStep(request: Request, response: Response): Promise<void> {
     const userId: string = request.params.user_id;
     const goalId: string = request.params.goal_id;
-    const { text, index, level, parent }: Step = request.body
+    const { text, index, level, parentId }: Step = request.body
     try {
-      const insertStepQuery = `INSERT INTO users_steps (user_id, goal_id, text, index, level, parent_step_id, date_time)
+      const insertStepQuery = `INSERT INTO users_steps (user_id, goal_id, text, index, level, parent_id, date_time)
         VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`;
       const dateTime = moment(new Date()).format(constants.DATE_FORMAT);
-      const values = [userId, goalId, text, index, level, parent, dateTime];        
+      const values = [userId, goalId, text, index, level, parentId, dateTime];        
       let { rows }: pg.QueryResult = await pool.query(insertStepQuery, values);
       const step: Step = {
         id: rows[0].id,
         text: rows[0].text,
         index: rows[0].index,
         level: rows[0].level,
-        parent: rows[0].parent
+        parentId: rows[0].parent_id
       };      
       response.status(200).send(step);
     } catch (error) {
@@ -87,11 +87,11 @@ export class Steps {
 
   async updateStep(request: Request, response: Response): Promise<void> {
     const id: string = request.params.id;
-    const { text, index, level, parent }: Step = request.body
+    const { text, index, level, parentId }: Step = request.body
     try {
-      const updateQuery = 'UPDATE users_steps SET text = $1, index = $2, level = $3, parent_step_id = $4, date_time = $5 WHERE id = $6';
+      const updateQuery = 'UPDATE users_steps SET text = $1, index = $2, level = $3, parent_id = $4, date_time = $5 WHERE id = $6';
       const dateTime = moment(new Date()).format(constants.DATE_FORMAT);      
-      await pool.query(updateQuery, [text, index, level, parent, dateTime, id]);
+      await pool.query(updateQuery, [text, index, level, parentId, dateTime, id]);
       response.status(200).send(`Step modified with ID: ${id}`);
     } catch (error) {
       response.status(400).send(error);
