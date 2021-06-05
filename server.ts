@@ -40,22 +40,22 @@ app.delete('/api/v1/users/:id', auth.verifyAccessToken, users.deleteUser);
 app.get('/api/v1/fields', auth.verifyAccessToken, fields.getFields);
 
 // Subfields
-app.get('/api/v1/subfields/:field_id', auth.verifyAccessToken, subfields.getSubfields);
+app.get('/api/v1/:field_id/subfields', auth.verifyAccessToken, subfields.getSubfields);
 
 // Skills
-app.get('/api/v1/skills/:subfield_id', auth.verifyAccessToken, skills.getSkills);
+app.get('/api/v1/:subfield_id/skills', auth.verifyAccessToken, skills.getSkills);
 
-// User goals
-app.get('/api/v1/goals/:user_id', auth.verifyAccessToken, goals.getGoals);
-app.get('/api/v1/goals/:user_id/:id', auth.verifyAccessToken, goals.getGoalById);
-app.post('/api/v1/goals/:user_id', auth.verifyAccessToken, goals.addGoal);
+// Users goals
+app.get('/api/v1/:user_id/goals', auth.verifyAccessToken, goals.getGoals);
+app.get('/api/v1/:user_id/goals/:id', auth.verifyAccessToken, goals.getGoalById);
+app.post('/api/v1/:user_id/goals', auth.verifyAccessToken, goals.addGoal);
 app.put('/api/v1/goals/:id', auth.verifyAccessToken, goals.updateGoal);
 app.delete('/api/v1/goals/:id', auth.verifyAccessToken, goals.deleteGoal);
 
-// User steps
-app.get('/api/v1/steps/:goal_id', auth.verifyAccessToken, steps.getSteps);
-app.get('/api/v1/steps/:goal_id/:id', auth.verifyAccessToken, steps.getStepById);
-app.post('/api/v1/steps/:user_id/:goal_id', auth.verifyAccessToken, steps.addStep);
+// Users steps
+app.get('/api/v1/:goal_id/steps', auth.verifyAccessToken, steps.getSteps);
+app.get('/api/v1/:goal_id/steps/:id', auth.verifyAccessToken, steps.getStepById);
+app.post('/api/v1/:user_id/:goal_id/steps', auth.verifyAccessToken, steps.addStep);
 app.put('/api/v1/steps/:id', auth.verifyAccessToken, steps.updateStep);
 app.delete('/api/v1/steps/:id', auth.verifyAccessToken, steps.deleteStep);
 
