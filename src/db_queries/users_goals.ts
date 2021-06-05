@@ -4,14 +4,12 @@ import moment from 'moment'
 import pg from 'pg';
 import { Conn } from '../db/conn';
 import { constants } from '../utils/constants';
-import { Steps } from './steps';
 import Goal from '../models/goal.model';
 
 const conn: Conn = new Conn();
 const pool = conn.pool;
-const steps: Steps = new Steps();
 
-export class Goals {
+export class UsersGoals {
   constructor() {
     autoBind(this);
   }

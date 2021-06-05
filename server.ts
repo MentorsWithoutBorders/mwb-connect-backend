@@ -1,21 +1,27 @@
 import express from 'express';
 import { Auth } from './src/db_queries/auth';
 import { Users } from './src/db_queries/users';
+import { UsersGoals } from './src/db_queries/users_goals';
+import { UsersSteps } from './src/db_queries/users_steps';
 import { Fields } from './src/db_queries/fields';
 import { Subfields } from './src/db_queries/subfields';
 import { Skills } from './src/db_queries/skills';
-import { Goals } from './src/db_queries/goals';
-import { Steps } from './src/db_queries/steps';
+import { Tutorials } from './src/db_queries/tutorials';
+import { QuizzesSettings } from './src/db_queries/quizzes_settings';
+import { Updates } from './src/db_queries/updates';
 
 const port = 3000;
 const app: express.Express = express();
 const auth: Auth = new Auth();
 const users: Users = new Users();
+const usersGoals: UsersGoals = new UsersGoals();
+const usersSteps: UsersSteps = new UsersSteps();
 const fields: Fields = new Fields();
 const subfields: Subfields = new Subfields();
 const skills: Skills = new Skills();
-const goals: Goals = new Goals();
-const steps: Steps = new Steps();
+const tutorials: Tutorials = new Tutorials();
+const quizzesSettings: QuizzesSettings = new QuizzesSettings();
+const updates: Updates = new Updates();
 
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
@@ -36,6 +42,20 @@ app.get('/api/v1/users/:id', auth.verifyAccessToken, users.getUserById);
 app.put('/api/v1/users/:id', auth.verifyAccessToken, users.updateUser);
 app.delete('/api/v1/users/:id', auth.verifyAccessToken, users.deleteUser);
 
+// Users goals
+app.get('/api/v1/:user_id/goals', auth.verifyAccessToken, usersGoals.getGoals);
+app.get('/api/v1/:user_id/goals/:id', auth.verifyAccessToken, usersGoals.getGoalById);
+app.post('/api/v1/:user_id/goals', auth.verifyAccessToken, usersGoals.addGoal);
+app.put('/api/v1/goals/:id', auth.verifyAccessToken, usersGoals.updateGoal);
+app.delete('/api/v1/goals/:id', auth.verifyAccessToken, usersGoals.deleteGoal);
+
+// Users steps
+app.get('/api/v1/:goal_id/steps', auth.verifyAccessToken, usersSteps.getSteps);
+app.get('/api/v1/:goal_id/steps/:id', auth.verifyAccessToken, usersSteps.getStepById);
+app.post('/api/v1/:user_id/:goal_id/steps', auth.verifyAccessToken, usersSteps.addStep);
+app.put('/api/v1/steps/:id', auth.verifyAccessToken, usersSteps.updateStep);
+app.delete('/api/v1/steps/:id', auth.verifyAccessToken, usersSteps.deleteStep);
+
 // Fields
 app.get('/api/v1/fields', auth.verifyAccessToken, fields.getFields);
 
@@ -45,19 +65,15 @@ app.get('/api/v1/:field_id/subfields', auth.verifyAccessToken, subfields.getSubf
 // Skills
 app.get('/api/v1/:subfield_id/skills', auth.verifyAccessToken, skills.getSkills);
 
-// Users goals
-app.get('/api/v1/:user_id/goals', auth.verifyAccessToken, goals.getGoals);
-app.get('/api/v1/:user_id/goals/:id', auth.verifyAccessToken, goals.getGoalById);
-app.post('/api/v1/:user_id/goals', auth.verifyAccessToken, goals.addGoal);
-app.put('/api/v1/goals/:id', auth.verifyAccessToken, goals.updateGoal);
-app.delete('/api/v1/goals/:id', auth.verifyAccessToken, goals.deleteGoal);
+// Tutorials
+app.get('/api/v1/tutorials', auth.verifyAccessToken, tutorials.getTutorials);
 
-// Users steps
-app.get('/api/v1/:goal_id/steps', auth.verifyAccessToken, steps.getSteps);
-app.get('/api/v1/:goal_id/steps/:id', auth.verifyAccessToken, steps.getStepById);
-app.post('/api/v1/:user_id/:goal_id/steps', auth.verifyAccessToken, steps.addStep);
-app.put('/api/v1/steps/:id', auth.verifyAccessToken, steps.updateStep);
-app.delete('/api/v1/steps/:id', auth.verifyAccessToken, steps.deleteStep);
+// Quizzes settings
+app.get('/api/v1/quizzes_settings', auth.verifyAccessToken, quizzesSettings.getQuizzesSettings);
+
+// Updates
+app.get('/api/v1/updates', auth.verifyAccessToken, updates.getUpdates);
+
 
 app.listen(port, () => {
   console.log(`App running on port ${port}.`);
