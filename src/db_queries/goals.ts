@@ -68,7 +68,10 @@ export class Goals {
       const insertGoalQuery = `INSERT INTO users_goals (user_id, text, index, date_time)
         VALUES ($1, $2, $3, $4) RETURNING *`;
       const dateTime = moment(new Date()).format(constants.DATE_FORMAT);
-      const index = goals[goals.length-1].index as number + 1;
+      let index = 0;
+      if (goals.length > 0) {
+        index = goals[goals.length-1].index as number + 1;
+      }
       const values = [userId, text, index, dateTime];        
       let { rows }: pg.QueryResult = await pool.query(insertGoalQuery, values);
       const goal: Goal = {
