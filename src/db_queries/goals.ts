@@ -95,9 +95,9 @@ export class Goals {
   async deleteGoal(request: Request, response: Response): Promise<void> {
     const id: string = request.params.id;
     try {
+      await this.deleteSteps(id);
       const deleteQuery = 'DELETE FROM users_goals WHERE id = $1';
       await pool.query(deleteQuery, [id]);
-      await this.deleteSteps(id);
       response.status(200).send(`Goal deleted with ID: ${id}`);
     } catch (error) {
       response.status(400).send(error);
