@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import autoBind from 'auto-bind';
-import moment from 'moment'
+import moment from 'moment';
 import pg from 'pg';
 import { Conn } from '../db/conn';
 import { constants } from '../utils/constants';
@@ -9,7 +9,7 @@ import Step from '../models/step.model';
 const conn: Conn = new Conn();
 const pool = conn.pool;
 
-export class UsersSteps {
+export class UserSteps {
   constructor() {
     autoBind(this);
   }

@@ -3,7 +3,7 @@ import jwt from 'jsonwebtoken';
 import pg from 'pg';
 import dotenv from 'dotenv';
 import autoBind from 'auto-bind';
-import moment from 'moment'
+import moment from 'moment';
 import { v4 as uuidv4 } from 'uuid';
 import { Conn } from '../db/conn';
 import { Helpers } from '../utils/helpers';
