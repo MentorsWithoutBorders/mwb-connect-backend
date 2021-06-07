@@ -112,7 +112,12 @@ export class UsersQuizzes {
   
   shouldSkipQuiz(lastQuizSubmitted: Quiz, round: number, roundCompleted: boolean, quizSettings: QuizSettings): boolean {
     const today = moment(new Date());
-    const dayLastQuizSubmitted = moment(lastQuizSubmitted.dateTime);
+    let dayLastQuizSubmitted;
+    if (lastQuizSubmitted != null) {
+      dayLastQuizSubmitted = moment(lastQuizSubmitted.dateTime);
+    } else {
+      dayLastQuizSubmitted = today;
+    }
     const diff = today.diff(dayLastQuizSubmitted, 'days');
     return round > quizSettings.rounds || roundCompleted && diff < (quizSettings.timeBetweenRounds as number);
   }
