@@ -12,7 +12,13 @@ const pool = conn.pool;
 
 interface QuizData {
   round: number;
+  roundCompleted: boolean;
   start: number;
+}
+
+interface QuizNumberData {
+  quizNumber: number;
+  quizNumberUpdated: boolean;
 }
 
 export class UsersQuizzes {
@@ -27,7 +33,8 @@ export class UsersQuizzes {
       let { rows }: pg.QueryResult = await pool.query(getQuizzesSettingsQuery);
       const quizSettings: QuizSettings = {
         count: rows[0].count,
-        rounds: rows[0].rounds
+        rounds: rows[0].rounds,
+        timeBetweenRounds: rows[0].time_between_rounds
       }
       const getQuizzesQuery = `SELECT * FROM users_quizzes 
         WHERE user_id = $1
@@ -37,7 +44,8 @@ export class UsersQuizzes {
       for (const row of rows) {
         const quiz: Quiz = {
           number: row.number,
-          isCorrect: row.is_correct
+          isCorrect: row.is_correct,
+          dateTime: row.date_time
         }
         quizzes.push(quiz);
       }
@@ -50,33 +58,29 @@ export class UsersQuizzes {
           solvedQuizzesRounds[quiz.number]++;
         }
       }
-      
       const lastQuizSubmitted = quizzes[0];
-      const { round, start }: QuizData = this.getQuizData(solvedQuizzesRounds, lastQuizSubmitted, quizSettings);
-
-      let quizNumber = 1;
-      let quizNumberUpdated = false;
-      for (var j = start + 1; j <= quizSettings.count; j++) {
-        if (solvedQuizzesRounds[j] < round) {
-          quizNumber = j;
-          quizNumberUpdated = true;
-          break;
-        }
-      }
-      if (!quizNumberUpdated) {
-        for (var k = 1; k <= start; k++) {
-          if (solvedQuizzesRounds[k] < round) {
-            quizNumber = k;
-            break;
-          }
-        }        
-      }
+      const quizNumber = this.setQuizNumber(solvedQuizzesRounds, lastQuizSubmitted, quizSettings);
       response.status(200).json(quizNumber);
     } catch (error) {
       response.status(400).send(error);
     } 
   }
-
+  
+  setQuizNumber(solvedQuizzesRounds: Array<number>, lastQuizSubmitted: Quiz, quizSettings: QuizSettings): number {
+    const { round, roundCompleted, start }: QuizData = this.getQuizData(solvedQuizzesRounds, lastQuizSubmitted, quizSettings);
+    let quizNumber;
+    if (this.shouldSkipQuiz(lastQuizSubmitted, round, roundCompleted, quizSettings)) {
+      quizNumber = 0;
+    } else {
+      let quizData = this.getQuizNumberData(start + 1, quizSettings.count, solvedQuizzesRounds, round);
+      if (!quizData.quizNumberUpdated) {
+        quizData = this.getQuizNumberData(1, start, solvedQuizzesRounds, round);
+      }
+      quizNumber = quizData.quizNumber;
+    }
+    return quizNumber;
+  }
+ 
   getQuizData(solvedQuizzesRounds: Array<number>, lastQuizSubmitted: Quiz, quizSettings: QuizSettings): QuizData {
     let round: number = 1;
     let shouldIncrementRound: boolean = true;
@@ -91,7 +95,9 @@ export class UsersQuizzes {
     if (lastQuizSubmitted != null) {
       start = lastQuizSubmitted.number;
     }
+    let roundCompleted = false;
     if (solvedQuizzesRounds.length - 1 == quizSettings.count && shouldIncrementRound) {
+      roundCompleted = true;
       round++;
       if (lastQuizSubmitted != null && lastQuizSubmitted.isCorrect) {
         start = 0;
@@ -99,18 +105,42 @@ export class UsersQuizzes {
     }
     return {
       round: round,
-      start: start
+      start: start,
+      roundCompleted: roundCompleted
     };
-  }  
+  }
+  
+  shouldSkipQuiz(lastQuizSubmitted: Quiz, round: number, roundCompleted: boolean, quizSettings: QuizSettings): boolean {
+    const today = moment(new Date());
+    const dayLastQuizSubmitted = moment(lastQuizSubmitted.dateTime);
+    const diff = today.diff(dayLastQuizSubmitted, 'days');
+    return round > quizSettings.rounds || roundCompleted && diff < (quizSettings.timeBetweenRounds as number);
+  }
+
+  getQuizNumberData(start: number, end: number, solvedQuizzesRounds: Array<number>, round: number): QuizNumberData {
+    let quizNumber = 1;
+    let quizNumberUpdated = false;
+    for (var i = start; i <= end; i++) {
+      if (solvedQuizzesRounds[i] < round) {
+        quizNumber = i;
+        quizNumberUpdated = true;
+        break;
+      }
+    }
+    return {
+      quizNumber: quizNumber,
+      quizNumberUpdated: quizNumberUpdated
+    }    
+  }
 
   async addQuiz(request: Request, response: Response): Promise<void> {
     const userId: string = request.params.user_id;
-    const { number, isCorrect }: Quiz = request.body
+    const { number, isCorrect, isClosed }: Quiz = request.body
     try {
-      const insertQuizQuery = `INSERT INTO users_quizzes (user_id, number, is_correct, date_time)
-        VALUES ($1, $2, $3, $4) RETURNING *`;
+      const insertQuizQuery = `INSERT INTO users_quizzes (user_id, number, is_correct, is_closed, date_time)
+        VALUES ($1, $2, $3, $4, $5) RETURNING *`;
       const dateTime = moment(new Date()).format(constants.DATE_FORMAT);
-      const values = [userId, number, isCorrect, dateTime];
+      const values = [userId, number, isCorrect, isClosed, dateTime];
       await pool.query(insertQuizQuery, values);
       response.status(200).send('Quiz has been added');
     } catch (error) {
