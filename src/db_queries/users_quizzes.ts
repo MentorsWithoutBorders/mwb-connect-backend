@@ -15,7 +15,7 @@ interface QuizData {
   start: number;
 }
 
-export class UserQuizzes {
+export class UsersQuizzes {
   constructor() {
     autoBind(this);
   }

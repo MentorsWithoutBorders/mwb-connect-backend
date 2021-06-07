@@ -7,7 +7,7 @@ import NotificationsSettings from '../models/notifications_settings.model';
 const conn: Conn = new Conn();
 const pool = conn.pool;
 
-export class UserNotificationsSettings {
+export class UsersNotificationsSettings {
   constructor() {
     autoBind(this);
   }

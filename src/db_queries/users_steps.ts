@@ -9,7 +9,7 @@ import Step from '../models/step.model';
 const conn: Conn = new Conn();
 const pool = conn.pool;
 
-export class UserSteps {
+export class UsersSteps {
   constructor() {
     autoBind(this);
   }

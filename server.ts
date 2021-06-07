@@ -1,11 +1,11 @@
 import express from 'express';
 import { Auth } from './src/db_queries/auth';
 import { Users } from './src/db_queries/users';
-import { UserGoals } from './src/db_queries/user_goals';
-import { UserSteps } from './src/db_queries/user_steps';
-import { UserQuizzes } from './src/db_queries/user_quizzes';
+import { UsersGoals } from './src/db_queries/users_goals';
+import { UsersSteps } from './src/db_queries/users_steps';
+import { UsersQuizzes } from './src/db_queries/users_quizzes';
 import { UsersSupportRequests } from './src/db_queries/users_support_requests';
-import { UserNotificationsSettings } from './src/db_queries/user_notifications_settings';
+import { UsersNotificationsSettings } from './src/db_queries/users_notifications_settings';
 import { Fields } from './src/db_queries/fields';
 import { Subfields } from './src/db_queries/subfields';
 import { Skills } from './src/db_queries/skills';
@@ -17,10 +17,10 @@ const port = 3000;
 const app: express.Express = express();
 const auth: Auth = new Auth();
 const users: Users = new Users();
-const userGoals: UserGoals = new UserGoals();
-const userSteps: UserSteps = new UserSteps();
-const userQuizzes: UserQuizzes = new UserQuizzes();
-const userNotificationSettings: UserNotificationsSettings = new UserNotificationsSettings();
+const usersGoals: UsersGoals = new UsersGoals();
+const usersSteps: UsersSteps = new UsersSteps();
+const usersQuizzes: UsersQuizzes = new UsersQuizzes();
+const usersNotificationsSettings: UsersNotificationsSettings = new UsersNotificationsSettings();
 const usersSupportRequests: UsersSupportRequests = new UsersSupportRequests();
 const fields: Fields = new Fields();
 const subfields: Subfields = new Subfields();
@@ -49,26 +49,26 @@ app.put('/api/v1/users/:id', auth.verifyAccessToken, users.updateUser);
 app.delete('/api/v1/users/:id', auth.verifyAccessToken, users.deleteUser);
 
 // User goals
-app.get('/api/v1/:user_id/goals', auth.verifyAccessToken, userGoals.getGoals);
-app.get('/api/v1/:user_id/goals/:id', auth.verifyAccessToken, userGoals.getGoalById);
-app.post('/api/v1/:user_id/goals', auth.verifyAccessToken, userGoals.addGoal);
-app.put('/api/v1/goals/:id', auth.verifyAccessToken, userGoals.updateGoal);
-app.delete('/api/v1/goals/:id', auth.verifyAccessToken, userGoals.deleteGoal);
+app.get('/api/v1/:user_id/goals', auth.verifyAccessToken, usersGoals.getGoals);
+app.get('/api/v1/:user_id/goals/:id', auth.verifyAccessToken, usersGoals.getGoalById);
+app.post('/api/v1/:user_id/goals', auth.verifyAccessToken, usersGoals.addGoal);
+app.put('/api/v1/goals/:id', auth.verifyAccessToken, usersGoals.updateGoal);
+app.delete('/api/v1/goals/:id', auth.verifyAccessToken, usersGoals.deleteGoal);
 
 // User steps
-app.get('/api/v1/:goal_id/steps', auth.verifyAccessToken, userSteps.getSteps);
-app.get('/api/v1/:goal_id/steps/:id', auth.verifyAccessToken, userSteps.getStepById);
-app.post('/api/v1/:user_id/:goal_id/steps', auth.verifyAccessToken, userSteps.addStep);
-app.put('/api/v1/steps/:id', auth.verifyAccessToken, userSteps.updateStep);
-app.delete('/api/v1/steps/:id', auth.verifyAccessToken, userSteps.deleteStep);
+app.get('/api/v1/:goal_id/steps', auth.verifyAccessToken, usersSteps.getSteps);
+app.get('/api/v1/:goal_id/steps/:id', auth.verifyAccessToken, usersSteps.getStepById);
+app.post('/api/v1/:user_id/:goal_id/steps', auth.verifyAccessToken, usersSteps.addStep);
+app.put('/api/v1/steps/:id', auth.verifyAccessToken, usersSteps.updateStep);
+app.delete('/api/v1/steps/:id', auth.verifyAccessToken, usersSteps.deleteStep);
 
 // User quizzes
-app.get('/api/v1/:user_id/quiz_number', auth.verifyAccessToken, userQuizzes.getQuizNumber);
-app.post('/api/v1/:user_id/quizzes', auth.verifyAccessToken, userQuizzes.addQuiz);
+app.get('/api/v1/:user_id/quiz_number', auth.verifyAccessToken, usersQuizzes.getQuizNumber);
+app.post('/api/v1/:user_id/quizzes', auth.verifyAccessToken, usersQuizzes.addQuiz);
 
 // User notifications settings
-app.get('/api/v1/:user_id/notifications_settings', auth.verifyAccessToken, userNotificationSettings.getNotificationsSettings);
-app.put('/api/v1/:user_id/notifications_settings', auth.verifyAccessToken, userNotificationSettings.updateNotificationsSettings);
+app.get('/api/v1/:user_id/notifications_settings', auth.verifyAccessToken, usersNotificationsSettings.getNotificationsSettings);
+app.put('/api/v1/:user_id/notifications_settings', auth.verifyAccessToken, usersNotificationsSettings.updateNotificationsSettings);
 
 // Users support requests
 app.post('/api/v1/:user_id/support_requests', auth.verifyAccessToken, usersSupportRequests.addSupportRequest);

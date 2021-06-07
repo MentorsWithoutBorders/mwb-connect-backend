@@ -9,7 +9,7 @@ import Goal from '../models/goal.model';
 const conn: Conn = new Conn();
 const pool = conn.pool;
 
-export class UserGoals {
+export class UsersGoals {
   constructor() {
     autoBind(this);
   }
