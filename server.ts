@@ -4,6 +4,7 @@ import { Users } from './src/db_queries/users';
 import { UserGoals } from './src/db_queries/user_goals';
 import { UserSteps } from './src/db_queries/user_steps';
 import { UserQuizzes } from './src/db_queries/user_quizzes';
+import { UsersSupportRequests } from './src/db_queries/users_support_requests';
 import { UserNotificationsSettings } from './src/db_queries/user_notifications_settings';
 import { Fields } from './src/db_queries/fields';
 import { Subfields } from './src/db_queries/subfields';
@@ -20,6 +21,7 @@ const userGoals: UserGoals = new UserGoals();
 const userSteps: UserSteps = new UserSteps();
 const userQuizzes: UserQuizzes = new UserQuizzes();
 const userNotificationSettings: UserNotificationsSettings = new UserNotificationsSettings();
+const usersSupportRequests: UsersSupportRequests = new UsersSupportRequests();
 const fields: Fields = new Fields();
 const subfields: Subfields = new Subfields();
 const skills: Skills = new Skills();
@@ -67,6 +69,9 @@ app.post('/api/v1/:user_id/quizzes', auth.verifyAccessToken, userQuizzes.addQuiz
 // User notifications settings
 app.get('/api/v1/:user_id/notifications_settings', auth.verifyAccessToken, userNotificationSettings.getNotificationsSettings);
 app.put('/api/v1/:user_id/notifications_settings', auth.verifyAccessToken, userNotificationSettings.updateNotificationsSettings);
+
+// Users support requests
+app.post('/api/v1/:user_id/support_requests', auth.verifyAccessToken, usersSupportRequests.addSupportRequest);
 
 // Fields
 app.get('/api/v1/fields', auth.verifyAccessToken, fields.getFields);
