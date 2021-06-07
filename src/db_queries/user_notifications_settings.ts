@@ -27,5 +27,19 @@ export class UserNotificationsSettings {
       response.status(400).send(error);
     } 
   }
+
+  async updateNotificationsSettings(request: Request, response: Response): Promise<void> {
+    const userId: string = request.params.user_id;
+    const { enabled, time }: NotificationsSettings = request.body
+    try {
+      const updateNotificationsSettingsQuery = `UPDATE users_notifications_settings
+        SET user_id = $1, enabled = $2, time = $3`;
+      const values = [userId, enabled, time];
+      await pool.query(updateNotificationsSettingsQuery, values);
+      response.status(200).send(`Notifications settings have been updated for user: ${userId}`);
+    } catch (error) {
+      response.status(400).send(error);
+    }
+  }    
 }
 
