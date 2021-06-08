@@ -21,11 +21,11 @@ export class UsersTimeZones {
     }
   }
 
-  async addTimeZone(userId: string, timezone: TimeZone): Promise<void> {
+  async addTimeZone(userId: string, timeZone: TimeZone): Promise<void> {
     try {
       const insertTimeZoneQuery = `INSERT INTO users_timezones (user_id, abbreviation, name, offset)
         VALUES ($1, $2, $3, $4)`;
-      const values = [userId, timezone.abbreviation, timezone.name, timezone.offset];        
+      const values = [userId, timeZone.abbreviation, timeZone.name, timeZone.offset];        
       await pool.query(insertTimeZoneQuery, values);
     } catch (error) {
       console.log(error)

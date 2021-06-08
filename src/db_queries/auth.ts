@@ -31,7 +31,7 @@ export class Auth {
   }
 
   async signUp(request: Request, response: Response): Promise<void> {
-    const { name, email, password, timezone }: User = request.body;
+    const { name, email, password, timeZone }: User = request.body;
     if (!email || !password) {
       response.status(400).send({'message': 'Some values are missing'});
       return ;
@@ -73,7 +73,7 @@ export class Auth {
       ({ rows } = await pool.query(createUserQuery, values));
       const userId: string = rows[0].id;
       await this.setDefaultUserProfile(userId);
-      await usersTimeZones.addTimeZone(userId, timezone as TimeZone);
+      await usersTimeZones.addTimeZone(userId, timeZone as TimeZone);
       const tokens: Tokens = await this.setTokens(userId);
       response.status(200).send(tokens);
     } catch (error) {

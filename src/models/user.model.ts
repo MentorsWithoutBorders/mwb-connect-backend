@@ -10,7 +10,7 @@ export default interface User {
   email?: string;
   password?: string;
   organization?: Organization;
-  timezone?: TimeZone;
+  timeZone?: TimeZone;
   field?: Field;
   isMentor?: boolean;
   isAvailable?: boolean;
