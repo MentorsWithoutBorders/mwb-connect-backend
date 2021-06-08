@@ -16,10 +16,13 @@ import Organization from '../models/organization.model';
 import Availability from '../models/availability.model';
 import Time from '../models/time.model';
 import LessonsAvailability from '../models/lessons_availability';
+import { UsersTimeZones } from './users_timezones';
+import TimeZone from '../models/timezone.model';
 
 const helpers: Helpers = new Helpers();
 const conn: Conn = new Conn();
 const pool = conn.pool;
+const usersTimeZones: UsersTimeZones = new UsersTimeZones();
 dotenv.config();
 
 export class Auth {
@@ -28,7 +31,7 @@ export class Auth {
   }
 
   async signUp(request: Request, response: Response): Promise<void> {
-    const { name, email, password }: User = request.body;
+    const { name, email, password, timezone }: User = request.body;
     if (!email || !password) {
       response.status(400).send({'message': 'Some values are missing'});
       return ;
@@ -47,7 +50,7 @@ export class Auth {
       }
 
       const approvedUser: User = await this.getApprovedUser(email);
-      if (approvedUser.email == undefined) {
+      if (approvedUser.email == '') {
         response.status(400).send({'message': 'You have to be a student from one of our partner NGOs or an employee of one of our partner companies.'});
         return ;
       }
@@ -70,6 +73,7 @@ export class Auth {
       ({ rows } = await pool.query(createUserQuery, values));
       const userId: string = rows[0].id;
       await this.setDefaultUserProfile(userId);
+      await usersTimeZones.addTimeZone(userId, timezone as TimeZone);
       const tokens: Tokens = await this.setTokens(userId);
       response.status(200).send(tokens);
     } catch (error) {
@@ -84,7 +88,7 @@ export class Auth {
     const getApprovedUserQuery = 'SELECT * FROM approved_users WHERE email = $1';
     const { rows }: pg.QueryResult = await pool.query(getApprovedUserQuery, [email]);
     if (!rows[0]) {
-      approvedUser.email = undefined;
+      approvedUser.email = '';
     } else {
       const field: Field = {
         id: rows[0].field_id
@@ -238,7 +242,7 @@ export class Auth {
         response.status(401).send({'message': 'The token you provided is invalid'});
         return ;
       }
-      request.user = { id: decoded.userId, name: name, email: email, password: password };
+      request.user = { id: decoded.userId, name: name as string, email: email as string, password: password as string };
       next();
     } catch (error) {
       response.status(401).send(error);

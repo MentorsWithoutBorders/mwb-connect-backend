@@ -1,7 +1,8 @@
-import Availability from "./availability.model";
-import Field from "./field.model";
-import LessonsAvailability from "./lessons_availability";
 import Organization from "./organization.model";
+import TimeZone from "./timezone.model";
+import Field from "./field.model";
+import Availability from "./availability.model";
+import LessonsAvailability from "./lessons_availability";
 
 export default interface User {
   id?: string;
@@ -9,6 +10,7 @@ export default interface User {
   email?: string;
   password?: string;
   organization?: Organization;
+  timezone?: TimeZone;
   field?: Field;
   isMentor?: boolean;
   isAvailable?: boolean;
