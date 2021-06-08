@@ -33,8 +33,8 @@ export class UsersNotificationsSettings {
     const { enabled, time }: NotificationsSettings = request.body
     try {
       const updateNotificationsSettingsQuery = `UPDATE users_notifications_settings
-        SET user_id = $1, enabled = $2, time = $3`;
-      const values = [userId, enabled, time];
+        SET enabled = $1, time = $2 WHERE user_id = $3`;
+      const values = [enabled, time, userId];
       await pool.query(updateNotificationsSettingsQuery, values);
       response.status(200).send(`Notifications settings have been updated for user: ${userId}`);
     } catch (error) {
