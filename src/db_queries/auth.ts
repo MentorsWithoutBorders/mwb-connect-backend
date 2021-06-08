@@ -8,6 +8,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { Conn } from '../db/conn';
 import { Helpers } from '../utils/helpers';
 import { constants } from '../utils/constants';
+import { UsersTimeZones } from './users_timezones';
 import Token from '../models/token.model';
 import Tokens from '../models/tokens.model';
 import User from '../models/user.model';
@@ -16,8 +17,8 @@ import Organization from '../models/organization.model';
 import Availability from '../models/availability.model';
 import Time from '../models/time.model';
 import LessonsAvailability from '../models/lessons_availability';
-import { UsersTimeZones } from './users_timezones';
 import TimeZone from '../models/timezone.model';
+import NotificationsSettings from '../models/notifications_settings.model';
 
 const helpers: Helpers = new Helpers();
 const conn: Conn = new Conn();
@@ -122,6 +123,10 @@ export class Auth {
       minInterval: rows[0].lessons_availability_min_interval,
       minIntervalUnit: rows[0].lessons_availability_min_interval_unit
     };
+    const notificationsSettings: NotificationsSettings = {
+      enabled: rows[0].notifications_enabled,
+      time: rows[0].notifications_time
+    }
     const defaultUser: User = {
       isAvailable: rows[0].is_available,
       availabilities: [availability],
@@ -135,6 +140,9 @@ export class Auth {
     const insertUserLessonsAvailabilityQuery = `INSERT INTO users_lessons_availabilities (user_id, min_interval, min_interval_unit)
       VALUES ($1, $2, $3)`;
     await pool.query(insertUserLessonsAvailabilityQuery, [userId, lessonsAvailability.minInterval, lessonsAvailability.minIntervalUnit]);
+    const insertNotificationsSettingsQuery = `INSERT INTO users_notifications_settings (user_id, enabled, time)
+      VALUES ($1, $2, $3)`;
+    await pool.query(insertNotificationsSettingsQuery, [userId, notificationsSettings.enabled, notificationsSettings.time]);    
   }  
 
   async login(request: Request, response: Response): Promise<void> {
