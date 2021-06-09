@@ -4,6 +4,7 @@ import pg from 'pg';
 import dotenv from 'dotenv';
 import autoBind from 'auto-bind';
 import moment from 'moment';
+import 'moment-timezone';
 import { v4 as uuidv4 } from 'uuid';
 import { Conn } from '../db/conn';
 import { Helpers } from '../utils/helpers';
@@ -72,12 +73,12 @@ export class Auth {
         approvedUser.field != null ? approvedUser.field.id : '',
         approvedUser.organization != null ? approvedUser.organization.id : '',
         String(approvedUser.isMentor),
-        moment(new Date()).format(constants.DATE_FORMAT),
-        moment(new Date()).format(constants.DATE_FORMAT),
+        moment.tz(new Date(), timeZone?.name as string).format(constants.DATE_FORMAT),
+        moment.tz(new Date(), timeZone?.name as string).format(constants.DATE_FORMAT),
       ];
       ({ rows } = await pool.query(createUserQuery, values));
       const userId: string = rows[0].id;
-      await this.setDefaultUserProfile(userId);
+      await this.setDefaultUserProfile(userId, approvedUser.isMentor as boolean);
       await usersTimeZones.addTimeZone(userId, timeZone as TimeZone);
       await usersGoals.addGoalToDB(userId, approvedUser.goal as string);
       const tokens: Tokens = await this.setTokens(userId);
@@ -114,7 +115,7 @@ export class Auth {
     return approvedUser;
   }
 
-  async setDefaultUserProfile(userId: string): Promise<void> {
+  async setDefaultUserProfile(userId: string, isMentor: boolean): Promise<void> {
     const getDefaultUserQuery = 'SELECT * FROM user_default_profile';
     const { rows }: pg.QueryResult = await pool.query(getDefaultUserQuery);
     const time: Time = {
@@ -143,9 +144,11 @@ export class Auth {
     const insertUserAvailabilityQuery = `INSERT INTO users_availabilities (user_id, day_of_week, time_from, time_to)
       VALUES ($1, $2, $3, $4)`;
     await pool.query(insertUserAvailabilityQuery, [userId, availability.dayOfWeek, availability.time.from, availability.time.to]);
-    const insertUserLessonsAvailabilityQuery = `INSERT INTO users_lessons_availabilities (user_id, min_interval, min_interval_unit)
-      VALUES ($1, $2, $3)`;
-    await pool.query(insertUserLessonsAvailabilityQuery, [userId, lessonsAvailability.minInterval, lessonsAvailability.minIntervalUnit]);
+    if (isMentor) {
+      const insertUserLessonsAvailabilityQuery = `INSERT INTO users_lessons_availabilities (user_id, min_interval, min_interval_unit)
+        VALUES ($1, $2, $3)`;
+      await pool.query(insertUserLessonsAvailabilityQuery, [userId, lessonsAvailability.minInterval, lessonsAvailability.minIntervalUnit]);
+    }
     const insertNotificationsSettingsQuery = `INSERT INTO users_notifications_settings (user_id, enabled, time)
       VALUES ($1, $2, $3)`;
     await pool.query(insertNotificationsSettingsQuery, [userId, notificationsSettings.enabled, notificationsSettings.time]);    

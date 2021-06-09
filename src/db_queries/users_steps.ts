@@ -1,13 +1,17 @@
 import { Request, Response } from 'express';
 import autoBind from 'auto-bind';
 import moment from 'moment';
+import 'moment-timezone';
 import pg from 'pg';
 import { Conn } from '../db/conn';
 import { constants } from '../utils/constants';
+import { UsersTimeZones } from './users_timezones';
 import Step from '../models/step.model';
+import TimeZone from '../models/timezone.model';
 
 const conn: Conn = new Conn();
 const pool = conn.pool;
+const usersTimeZones: UsersTimeZones = new UsersTimeZones();
 
 export class UsersSteps {
   constructor() {
@@ -62,9 +66,10 @@ export class UsersSteps {
     const goalId: string = request.params.goal_id;
     const { text, index, level, parentId }: Step = request.body
     try {
+      const timeZone: TimeZone = await usersTimeZones.getUserTimeZone(userId);
       const insertStepQuery = `INSERT INTO users_steps (user_id, goal_id, text, index, level, parent_id, date_time)
         VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`;
-      const dateTime = moment(new Date()).format(constants.DATE_FORMAT);
+      const dateTime = moment.tz(new Date(), timeZone?.name).format(constants.DATE_FORMAT);
       const values = [userId, goalId, text, index, level, parentId, dateTime];        
       let { rows }: pg.QueryResult = await pool.query(insertStepQuery, values);
       const step: Step = {
@@ -81,11 +86,13 @@ export class UsersSteps {
   }
 
   async updateStep(request: Request, response: Response): Promise<void> {
+    const userId: string = request.params.user_id;
     const id: string = request.params.id;
     const { text, index, level, parentId }: Step = request.body
     try {
+      const timeZone: TimeZone = await usersTimeZones.getUserTimeZone(userId);
       const updateQuery = 'UPDATE users_steps SET text = $1, index = $2, level = $3, parent_id = $4, date_time = $5 WHERE id = $6';
-      const dateTime = moment(new Date()).format(constants.DATE_FORMAT);      
+      const dateTime = moment.tz(new Date(), timeZone?.name).format(constants.DATE_FORMAT);
       await pool.query(updateQuery, [text, index, level, parentId, dateTime, id]);
       response.status(200).send(`Step modified with ID: ${id}`);
     } catch (error) {

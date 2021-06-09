@@ -52,14 +52,14 @@ app.delete('/api/v1/users/:id', auth.verifyAccessToken, users.deleteUser);
 app.get('/api/v1/:user_id/goals', auth.verifyAccessToken, usersGoals.getGoals);
 app.get('/api/v1/:user_id/goals/:id', auth.verifyAccessToken, usersGoals.getGoalById);
 app.post('/api/v1/:user_id/goals', auth.verifyAccessToken, usersGoals.addGoal);
-app.put('/api/v1/goals/:id', auth.verifyAccessToken, usersGoals.updateGoal);
+app.put('/api/v1/:user_id/goals/:id', auth.verifyAccessToken, usersGoals.updateGoal);
 app.delete('/api/v1/goals/:id', auth.verifyAccessToken, usersGoals.deleteGoal);
 
 // User steps
 app.get('/api/v1/:goal_id/steps', auth.verifyAccessToken, usersSteps.getSteps);
 app.get('/api/v1/:goal_id/steps/:id', auth.verifyAccessToken, usersSteps.getStepById);
 app.post('/api/v1/:user_id/:goal_id/steps', auth.verifyAccessToken, usersSteps.addStep);
-app.put('/api/v1/steps/:id', auth.verifyAccessToken, usersSteps.updateStep);
+app.put('/api/v1/:user_id/steps/:id', auth.verifyAccessToken, usersSteps.updateStep);
 app.delete('/api/v1/steps/:id', auth.verifyAccessToken, usersSteps.deleteStep);
 
 // User quizzes

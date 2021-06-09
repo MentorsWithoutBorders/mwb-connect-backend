@@ -4,11 +4,14 @@ import pg from 'pg';
 import moment from 'moment';
 import { Conn } from '../db/conn';
 import { constants } from '../utils/constants';
+import { UsersTimeZones } from './users_timezones';
 import Quiz from '../models/quiz.model';
 import QuizSettings from '../models/quiz_settings.model';
+import TimeZone from '../models/timezone.model';
 
 const conn: Conn = new Conn();
 const pool = conn.pool;
+const usersTimeZones: UsersTimeZones = new UsersTimeZones();
 
 interface QuizData {
   round: number;
@@ -142,9 +145,10 @@ export class UsersQuizzes {
     const userId: string = request.params.user_id;
     const { number, isCorrect, isClosed }: Quiz = request.body
     try {
+      const timeZone: TimeZone = await usersTimeZones.getUserTimeZone(userId);
       const insertQuizQuery = `INSERT INTO users_quizzes (user_id, number, is_correct, is_closed, date_time)
         VALUES ($1, $2, $3, $4, $5) RETURNING *`;
-      const dateTime = moment(new Date()).format(constants.DATE_FORMAT);
+      const dateTime = moment.tz(new Date(), timeZone?.name).format(constants.DATE_FORMAT);
       const values = [userId, number, isCorrect, isClosed, dateTime];
       await pool.query(insertQuizQuery, values);
       response.status(200).send('Quiz has been added');
