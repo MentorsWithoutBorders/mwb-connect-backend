@@ -8,10 +8,12 @@ import { v4 as uuidv4 } from 'uuid';
 import { Conn } from '../db/conn';
 import { Helpers } from '../utils/helpers';
 import { constants } from '../utils/constants';
+import { UsersGoals } from './users_goals';
 import { UsersTimeZones } from './users_timezones';
 import Token from '../models/token.model';
 import Tokens from '../models/tokens.model';
 import User from '../models/user.model';
+import ApprovedUser from '../models/approved_user.model';
 import Field from '../models/field.model';
 import Organization from '../models/organization.model';
 import Availability from '../models/availability.model';
@@ -23,6 +25,7 @@ import NotificationsSettings from '../models/notifications_settings.model';
 const helpers: Helpers = new Helpers();
 const conn: Conn = new Conn();
 const pool = conn.pool;
+const usersGoals: UsersGoals = new UsersGoals();
 const usersTimeZones: UsersTimeZones = new UsersTimeZones();
 dotenv.config();
 
@@ -50,7 +53,7 @@ export class Auth {
         return ;
       }
 
-      const approvedUser: User = await this.getApprovedUser(email);
+      const approvedUser: ApprovedUser = await this.getApprovedUser(email);
       if (approvedUser.email == '') {
         response.status(400).send({'message': 'You have to be a student from one of our partner NGOs or an employee of one of our partner companies.'});
         return ;
@@ -58,8 +61,8 @@ export class Auth {
 
       const hashPassword: string = helpers.hashPassword(password);  
       const createUserQuery = `INSERT INTO 
-        users (id, name, email, password, field_id, organization_id, is_mentor, available_from) 
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8) 
+        users (id, name, email, password, field_id, organization_id, is_mentor, available_from, registered_on) 
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) 
         returning *`;
       const values: Array<string> = [
         uuidv4(),
@@ -70,11 +73,13 @@ export class Auth {
         approvedUser.organization != null ? approvedUser.organization.id : '',
         String(approvedUser.isMentor),
         moment(new Date()).format(constants.DATE_FORMAT),
+        moment(new Date()).format(constants.DATE_FORMAT),
       ];
       ({ rows } = await pool.query(createUserQuery, values));
       const userId: string = rows[0].id;
       await this.setDefaultUserProfile(userId);
       await usersTimeZones.addTimeZone(userId, timeZone as TimeZone);
+      await usersGoals.addGoalToDB(userId, approvedUser.goal as string);
       const tokens: Tokens = await this.setTokens(userId);
       response.status(200).send(tokens);
     } catch (error) {
@@ -82,8 +87,8 @@ export class Auth {
     }
   }
 
-  async getApprovedUser(email: string): Promise<User> {
-    let approvedUser: User = {
+  async getApprovedUser(email: string): Promise<ApprovedUser> {
+    let approvedUser: ApprovedUser = {
       email: email
     };
     const getApprovedUserQuery = 'SELECT * FROM approved_users WHERE email = $1';
@@ -102,7 +107,8 @@ export class Auth {
         name: rows[0].name,
         field: field,
         organization: organization,
-        isMentor: rows[0].is_mentor
+        isMentor: rows[0].is_mentor,
+        goal: rows[0].goal
       };
     }
     return approvedUser;

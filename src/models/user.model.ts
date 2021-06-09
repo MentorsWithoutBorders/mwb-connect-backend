@@ -16,5 +16,6 @@ export default interface User {
   isAvailable?: boolean;
   availableFrom?: string;
   availabilities?: Array<Availability>;
-  lessonsAvailability?: LessonsAvailability
+  lessonsAvailability?: LessonsAvailability;
+  registeredOn?: string;
 }

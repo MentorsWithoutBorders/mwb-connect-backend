@@ -62,24 +62,28 @@ export class UsersGoals {
     const userId: string = request.params.user_id;
     const { text }: Goal = request.body
     try {
-      const goals: Array<Goal> = await this.getGoalsFromDB(userId);
-      const insertGoalQuery = `INSERT INTO users_goals (user_id, text, index, date_time)
-        VALUES ($1, $2, $3, $4) RETURNING *`;
-      const dateTime = moment(new Date()).format(constants.DATE_FORMAT);
-      let index = 0;
-      if (goals.length > 0) {
-        index = goals[goals.length-1].index as number + 1;
-      }
-      const values = [userId, text, index, dateTime];        
-      let { rows }: pg.QueryResult = await pool.query(insertGoalQuery, values);
-      const goal: Goal = {
-        id: rows[0].id,
-        text: rows[0].text
-      };      
+      const goal: Goal = await this.addGoalToDB(userId, text);
       response.status(200).send(goal);
     } catch (error) {
       response.status(400).send(error);
     }
+  }
+
+  async addGoalToDB(userId: string, text: string): Promise<Goal> {
+    const goals: Array<Goal> = await this.getGoalsFromDB(userId);
+    const insertGoalQuery = `INSERT INTO users_goals (user_id, text, index, date_time)
+      VALUES ($1, $2, $3, $4) RETURNING *`;
+    const dateTime = moment(new Date()).format(constants.DATE_FORMAT);
+    let index = 0;
+    if (goals.length > 0) {
+      index = goals[goals.length-1].index as number + 1;
+    }
+    const values = [userId, text, index, dateTime];        
+    let { rows }: pg.QueryResult = await pool.query(insertGoalQuery, values);
+    return {
+      id: rows[0].id,
+      text: rows[0].text
+    }   
   }
 
   async updateGoal(request: Request, response: Response): Promise<void> {
