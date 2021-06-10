@@ -268,7 +268,7 @@ export class Auth {
 
   async getAccessToken(request: Request, response: Response): Promise<void> {
     const userId: string = request.params.id;
-    const { refreshToken }: Tokens = request.body;
+    const refreshToken: string = request.query.refreshToken as string;
     try {
       const getRefreshTokenQuery = 'SELECT * FROM users_refresh_tokens WHERE user_id = $1 AND refresh_token = $2';
       const { rows }: pg.QueryResult = await pool.query(getRefreshTokenQuery, [userId, refreshToken]);
