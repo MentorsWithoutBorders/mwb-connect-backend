@@ -57,8 +57,10 @@ export class Users {
         isMentor: rows[0].is_mentor,
         isAvailable: rows[0].is_available,
         availableFrom: moment(rows[0].available_from).format(constants.DATE_FORMAT),
-        availabilities: await this.getUserAvailabilities(id),
-        lessonsAvailability: await this.getUserLessonsAvailability(id)
+        availabilities: await this.getUserAvailabilities(id)
+      }
+      if (rows[0].is_mentor) {
+        user.lessonsAvailability = await this.getUserLessonsAvailability(id)        
       }
 
       response.status(200).json(user);
