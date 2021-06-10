@@ -19,7 +19,7 @@ export class UsersSteps {
   }
 
   async getSteps(request: Request, response: Response): Promise<void> {
-    const goalId: string = request.params.goal_id;
+    const goalId: string = request.params.id;
     try {
       const getStepsQuery = `SELECT * FROM users_steps 
         WHERE goal_id = $1`;
@@ -42,12 +42,10 @@ export class UsersSteps {
   }
 
   async getStepById(request: Request, response: Response): Promise<void> {
-    const goalId: string = request.params.goal_id;
     const id: string = request.params.id;
     try {
-      const getStepQuery = `SELECT * FROM users_steps
-        WHERE goal_id = $1 AND id = $2`;
-      const { rows }: pg.QueryResult = await pool.query(getStepQuery, [goalId, id]);
+      const getStepQuery = `SELECT * FROM users_steps WHERE id = $1`;
+      const { rows }: pg.QueryResult = await pool.query(getStepQuery, [id]);
       const step: Step = {
         id: rows[0].id,
         text: rows[0].text,

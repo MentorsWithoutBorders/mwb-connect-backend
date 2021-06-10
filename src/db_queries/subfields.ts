@@ -13,7 +13,7 @@ export class Subfields {
   }
 
   async getSubfields(request: Request, response: Response): Promise<void> {
-    const fieldId: string = request.params.field_id;
+    const fieldId: string = request.params.id;
     try {
       const getSubfieldsQuery = `SELECT s.id, s.name
         FROM subfields s

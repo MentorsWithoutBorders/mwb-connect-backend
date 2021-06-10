@@ -13,7 +13,7 @@ export class Skills {
   }
 
   async getSkills(request: Request, response: Response): Promise<void> {
-    const subfieldId: string = request.params.subfield_id;
+    const subfieldId: string = request.params.id;
     try {
       const getSkillsQuery = `SELECT s.id, s.name
         FROM skills s

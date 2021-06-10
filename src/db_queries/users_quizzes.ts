@@ -30,7 +30,7 @@ export class UsersQuizzes {
   }
 
   async getQuizNumber(request: Request, response: Response): Promise<void> {
-    const userId: string = request.params.user_id;
+    const userId: string = request.params.id;
     try {
       const getQuizzesSettingsQuery = 'SELECT * FROM quizzes_settings';
       let { rows }: pg.QueryResult = await pool.query(getQuizzesSettingsQuery);
@@ -142,7 +142,7 @@ export class UsersQuizzes {
   }
 
   async addQuiz(request: Request, response: Response): Promise<void> {
-    const userId: string = request.params.user_id;
+    const userId: string = request.params.id;
     const { number, isCorrect, isClosed }: Quiz = request.body
     try {
       const timeZone: TimeZone = await usersTimeZones.getUserTimeZone(userId);

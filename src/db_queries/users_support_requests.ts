@@ -18,7 +18,7 @@ export class UsersSupportRequests {
   }
 
   async addSupportRequest(request: Request, response: Response): Promise<void> {
-    const userId: string = request.params.user_id;
+    const userId: string = request.params.id;
     const { text }: SupportRequest = request.body
     try {
       const timeZone: TimeZone = await usersTimeZones.getUserTimeZone(userId);

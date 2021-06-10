@@ -196,7 +196,7 @@ export class Auth {
   }
 
   async setRefreshToken(userId: string, refreshToken: string): Promise<void> {
-    const getRefreshTokenQuery = 'SELECT * FROM refresh_tokens WHERE user_id = $1';
+    const getRefreshTokenQuery = 'SELECT * FROM users_refresh_tokens WHERE user_id = $1';
     const { rows }: pg.QueryResult = await pool.query(getRefreshTokenQuery, [userId]);
     if (!rows[0]) {
       await this.addRefreshToken(userId, refreshToken);
@@ -207,7 +207,7 @@ export class Auth {
 
   async addRefreshToken(userId: string, refreshToken: string): Promise<void> {
     const insertRefreshTokenQuery = `INSERT INTO 
-      refresh_tokens (user_id, refresh_token) 
+      users_refresh_tokens (user_id, refresh_token) 
       VALUES ($1, $2)`;
     const values: Array<string> = [
       userId,
@@ -217,7 +217,7 @@ export class Auth {
   }
 
   async updateRefreshToken(userId: string, refreshToken: string): Promise<void> {
-    const updateRefreshTokenQuery = `UPDATE refresh_tokens SET refresh_token = $1 WHERE user_id = $2`;
+    const updateRefreshTokenQuery = `UPDATE users_refresh_tokens SET refresh_token = $1 WHERE user_id = $2`;
     const values: Array<string> = [
       refreshToken,
       userId
@@ -226,14 +226,14 @@ export class Auth {
   }
 
   async revokeRefreshToken(userId: string): Promise<void> {
-    const deleteRefreshTokenQuery = 'DELETE FROM refresh_tokens WHERE user_id = $1';
+    const deleteRefreshTokenQuery = 'DELETE FROM users_refresh_tokens WHERE user_id = $1';
     await pool.query(deleteRefreshTokenQuery, [userId]);
   }  
 
   async logout(request: Request, response: Response): Promise<void> {
-    const { id }: User = request.body;
+    const userId: string = request.params.id;
     try {
-      await this.revokeRefreshToken(id || '');
+      await this.revokeRefreshToken(userId || '');
       response.status(200).json()
     } catch (error) {
       response.status(400).send(error);
@@ -267,10 +267,10 @@ export class Auth {
   }
 
   async getAccessToken(request: Request, response: Response): Promise<void> {
-    const userId: string = request.query.userId as string;
-    const refreshToken: string = request.query.refreshToken as string;
+    const userId: string = request.params.id;
+    const { refreshToken }: Tokens = request.body;
     try {
-      const getRefreshTokenQuery = 'SELECT * FROM refresh_tokens WHERE user_id = $1 AND refresh_token = $2';
+      const getRefreshTokenQuery = 'SELECT * FROM users_refresh_tokens WHERE user_id = $1 AND refresh_token = $2';
       const { rows }: pg.QueryResult = await pool.query(getRefreshTokenQuery, [userId, refreshToken]);
       if (rows[0]) {
         const tokens: Tokens = await this.setTokens(userId);

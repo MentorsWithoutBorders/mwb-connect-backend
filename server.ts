@@ -39,8 +39,8 @@ app.get('/', (request: express.Request, response: express.Response): void => {
 // Authentication
 app.post('/api/v1/signup', auth.signUp);
 app.post('/api/v1/login', auth.login);
-app.post('/api/v1/logout', auth.logout);
-app.get('/api/v1/access_token', auth.getAccessToken);
+app.post('/api/v1/users/:id/logout', auth.logout);
+app.get('/api/v1/users/:id/access_token', auth.getAccessToken);
 
 // Users
 app.get('/api/v1/users', auth.verifyAccessToken, users.getUsers);
@@ -49,38 +49,38 @@ app.put('/api/v1/users/:id', auth.verifyAccessToken, users.updateUser);
 app.delete('/api/v1/users/:id', auth.verifyAccessToken, users.deleteUser);
 
 // User goals
-app.get('/api/v1/:user_id/goals', auth.verifyAccessToken, usersGoals.getGoals);
-app.get('/api/v1/:user_id/goals/:id', auth.verifyAccessToken, usersGoals.getGoalById);
-app.post('/api/v1/:user_id/goals', auth.verifyAccessToken, usersGoals.addGoal);
-app.put('/api/v1/:user_id/goals/:id', auth.verifyAccessToken, usersGoals.updateGoal);
+app.get('/api/v1/users/:id/goals', auth.verifyAccessToken, usersGoals.getGoals);
+app.get('/api/v1/goals/:id', auth.verifyAccessToken, usersGoals.getGoalById);
+app.post('/api/v1/users/:id/goals', auth.verifyAccessToken, usersGoals.addGoal);
+app.put('/api/v1/users/:user_id/goals/:id', auth.verifyAccessToken, usersGoals.updateGoal);
 app.delete('/api/v1/goals/:id', auth.verifyAccessToken, usersGoals.deleteGoal);
 
 // User steps
-app.get('/api/v1/:goal_id/steps', auth.verifyAccessToken, usersSteps.getSteps);
-app.get('/api/v1/:goal_id/steps/:id', auth.verifyAccessToken, usersSteps.getStepById);
-app.post('/api/v1/:user_id/:goal_id/steps', auth.verifyAccessToken, usersSteps.addStep);
-app.put('/api/v1/:user_id/steps/:id', auth.verifyAccessToken, usersSteps.updateStep);
+app.get('/api/v1/goals/:id/steps', auth.verifyAccessToken, usersSteps.getSteps);
+app.get('/api/v1/steps/:id', auth.verifyAccessToken, usersSteps.getStepById);
+app.post('/api/v1/users/:user_id/goals/:goal_id/steps', auth.verifyAccessToken, usersSteps.addStep);
+app.put('/api/v1/users/:user_id/steps/:id', auth.verifyAccessToken, usersSteps.updateStep);
 app.delete('/api/v1/steps/:id', auth.verifyAccessToken, usersSteps.deleteStep);
 
 // User quizzes
-app.get('/api/v1/:user_id/quiz_number', auth.verifyAccessToken, usersQuizzes.getQuizNumber);
-app.post('/api/v1/:user_id/quizzes', auth.verifyAccessToken, usersQuizzes.addQuiz);
+app.get('/api/v1/users/:id/quiz_number', auth.verifyAccessToken, usersQuizzes.getQuizNumber);
+app.post('/api/v1/users/:id/quizzes', auth.verifyAccessToken, usersQuizzes.addQuiz);
 
 // User notifications settings
-app.get('/api/v1/:user_id/notifications_settings', auth.verifyAccessToken, usersNotificationsSettings.getNotificationsSettings);
-app.put('/api/v1/:user_id/notifications_settings', auth.verifyAccessToken, usersNotificationsSettings.updateNotificationsSettings);
+app.get('/api/v1/users/:id/notifications_settings', auth.verifyAccessToken, usersNotificationsSettings.getNotificationsSettings);
+app.put('/api/v1/users/:id/notifications_settings', auth.verifyAccessToken, usersNotificationsSettings.updateNotificationsSettings);
 
 // Users support requests
-app.post('/api/v1/:user_id/support_requests', auth.verifyAccessToken, usersSupportRequests.addSupportRequest);
+app.post('/api/v1/users/:id/support_requests', auth.verifyAccessToken, usersSupportRequests.addSupportRequest);
 
 // Fields
 app.get('/api/v1/fields', auth.verifyAccessToken, fields.getFields);
 
 // Subfields
-app.get('/api/v1/:field_id/subfields', auth.verifyAccessToken, subfields.getSubfields);
+app.get('/api/v1/fields/:id/subfields', auth.verifyAccessToken, subfields.getSubfields);
 
 // Skills
-app.get('/api/v1/:subfield_id/skills', auth.verifyAccessToken, skills.getSkills);
+app.get('/api/v1/subfields/:id/skills', auth.verifyAccessToken, skills.getSkills);
 
 // Tutorials
 app.get('/api/v1/tutorials', auth.verifyAccessToken, tutorials.getTutorials);
