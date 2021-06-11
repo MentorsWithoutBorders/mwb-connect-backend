@@ -116,8 +116,8 @@ export class Users {
     const availabilities: Array<Availability> = [];
     for (const row of rows) {
       const time: Time = {
-        from: row.time_from,
-        to: row.time_to
+        from: moment(row.time_from, 'HH:mm').format('ha'),
+        to: moment(row.time_to, 'HH:mm').format('ha')
       }
       const availability: Availability = {
         dayOfWeek: row.day_of_week,
@@ -199,7 +199,9 @@ export class Users {
     for (let availability of availabilities) {
       const insertAvailabilityQuery = `INSERT INTO users_availabilities (user_id, day_of_week, time_from, time_to)
         VALUES ($1, $2, $3, $4)`;
-      const values = [userId, availability.dayOfWeek, availability.time.from, availability.time.to];
+      const timeFrom = moment(availability.time.from, 'ha').format('HH:mm');
+      const timeto = moment(availability.time.to, 'ha').format('HH:mm');
+      const values = [userId, availability.dayOfWeek, timeFrom, timeto];
       await pool.query(insertAvailabilityQuery, values);
     }
   }
