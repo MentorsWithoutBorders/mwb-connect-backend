@@ -6,6 +6,7 @@ import { Conn } from '../db/conn';
 import { Auth } from './auth';
 import { constants } from '../utils/constants';
 import User from '../models/user.model';
+import Organization from '../models/organization.model';
 import Field from '../models/field.model';
 import Subfield from '../models/subfield.model';
 import Skill from '../models/skill.model';
@@ -35,31 +36,8 @@ export class Users {
   async getUserById(request: Request, response: Response): Promise<void> {
     const id: string = request.params.id;
     try {
-      const getUserQuery = `SELECT u.id, u.name, u.email, o.name AS organization, f.id AS field_id, f.name AS field_name, u.is_mentor, u.is_available, u.available_from
-        FROM users u
-        INNER JOIN fields f
-        ON u.field_id = f.id
-        INNER JOIN organizations o
-        ON u.organization_id = o.id
-        WHERE u.id = $1`;
-      const { rows }: pg.QueryResult = await pool.query(getUserQuery, [id]);
-      const field: Field = {
-        id: rows[0].field_id,
-        name: rows[0].field_name,
-        subfields: await this.getUserSubfields(id)
-      }
-      const user: User = {
-        id: rows[0].id,
-        name: rows[0].name,
-        email: rows[0].email,
-        organization: rows[0].organization,
-        field: field,
-        isMentor: rows[0].is_mentor,
-        isAvailable: rows[0].is_available,
-        availableFrom: moment(rows[0].available_from).format(constants.DATE_FORMAT),
-        availabilities: await this.getUserAvailabilities(id)
-      }
-      if (rows[0].is_mentor) {
+      const user: User = await this.getUserFromDB(id);
+      if (user.isMentor) {
         user.lessonsAvailability = await this.getUserLessonsAvailability(id)        
       }
 
@@ -69,10 +47,41 @@ export class Users {
     }
   }
 
+  async getUserFromDB(id: string): Promise<User> {
+    const getUserQuery = `SELECT u.id, u.name, u.email, o.name AS organization, f.id AS field_id, f.name AS field_name, u.is_mentor, u.is_available, u.available_from
+      FROM users u
+      JOIN fields f
+      ON u.field_id = f.id
+      JOIN organizations o
+      ON u.organization_id = o.id
+      WHERE u.id = $1`;
+    const { rows }: pg.QueryResult = await pool.query(getUserQuery, [id]);
+    const organization: Organization = {
+      name: rows[0].organization
+    };    
+    const field: Field = {
+      id: rows[0].field_id,
+      name: rows[0].field_name,
+      subfields: await this.getUserSubfields(id)
+    };
+    return {
+      id: rows[0].id,
+      name: rows[0].name,
+      email: rows[0].email,
+      organization: organization,
+      field: field,
+      isMentor: rows[0].is_mentor,
+      isAvailable: rows[0].is_available,
+      availableFrom: moment(rows[0].available_from).format(constants.DATE_FORMAT),
+      availabilities: await this.getUserAvailabilities(id),
+      registeredOn: moment(rows[0].available_from).format(constants.DATE_FORMAT)
+    }
+  }
+
   async getUserSubfields(userId: string): Promise<Array<Subfield>> {
     const getSubfieldsQuery = `SELECT s.id, s.name
       FROM subfields s
-      INNER JOIN users_subfields us
+      JOIN users_subfields us
       ON us.subfield_id = s.id
       WHERE us.user_id = $1
       ORDER BY us.subfield_index ASC`;
@@ -93,7 +102,7 @@ export class Users {
   async getUserSkills(userId: string, subfieldId: string): Promise<Array<Skill>> {
     const getSkillsQuery = `SELECT s.id, s.name
       FROM skills s
-      INNER JOIN users_skills us
+      JOIN users_skills us
       ON us.skill_id = s.id
       WHERE us.user_id = $1 AND us.subfield_id = $2
       ORDER BY us.skill_index ASC`;

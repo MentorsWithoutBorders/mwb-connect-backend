@@ -17,7 +17,7 @@ export class Subfields {
     try {
       const getSubfieldsQuery = `SELECT s.id, s.name
         FROM subfields s
-        INNER JOIN fields_subfields fs
+        JOIN fields_subfields fs
         ON fs.subfield_id = s.id
         WHERE fs.field_id = $1
         ORDER BY fs.subfield_index`;

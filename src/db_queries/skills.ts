@@ -17,7 +17,7 @@ export class Skills {
     try {
       const getSkillsQuery = `SELECT s.id, s.name
         FROM skills s
-        INNER JOIN subfields_skills ss
+        JOIN subfields_skills ss
         ON ss.skill_id = s.id
         WHERE ss.subfield_id = $1
         ORDER BY ss.skill_index`;

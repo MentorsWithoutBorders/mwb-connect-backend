@@ -21,9 +21,9 @@ export class UsersSupportRequests {
     const userId: string = request.params.id;
     const { text }: SupportRequest = request.body
     try {
-      const timeZone: TimeZone = await usersTimeZones.getUserTimeZone(userId);
       const insertSupportRequestQuery = `INSERT INTO users_support_requests (user_id, text, date_time)
         VALUES ($1, $2, $3)`;
+      const timeZone: TimeZone = await usersTimeZones.getUserTimeZone(userId);
       const dateTime = moment.tz(new Date(), timeZone?.name).format(constants.DATE_FORMAT);
       const values = [userId, text, dateTime];
       await pool.query(insertSupportRequestQuery, values);

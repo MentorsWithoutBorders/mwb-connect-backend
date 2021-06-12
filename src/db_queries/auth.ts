@@ -71,7 +71,7 @@ export class Auth {
         email,
         hashPassword,
         approvedUser.field != null ? approvedUser.field.id : '',
-        approvedUser.organization != null ? approvedUser.organization.id : '',
+        approvedUser.organization != null ? approvedUser.organization.id as string : '',
         String(approvedUser.isMentor),
         moment.tz(new Date(), timeZone?.name as string).format(constants.DATE_FORMAT),
         moment.tz(new Date(), timeZone?.name as string).format(constants.DATE_FORMAT),

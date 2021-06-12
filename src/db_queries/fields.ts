@@ -36,7 +36,7 @@ export class Fields {
   async getSubfields(fieldId: string): Promise<Array<Subfield>> {
     const getSubfieldsQuery = `SELECT s.id, s.name
       FROM subfields s
-      INNER JOIN fields_subfields fs
+      JOIN fields_subfields fs
       ON fs.subfield_id = s.id
       WHERE fs.field_id = $1
       ORDER BY fs.subfield_index`;
@@ -56,7 +56,7 @@ export class Fields {
   async getSkills(subfieldId: string): Promise<Array<Skill>> {
     const getSkillsQuery = `SELECT s.id, s.name
       FROM skills s
-      INNER JOIN subfields_skills ss
+      JOIN subfields_skills ss
       ON ss.skill_id = s.id
       WHERE ss.subfield_id = $1
       ORDER BY ss.skill_index`;

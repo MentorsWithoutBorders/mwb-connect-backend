@@ -73,9 +73,9 @@ export class UsersGoals {
 
   async addGoalToDB(userId: string, text: string): Promise<Goal> {
     const goals: Array<Goal> = await this.getGoalsFromDB(userId);
-    const timeZone: TimeZone = await usersTimeZones.getUserTimeZone(userId);
     const insertGoalQuery = `INSERT INTO users_goals (user_id, text, index, date_time)
       VALUES ($1, $2, $3, $4) RETURNING *`;
+    const timeZone: TimeZone = await usersTimeZones.getUserTimeZone(userId);
     const dateTime = moment.tz(new Date(), timeZone?.name).format(constants.DATE_FORMAT);
     let index = 0;
     if (goals.length > 0) {
@@ -94,8 +94,8 @@ export class UsersGoals {
     const id: string = request.params.id;
     const { text }: Goal = request.body
     try {
-      const timeZone: TimeZone = await usersTimeZones.getUserTimeZone(userId);
       const updateQuery = 'UPDATE users_goals SET text = $1, date_time = $2 WHERE id = $3';
+      const timeZone: TimeZone = await usersTimeZones.getUserTimeZone(userId);
       const dateTime = moment.tz(new Date(), timeZone?.name).format(constants.DATE_FORMAT);
       await pool.query(updateQuery, [text, dateTime, id]);
       response.status(200).send(`Goal modified with ID: ${id}`);

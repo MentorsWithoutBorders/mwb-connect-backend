@@ -4,4 +4,5 @@ export default interface Step {
   level?: number;
   index?: number;
   parentId?: string;
+  dateTime?: string;
 }

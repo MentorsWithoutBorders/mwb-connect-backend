@@ -4,8 +4,9 @@ import { Users } from './src/db_queries/users';
 import { UsersGoals } from './src/db_queries/users_goals';
 import { UsersSteps } from './src/db_queries/users_steps';
 import { UsersQuizzes } from './src/db_queries/users_quizzes';
-import { UsersSupportRequests } from './src/db_queries/users_support_requests';
+import { UsersLessonRequests } from './src/db_queries/users_lesson_requests';
 import { UsersNotificationsSettings } from './src/db_queries/users_notifications_settings';
+import { UsersSupportRequests } from './src/db_queries/users_support_requests';
 import { Fields } from './src/db_queries/fields';
 import { Subfields } from './src/db_queries/subfields';
 import { Skills } from './src/db_queries/skills';
@@ -20,6 +21,7 @@ const users: Users = new Users();
 const usersGoals: UsersGoals = new UsersGoals();
 const usersSteps: UsersSteps = new UsersSteps();
 const usersQuizzes: UsersQuizzes = new UsersQuizzes();
+const usersLessonRequests: UsersLessonRequests = new UsersLessonRequests();
 const usersNotificationsSettings: UsersNotificationsSettings = new UsersNotificationsSettings();
 const usersSupportRequests: UsersSupportRequests = new UsersSupportRequests();
 const fields: Fields = new Fields();
@@ -48,25 +50,30 @@ app.get('/api/v1/users/:id', auth.verifyAccessToken, users.getUserById);
 app.put('/api/v1/users/:id', auth.verifyAccessToken, users.updateUser);
 app.delete('/api/v1/users/:id', auth.verifyAccessToken, users.deleteUser);
 
-// User goals
+// Users goals
 app.get('/api/v1/users/:id/goals', auth.verifyAccessToken, usersGoals.getGoals);
 app.get('/api/v1/goals/:id', auth.verifyAccessToken, usersGoals.getGoalById);
 app.post('/api/v1/users/:id/goals', auth.verifyAccessToken, usersGoals.addGoal);
 app.put('/api/v1/users/:user_id/goals/:id', auth.verifyAccessToken, usersGoals.updateGoal);
 app.delete('/api/v1/goals/:id', auth.verifyAccessToken, usersGoals.deleteGoal);
 
-// User steps
+// Users steps
 app.get('/api/v1/goals/:id/steps', auth.verifyAccessToken, usersSteps.getSteps);
 app.get('/api/v1/steps/:id', auth.verifyAccessToken, usersSteps.getStepById);
 app.post('/api/v1/users/:user_id/goals/:goal_id/steps', auth.verifyAccessToken, usersSteps.addStep);
 app.put('/api/v1/users/:user_id/steps/:id', auth.verifyAccessToken, usersSteps.updateStep);
 app.delete('/api/v1/steps/:id', auth.verifyAccessToken, usersSteps.deleteStep);
+app.get('/api/v1/users/:id/last_step_added', auth.verifyAccessToken, usersSteps.getLastStepAdded);
 
-// User quizzes
+// Users quizzes
 app.get('/api/v1/users/:id/quiz_number', auth.verifyAccessToken, usersQuizzes.getQuizNumber);
 app.post('/api/v1/users/:id/quizzes', auth.verifyAccessToken, usersQuizzes.addQuiz);
 
-// User notifications settings
+// Users lesson requests
+app.post('/api/v1/users/:id/lesson_requests', auth.verifyAccessToken, usersLessonRequests.addLessonRequest);
+app.get('/api/v1/users/:id/last_lesson_request', auth.verifyAccessToken, usersLessonRequests.getLastLessonRequest);
+
+// Users notifications settings
 app.get('/api/v1/users/:id/notifications_settings', auth.verifyAccessToken, usersNotificationsSettings.getNotificationsSettings);
 app.put('/api/v1/users/:id/notifications_settings', auth.verifyAccessToken, usersNotificationsSettings.updateNotificationsSettings);
 
