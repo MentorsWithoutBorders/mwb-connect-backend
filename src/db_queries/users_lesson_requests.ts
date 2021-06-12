@@ -110,7 +110,29 @@ export class UsersLessonRequests {
   async deleteLessonRequest(id: string): Promise<void> {
     const deleteLessonRequestQuery = 'DELETE FROM users_lesson_requests WHERE id = $1';
     await pool.query(deleteLessonRequestQuery, [id]);
-  }    
+  }
+  
+  async rejectLessonRequest(request: Request, response: Response): Promise<void> {
+    const lessonRequestId: string = request.params.id;
+    try {
+      const updateLessonRequestQuery = 'UPDATE users_lesson_requests SET is_rejected = true WHERE id = $1';
+      await pool.query(updateLessonRequestQuery, [lessonRequestId]);
+      response.status(200).send(`Lesson request modified with ID: ${lessonRequestId}`);
+    } catch (error) {
+      response.status(400).send(error);
+    }
+  }
+  
+  async cancelLessonRequest(request: Request, response: Response): Promise<void> {
+    const lessonRequestId: string = request.params.id;
+    try {
+      const updateLessonRequestQuery = 'UPDATE users_lesson_requests SET is_canceled = true WHERE id = $1';
+      await pool.query(updateLessonRequestQuery, [lessonRequestId]);
+      response.status(200).send(`Lesson request modified with ID: ${lessonRequestId}`);
+    } catch (error) {
+      response.status(400).send(error);
+    }
+  }   
   
 }
 

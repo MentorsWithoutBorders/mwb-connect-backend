@@ -106,10 +106,10 @@ export class UsersSteps {
     const id: string = request.params.id;
     const { text, index, level, parentId }: Step = request.body
     try {
-      const updateQuery = 'UPDATE users_steps SET text = $1, index = $2, level = $3, parent_id = $4, date_time = $5 WHERE id = $6';
+      const updateStepQuery = 'UPDATE users_steps SET text = $1, index = $2, level = $3, parent_id = $4, date_time = $5 WHERE id = $6';
       const timeZone: TimeZone = await usersTimeZones.getUserTimeZone(userId);
       const dateTime = moment.tz(new Date(), timeZone?.name).format(constants.DATE_FORMAT);
-      await pool.query(updateQuery, [text, index, level, parentId, dateTime, id]);
+      await pool.query(updateStepQuery, [text, index, level, parentId, dateTime, id]);
       response.status(200).send(`Step modified with ID: ${id}`);
     } catch (error) {
       response.status(400).send(error);
@@ -119,8 +119,8 @@ export class UsersSteps {
   async deleteStep(request: Request, response: Response): Promise<void> {
     const id: string = request.params.id;
     try {
-      const deleteQuery = 'DELETE FROM users_steps WHERE id = $1';
-      await pool.query(deleteQuery, [id]);
+      const deleteStepQuery = 'DELETE FROM users_steps WHERE id = $1';
+      await pool.query(deleteStepQuery, [id]);
       response.status(200).send(`Step deleted with ID: ${id}`);
     } catch (error) {
       response.status(400).send(error);

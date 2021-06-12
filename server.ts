@@ -73,6 +73,8 @@ app.post('/api/v1/users/:id/quizzes', auth.verifyAccessToken, usersQuizzes.addQu
 app.post('/api/v1/users/:id/lesson_requests', auth.verifyAccessToken, usersLessonRequests.addLessonRequest);
 app.get('/api/v1/users/:id/last_lesson_request', auth.verifyAccessToken, usersLessonRequests.getLastLessonRequest);
 app.post('/api/v1/lesson_requests/:id/accept_lesson_request', auth.verifyAccessToken, usersLessonRequests.acceptLessonRequest);
+app.put('/api/v1/lesson_requests/:id/reject_lesson_request', auth.verifyAccessToken, usersLessonRequests.rejectLessonRequest);
+app.put('/api/v1/lesson_requests/:id/cancel_lesson_request', auth.verifyAccessToken, usersLessonRequests.cancelLessonRequest);
 
 // Users notifications settings
 app.get('/api/v1/users/:id/notifications_settings', auth.verifyAccessToken, usersNotificationsSettings.getNotificationsSettings);

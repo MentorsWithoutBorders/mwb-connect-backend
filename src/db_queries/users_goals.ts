@@ -94,10 +94,10 @@ export class UsersGoals {
     const id: string = request.params.id;
     const { text }: Goal = request.body
     try {
-      const updateQuery = 'UPDATE users_goals SET text = $1, date_time = $2 WHERE id = $3';
+      const updateGoalQuery = 'UPDATE users_goals SET text = $1, date_time = $2 WHERE id = $3';
       const timeZone: TimeZone = await usersTimeZones.getUserTimeZone(userId);
       const dateTime = moment.tz(new Date(), timeZone?.name).format(constants.DATE_FORMAT);
-      await pool.query(updateQuery, [text, dateTime, id]);
+      await pool.query(updateGoalQuery, [text, dateTime, id]);
       response.status(200).send(`Goal modified with ID: ${id}`);
     } catch (error) {
       response.status(400).send(error);
@@ -108,8 +108,8 @@ export class UsersGoals {
     const id: string = request.params.id;
     try {
       await this.deleteSteps(id);
-      const deleteQuery = 'DELETE FROM users_goals WHERE id = $1';
-      await pool.query(deleteQuery, [id]);
+      const deleteGoalQuery = 'DELETE FROM users_goals WHERE id = $1';
+      await pool.query(deleteGoalQuery, [id]);
       response.status(200).send(`Goal deleted with ID: ${id}`);
     } catch (error) {
       response.status(400).send(error);
