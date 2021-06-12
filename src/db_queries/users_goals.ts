@@ -62,7 +62,7 @@ export class UsersGoals {
 
   async addGoal(request: Request, response: Response): Promise<void> {
     const userId: string = request.params.id;
-    const { text }: Goal = request.body
+    const { text }: Goal = request.body;
     try {
       const goal: Goal = await this.addGoalToDB(userId, text);
       response.status(200).send(goal);
@@ -117,8 +117,8 @@ export class UsersGoals {
   }
 
   async deleteSteps(goalId: string): Promise<void> {
-    const deleteQuery = 'DELETE FROM users_steps WHERE goal_id = $1';
-    await pool.query(deleteQuery, [goalId]);
+    const deleteStepsQuery = 'DELETE FROM users_steps WHERE goal_id = $1';
+    await pool.query(deleteStepsQuery, [goalId]);
   }  
 }
 
