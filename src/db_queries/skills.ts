@@ -15,25 +15,30 @@ export class Skills {
   async getSkills(request: Request, response: Response): Promise<void> {
     const subfieldId: string = request.params.id;
     try {
-      const getSkillsQuery = `SELECT s.id, s.name
-        FROM skills s
-        JOIN subfields_skills ss
-        ON ss.skill_id = s.id
-        WHERE ss.subfield_id = $1
-        ORDER BY ss.skill_index`;
-      const { rows }: pg.QueryResult = await pool.query(getSkillsQuery, [subfieldId]);
-      const skills: Array<Skill> = [];
-      for (const row of rows) {
-        const skill: Skill = {
-          id: row.id,
-          name: row.name
-        };
-        skills.push(skill);
-      }
+      const skills = this.getSkillsFromDB(subfieldId);
       response.status(200).json(skills);
     } catch (error) {
       response.status(400).send(error);
     } 
+  }
+
+  async getSkillsFromDB(subfieldId: string): Promise<Array<Skill>> {
+    const getSkillsQuery = `SELECT s.id, s.name
+      FROM skills s
+      JOIN subfields_skills ss
+      ON ss.skill_id = s.id
+      WHERE ss.subfield_id = $1
+      ORDER BY ss.skill_index`;
+    const { rows }: pg.QueryResult = await pool.query(getSkillsQuery, [subfieldId]);
+    const skills: Array<Skill> = [];
+    for (const row of rows) {
+      const skill: Skill = {
+        id: row.id,
+        name: row.name
+      };
+      skills.push(skill);
+    }   
+    return skills; 
   }
 }
 

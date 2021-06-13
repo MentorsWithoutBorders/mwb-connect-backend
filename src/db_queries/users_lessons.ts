@@ -6,7 +6,6 @@ import pg from 'pg';
 import { Conn } from '../db/conn';
 import { constants } from '../utils/constants';
 import { Users } from './users';
-import { UsersTimeZones } from './users_timezones';
 import User from '../models/user.model';
 import Lesson from '../models/lesson.model';
 

@@ -6,6 +6,7 @@ import { UsersSteps } from './src/db_queries/users_steps';
 import { UsersQuizzes } from './src/db_queries/users_quizzes';
 import { UsersLessonRequests } from './src/db_queries/users_lesson_requests';
 import { UsersLessons } from './src/db_queries/users_lessons';
+import { UsersSkills } from './src/db_queries/users_skills';
 import { UsersNotificationsSettings } from './src/db_queries/users_notifications_settings';
 import { UsersSupportRequests } from './src/db_queries/users_support_requests';
 import { Fields } from './src/db_queries/fields';
@@ -24,6 +25,7 @@ const usersSteps: UsersSteps = new UsersSteps();
 const usersQuizzes: UsersQuizzes = new UsersQuizzes();
 const usersLessonRequests: UsersLessonRequests = new UsersLessonRequests();
 const usersLessons: UsersLessons = new UsersLessons();
+const usersSkills: UsersSkills = new UsersSkills();
 const usersNotificationsSettings: UsersNotificationsSettings = new UsersNotificationsSettings();
 const usersSupportRequests: UsersSupportRequests = new UsersSupportRequests();
 const fields: Fields = new Fields();
@@ -83,6 +85,10 @@ app.get('/api/v1/users/:id/next_lesson', auth.verifyAccessToken, usersLessons.ge
 app.put('/api/v1/lessons/:id/cancel_lesson', auth.verifyAccessToken, usersLessons.cancelLesson);
 app.put('/api/v1/lessons/:id/student_presence', auth.verifyAccessToken, usersLessons.setLessonPresenceStudent);
 app.put('/api/v1/lessons/:id/mentor_presence', auth.verifyAccessToken, usersLessons.setLessonPresenceMentor);
+
+// Users skills
+app.get('/api/v1/users/:user_id/subfields/:subfield_id/skills', auth.verifyAccessToken, usersSkills.getUserSkills);
+app.post('/api/v1/users/:user_id/subfields/:subfield_id/skills', auth.verifyAccessToken, usersSkills.addUserSkills);
 
 // Users notifications settings
 app.get('/api/v1/users/:id/notifications_settings', auth.verifyAccessToken, usersNotificationsSettings.getNotificationsSettings);
