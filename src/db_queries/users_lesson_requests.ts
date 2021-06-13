@@ -8,7 +8,6 @@ import { constants } from '../utils/constants';
 import { Users } from './users';
 import { UsersTimeZones } from './users_timezones';
 import User from '../models/user.model';
-import Organization from '../models/organization.model';
 import LessonRequest from '../models/lesson_request.model';
 import Lesson from '../models/lesson.model';
 import TimeZone from '../models/timezone.model';
@@ -38,35 +37,40 @@ export class UsersLessonRequests {
     }
   }
   
-  async getLastLessonRequest(request: Request, response: Response): Promise<void> {
+  async getLessonRequest(request: Request, response: Response): Promise<void> {
     const userId: string = request.params.id;
     try {
-      const user: User = await users.getUserFromDB(userId);
-      const userTypeId = user.isMentor ? 'mentor_id' : 'student_id';
-      const getLastLessonRequestQuery = `SELECT ulr.id, ulr.sent_date_time, s.name AS subfield
+      const isMentor = await this.getIsMentor(userId);
+      const userTypeId = isMentor ? 'mentor_id' : 'student_id';
+      const getLessonRequestQuery = `SELECT ulr.id, ulr.student_id, ulr.sent_date_time, s.name AS subfield, ulr.is_canceled
         FROM users_lesson_requests ulr
         LEFT OUTER JOIN subfields s
         ON ulr.subfield_id = s.id
         WHERE ${userTypeId} = $1
         ORDER BY ulr.sent_date_time DESC LIMIT 1`;
-      const { rows }: pg.QueryResult = await pool.query(getLastLessonRequestQuery, [userId]);
-      const userOrganization = user.organization as Organization;
+      const { rows }: pg.QueryResult = await pool.query(getLessonRequestQuery, [userId]);
       const lessonRequest: LessonRequest = {
         id: rows[0].id,
-        organization: userOrganization.name as string,
         subfield: rows[0].subfield,
-        sentDateTime: moment(rows[0].sent_date_time).format(constants.DATE_FORMAT)
+        sentDateTime: moment(rows[0].sent_date_time).format(constants.DATE_FORMAT),
+        isCanceled: rows[0].is_canceled,
       }
-      if (user.isMentor) {
-        lessonRequest.mentor = user.name as string;
-      } else {
-        lessonRequest.student = user.name as string;
+      if (isMentor) {
+        const student: User = await users.getUserFromDB(rows[0].student_id);
+        lessonRequest.student = student.name as string;
+        lessonRequest.organization = student.organization?.name as string;
       }
       response.status(200).json(lessonRequest);
     } catch (error) {
       response.status(400).send(error);
     }
   }
+
+  async getIsMentor(userId: string): Promise<boolean> {
+    const getUserQuery = 'SELECT * FROM users WHERE id = $1';
+    const { rows }: pg.QueryResult = await pool.query(getUserQuery, [userId]);
+    return rows[0].is_mentor;
+  }  
 
   async acceptLessonRequest(request: Request, response: Response): Promise<void> {
     const lessonRequestId: string = request.params.id;
@@ -133,6 +137,5 @@ export class UsersLessonRequests {
       response.status(400).send(error);
     }
   }   
-  
 }
 

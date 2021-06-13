@@ -5,6 +5,7 @@ import { UsersGoals } from './src/db_queries/users_goals';
 import { UsersSteps } from './src/db_queries/users_steps';
 import { UsersQuizzes } from './src/db_queries/users_quizzes';
 import { UsersLessonRequests } from './src/db_queries/users_lesson_requests';
+import { UsersLessons } from './src/db_queries/users_lessons';
 import { UsersNotificationsSettings } from './src/db_queries/users_notifications_settings';
 import { UsersSupportRequests } from './src/db_queries/users_support_requests';
 import { Fields } from './src/db_queries/fields';
@@ -22,6 +23,7 @@ const usersGoals: UsersGoals = new UsersGoals();
 const usersSteps: UsersSteps = new UsersSteps();
 const usersQuizzes: UsersQuizzes = new UsersQuizzes();
 const usersLessonRequests: UsersLessonRequests = new UsersLessonRequests();
+const usersLessons: UsersLessons = new UsersLessons();
 const usersNotificationsSettings: UsersNotificationsSettings = new UsersNotificationsSettings();
 const usersSupportRequests: UsersSupportRequests = new UsersSupportRequests();
 const fields: Fields = new Fields();
@@ -71,10 +73,16 @@ app.post('/api/v1/users/:id/quizzes', auth.verifyAccessToken, usersQuizzes.addQu
 
 // Users lesson requests
 app.post('/api/v1/users/:id/lesson_requests', auth.verifyAccessToken, usersLessonRequests.addLessonRequest);
-app.get('/api/v1/users/:id/last_lesson_request', auth.verifyAccessToken, usersLessonRequests.getLastLessonRequest);
+app.get('/api/v1/users/:id/lesson_request', auth.verifyAccessToken, usersLessonRequests.getLessonRequest);
 app.post('/api/v1/lesson_requests/:id/accept_lesson_request', auth.verifyAccessToken, usersLessonRequests.acceptLessonRequest);
 app.put('/api/v1/lesson_requests/:id/reject_lesson_request', auth.verifyAccessToken, usersLessonRequests.rejectLessonRequest);
 app.put('/api/v1/lesson_requests/:id/cancel_lesson_request', auth.verifyAccessToken, usersLessonRequests.cancelLessonRequest);
+
+// Users lessons
+app.get('/api/v1/users/:id/next_lesson', auth.verifyAccessToken, usersLessons.getNextLesson);
+app.put('/api/v1/lessons/:id/cancel_lesson', auth.verifyAccessToken, usersLessons.cancelLesson);
+app.put('/api/v1/lessons/:id/student_presence', auth.verifyAccessToken, usersLessons.setLessonPresenceStudent);
+app.put('/api/v1/lessons/:id/mentor_presence', auth.verifyAccessToken, usersLessons.setLessonPresenceMentor);
 
 // Users notifications settings
 app.get('/api/v1/users/:id/notifications_settings', auth.verifyAccessToken, usersNotificationsSettings.getNotificationsSettings);

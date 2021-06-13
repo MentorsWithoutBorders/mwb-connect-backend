@@ -5,4 +5,5 @@ export default interface LessonRequest {
   organization?: string;
   subfield?: string;
   sentDateTime?: string;
+  isCanceled?: boolean
 }
