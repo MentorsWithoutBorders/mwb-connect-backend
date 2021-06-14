@@ -57,6 +57,7 @@ export class Users {
       WHERE u.id = $1`;
     const { rows }: pg.QueryResult = await pool.query(getUserQuery, [id]);
     const organization: Organization = {
+      id: rows[0].id,
       name: rows[0].organization
     };    
     const field: Field = {
@@ -205,7 +206,7 @@ export class Users {
   }
   
   async insertUserAvailabilities(userId: string, availabilities: Array<Availability>): Promise<void> {
-    for (let availability of availabilities) {
+    for (const availability of availabilities) {
       const insertAvailabilityQuery = `INSERT INTO users_availabilities (user_id, day_of_week, time_from, time_to)
         VALUES ($1, $2, $3, $4)`;
       const timeFrom = moment(availability.time.from, 'ha').format('HH:mm');

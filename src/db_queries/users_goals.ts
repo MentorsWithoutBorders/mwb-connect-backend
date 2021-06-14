@@ -82,7 +82,7 @@ export class UsersGoals {
       index = goals[goals.length-1].index as number + 1;
     }
     const values = [userId, text, index, dateTime];        
-    let { rows }: pg.QueryResult = await pool.query(insertGoalQuery, values);
+    const { rows }: pg.QueryResult = await pool.query(insertGoalQuery, values);
     return {
       id: rows[0].id,
       text: rows[0].text

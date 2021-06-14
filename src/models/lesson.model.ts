@@ -1,10 +1,10 @@
+import User from "./user.model";
 import Subfield from "./subfield.model";
 
 export default interface Lesson {
-  id: string;
-  student?: string;
-  mentor?: string;
-  organization?: string;
+  id?: string;
+  student?: User;
+  mentor?: User;
   subfield?: Subfield;
   dateTime?: string;
   meetingUrl?: string;

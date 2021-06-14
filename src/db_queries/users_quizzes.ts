@@ -52,7 +52,7 @@ export class UsersQuizzes {
         }
         quizzes.push(quiz);
       }
-      let solvedQuizzesRounds: Array<number> = [];
+      const solvedQuizzesRounds: Array<number> = [];
       for (let i = 1; i <= quizSettings.count; i++) {
         solvedQuizzesRounds[i] = 0;
       }      
@@ -85,8 +85,8 @@ export class UsersQuizzes {
   }
  
   getQuizData(solvedQuizzesRounds: Array<number>, lastQuizSubmitted: Quiz, quizSettings: QuizSettings): QuizData {
-    let round: number = 1;
-    let shouldIncrementRound: boolean = true;
+    let round = 1;
+    let shouldIncrementRound = true;
     for (const solvedQuizRound of solvedQuizzesRounds) {
       if (solvedQuizRound > round) {
         round = solvedQuizRound;
@@ -128,7 +128,7 @@ export class UsersQuizzes {
   getQuizNumberData(start: number, end: number, solvedQuizzesRounds: Array<number>, round: number): QuizNumberData {
     let quizNumber = 1;
     let quizNumberUpdated = false;
-    for (var i = start; i <= end; i++) {
+    for (let i = start; i <= end; i++) {
       if (solvedQuizzesRounds[i] < round) {
         quizNumber = i;
         quizNumberUpdated = true;

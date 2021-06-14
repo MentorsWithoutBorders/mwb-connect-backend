@@ -29,11 +29,11 @@ export class UsersSkills {
   async addUserSkills(request: Request, response: Response): Promise<void> {
     const userId: string = request.params.user_id;
     const subfieldId: string = request.params.subfield_id;
-    const { skills } = request.body;
+    const skills  = request.body;
     try {
       const currentSkills = await users.getUserSkills(userId, subfieldId);
       const subfieldSkills = await skillsQueries.getSkillsFromDB(subfieldId);
-      let skillsToAdd: Array<Skill> = [];
+      const skillsToAdd: Array<Skill> = [];
       for (const subfieldSkill of subfieldSkills) {
         if (currentSkills.some(currentSkill => currentSkill.id === subfieldSkill.id) ||
             (skills as Array<string>).some(skill => skill === subfieldSkill.id)) {

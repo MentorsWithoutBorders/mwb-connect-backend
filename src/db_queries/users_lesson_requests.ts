@@ -11,6 +11,7 @@ import User from '../models/user.model';
 import LessonRequest from '../models/lesson_request.model';
 import Lesson from '../models/lesson.model';
 import TimeZone from '../models/timezone.model';
+import Organization from '../models/organization.model';
 
 const conn: Conn = new Conn();
 const pool = conn.pool;
@@ -56,10 +57,14 @@ export class UsersLessonRequests {
         isCanceled: rows[0].is_canceled,
       }
       if (isMentor) {
-        const student: User = await users.getUserFromDB(rows[0].student_id);
-        lessonRequest.student = student.name as string;
-        lessonRequest.organization = student.organization?.name as string;
-      }
+        const user: User = await users.getUserFromDB(rows[0].student_id);
+        const student: User = {
+          id: user.id as string,
+          name: user.name as string,
+          organization: user.organization as Organization
+        }
+        lessonRequest.student = student;
+      }    
       response.status(200).json(lessonRequest);
     } catch (error) {
       response.status(400).send(error);

@@ -82,6 +82,7 @@ app.put('/api/v1/lesson_requests/:id/cancel_lesson_request', auth.verifyAccessTo
 
 // Users lessons
 app.get('/api/v1/users/:id/next_lesson', auth.verifyAccessToken, usersLessons.getNextLesson);
+app.get('/api/v1/users/:id/previous_lesson', auth.verifyAccessToken, usersLessons.getPreviousLesson);
 app.put('/api/v1/lessons/:id/cancel_lesson', auth.verifyAccessToken, usersLessons.cancelLesson);
 app.put('/api/v1/lessons/:id/student_presence', auth.verifyAccessToken, usersLessons.setLessonPresenceStudent);
 app.put('/api/v1/lessons/:id/mentor_presence', auth.verifyAccessToken, usersLessons.setLessonPresenceMentor);

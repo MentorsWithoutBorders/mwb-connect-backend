@@ -87,7 +87,7 @@ export class UsersSteps {
       const timeZone: TimeZone = await usersTimeZones.getUserTimeZone(userId);
       const dateTime = moment.tz(new Date(), timeZone?.name).format(constants.DATE_FORMAT);
       const values = [userId, goalId, text, index, level, parentId, dateTime];        
-      let { rows }: pg.QueryResult = await pool.query(insertStepQuery, values);
+      const { rows }: pg.QueryResult = await pool.query(insertStepQuery, values);
       const step: Step = {
         id: rows[0].id,
         text: rows[0].text,
