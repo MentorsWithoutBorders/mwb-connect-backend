@@ -8,6 +8,7 @@ import { constants } from '../utils/constants';
 import { Users } from './users';
 import { UsersTimeZones } from './users_timezones';
 import User from '../models/user.model';
+import Subfield from '../models/subfield.model';
 import LessonRequest from '../models/lesson_request.model';
 import Lesson from '../models/lesson.model';
 import TimeZone from '../models/timezone.model';
@@ -43,28 +44,35 @@ export class UsersLessonRequests {
     try {
       const isMentor = await this.getIsMentor(userId);
       const userTypeId = isMentor ? 'mentor_id' : 'student_id';
-      const getLessonRequestQuery = `SELECT ulr.id, ulr.student_id, ulr.sent_date_time, s.name AS subfield, ulr.is_canceled
+      const getLessonRequestQuery = `SELECT ulr.id, ulr.student_id, ulr.subfield_id, ulr.sent_date_time, s.name AS subfield_name, ulr.is_canceled
         FROM users_lesson_requests ulr
         LEFT OUTER JOIN subfields s
         ON ulr.subfield_id = s.id
         WHERE ${userTypeId} = $1
         ORDER BY ulr.sent_date_time DESC LIMIT 1`;
       const { rows }: pg.QueryResult = await pool.query(getLessonRequestQuery, [userId]);
-      const lessonRequest: LessonRequest = {
-        id: rows[0].id,
-        subfield: rows[0].subfield,
-        sentDateTime: moment(rows[0].sent_date_time).format(constants.DATE_FORMAT),
-        isCanceled: rows[0].is_canceled,
-      }
-      if (isMentor) {
-        const user: User = await users.getUserFromDB(rows[0].student_id);
-        const student: User = {
-          id: user.id as string,
-          name: user.name as string,
-          organization: user.organization as Organization
+      let lessonRequest: LessonRequest = {};
+      if (rows[0]) {
+        const subfield: Subfield = {
+          id: rows[0].subfield_id,
+          name: rows[0].subfield_name
         }
-        lessonRequest.student = student;
-      }    
+        lessonRequest = {
+          id: rows[0].id,
+          subfield: subfield,
+          sentDateTime: moment(rows[0].sent_date_time).format(constants.DATE_FORMAT),
+          isCanceled: rows[0].is_canceled,
+        }
+        if (isMentor) {
+          const user: User = await users.getUserFromDB(rows[0].student_id);
+          const student: User = {
+            id: user.id as string,
+            name: user.name as string,
+            organization: user.organization as Organization
+          }
+          lessonRequest.student = student;
+        } 
+      }   
       response.status(200).json(lessonRequest);
     } catch (error) {
       response.status(400).send(error);

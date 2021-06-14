@@ -34,9 +34,9 @@ export class UsersLessons {
         FROM users_lessons ul
         JOIN subfields s
         ON ul.subfield_id = s.id
-        WHERE ${userTypeId} = $1 AND ul.date_time::timestamp >= '${today}'
+        WHERE ${userTypeId} = $1 AND ul.date_time::timestamp >= $2
         ORDER BY ul.date_time DESC LIMIT 1`;
-      const { rows }: pg.QueryResult = await pool.query(getNextLessonQuery, [userId]);
+      const { rows }: pg.QueryResult = await pool.query(getNextLessonQuery, [userId, today]);
       const lesson = await this.setLesson(rows[0], isMentor);
       response.status(200).json(lesson);
     } catch (error) {
@@ -96,9 +96,9 @@ export class UsersLessons {
         FROM users_lessons ul
         JOIN subfields s
         ON ul.subfield_id = s.id
-        WHERE ${userTypeId} = $1 AND ul.date_time::timestamp < '${today}'
+        WHERE ${userTypeId} = $1 AND ul.date_time::timestamp < $2
         ORDER BY ul.date_time DESC LIMIT 1`;
-      const { rows }: pg.QueryResult = await pool.query(getPreviousLessonQuery, [userId]);
+      const { rows }: pg.QueryResult = await pool.query(getPreviousLessonQuery, [userId, today]);
       const lesson = await this.setLesson(rows[0], isMentor);
       response.status(200).json(lesson);
     } catch (error) {
