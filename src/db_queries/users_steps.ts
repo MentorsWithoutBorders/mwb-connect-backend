@@ -54,15 +54,19 @@ export class UsersSteps {
   async getStepByIdFromDB(id: string): Promise<Step> {
     const getStepQuery = `SELECT * FROM users_steps WHERE id = $1`;
     const { rows }: pg.QueryResult = await pool.query(getStepQuery, [id]);
-    return {
-      id: rows[0].id,
-      userId: rows[0].user_id,
-      text: rows[0].text,
-      index: rows[0].index,
-      level: rows[0].level,
-      parentId: rows[0].parent_id,
-      dateTime: moment(rows[0].date_time).format(constants.DATE_FORMAT)
-    };    
+    let step: Step = {};
+    if (rows[0]) {    
+      step = {
+        id: rows[0].id,
+        userId: rows[0].user_id,
+        text: rows[0].text,
+        index: rows[0].index,
+        level: rows[0].level,
+        parentId: rows[0].parent_id,
+        dateTime: moment(rows[0].date_time).format(constants.DATE_FORMAT)
+      };
+    }
+    return step;
   }
 
   async getLastStepAdded(request: Request, response: Response): Promise<void> {
@@ -80,14 +84,18 @@ export class UsersSteps {
       WHERE user_id = $1
       ORDER BY date_time DESC LIMIT 1`;
     const { rows }: pg.QueryResult = await pool.query(getStepQuery, [userId]);
-    return {
-      id: rows[0].id,
-      text: rows[0].text,
-      index: rows[0].index,
-      level: rows[0].level,
-      parentId: rows[0].parent_id,
-      dateTime: moment(rows[0].date_time).format(constants.DATE_FORMAT)
-    }    
+    let step: Step = {};
+    if (rows[0]) {
+      step = {
+        id: rows[0].id,
+        text: rows[0].text,
+        index: rows[0].index,
+        level: rows[0].level,
+        parentId: rows[0].parent_id,
+        dateTime: moment(rows[0].date_time).format(constants.DATE_FORMAT)
+      } 
+    }
+    return step;  
   }
 
   async addStep(request: Request, response: Response): Promise<void> {
@@ -121,7 +129,7 @@ export class UsersSteps {
     try {
       const timeZone: TimeZone = await usersTimeZones.getUserTimeZone(userId);
       const dateTime = moment.tz(new Date(), timeZone?.name).format(constants.DATE_FORMAT);
-      await this.updateStepInDB(id, text, index as number, level as number, parentId as string, dateTime);
+      await this.updateStepInDB(id, text as string, index as number, level as number, parentId as string, dateTime);
       response.status(200).send(`Step modified with ID: ${id}`);
     } catch (error) {
       response.status(400).send(error);
@@ -145,7 +153,7 @@ export class UsersSteps {
       if (lastStepAddedBeforeDelete.id == stepId) {
         const lastStepAdded = await this.getLastStepAddedFromDB(userId as string);
         const { id, text, index, level, parentId }: Step = lastStepAdded;
-        await this.updateStepInDB(id, text, index as number, level as number, parentId as string, dateTime as string);
+        await this.updateStepInDB(id as string, text as string, index as number, level as number, parentId as string, dateTime as string);
       }
       response.status(200).send(`Step deleted with ID: ${stepId}`);
     } catch (error) {

@@ -1,7 +1,7 @@
 export default interface Step {
-  id: string;
+  id?: string;
   userId?: string;
-  text: string;
+  text?: string;
   level?: number;
   index?: number;
   parentId?: string;
