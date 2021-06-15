@@ -44,43 +44,56 @@ export class UsersSteps {
   async getStepById(request: Request, response: Response): Promise<void> {
     const id: string = request.params.id;
     try {
-      const getStepQuery = `SELECT * FROM users_steps WHERE id = $1`;
-      const { rows }: pg.QueryResult = await pool.query(getStepQuery, [id]);
-      const step: Step = {
-        id: rows[0].id,
-        text: rows[0].text,
-        index: rows[0].index,
-        level: rows[0].level,
-        parentId: rows[0].parent_id
-      };
+      const step: Step = await this.getStepByIdFromDB(id);
       response.status(200).json(step);
     } catch (error) {
       response.status(400).send(error);
     }
   }
 
+  async getStepByIdFromDB(id: string): Promise<Step> {
+    const getStepQuery = `SELECT * FROM users_steps WHERE id = $1`;
+    const { rows }: pg.QueryResult = await pool.query(getStepQuery, [id]);
+    return {
+      id: rows[0].id,
+      userId: rows[0].user_id,
+      text: rows[0].text,
+      index: rows[0].index,
+      level: rows[0].level,
+      parentId: rows[0].parent_id,
+      dateTime: moment(rows[0].date_time).format(constants.DATE_FORMAT)
+    };    
+  }
+
   async getLastStepAdded(request: Request, response: Response): Promise<void> {
     const userId: string = request.params.id;
     try {
-      const getStepQuery = `SELECT * FROM users_steps 
-        WHERE user_id = $1
-        ORDER BY date_time DESC LIMIT 1`;
-      const { rows }: pg.QueryResult = await pool.query(getStepQuery, [userId]);
-      const step: Step = {
-        id: rows[0].id,
-        text: rows[0].text,
-        dateTime: moment(rows[0].date_time).format(constants.DATE_FORMAT)
-      }
+      const step: Step = await this.getLastStepAddedFromDB(userId);
       response.status(200).json(step);
     } catch (error) {
       response.status(400).send(error);
     }
-  }  
+  }
+  
+  async getLastStepAddedFromDB(userId: string): Promise<Step> {
+    const getStepQuery = `SELECT * FROM users_steps 
+      WHERE user_id = $1
+      ORDER BY date_time DESC LIMIT 1`;
+    const { rows }: pg.QueryResult = await pool.query(getStepQuery, [userId]);
+    return {
+      id: rows[0].id,
+      text: rows[0].text,
+      index: rows[0].index,
+      level: rows[0].level,
+      parentId: rows[0].parent_id,
+      dateTime: moment(rows[0].date_time).format(constants.DATE_FORMAT)
+    }    
+  }
 
   async addStep(request: Request, response: Response): Promise<void> {
     const userId: string = request.params.user_id;
     const goalId: string = request.params.goal_id;
-    const { text, index, level, parentId }: Step = request.body
+    const { text, index, level, parentId }: Step = request.body;
     try {
       const insertStepQuery = `INSERT INTO users_steps (user_id, goal_id, text, index, level, parent_id, date_time)
         VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`;
@@ -106,22 +119,35 @@ export class UsersSteps {
     const id: string = request.params.id;
     const { text, index, level, parentId }: Step = request.body
     try {
-      const updateStepQuery = 'UPDATE users_steps SET text = $1, index = $2, level = $3, parent_id = $4, date_time = $5 WHERE id = $6';
       const timeZone: TimeZone = await usersTimeZones.getUserTimeZone(userId);
       const dateTime = moment.tz(new Date(), timeZone?.name).format(constants.DATE_FORMAT);
-      await pool.query(updateStepQuery, [text, index, level, parentId, dateTime, id]);
+      await this.updateStepInDB(id, text, index as number, level as number, parentId as string, dateTime);
       response.status(200).send(`Step modified with ID: ${id}`);
     } catch (error) {
       response.status(400).send(error);
     }
   }
 
+  async updateStepInDB(id: string, text: string, index: number, level: number, parentId: string, dateTime: string): Promise<void> {
+    const updateStepQuery = 'UPDATE users_steps SET text = $1, index = $2, level = $3, parent_id = $4, date_time = $5 WHERE id = $6';
+    await pool.query(updateStepQuery, [text, index, level, parentId, dateTime, id]);    
+  }
+
   async deleteStep(request: Request, response: Response): Promise<void> {
-    const id: string = request.params.id;
+    const stepId: string = request.params.id;
     try {
+      const stepToDelete = await this.getStepByIdFromDB(stepId);
+      const { userId, dateTime }: Step = stepToDelete;
+      const lastStepAddedBeforeDelete = await this.getLastStepAddedFromDB(userId as string);
       const deleteStepQuery = 'DELETE FROM users_steps WHERE id = $1';
-      await pool.query(deleteStepQuery, [id]);
-      response.status(200).send(`Step deleted with ID: ${id}`);
+      await pool.query(deleteStepQuery, [stepId]);
+
+      if (lastStepAddedBeforeDelete.id == stepId) {
+        const lastStepAdded = await this.getLastStepAddedFromDB(userId as string);
+        const { id, text, index, level, parentId }: Step = lastStepAdded;
+        await this.updateStepInDB(id, text, index as number, level as number, parentId as string, dateTime as string);
+      }
+      response.status(200).send(`Step deleted with ID: ${stepId}`);
     } catch (error) {
       response.status(400).send(error);
     }    
