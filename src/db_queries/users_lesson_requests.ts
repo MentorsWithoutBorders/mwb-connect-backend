@@ -28,12 +28,15 @@ export class UsersLessonRequests {
     const studentId: string = request.params.id;
     try {
       const insertLessonRequestQuery = `INSERT INTO users_lesson_requests (student_id, sent_date_time)
-        VALUES ($1, $2)`;
+        VALUES ($1, $2) RETURNING *`;
       const timeZone: TimeZone = await usersTimeZones.getUserTimeZone(studentId);
       const sentDateTime = moment.tz(new Date(), timeZone?.name).format(constants.DATE_FORMAT);
       const values = [studentId, sentDateTime];
-      await pool.query(insertLessonRequestQuery, values);
-      response.status(200).send('Lesson request has been added');
+      const { rows }: pg.QueryResult = await pool.query(insertLessonRequestQuery, values);
+      const lessonRequest: LessonRequest = {
+        id: rows[0].id
+      }
+      response.status(200).send(lessonRequest);
     } catch (error) {
       response.status(400).send(error);
     }
