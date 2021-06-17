@@ -98,22 +98,25 @@ export class UsersLessonRequests {
       const mentorId = rows[0].mentor_id;
       const subfieldId = rows[0].subfield_id;
       const lessonDateTime = rows[0].lesson_date_time;
-      this.addLesson(studentId, mentorId, subfieldId, lessonDateTime, meetingUrl as string);
-      this.addStudentSubfield(studentId, subfieldId);
-      this.deleteLessonRequest(lessonRequestId);
-      response.status(200).send('Lesson has been added');
+      const lesson = await this.addLesson(studentId, mentorId, subfieldId, lessonDateTime, meetingUrl as string);
+      await this.addStudentSubfield(studentId, subfieldId);
+      await this.deleteLessonRequest(lessonRequestId);
+      response.status(200).send(lesson);
     } catch (error) {
       response.status(400).send(error);
     }
   }
   
-  async addLesson(studentId: string, mentorId: string, subfieldId: string, lessonDateTime: string, meetingUrl: string): Promise<void> {
+  async addLesson(studentId: string, mentorId: string, subfieldId: string, lessonDateTime: string, meetingUrl: string): Promise<Lesson> {
     const insertLessonQuery = `INSERT INTO users_lessons (student_id, mentor_id, subfield_id, date_time, meeting_url)
-      VALUES ($1, $2, $3, $4, $5)`;
+      VALUES ($1, $2, $3, $4, $5) RETURNING *`;
     const timeZone: TimeZone = await usersTimeZones.getUserTimeZone(mentorId);
     const dateTime = moment.tz(lessonDateTime, timeZone?.name).format(constants.DATE_FORMAT);
     const values = [studentId, mentorId, subfieldId, dateTime, meetingUrl];
-    await pool.query(insertLessonQuery, values);    
+    const { rows }: pg.QueryResult = await pool.query(insertLessonQuery, values);
+    return {
+      id: rows[0].id
+    } 
   }
 
   async addStudentSubfield(studentId: string, subfieldId: string): Promise<void> {
