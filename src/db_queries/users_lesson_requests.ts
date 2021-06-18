@@ -47,7 +47,7 @@ export class UsersLessonRequests {
     try {
       const isMentor = await this.getIsMentor(userId);
       const userTypeId = isMentor ? 'mentor_id' : 'student_id';
-      const getLessonRequestQuery = `SELECT ulr.id, ulr.student_id, ulr.subfield_id, ulr.sent_date_time, s.name AS subfield_name, ulr.is_canceled
+      const getLessonRequestQuery = `SELECT ulr.id, ulr.student_id, ulr.subfield_id, ulr.sent_date_time, ulr.lesson_date_time, s.name AS subfield_name, ulr.is_canceled
         FROM users_lesson_requests ulr
         LEFT OUTER JOIN subfields s
         ON ulr.subfield_id = s.id
@@ -64,6 +64,7 @@ export class UsersLessonRequests {
           id: rows[0].id,
           subfield: subfield,
           sentDateTime: moment(rows[0].sent_date_time).format(constants.DATE_FORMAT),
+          lessonDateTime: moment(rows[0].lesson_date_time).format(constants.DATE_FORMAT),
           isCanceled: rows[0].is_canceled,
         }
         if (isMentor) {

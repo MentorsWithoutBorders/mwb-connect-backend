@@ -7,5 +7,6 @@ export default interface LessonRequest {
   mentor?: User;
   subfield?: Subfield;
   sentDateTime?: string;
+  lessonDateTime?: string;
   isCanceled?: boolean
 }
