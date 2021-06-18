@@ -116,6 +116,18 @@ export class UsersLessons {
       response.status(400).send(error);
     }
   }
+
+  async setLessonMeetingUrl(request: Request, response: Response): Promise<void> {
+    const lessonId: string = request.params.id;
+    const { meetingUrl }: Lesson = request.body
+    try {
+      const updateLessonQuery = 'UPDATE users_lessons SET meeting_url = $1 WHERE id = $2';
+      await pool.query(updateLessonQuery, [meetingUrl, lessonId]);
+      response.status(200).send(`Lesson modified with ID: ${lessonId}`);
+    } catch (error) {
+      response.status(400).send(error);
+    }
+  } 
   
   async setLessonPresenceStudent(request: Request, response: Response): Promise<void> {
     const lessonId: string = request.params.id;
