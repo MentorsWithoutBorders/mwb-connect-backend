@@ -26,22 +26,26 @@ export class UsersLessons {
   async getNextLesson(request: Request, response: Response): Promise<void> {
     const userId: string = request.params.id;
     try {
-      const isMentor = await this.getIsMentor(userId);
-      const userTypeId = isMentor ? 'mentor_id' : 'student_id';
-      const timeZone: TimeZone = await usersTimeZones.getUserTimeZone(userId);
-      const today = moment.tz(new Date(), timeZone?.name).format(constants.DATE_FORMAT);      
-      const getNextLessonQuery = `SELECT ul.id, ul.student_id, ul.mentor_id, ul.subfield_id, ul.date_time, s.name AS subfield_name, ul.meeting_url, ul.is_canceled
-        FROM users_lessons ul
-        JOIN subfields s
-        ON ul.subfield_id = s.id
-        WHERE ${userTypeId} = $1 AND ul.date_time::timestamp >= $2
-        ORDER BY ul.date_time DESC LIMIT 1`;
-      const { rows }: pg.QueryResult = await pool.query(getNextLessonQuery, [userId, today]);
-      const lesson = await this.setLesson(rows[0], isMentor);
+      const lesson = await this.getLessonFromDB(userId);
       response.status(200).json(lesson);
     } catch (error) {
       response.status(400).send(error);
     }
+  }
+
+  async getLessonFromDB(userId: string): Promise<Lesson> {
+    const isMentor = await this.getIsMentor(userId);
+    const userTypeId = isMentor ? 'mentor_id' : 'student_id';
+    const timeZone: TimeZone = await usersTimeZones.getUserTimeZone(userId);
+    const now = moment.tz(new Date(), timeZone?.name).format(constants.DATE_FORMAT);      
+    const getNextLessonQuery = `SELECT ul.id, ul.student_id, ul.mentor_id, ul.subfield_id, ul.date_time, s.name AS subfield_name, ul.meeting_url, ul.is_canceled
+      FROM users_lessons ul
+      JOIN subfields s
+      ON ul.subfield_id = s.id
+      WHERE ${userTypeId} = $1 AND ul.date_time::timestamp >= $2
+      ORDER BY ul.date_time DESC LIMIT 1`;
+    const { rows }: pg.QueryResult = await pool.query(getNextLessonQuery, [userId, now]);
+    return this.setLesson(rows[0], isMentor);
   }
 
   async setLesson(row: pg.QueryResultRow, isMentor: boolean): Promise<Lesson> {

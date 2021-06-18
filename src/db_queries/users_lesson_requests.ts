@@ -6,6 +6,7 @@ import pg from 'pg';
 import { Conn } from '../db/conn';
 import { constants } from '../utils/constants';
 import { Users } from './users';
+import { UsersLessons } from './users_lessons';
 import { UsersTimeZones } from './users_timezones';
 import User from '../models/user.model';
 import Subfield from '../models/subfield.model';
@@ -17,6 +18,7 @@ import Organization from '../models/organization.model';
 const conn: Conn = new Conn();
 const pool = conn.pool;
 const users: Users = new Users();
+const usersLessons: UsersLessons = new UsersLessons();
 const usersTimeZones: UsersTimeZones = new UsersTimeZones();
 
 export class UsersLessonRequests {
@@ -114,10 +116,8 @@ export class UsersLessonRequests {
     const timeZone: TimeZone = await usersTimeZones.getUserTimeZone(mentorId);
     const dateTime = moment.tz(lessonDateTime, timeZone?.name).format(constants.DATE_FORMAT);
     const values = [studentId, mentorId, subfieldId, dateTime, meetingUrl];
-    const { rows }: pg.QueryResult = await pool.query(insertLessonQuery, values);
-    return {
-      id: rows[0].id
-    } 
+    await pool.query(insertLessonQuery, values);
+    return usersLessons.getLessonFromDB(mentorId);
   }
 
   async addStudentSubfield(studentId: string, subfieldId: string): Promise<void> {
