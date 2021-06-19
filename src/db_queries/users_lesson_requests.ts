@@ -62,11 +62,15 @@ export class UsersLessonRequests {
           id: rows[0].subfield_id,
           name: rows[0].subfield_name
         }
+        let lessonDateTime;
+        if (rows[0].lesson_date_time != null) {
+          lessonDateTime = moment(rows[0].lesson_date_time).format(constants.DATE_FORMAT);
+        }
         lessonRequest = {
           id: rows[0].id,
           subfield: subfield,
           sentDateTime: moment(rows[0].sent_date_time).format(constants.DATE_FORMAT),
-          lessonDateTime: moment(rows[0].lesson_date_time).format(constants.DATE_FORMAT),
+          lessonDateTime: lessonDateTime as string,
           isCanceled: rows[0].is_canceled,
         }
         if (isMentor) {
