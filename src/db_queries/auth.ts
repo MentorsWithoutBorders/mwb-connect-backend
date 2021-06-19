@@ -80,7 +80,9 @@ export class Auth {
       const userId: string = rows[0].id;
       await this.setDefaultUserProfile(userId, approvedUser.isMentor as boolean);
       await usersTimeZones.addTimeZone(userId, timeZone as TimeZone);
-      await usersGoals.addGoalToDB(userId, approvedUser.goal as string);
+      if (!approvedUser.isMentor) {
+        await usersGoals.addGoalToDB(userId, approvedUser.goal as string);
+      }
       const tokens: Tokens = await this.setTokens(userId);
       response.status(200).send(tokens);
     } catch (error) {
@@ -128,7 +130,8 @@ export class Auth {
     };
     const lessonsAvailability: LessonsAvailability = {
       minInterval: rows[0].lessons_availability_min_interval,
-      minIntervalUnit: rows[0].lessons_availability_min_interval_unit
+      minIntervalUnit: rows[0].lessons_availability_min_interval_unit,
+      maxStudents: rows[0].lessons_availability_max_students
     };
     const notificationsSettings: NotificationsSettings = {
       enabled: rows[0].notifications_enabled,
@@ -145,9 +148,9 @@ export class Auth {
       VALUES ($1, $2, $3, $4)`;
     await pool.query(insertUserAvailabilityQuery, [userId, availability.dayOfWeek, availability.time.from, availability.time.to]);
     if (isMentor) {
-      const insertUserLessonsAvailabilityQuery = `INSERT INTO users_lessons_availabilities (user_id, min_interval, min_interval_unit)
-        VALUES ($1, $2, $3)`;
-      await pool.query(insertUserLessonsAvailabilityQuery, [userId, lessonsAvailability.minInterval, lessonsAvailability.minIntervalUnit]);
+      const insertUserLessonsAvailabilityQuery = `INSERT INTO users_lessons_availabilities (user_id, min_interval, min_interval_unit, max_students)
+        VALUES ($1, $2, $3, $4)`;
+      await pool.query(insertUserLessonsAvailabilityQuery, [userId, lessonsAvailability.minInterval, lessonsAvailability.minIntervalUnit, lessonsAvailability.maxStudents]);
     }
     const insertNotificationsSettingsQuery = `INSERT INTO users_notifications_settings (user_id, enabled, time)
       VALUES ($1, $2, $3)`;

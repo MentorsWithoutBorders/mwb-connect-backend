@@ -144,7 +144,8 @@ export class Users {
     const { rows }: pg.QueryResult = await pool.query(getLessonsAvailabilityQuery, [userId]);
     return {
       minInterval: rows[0].min_interval,
-      minIntervalUnit: rows[0].min_interval_unit
+      minIntervalUnit: rows[0].min_interval_unit,
+      maxStudents: rows[0].max_students
     };
   }    
 
