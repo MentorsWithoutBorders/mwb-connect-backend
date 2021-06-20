@@ -121,7 +121,7 @@ export class UsersLessonRequests {
     const dateTime = moment.tz(lessonDateTime, timeZone?.name).format(constants.DATE_FORMAT);
     const values = [studentId, mentorId, subfieldId, dateTime, meetingUrl];
     await pool.query(insertLessonQuery, values);
-    return usersLessons.getLessonFromDB(mentorId);
+    return usersLessons.getNextLessonFromDB(mentorId);
   }
 
   async addStudentSubfield(studentId: string, subfieldId: string): Promise<void> {

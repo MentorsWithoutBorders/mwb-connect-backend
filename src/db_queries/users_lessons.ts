@@ -26,52 +26,80 @@ export class UsersLessons {
   async getNextLesson(request: Request, response: Response): Promise<void> {
     const userId: string = request.params.id;
     try {
-      const lesson = await this.getLessonFromDB(userId);
+      const lesson = await this.getNextLessonFromDB(userId);
       response.status(200).json(lesson);
     } catch (error) {
       response.status(400).send(error);
     }
   }
 
-  async getLessonFromDB(userId: string): Promise<Lesson> {
+  async getNextLessonFromDB(userId: string): Promise<Lesson> {
     const isMentor = await this.getIsMentor(userId);
-    const userTypeId = isMentor ? 'mentor_id' : 'student_id';
     const timeZone: TimeZone = await usersTimeZones.getUserTimeZone(userId);
-    const now = moment.tz(new Date(), timeZone?.name).format(constants.DATE_FORMAT);      
-    const getNextLessonQuery = `SELECT ul.id, ul.student_id, ul.mentor_id, ul.subfield_id, ul.date_time, s.name AS subfield_name, ul.meeting_url, ul.is_canceled
-      FROM users_lessons ul
-      JOIN subfields s
-      ON ul.subfield_id = s.id
-      WHERE ${userTypeId} = $1 AND ul.date_time::timestamp >= $2
-      ORDER BY ul.date_time DESC LIMIT 1`;
+    const now = moment.tz(new Date(), timeZone?.name).format(constants.DATE_FORMAT);
+    let getNextLessonQuery = '';
+    if (isMentor) {
+      getNextLessonQuery = `SELECT ul.id, ul.mentor_id, ul.subfield_id, ul.date_time, s.name AS subfield_name, ul.meeting_url, ul.is_canceled
+        FROM users_lessons ul
+        JOIN subfields s
+        ON ul.subfield_id = s.id
+        WHERE mentor_id = $1 AND ul.date_time::timestamp >= $2
+        ORDER BY ul.date_time DESC LIMIT 1`;
+    } else {
+      getNextLessonQuery = `SELECT ul.id, ul.mentor_id, ul.subfield_id, ul.date_time, s.name AS subfield_name, ul.meeting_url, ul.is_canceled
+        FROM users_lessons ul
+        JOIN users_lessons_students uls
+        ON ul.id = uls.lesson_id        
+        JOIN subfields s
+        ON ul.subfield_id = s.id
+        WHERE uls.student_id = $1 AND ul.date_time::timestamp >= $2
+        ORDER BY ul.date_time DESC LIMIT 1`;      
+    }
     const { rows }: pg.QueryResult = await pool.query(getNextLessonQuery, [userId, now]);
-    return this.setLesson(rows[0], isMentor);
+    const lessonRow = rows[0];
+    let students: Array<User> = [];
+    if (lessonRow != null) {
+      students = await this.getLessonStudents(lessonRow.id);
+    }
+    return this.setLesson(lessonRow, students, isMentor);
   }
 
-  async setLesson(row: pg.QueryResultRow, isMentor: boolean): Promise<Lesson> {
+  async getLessonStudents(lessonId: string): Promise<Array<User>> {
+    const getLessonStudentsQuery = `SELECT student_id, is_present, is_canceled
+      FROM users_lessons_students
+      WHERE lesson_id = $1`;
+    const { rows }: pg.QueryResult = await pool.query(getLessonStudentsQuery, [lessonId]);
+    const students: Array<User> = [];
+    for (const studentRow of rows) {
+      const user: User = await users.getUserFromDB(studentRow.student_id);
+      const student: User = {
+        id: user.id as string,
+        name: user.name as string,
+        organization: user.organization as Organization
+      }
+      students.push(student);          
+    }  
+    return students;  
+  }
+
+  async setLesson(lessonRow: pg.QueryResultRow, students: Array<User>, isMentor: boolean): Promise<Lesson> {
     let lesson: Lesson = {};
-    if (row) {    
+    if (lessonRow) {    
       const subfield: Subfield = {
-        id: row.subfield_id,
-        name: row.subfield_name
+        id: lessonRow.subfield_id,
+        name: lessonRow.subfield_name
       }
       lesson = {
-        id: row.id,
+        id: lessonRow.id,
         subfield: subfield,
-        dateTime: moment(row.date_time).format(constants.DATE_FORMAT),
-        meetingUrl: row.meeting_url,
-        isCanceled: row.is_canceled
+        dateTime: moment(lessonRow.date_time).format(constants.DATE_FORMAT),
+        meetingUrl: lessonRow.meeting_url,
+        isCanceled: lessonRow.is_canceled
       }
       if (isMentor) {
-        const user: User = await users.getUserFromDB(row.student_id);
-        const student: User = {
-          id: user.id as string,
-          name: user.name as string,
-          organization: user.organization as Organization
-        }
-        lesson.student = student;
+        lesson.students = students;
       } else {
-        const user: User = await users.getUserFromDB(row.mentor_id);
+        const user: User = await users.getUserFromDB(lessonRow.mentor_id);
         const mentor: User = {
           id: user.id as string,
           name: user.name as string,
@@ -93,17 +121,33 @@ export class UsersLessons {
     const userId: string = request.params.id;
     try {
       const isMentor = await this.getIsMentor(userId);
-      const userTypeId = isMentor ? 'mentor_id' : 'student_id';
       const timeZone: TimeZone = await usersTimeZones.getUserTimeZone(userId);
-      const today = moment.tz(new Date(), timeZone?.name).format(constants.DATE_FORMAT);        
-      const getPreviousLessonQuery = `SELECT ul.id, ul.student_id, ul.mentor_id, ul.subfield_id, ul.date_time, s.name AS subfield_name, ul.meeting_url, ul.is_canceled
-        FROM users_lessons ul
-        JOIN subfields s
-        ON ul.subfield_id = s.id
-        WHERE ${userTypeId} = $1 AND ul.date_time::timestamp < $2
-        ORDER BY ul.date_time DESC LIMIT 1`;
-      const { rows }: pg.QueryResult = await pool.query(getPreviousLessonQuery, [userId, today]);
-      const lesson = await this.setLesson(rows[0], isMentor);
+      const now = moment.tz(new Date(), timeZone?.name).format(constants.DATE_FORMAT);        
+      let getPreviousLessonQuery = '';
+      if (isMentor) {
+        getPreviousLessonQuery = `SELECT ul.id, ul.mentor_id, ul.subfield_id, ul.date_time, s.name AS subfield_name, ul.meeting_url, ul.is_canceled
+          FROM users_lessons ul
+          JOIN subfields s
+          ON ul.subfield_id = s.id
+          WHERE mentor_id = $1 AND ul.date_time::timestamp < $2
+          ORDER BY ul.date_time DESC LIMIT 1`;
+      } else {
+        getPreviousLessonQuery = `SELECT ul.id, ul.mentor_id, ul.subfield_id, ul.date_time, s.name AS subfield_name, ul.meeting_url, ul.is_canceled
+          FROM users_lessons ul
+          JOIN users_lessons_students uls
+          ON ul.id = uls.lesson_id        
+          JOIN subfields s
+          ON ul.subfield_id = s.id
+          WHERE uls.student_id = $1 AND ul.date_time::timestamp < $2
+          ORDER BY ul.date_time DESC LIMIT 1`;      
+      }
+      const { rows }: pg.QueryResult = await pool.query(getPreviousLessonQuery, [userId, now]);
+      const lessonRow = rows[0];
+      let students: Array<User> = [];
+      if (lessonRow != null) {
+        students = await this.getLessonStudents(lessonRow.id);
+      }
+      const lesson = await this.setLesson(lessonRow, students, isMentor);
       response.status(200).json(lesson);
     } catch (error) {
       response.status(400).send(error);
