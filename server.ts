@@ -85,7 +85,6 @@ app.get('/api/v1/users/:id/next_lesson', auth.verifyAccessToken, usersLessons.ge
 app.get('/api/v1/users/:id/previous_lesson', auth.verifyAccessToken, usersLessons.getPreviousLesson);
 app.put('/api/v1/lessons/:id/cancel_lesson', auth.verifyAccessToken, usersLessons.cancelLesson);
 app.put('/api/v1/lessons/:id/change_meeting_url', auth.verifyAccessToken, usersLessons.setLessonMeetingUrl);
-app.put('/api/v1/lessons/:id/student_presence', auth.verifyAccessToken, usersLessons.setLessonPresenceStudent);
 app.put('/api/v1/lessons/:id/mentor_presence', auth.verifyAccessToken, usersLessons.setLessonPresenceMentor);
 
 // Users skills

@@ -177,18 +177,6 @@ export class UsersLessons {
     }
   } 
   
-  async setLessonPresenceStudent(request: Request, response: Response): Promise<void> {
-    const lessonId: string = request.params.id;
-    const { isStudentPresent }: Lesson = request.body
-    try {
-      const updateLessonQuery = 'UPDATE users_lessons SET is_student_present = $1 WHERE id = $2';
-      await pool.query(updateLessonQuery, [isStudentPresent, lessonId]);
-      response.status(200).send(`Lesson modified with ID: ${lessonId}`);
-    } catch (error) {
-      response.status(400).send(error);
-    }
-  }
-  
   async setLessonPresenceMentor(request: Request, response: Response): Promise<void> {
     const lessonId: string = request.params.id;
     const { isMentorPresent }: Lesson = request.body

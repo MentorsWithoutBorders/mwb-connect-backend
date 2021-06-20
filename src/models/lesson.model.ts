@@ -8,7 +8,6 @@ export default interface Lesson {
   subfield?: Subfield;
   dateTime?: string;
   meetingUrl?: string;
-  isStudentPresent?: boolean;
   isMentorPresent?: boolean;
   isCanceled?: boolean;
 }
