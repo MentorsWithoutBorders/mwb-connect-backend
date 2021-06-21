@@ -65,7 +65,7 @@ export class UsersLessons {
   }
 
   async getLessonStudents(lessonId: string): Promise<Array<User>> {
-    const getLessonStudentsQuery = `SELECT student_id, is_present, is_canceled
+    const getLessonStudentsQuery = `SELECT student_id, is_canceled
       FROM users_lessons_students
       WHERE lesson_id = $1`;
     const { rows }: pg.QueryResult = await pool.query(getLessonStudentsQuery, [lessonId]);
