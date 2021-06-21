@@ -219,9 +219,9 @@ export class Users {
 
   async updateUserLessonsAvailability(userId: string, lessonsAvailability: LessonsAvailability): Promise<void> {
     const updateLessonsAvailabilityQuery = `UPDATE users_lessons_availabilities 
-      SET min_interval = $1, min_interval_unit = $2
-      WHERE user_id = $3`;
-    const values = [lessonsAvailability.minInterval, lessonsAvailability.minIntervalUnit, userId];
+      SET min_interval = $1, min_interval_unit = $2, max_students = $3
+      WHERE user_id = $4`;
+    const values = [lessonsAvailability.minInterval, lessonsAvailability.minIntervalUnit, lessonsAvailability.maxStudents, userId];
     await pool.query(updateLessonsAvailabilityQuery, values);
   }  
 
