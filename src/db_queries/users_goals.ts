@@ -76,7 +76,7 @@ export class UsersGoals {
     const insertGoalQuery = `INSERT INTO users_goals (user_id, text, index, date_time)
       VALUES ($1, $2, $3, $4) RETURNING *`;
     const timeZone: TimeZone = await usersTimeZones.getUserTimeZone(userId);
-    const dateTime = moment.tz(new Date(), timeZone?.name).format(constants.DATE_FORMAT);
+    const dateTime = moment.tz(new Date(), timeZone?.name).format(constants.DATE_TIME_FORMAT);
     let index = 0;
     if (goals.length > 0) {
       index = goals[goals.length-1].index as number + 1;
@@ -96,7 +96,7 @@ export class UsersGoals {
     try {
       const updateGoalQuery = 'UPDATE users_goals SET text = $1, date_time = $2 WHERE id = $3';
       const timeZone: TimeZone = await usersTimeZones.getUserTimeZone(userId);
-      const dateTime = moment.tz(new Date(), timeZone?.name).format(constants.DATE_FORMAT);
+      const dateTime = moment.tz(new Date(), timeZone?.name).format(constants.DATE_TIME_FORMAT);
       await pool.query(updateGoalQuery, [text, dateTime, id]);
       response.status(200).send(`Goal modified with ID: ${id}`);
     } catch (error) {

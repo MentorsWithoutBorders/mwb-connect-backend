@@ -36,17 +36,17 @@ export class UsersLessons {
   async getNextLessonFromDB(userId: string): Promise<Lesson> {
     const isMentor = await this.getIsMentor(userId);
     const timeZone: TimeZone = await usersTimeZones.getUserTimeZone(userId);
-    const now = moment.tz(new Date(), timeZone?.name).format(constants.DATE_FORMAT);
+    const now = moment.tz(new Date(), timeZone?.name).format(constants.DATE_TIME_FORMAT);
     let getNextLessonQuery = '';
     if (isMentor) {
-      getNextLessonQuery = `SELECT ul.id, ul.mentor_id, ul.subfield_id, ul.date_time, s.name AS subfield_name, ul.meeting_url, ul.is_canceled
+      getNextLessonQuery = `SELECT ul.id, ul.mentor_id, ul.subfield_id, ul.date_time, s.name AS subfield_name, ul.meeting_url, ul.is_recurrent, ul.end_recurrence_date, ul.is_canceled
         FROM users_lessons ul
         JOIN subfields s
         ON ul.subfield_id = s.id
         WHERE mentor_id = $1 AND ul.date_time::timestamp >= $2
         ORDER BY ul.date_time DESC LIMIT 1`;
     } else {
-      getNextLessonQuery = `SELECT ul.id, ul.mentor_id, ul.subfield_id, ul.date_time, s.name AS subfield_name, ul.meeting_url, ul.is_canceled
+      getNextLessonQuery = `SELECT ul.id, ul.mentor_id, ul.subfield_id, ul.date_time, s.name AS subfield_name, ul.meeting_url, ul.is_recurrent, ul.end_recurrence_date, ul.is_canceled
         FROM users_lessons ul
         JOIN users_lessons_students uls
         ON ul.id = uls.lesson_id        
@@ -92,9 +92,13 @@ export class UsersLessons {
       lesson = {
         id: lessonRow.id,
         subfield: subfield,
-        dateTime: moment(lessonRow.date_time).format(constants.DATE_FORMAT),
+        dateTime: moment(lessonRow.date_time).format(constants.DATE_TIME_FORMAT),
         meetingUrl: lessonRow.meeting_url,
+        isRecurrent: lessonRow.is_recurrent,
         isCanceled: lessonRow.is_canceled
+      }
+      if (lessonRow.end_recurrence_date != null) {
+        lesson.endRecurrenceDate = moment(lessonRow.end_recurrence_date).format(constants.DATE_FORMAT)
       }
       if (isMentor) {
         lesson.students = students;
@@ -122,17 +126,17 @@ export class UsersLessons {
     try {
       const isMentor = await this.getIsMentor(userId);
       const timeZone: TimeZone = await usersTimeZones.getUserTimeZone(userId);
-      const now = moment.tz(new Date(), timeZone?.name).format(constants.DATE_FORMAT);        
+      const now = moment.tz(new Date(), timeZone?.name).format(constants.DATE_TIME_FORMAT);        
       let getPreviousLessonQuery = '';
       if (isMentor) {
-        getPreviousLessonQuery = `SELECT ul.id, ul.mentor_id, ul.subfield_id, ul.date_time, s.name AS subfield_name, ul.meeting_url, ul.is_canceled
+        getPreviousLessonQuery = `SELECT ul.id, ul.mentor_id, ul.subfield_id, ul.date_time, s.name AS subfield_name, ul.meeting_url, ul.is_recurrent, ul.end_recurrence_date, ul.is_canceled
           FROM users_lessons ul
           JOIN subfields s
           ON ul.subfield_id = s.id
           WHERE mentor_id = $1 AND ul.date_time::timestamp < $2
           ORDER BY ul.date_time DESC LIMIT 1`;
       } else {
-        getPreviousLessonQuery = `SELECT ul.id, ul.mentor_id, ul.subfield_id, ul.date_time, s.name AS subfield_name, ul.meeting_url, ul.is_canceled
+        getPreviousLessonQuery = `SELECT ul.id, ul.mentor_id, ul.subfield_id, ul.date_time, s.name AS subfield_name, ul.meeting_url, ul.is_recurrent, ul.end_recurrence_date, ul.is_canceled
           FROM users_lessons ul
           JOIN users_lessons_students uls
           ON ul.id = uls.lesson_id        

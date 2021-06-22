@@ -73,9 +73,9 @@ export class Users {
       field: field,
       isMentor: rows[0].is_mentor,
       isAvailable: rows[0].is_available,
-      availableFrom: moment(rows[0].available_from).format(constants.DATE_FORMAT),
+      availableFrom: moment(rows[0].available_from).format(constants.DATE_TIME_FORMAT),
       availabilities: await this.getUserAvailabilities(id),
-      registeredOn: moment(rows[0].available_from).format(constants.DATE_FORMAT)
+      registeredOn: moment(rows[0].available_from).format(constants.DATE_TIME_FORMAT)
     }
   }
 

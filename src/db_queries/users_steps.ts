@@ -63,7 +63,7 @@ export class UsersSteps {
         index: rows[0].index,
         level: rows[0].level,
         parentId: rows[0].parent_id,
-        dateTime: moment(rows[0].date_time).format(constants.DATE_FORMAT)
+        dateTime: moment(rows[0].date_time).format(constants.DATE_TIME_FORMAT)
       };
     }
     return step;
@@ -92,7 +92,7 @@ export class UsersSteps {
         index: rows[0].index,
         level: rows[0].level,
         parentId: rows[0].parent_id,
-        dateTime: moment(rows[0].date_time).format(constants.DATE_FORMAT)
+        dateTime: moment(rows[0].date_time).format(constants.DATE_TIME_FORMAT)
       } 
     }
     return step;  
@@ -106,7 +106,7 @@ export class UsersSteps {
       const insertStepQuery = `INSERT INTO users_steps (user_id, goal_id, text, index, level, parent_id, date_time)
         VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`;
       const timeZone: TimeZone = await usersTimeZones.getUserTimeZone(userId);
-      const dateTime = moment.tz(new Date(), timeZone?.name).format(constants.DATE_FORMAT);
+      const dateTime = moment.tz(new Date(), timeZone?.name).format(constants.DATE_TIME_FORMAT);
       const values = [userId, goalId, text, index, level, parentId, dateTime];        
       const { rows }: pg.QueryResult = await pool.query(insertStepQuery, values);
       const step: Step = {
@@ -128,7 +128,7 @@ export class UsersSteps {
     const { text, index, level, parentId }: Step = request.body
     try {
       const timeZone: TimeZone = await usersTimeZones.getUserTimeZone(userId);
-      const dateTime = moment.tz(new Date(), timeZone?.name).format(constants.DATE_FORMAT);
+      const dateTime = moment.tz(new Date(), timeZone?.name).format(constants.DATE_TIME_FORMAT);
       await this.updateStepInDB(id, text as string, index as number, level as number, parentId as string, dateTime);
       response.status(200).send(`Step modified with ID: ${id}`);
     } catch (error) {

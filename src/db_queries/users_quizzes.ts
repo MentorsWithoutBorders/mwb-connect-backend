@@ -148,7 +148,7 @@ export class UsersQuizzes {
       const insertQuizQuery = `INSERT INTO users_quizzes (user_id, number, is_correct, is_closed, date_time)
         VALUES ($1, $2, $3, $4, $5) RETURNING *`;
       const timeZone: TimeZone = await usersTimeZones.getUserTimeZone(userId);
-      const dateTime = moment.tz(new Date(), timeZone?.name).format(constants.DATE_FORMAT);
+      const dateTime = moment.tz(new Date(), timeZone?.name).format(constants.DATE_TIME_FORMAT);
       const values = [userId, number, isCorrect, isClosed, dateTime];
       await pool.query(insertQuizQuery, values);
       response.status(200).send('Quiz has been added');
