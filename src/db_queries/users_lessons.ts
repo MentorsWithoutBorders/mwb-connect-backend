@@ -57,8 +57,9 @@ export class UsersLessons {
     let lessonRow = rows[0];
     let students: Array<User> = [];
     const timeZone: TimeZone = await usersTimeZones.getUserTimeZone(userId);
-    const now = moment.tz(new Date(), timeZone?.name);
-    console.log('now: ' + now.format(constants.DATE_TIME_FORMAT));
+    const now = moment(new Date());
+    console.log('now: ' + now);
+    console.log('now formatted: ' + now.format(constants.DATE_TIME_FORMAT));    
     if (lessonRow) {
       const endRecurrenceDateTime = moment(lessonRow.end_recurrence_date_time);
       console.log('endRecurrenceDateTime: ' + endRecurrenceDateTime);
