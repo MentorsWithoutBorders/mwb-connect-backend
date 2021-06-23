@@ -60,9 +60,9 @@ export class UsersLessons {
     const now = moment.tz(new Date(), timeZone?.name);
     console.log('now: ' + now.format(constants.DATE_TIME_FORMAT));
     if (lessonRow) {
-      const endRecurrenceDateTime = moment(lessonRow.end_recurrence_date_time);
+      const endRecurrenceDateTime = moment.tz(lessonRow.end_recurrence_date_time, timeZone?.name);
       console.log('endRecurrenceDateTime: ' + endRecurrenceDateTime.format(constants.DATE_TIME_FORMAT));
-      let lessonDateTime = moment(lessonRow.date_time);
+      let lessonDateTime = moment.tz(lessonRow.date_time, timeZone?.name);
       console.log('lessonDateTime: ' + lessonDateTime.format(constants.DATE_TIME_FORMAT));
       if (lessonRow.is_recurrent) {
         if (endRecurrenceDateTime.isBefore(now)) {
