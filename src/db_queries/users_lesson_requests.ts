@@ -97,7 +97,7 @@ export class UsersLessonRequests {
 
   async acceptLessonRequest(request: Request, response: Response): Promise<void> {
     const lessonRequestId: string = request.params.id;
-    const { meetingUrl }: Lesson = request.body
+    const { meetingUrl, isRecurrent, endRecurrenceDateTime }: Lesson = request.body
     try {
       const getLessonRequestQuery = 'SELECT * FROM users_lesson_requests WHERE id = $1';
       const { rows }: pg.QueryResult = await pool.query(getLessonRequestQuery, [lessonRequestId]);
@@ -105,7 +105,7 @@ export class UsersLessonRequests {
       const mentorId = rows[0].mentor_id;
       const subfieldId = rows[0].subfield_id;
       const lessonDateTime = rows[0].lesson_date_time;
-      const lesson = await this.addLesson(studentId, mentorId, subfieldId, lessonDateTime, meetingUrl as string);
+      const lesson = await this.addLesson(studentId, mentorId, subfieldId, lessonDateTime, meetingUrl as string, isRecurrent as boolean, endRecurrenceDateTime as string);
       await this.addStudentSubfield(studentId, subfieldId);
       await this.deleteLessonRequest(lessonRequestId);
       response.status(200).send(lesson);
@@ -114,12 +114,12 @@ export class UsersLessonRequests {
     }
   }
   
-  async addLesson(studentId: string, mentorId: string, subfieldId: string, lessonDateTime: string, meetingUrl: string): Promise<Lesson> {
-    const insertLessonQuery = `INSERT INTO users_lessons (mentor_id, subfield_id, date_time, meeting_url)
-      VALUES ($1, $2, $3, $4) RETURNING *`;
+  async addLesson(studentId: string, mentorId: string, subfieldId: string, lessonDateTime: string, meetingUrl: string, isRecurrent: boolean, endRecurrenceDateTime: string): Promise<Lesson> {
+    const insertLessonQuery = `INSERT INTO users_lessons (mentor_id, subfield_id, date_time, meeting_url, is_recurrent, end_recurrence_date_time)
+      VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`;
     const timeZone: TimeZone = await usersTimeZones.getUserTimeZone(mentorId);
     const dateTime = moment.tz(lessonDateTime, timeZone?.name).format(constants.DATE_TIME_FORMAT);
-    const values = [mentorId, subfieldId, dateTime, meetingUrl];
+    const values = [mentorId, subfieldId, dateTime, meetingUrl, isRecurrent, endRecurrenceDateTime];
     const { rows }: pg.QueryResult = await pool.query(insertLessonQuery, values);
     const lesson: Lesson = {
       id: rows[0].id

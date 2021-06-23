@@ -37,14 +37,14 @@ export class UsersLessons {
     const isMentor = await this.getIsMentor(userId);
     let getNextLessonQuery = '';
     if (isMentor) {
-      getNextLessonQuery = `SELECT ul.id, ul.mentor_id, ul.subfield_id, ul.date_time, s.name AS subfield_name, ul.meeting_url, ul.is_recurrent, ul.end_recurrence_date, ul.is_canceled
+      getNextLessonQuery = `SELECT ul.id, ul.mentor_id, ul.subfield_id, ul.date_time, s.name AS subfield_name, ul.meeting_url, ul.is_recurrent, ul.end_recurrence_date_time, ul.is_canceled
         FROM users_lessons ul
         JOIN subfields s
         ON ul.subfield_id = s.id
         WHERE mentor_id = $1
         ORDER BY ul.date_time DESC LIMIT 1`;
     } else {
-      getNextLessonQuery = `SELECT ul.id, ul.mentor_id, ul.subfield_id, ul.date_time, s.name AS subfield_name, ul.meeting_url, ul.is_recurrent, ul.end_recurrence_date, ul.is_canceled
+      getNextLessonQuery = `SELECT ul.id, ul.mentor_id, ul.subfield_id, ul.date_time, s.name AS subfield_name, ul.meeting_url, ul.is_recurrent, ul.end_recurrence_date_time, ul.is_canceled
         FROM users_lessons ul
         JOIN users_lessons_students uls
         ON ul.id = uls.lesson_id        
@@ -56,18 +56,22 @@ export class UsersLessons {
     const { rows }: pg.QueryResult = await pool.query(getNextLessonQuery, [userId]);
     let lessonRow = rows[0];
     let students: Array<User> = [];
-    const now = moment(new Date());
+    const timeZone: TimeZone = await usersTimeZones.getUserTimeZone(userId);
+    const now = moment.tz(new Date(), timeZone?.name);
+    console.log('now: ' + now.toDate());
     if (lessonRow) {
-      const endRecurrenceDate = moment(lessonRow.end_recurrence_date);
+      const endRecurrenceDateTime = moment(lessonRow.end_recurrence_date_time);
+      console.log('endRecurrenceDateTime: ' + endRecurrenceDateTime.toDate());
       let lessonDateTime = moment(lessonRow.date_time);
+      console.log('lessonDateTime: ' + lessonDateTime.toDate());
       if (lessonRow.is_recurrent) {
-        if (endRecurrenceDate.isBefore(now, 'day')) {
+        if (endRecurrenceDateTime.isBefore(now)) {
           lessonRow = null;
         } else {
-          while (lessonDateTime.isBefore(now, 'day')) {
+          while (lessonDateTime.isBefore(now)) {
             lessonDateTime = lessonDateTime.add(7, 'd');
           }
-          if (lessonDateTime.isAfter(endRecurrenceDate, 'day')) {
+          if (lessonDateTime.isAfter(endRecurrenceDateTime)) {
             lessonRow = null;
           } else {
             lessonRow.date_time = lessonDateTime.toDate();
@@ -118,8 +122,8 @@ export class UsersLessons {
         isRecurrent: lessonRow.is_recurrent,
         isCanceled: lessonRow.is_canceled
       }
-      if (lessonRow.end_recurrence_date != null) {
-        lesson.endRecurrenceDate = moment(lessonRow.end_recurrence_date).format(constants.DATE_FORMAT)
+      if (lessonRow.end_recurrence_date_time != null) {
+        lesson.endRecurrenceDateTime = moment(lessonRow.end_recurrence_date_time).format(constants.DATE_TIME_FORMAT)
       }
       if (isMentor) {
         lesson.students = students;
@@ -150,14 +154,14 @@ export class UsersLessons {
       const now = moment.tz(new Date(), timeZone?.name).format(constants.DATE_TIME_FORMAT);        
       let getPreviousLessonQuery = '';
       if (isMentor) {
-        getPreviousLessonQuery = `SELECT ul.id, ul.mentor_id, ul.subfield_id, ul.date_time, s.name AS subfield_name, ul.meeting_url, ul.is_recurrent, ul.end_recurrence_date, ul.is_canceled
+        getPreviousLessonQuery = `SELECT ul.id, ul.mentor_id, ul.subfield_id, ul.date_time, s.name AS subfield_name, ul.meeting_url, ul.is_recurrent, ul.end_recurrence_date_time, ul.is_canceled
           FROM users_lessons ul
           JOIN subfields s
           ON ul.subfield_id = s.id
           WHERE mentor_id = $1 AND ul.date_time::timestamp < $2
           ORDER BY ul.date_time DESC LIMIT 1`;
       } else {
-        getPreviousLessonQuery = `SELECT ul.id, ul.mentor_id, ul.subfield_id, ul.date_time, s.name AS subfield_name, ul.meeting_url, ul.is_recurrent, ul.end_recurrence_date, ul.is_canceled
+        getPreviousLessonQuery = `SELECT ul.id, ul.mentor_id, ul.subfield_id, ul.date_time, s.name AS subfield_name, ul.meeting_url, ul.is_recurrent, ul.end_recurrence_date_time, ul.is_canceled
           FROM users_lessons ul
           JOIN users_lessons_students uls
           ON ul.id = uls.lesson_id        
