@@ -35,15 +35,13 @@ export class UsersLessons {
 
   async getNextLessonFromDB(userId: string): Promise<Lesson> {
     const isMentor = await this.getIsMentor(userId);
-    const timeZone: TimeZone = await usersTimeZones.getUserTimeZone(userId);
-    const now = moment.tz(new Date(), timeZone?.name).format(constants.DATE_TIME_FORMAT);
     let getNextLessonQuery = '';
     if (isMentor) {
       getNextLessonQuery = `SELECT ul.id, ul.mentor_id, ul.subfield_id, ul.date_time, s.name AS subfield_name, ul.meeting_url, ul.is_recurrent, ul.end_recurrence_date, ul.is_canceled
         FROM users_lessons ul
         JOIN subfields s
         ON ul.subfield_id = s.id
-        WHERE mentor_id = $1 AND ul.date_time::timestamp >= $2
+        WHERE mentor_id = $1
         ORDER BY ul.date_time DESC LIMIT 1`;
     } else {
       getNextLessonQuery = `SELECT ul.id, ul.mentor_id, ul.subfield_id, ul.date_time, s.name AS subfield_name, ul.meeting_url, ul.is_recurrent, ul.end_recurrence_date, ul.is_canceled
@@ -52,13 +50,36 @@ export class UsersLessons {
         ON ul.id = uls.lesson_id        
         JOIN subfields s
         ON ul.subfield_id = s.id
-        WHERE uls.student_id = $1 AND ul.date_time::timestamp >= $2
+        WHERE uls.student_id = $1
         ORDER BY ul.date_time DESC LIMIT 1`;      
     }
-    const { rows }: pg.QueryResult = await pool.query(getNextLessonQuery, [userId, now]);
-    const lessonRow = rows[0];
+    const { rows }: pg.QueryResult = await pool.query(getNextLessonQuery, [userId]);
+    let lessonRow = rows[0];
     let students: Array<User> = [];
-    if (lessonRow != null) {
+    const now = moment(new Date());
+    if (lessonRow) {
+      const endRecurrenceDate = moment(lessonRow.end_recurrence_date);
+      let lessonDateTime = moment(lessonRow.date_time);
+      if (lessonRow.is_recurrent) {
+        if (endRecurrenceDate.isBefore(now, 'day')) {
+          lessonRow = null;
+        } else {
+          while (lessonDateTime.isBefore(now, 'day')) {
+            lessonDateTime = lessonDateTime.add(7, 'd');
+          }
+          if (lessonDateTime.isAfter(endRecurrenceDate, 'day')) {
+            lessonRow = null;
+          } else {
+            lessonRow.date_time = lessonDateTime.toDate();
+          }
+        }
+      } else {
+        if (lessonDateTime.isBefore(now)) {
+          lessonRow = null;
+        } else {
+          lessonRow.date_time = lessonDateTime.toDate();
+        }
+      }
       students = await this.getLessonStudents(lessonRow.id);
     }
     return this.setLesson(lessonRow, students, isMentor);
