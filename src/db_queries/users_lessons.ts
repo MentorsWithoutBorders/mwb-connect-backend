@@ -58,12 +58,12 @@ export class UsersLessons {
     let students: Array<User> = [];
     const timeZone: TimeZone = await usersTimeZones.getUserTimeZone(userId);
     const now = moment.tz(new Date(), timeZone?.name);
-    console.log('now: ' + now.toDate());
+    console.log('now: ' + now.format(constants.DATE_TIME_FORMAT));
     if (lessonRow) {
       const endRecurrenceDateTime = moment(lessonRow.end_recurrence_date_time);
-      console.log('endRecurrenceDateTime: ' + endRecurrenceDateTime.toDate());
+      console.log('endRecurrenceDateTime: ' + endRecurrenceDateTime.format(constants.DATE_TIME_FORMAT));
       let lessonDateTime = moment(lessonRow.date_time);
-      console.log('lessonDateTime: ' + lessonDateTime.toDate());
+      console.log('lessonDateTime: ' + lessonDateTime.format(constants.DATE_TIME_FORMAT));
       if (lessonRow.is_recurrent) {
         if (endRecurrenceDateTime.isBefore(now)) {
           lessonRow = null;
