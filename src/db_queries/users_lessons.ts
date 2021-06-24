@@ -57,14 +57,15 @@ export class UsersLessons {
     let lessonRow = rows[0];
     let students: Array<User> = [];
     const timeZone: TimeZone = await usersTimeZones.getUserTimeZone(userId);
-    const now = moment(new Date());
+    let now = moment();
+    now = moment.tz(now, timeZone.name);
     console.log('now: ' + now);
-    console.log('now formatted: ' + now.format(constants.DATE_TIME_FORMAT));    
+    console.log('now formatted: ' + now.format(constants.DATE_TIME_FORMAT));
     if (lessonRow) {
-      const endRecurrenceDateTime = moment(lessonRow.end_recurrence_date_time);
+      const endRecurrenceDateTime = moment.tz(lessonRow.end_recurrence_date_time, timeZone.name);
       console.log('endRecurrenceDateTime: ' + endRecurrenceDateTime);
       console.log('endRecurrenceDateTime formatted: ' + endRecurrenceDateTime.format(constants.DATE_TIME_FORMAT));
-      let lessonDateTime = moment(lessonRow.date_time);
+      let lessonDateTime = moment.tz(lessonRow.date_time, timeZone.name);
       console.log('lessonDateTime: ' + lessonDateTime);
       console.log('lessonDateTime formatted: ' + lessonDateTime.format(constants.DATE_TIME_FORMAT));
       if (lessonRow.is_recurrent) {
