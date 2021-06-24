@@ -64,13 +64,13 @@ export class UsersLessons {
     console.log('now formatted: ' + now.format(constants.DATE_TIME_FORMAT));
     if (lessonRow) {
       const endReccurrenceDateTimeJS = new Date(lessonRow.end_recurrence_date_time);
-      const localEndReccurrenceDateTimeJS = moment(endReccurrenceDateTimeJS);
+      const localEndReccurrenceDateTimeJS = moment(endReccurrenceDateTimeJS).format('YYYY-MM-DDTHH:mm:ss.SSS');
       const endRecurrenceDateTime = moment.tz(localEndReccurrenceDateTimeJS, timeZone.name);
       console.log('endRecurrenceDateTime: ' + endRecurrenceDateTime);
       console.log('endRecurrenceDateTime ISO: ' + endRecurrenceDateTime.toISOString());
       console.log('endRecurrenceDateTime formatted: ' + endRecurrenceDateTime.format(constants.DATE_TIME_FORMAT));
       const lessonDateTimeJS = new Date(lessonRow.date_time);
-      const localLessonDateTimeJS = moment(lessonDateTimeJS);
+      const localLessonDateTimeJS = moment(lessonDateTimeJS).format('YYYY-MM-DDTHH:mm:ss.SSS');
       let lessonDateTime = moment.tz(localLessonDateTimeJS, timeZone.name);
       console.log('lessonDateTime: ' + lessonDateTime);
       console.log('lessonDateTime ISO: ' + lessonDateTime.toISOString());
