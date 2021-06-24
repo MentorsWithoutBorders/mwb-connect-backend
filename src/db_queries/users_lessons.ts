@@ -58,16 +58,20 @@ export class UsersLessons {
     let students: Array<User> = [];
     const timeZone: TimeZone = await usersTimeZones.getUserTimeZone(userId);
     let now = moment();
-    now = moment(now).tz(timeZone.name);
+    now = moment.tz(now, timeZone.name);
     console.log('now: ' + now);
     console.log('now ISO: ' + now.toISOString());
     console.log('now formatted: ' + now.format(constants.DATE_TIME_FORMAT));
     if (lessonRow) {
-      const endRecurrenceDateTime = moment(lessonRow.end_recurrence_date_time).tz(timeZone.name);
+      const endReccurrenceDateTimeJS = new Date(lessonRow.end_recurrence_date_time);
+      const localEndReccurrenceDateTimeJS = moment(endReccurrenceDateTimeJS).format('YYYY-MM-DDTHH:mm:ss.SSS');
+      const endRecurrenceDateTime = moment.tz(localEndReccurrenceDateTimeJS, timeZone.name);
       console.log('endRecurrenceDateTime: ' + endRecurrenceDateTime);
       console.log('endRecurrenceDateTime ISO: ' + endRecurrenceDateTime.toISOString());
       console.log('endRecurrenceDateTime formatted: ' + endRecurrenceDateTime.format(constants.DATE_TIME_FORMAT));
-      let lessonDateTime = moment(lessonRow.date_time).tz(timeZone.name);
+      const lessonDateTimeJS = new Date(lessonRow.date_time);
+      const localLessonDateTimeJS = moment(lessonDateTimeJS).format('YYYY-MM-DDTHH:mm:ss.SSS');
+      let lessonDateTime = moment.tz(localLessonDateTimeJS, timeZone.name);
       console.log('lessonDateTime: ' + lessonDateTime);
       console.log('lessonDateTime ISO: ' + lessonDateTime.toISOString());
       console.log('lessonDateTime formatted: ' + lessonDateTime.format(constants.DATE_TIME_FORMAT));
