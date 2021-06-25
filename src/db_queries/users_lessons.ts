@@ -53,42 +53,45 @@ export class UsersLessons {
     const { rows }: pg.QueryResult = await pool.query(getNextLessonQuery, [userId]);
     let lessonRow = rows[0];
     let students: Array<User> = [];
-    const now = moment.utc();
-    console.log('now: ' + now);
-    console.log('now ISO: ' + now.toISOString());
-    console.log('now formatted: ' + now.format(constants.DATE_TIME_FORMAT));
     if (lessonRow) {
-      const endRecurrenceDateTime = moment.utc(lessonRow.end_recurrence_date_time);
-      console.log('endRecurrenceDateTime: ' + endRecurrenceDateTime);
-      console.log('endRecurrenceDateTime ISO: ' + endRecurrenceDateTime.toISOString());
-      console.log('endRecurrenceDateTime formatted: ' + endRecurrenceDateTime.format(constants.DATE_TIME_FORMAT));
-      let lessonDateTime = moment.utc(lessonRow.date_time);
-      console.log('lessonDateTime: ' + lessonDateTime);
-      console.log('lessonDateTime ISO: ' + lessonDateTime.toISOString());
-      console.log('lessonDateTime formatted: ' + lessonDateTime.format(constants.DATE_TIME_FORMAT));
-      if (lessonRow.is_recurrent) {
-        if (endRecurrenceDateTime.isBefore(now)) {
-          lessonRow = null;
-        } else {
-          while (lessonDateTime.isBefore(now)) {
-            lessonDateTime = lessonDateTime.add(7, 'd');
-          }
-          if (lessonDateTime.isAfter(endRecurrenceDateTime)) {
-            lessonRow = null;
-          } else {
-            lessonRow.date_time = moment.utc(lessonDateTime);
-          }
-        }
-      } else {
-        if (lessonDateTime.isBefore(now)) {
-          lessonRow = null;
-        } else {
-          lessonRow.date_time = moment.utc(lessonDateTime);
-        }
+      let lesson: Lesson = {
+        dateTime: moment.utc(lessonRow.date_time).format(constants.DATE_TIME_FORMAT),
+        isRecurrent: lessonRow.is_recurrent
       }
-      students = await this.getLessonStudents(lessonRow.id);
+      if (lessonRow.end_recurrence_date_time != null) {
+        lesson.endRecurrenceDateTime = moment.utc(lessonRow.end_recurrence_date_time).format(constants.DATE_TIME_FORMAT)
+      }
+      lesson = this.checkLessonRecurrence(lesson);
+      if (Object.keys(lesson).length === 0) {
+        lessonRow = null;
+      } else {
+        students = await this.getLessonStudents(lessonRow.id);
+      }
     }
     return this.setLesson(lessonRow, students, isMentor);
+  }
+
+  checkLessonRecurrence(lesson: Lesson): Lesson {
+    const now = moment.utc();
+    const endRecurrenceDateTime = moment.utc(lesson.endRecurrenceDateTime);
+    let lessonDateTime = moment.utc(lesson.dateTime);
+    if (lesson.isRecurrent) {
+      if (endRecurrenceDateTime.isBefore(now)) {
+        return {};
+      } else {
+        while (lessonDateTime.isBefore(now)) {
+          lessonDateTime = lessonDateTime.add(7, 'd');
+        }
+        if (lessonDateTime.isAfter(endRecurrenceDateTime)) {
+          return {};
+        }
+      }
+    } else {
+      if (lessonDateTime.isBefore(now)) {
+        return {};
+      }
+    }
+    return lesson;    
   }
 
   async getLessonStudents(lessonId: string): Promise<Array<User>> {
