@@ -31,8 +31,7 @@ export class UsersLessonRequests {
     try {
       const insertLessonRequestQuery = `INSERT INTO users_lesson_requests (student_id, sent_date_time)
         VALUES ($1, $2) RETURNING *`;
-      const timeZone: TimeZone = await usersTimeZones.getUserTimeZone(studentId);
-      const sentDateTime = moment.tz(new Date(), timeZone?.name).format(constants.DATE_TIME_FORMAT);
+      const sentDateTime = new Date();
       const values = [studentId, sentDateTime];
       const { rows }: pg.QueryResult = await pool.query(insertLessonRequestQuery, values);
       const lessonRequest: LessonRequest = {
