@@ -31,7 +31,7 @@ export class UsersLessonRequests {
     try {
       const insertLessonRequestQuery = `INSERT INTO users_lesson_requests (student_id, sent_date_time)
         VALUES ($1, $2) RETURNING *`;
-      const sentDateTime = new Date();
+      const sentDateTime = moment.utc();
       const values = [studentId, sentDateTime];
       const { rows }: pg.QueryResult = await pool.query(insertLessonRequestQuery, values);
       const lessonRequest: LessonRequest = {
@@ -47,7 +47,7 @@ export class UsersLessonRequests {
     const userId: string = request.params.id;
     try {
       const isMentor = await this.getIsMentor(userId);
-      const userTypeId = isMentor ? 'mentor_id' : 'student_id';
+      const userTypeId = isMentor ? 'ulr.mentor_id' : 'ulr.student_id';
       const getLessonRequestQuery = `SELECT ulr.id, ulr.student_id, ulr.subfield_id, ulr.sent_date_time, ulr.lesson_date_time, s.name AS subfield_name, ulr.is_canceled
         FROM users_lesson_requests ulr
         LEFT OUTER JOIN subfields s
@@ -63,12 +63,12 @@ export class UsersLessonRequests {
         }
         let lessonDateTime;
         if (rows[0].lesson_date_time != null) {
-          lessonDateTime = moment(rows[0].lesson_date_time).format(constants.DATE_TIME_FORMAT);
+          lessonDateTime = moment.utc(rows[0].lesson_date_time).format(constants.DATE_TIME_FORMAT);
         }
         lessonRequest = {
           id: rows[0].id,
           subfield: subfield,
-          sentDateTime: moment(rows[0].sent_date_time).format(constants.DATE_TIME_FORMAT),
+          sentDateTime: moment.utc(rows[0].sent_date_time).format(constants.DATE_TIME_FORMAT),
           lessonDateTime: lessonDateTime as string,
           isCanceled: rows[0].is_canceled,
         }
