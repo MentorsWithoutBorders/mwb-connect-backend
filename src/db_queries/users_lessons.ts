@@ -6,17 +6,14 @@ import pg from 'pg';
 import { Conn } from '../db/conn';
 import { constants } from '../utils/constants';
 import { Users } from './users';
-import { UsersTimeZones } from './users_timezones';
 import User from '../models/user.model';
 import Organization from '../models/organization.model';
 import Lesson from '../models/lesson.model';
 import Subfield from '../models/subfield.model';
-import TimeZone from '../models/timezone.model';
 
 const conn: Conn = new Conn();
 const pool = conn.pool;
 const users: Users = new Users();
-const usersTimeZones: UsersTimeZones = new UsersTimeZones();
 
 export class UsersLessons {
   constructor() {
@@ -56,22 +53,16 @@ export class UsersLessons {
     const { rows }: pg.QueryResult = await pool.query(getNextLessonQuery, [userId]);
     let lessonRow = rows[0];
     let students: Array<User> = [];
-    const timeZone: TimeZone = await usersTimeZones.getUserTimeZone(userId);
-    let now = moment();
-    now = moment.tz(now, timeZone.name);
+    const now = moment.utc();
     console.log('now: ' + now);
     console.log('now ISO: ' + now.toISOString());
     console.log('now formatted: ' + now.format(constants.DATE_TIME_FORMAT));
     if (lessonRow) {
-      const endReccurrenceDateTimeJS = new Date(lessonRow.end_recurrence_date_time);
-      const localEndReccurrenceDateTimeJS = moment(endReccurrenceDateTimeJS).format('YYYY-MM-DDTHH:mm:ss.SSS');
-      const endRecurrenceDateTime = moment.tz(localEndReccurrenceDateTimeJS, timeZone.name);
+      const endRecurrenceDateTime = moment.utc(lessonRow.end_recurrence_date_time);
       console.log('endRecurrenceDateTime: ' + endRecurrenceDateTime);
       console.log('endRecurrenceDateTime ISO: ' + endRecurrenceDateTime.toISOString());
       console.log('endRecurrenceDateTime formatted: ' + endRecurrenceDateTime.format(constants.DATE_TIME_FORMAT));
-      const lessonDateTimeJS = new Date(lessonRow.date_time);
-      const localLessonDateTimeJS = moment(lessonDateTimeJS).format('YYYY-MM-DDTHH:mm:ss.SSS');
-      let lessonDateTime = moment.tz(localLessonDateTimeJS, timeZone.name);
+      let lessonDateTime = moment.utc(lessonRow.date_time);
       console.log('lessonDateTime: ' + lessonDateTime);
       console.log('lessonDateTime ISO: ' + lessonDateTime.toISOString());
       console.log('lessonDateTime formatted: ' + lessonDateTime.format(constants.DATE_TIME_FORMAT));
@@ -85,14 +76,14 @@ export class UsersLessons {
           if (lessonDateTime.isAfter(endRecurrenceDateTime)) {
             lessonRow = null;
           } else {
-            lessonRow.date_time = lessonDateTime.toDate();
+            lessonRow.date_time = moment.utc(lessonDateTime);
           }
         }
       } else {
         if (lessonDateTime.isBefore(now)) {
           lessonRow = null;
         } else {
-          lessonRow.date_time = lessonDateTime.toDate();
+          lessonRow.date_time = moment.utc(lessonDateTime);
         }
       }
       students = await this.getLessonStudents(lessonRow.id);
@@ -128,13 +119,13 @@ export class UsersLessons {
       lesson = {
         id: lessonRow.id,
         subfield: subfield,
-        dateTime: moment(lessonRow.date_time).format(constants.DATE_TIME_FORMAT),
+        dateTime: moment.utc(lessonRow.date_time).format(constants.DATE_TIME_FORMAT),
         meetingUrl: lessonRow.meeting_url,
         isRecurrent: lessonRow.is_recurrent,
         isCanceled: lessonRow.is_canceled
       }
       if (lessonRow.end_recurrence_date_time != null) {
-        lesson.endRecurrenceDateTime = moment(lessonRow.end_recurrence_date_time).format(constants.DATE_TIME_FORMAT)
+        lesson.endRecurrenceDateTime = moment.utc(lessonRow.end_recurrence_date_time).format(constants.DATE_TIME_FORMAT)
       }
       if (isMentor) {
         lesson.students = students;
@@ -161,8 +152,7 @@ export class UsersLessons {
     const userId: string = request.params.id;
     try {
       const isMentor = await this.getIsMentor(userId);
-      const timeZone: TimeZone = await usersTimeZones.getUserTimeZone(userId);
-      const now = moment.tz(new Date(), timeZone?.name).format(constants.DATE_TIME_FORMAT);        
+      const now = moment.utc();
       let getPreviousLessonQuery = '';
       if (isMentor) {
         getPreviousLessonQuery = `SELECT ul.id, ul.mentor_id, ul.subfield_id, ul.date_time, s.name AS subfield_name, ul.meeting_url, ul.is_recurrent, ul.end_recurrence_date_time, ul.is_canceled

@@ -7,19 +7,16 @@ import { Conn } from '../db/conn';
 import { constants } from '../utils/constants';
 import { Users } from './users';
 import { UsersLessons } from './users_lessons';
-import { UsersTimeZones } from './users_timezones';
 import User from '../models/user.model';
 import Subfield from '../models/subfield.model';
 import LessonRequest from '../models/lesson_request.model';
 import Lesson from '../models/lesson.model';
-import TimeZone from '../models/timezone.model';
 import Organization from '../models/organization.model';
 
 const conn: Conn = new Conn();
 const pool = conn.pool;
 const users: Users = new Users();
 const usersLessons: UsersLessons = new UsersLessons();
-const usersTimeZones: UsersTimeZones = new UsersTimeZones();
 
 export class UsersLessonRequests {
   constructor() {
@@ -116,9 +113,8 @@ export class UsersLessonRequests {
   async addLesson(studentId: string, mentorId: string, subfieldId: string, lessonDateTime: string, meetingUrl: string, isRecurrent: boolean, endRecurrenceDateTime: string): Promise<Lesson> {
     const insertLessonQuery = `INSERT INTO users_lessons (mentor_id, subfield_id, date_time, meeting_url, is_recurrent, end_recurrence_date_time)
       VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`;
-    const timeZone: TimeZone = await usersTimeZones.getUserTimeZone(mentorId);
-    const dateTime = moment.tz(lessonDateTime, timeZone?.name).format(constants.DATE_TIME_FORMAT);
-    const values = [mentorId, subfieldId, dateTime, meetingUrl, isRecurrent, endRecurrenceDateTime];
+    const dateTime = moment.utc(lessonDateTime);
+    const values = [mentorId, subfieldId, dateTime, meetingUrl, isRecurrent, moment.utc(endRecurrenceDateTime)];
     const { rows }: pg.QueryResult = await pool.query(insertLessonQuery, values);
     const lesson: Lesson = {
       id: rows[0].id
