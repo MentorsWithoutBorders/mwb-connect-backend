@@ -47,7 +47,7 @@ export class UsersLessons {
         ON ul.id = uls.lesson_id        
         JOIN subfields s
         ON ul.subfield_id = s.id
-        WHERE uls.student_id = $1 AND ul.is_canceled IS DISTINCT FROM true
+        WHERE uls.student_id = $1 AND ul.is_canceled IS DISTINCT FROM true AND uls.is_canceled IS DISTINCT FROM true
         ORDER BY ul.date_time DESC LIMIT 1`;      
     }
     const { rows }: pg.QueryResult = await pool.query(getNextLessonQuery, [userId]);
@@ -139,13 +139,15 @@ export class UsersLessons {
     const { rows }: pg.QueryResult = await pool.query(getLessonStudentsQuery, [lessonId]);
     const students: Array<User> = [];
     for (const studentRow of rows) {
-      const user: User = await users.getUserFromDB(studentRow.student_id);
-      const student: User = {
-        id: user.id as string,
-        name: user.name as string,
-        organization: user.organization as Organization
+      if (!studentRow.is_canceled) {
+        const user: User = await users.getUserFromDB(studentRow.student_id);
+        const student: User = {
+          id: user.id as string,
+          name: user.name as string,
+          organization: user.organization as Organization
+        }
+        students.push(student);
       }
-      students.push(student);          
     }  
     return students;  
   }
@@ -200,7 +202,7 @@ export class UsersLessons {
           FROM users_lessons ul
           JOIN subfields s
           ON ul.subfield_id = s.id
-          WHERE ul.mentor_id = $1 AND ul.date_time::timestamp < $2 AND ul.is_canceled IS DISTINCT FROM true
+          WHERE ul.mentor_id = $1 AND ul.date_time::timestamp < $2
           ORDER BY ul.date_time DESC LIMIT 1`;
       } else {
         getPreviousLessonQuery = `SELECT ul.id, ul.mentor_id, ul.subfield_id, ul.date_time, s.name AS subfield_name, ul.meeting_url, ul.is_recurrent, ul.end_recurrence_date_time, ul.is_canceled
@@ -209,7 +211,7 @@ export class UsersLessons {
           ON ul.id = uls.lesson_id        
           JOIN subfields s
           ON ul.subfield_id = s.id
-          WHERE uls.student_id = $1 AND ul.date_time::timestamp < $2 AND ul.is_canceled IS DISTINCT FROM true
+          WHERE uls.student_id = $1 AND ul.date_time::timestamp < $2
           ORDER BY ul.date_time DESC LIMIT 1`;      
       }
       const { rows }: pg.QueryResult = await pool.query(getPreviousLessonQuery, [userId, now]);
@@ -291,11 +293,11 @@ export class UsersLessons {
       } else {
         const isMentor = await this.getIsMentor(userId);
         if (isMentor) {
-          const updateMentorLessonQuery = 'UPDATE users_lessons SET is_canceled = true WHERE lesson_id = $1';
+          const updateMentorLessonQuery = 'UPDATE users_lessons SET is_canceled = true WHERE id = $1';
           await pool.query(updateMentorLessonQuery, [lessonId]);
         } else {
-          const deleteStudentLessonQuery = 'DELETE FROM users_lessons_students WHERE user_id = $1 AND lesson_id = $2';
-          await pool.query(deleteStudentLessonQuery, [userId, lessonId]);
+          const updateStudentLessonQuery = 'UPDATE users_lessons_students SET is_canceled = true  WHERE lesson_id = $1 AND student_id = $2';
+          await pool.query(updateStudentLessonQuery, [lessonId, userId]);
         }
       }
       response.status(200).send(`Lesson modified with ID: ${lessonId}`);
