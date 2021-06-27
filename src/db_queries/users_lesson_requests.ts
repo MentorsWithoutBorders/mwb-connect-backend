@@ -1,7 +1,6 @@
 import { Request, Response } from 'express';
 import autoBind from 'auto-bind';
 import moment from 'moment';
-import 'moment-timezone';
 import pg from 'pg';
 import { Conn } from '../db/conn';
 import { constants } from '../utils/constants';

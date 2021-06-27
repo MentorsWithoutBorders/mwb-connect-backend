@@ -3,15 +3,11 @@ import autoBind from 'auto-bind';
 import pg from 'pg';
 import moment from 'moment';
 import { Conn } from '../db/conn';
-import { constants } from '../utils/constants';
-import { UsersTimeZones } from './users_timezones';
 import Quiz from '../models/quiz.model';
 import QuizSettings from '../models/quiz_settings.model';
-import TimeZone from '../models/timezone.model';
 
 const conn: Conn = new Conn();
 const pool = conn.pool;
-const usersTimeZones: UsersTimeZones = new UsersTimeZones();
 
 interface QuizData {
   round: number;
@@ -114,10 +110,10 @@ export class UsersQuizzes {
   }
   
   shouldSkipQuiz(lastQuizSubmitted: Quiz, round: number, roundCompleted: boolean, quizSettings: QuizSettings): boolean {
-    const today = moment(new Date());
+    const today = moment.utc();
     let dayLastQuizSubmitted;
     if (lastQuizSubmitted != null) {
-      dayLastQuizSubmitted = moment(lastQuizSubmitted.dateTime);
+      dayLastQuizSubmitted = moment.utc(lastQuizSubmitted.dateTime);
     } else {
       dayLastQuizSubmitted = today;
     }
@@ -147,8 +143,7 @@ export class UsersQuizzes {
     try {
       const insertQuizQuery = `INSERT INTO users_quizzes (user_id, number, is_correct, is_closed, date_time)
         VALUES ($1, $2, $3, $4, $5) RETURNING *`;
-      const timeZone: TimeZone = await usersTimeZones.getUserTimeZone(userId);
-      const dateTime = moment.tz(new Date(), timeZone?.name).format(constants.DATE_TIME_FORMAT);
+      const dateTime = moment.utc();
       const values = [userId, number, isCorrect, isClosed, dateTime];
       await pool.query(insertQuizQuery, values);
       response.status(200).send('Quiz has been added');

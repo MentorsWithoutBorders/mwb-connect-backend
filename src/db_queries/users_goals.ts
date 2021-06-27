@@ -1,17 +1,12 @@
 import { Request, Response } from 'express';
 import autoBind from 'auto-bind';
 import moment from 'moment';
-import 'moment-timezone';
 import pg from 'pg';
 import { Conn } from '../db/conn';
-import { constants } from '../utils/constants';
-import { UsersTimeZones } from './users_timezones';
 import Goal from '../models/goal.model';
-import TimeZone from '../models/timezone.model';
 
 const conn: Conn = new Conn();
 const pool = conn.pool;
-const usersTimeZones: UsersTimeZones = new UsersTimeZones();
 
 export class UsersGoals {
   constructor() {
@@ -75,8 +70,7 @@ export class UsersGoals {
     const goals: Array<Goal> = await this.getGoalsFromDB(userId);
     const insertGoalQuery = `INSERT INTO users_goals (user_id, text, index, date_time)
       VALUES ($1, $2, $3, $4) RETURNING *`;
-    const timeZone: TimeZone = await usersTimeZones.getUserTimeZone(userId);
-    const dateTime = moment.tz(new Date(), timeZone?.name).format(constants.DATE_TIME_FORMAT);
+    const dateTime = moment.utc();
     let index = 0;
     if (goals.length > 0) {
       index = goals[goals.length-1].index as number + 1;
@@ -90,13 +84,11 @@ export class UsersGoals {
   }
 
   async updateGoal(request: Request, response: Response): Promise<void> {
-    const userId: string = request.params.user_id;
     const id: string = request.params.id;
     const { text }: Goal = request.body
     try {
       const updateGoalQuery = 'UPDATE users_goals SET text = $1, date_time = $2 WHERE id = $3';
-      const timeZone: TimeZone = await usersTimeZones.getUserTimeZone(userId);
-      const dateTime = moment.tz(new Date(), timeZone?.name).format(constants.DATE_TIME_FORMAT);
+      const dateTime = moment.utc();
       await pool.query(updateGoalQuery, [text, dateTime, id]);
       response.status(200).send(`Goal modified with ID: ${id}`);
     } catch (error) {

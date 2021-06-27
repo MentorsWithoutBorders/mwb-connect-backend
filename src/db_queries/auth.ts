@@ -4,11 +4,9 @@ import pg from 'pg';
 import dotenv from 'dotenv';
 import autoBind from 'auto-bind';
 import moment from 'moment';
-import 'moment-timezone';
 import { v4 as uuidv4 } from 'uuid';
 import { Conn } from '../db/conn';
 import { Helpers } from '../utils/helpers';
-import { constants } from '../utils/constants';
 import { UsersGoals } from './users_goals';
 import { UsersTimeZones } from './users_timezones';
 import Token from '../models/token.model';
@@ -65,7 +63,7 @@ export class Auth {
         users (id, name, email, password, field_id, organization_id, is_mentor, available_from, registered_on) 
         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) 
         returning *`;
-      const values: Array<string> = [
+      const values = [
         uuidv4(),
         name || approvedUser.name || '',
         email,
@@ -73,8 +71,8 @@ export class Auth {
         approvedUser.field != null ? approvedUser.field.id : '',
         approvedUser.organization != null ? approvedUser.organization.id as string : '',
         String(approvedUser.isMentor),
-        moment.tz(new Date(), timeZone?.name as string).format(constants.DATE_TIME_FORMAT),
-        moment.tz(new Date(), timeZone?.name as string).format(constants.DATE_TIME_FORMAT),
+        moment.utc(),
+        moment.utc()
       ];
       ({ rows } = await pool.query(createUserQuery, values));
       const userId: string = rows[0].id;

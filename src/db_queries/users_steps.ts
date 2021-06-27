@@ -1,17 +1,13 @@
 import { Request, Response } from 'express';
 import autoBind from 'auto-bind';
 import moment from 'moment';
-import 'moment-timezone';
 import pg from 'pg';
 import { Conn } from '../db/conn';
 import { constants } from '../utils/constants';
-import { UsersTimeZones } from './users_timezones';
 import Step from '../models/step.model';
-import TimeZone from '../models/timezone.model';
 
 const conn: Conn = new Conn();
 const pool = conn.pool;
-const usersTimeZones: UsersTimeZones = new UsersTimeZones();
 
 export class UsersSteps {
   constructor() {
@@ -63,7 +59,7 @@ export class UsersSteps {
         index: rows[0].index,
         level: rows[0].level,
         parentId: rows[0].parent_id,
-        dateTime: moment(rows[0].date_time).format(constants.DATE_TIME_FORMAT)
+        dateTime: moment.utc(rows[0].date_time).format(constants.DATE_TIME_FORMAT)
       };
     }
     return step;
@@ -92,7 +88,7 @@ export class UsersSteps {
         index: rows[0].index,
         level: rows[0].level,
         parentId: rows[0].parent_id,
-        dateTime: moment(rows[0].date_time).format(constants.DATE_TIME_FORMAT)
+        dateTime: moment.utc(rows[0].date_time).format(constants.DATE_TIME_FORMAT)
       } 
     }
     return step;  
@@ -105,8 +101,7 @@ export class UsersSteps {
     try {
       const insertStepQuery = `INSERT INTO users_steps (user_id, goal_id, text, index, level, parent_id, date_time)
         VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`;
-      const timeZone: TimeZone = await usersTimeZones.getUserTimeZone(userId);
-      const dateTime = moment.tz(new Date(), timeZone?.name).format(constants.DATE_TIME_FORMAT);
+      const dateTime = moment.utc();
       const values = [userId, goalId, text, index, level, parentId, dateTime];        
       const { rows }: pg.QueryResult = await pool.query(insertStepQuery, values);
       const step: Step = {
@@ -123,12 +118,10 @@ export class UsersSteps {
   }
 
   async updateStep(request: Request, response: Response): Promise<void> {
-    const userId: string = request.params.user_id;
     const id: string = request.params.id;
     const { text, index, level, parentId }: Step = request.body
     try {
-      const timeZone: TimeZone = await usersTimeZones.getUserTimeZone(userId);
-      const dateTime = moment.tz(new Date(), timeZone?.name).format(constants.DATE_TIME_FORMAT);
+      const dateTime = moment.utc().format(constants.DATE_TIME_FORMAT);
       await this.updateStepInDB(id, text as string, index as number, level as number, parentId as string, dateTime);
       response.status(200).send(`Step modified with ID: ${id}`);
     } catch (error) {

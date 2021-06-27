@@ -40,7 +40,6 @@ export class Users {
       if (user.isMentor) {
         user.lessonsAvailability = await this.getUserLessonsAvailability(id)        
       }
-
       response.status(200).json(user);
     } catch (error) {
       response.status(400).send(error);
@@ -73,9 +72,9 @@ export class Users {
       field: field,
       isMentor: rows[0].is_mentor,
       isAvailable: rows[0].is_available,
-      availableFrom: moment(rows[0].available_from).format(constants.DATE_TIME_FORMAT),
+      availableFrom: moment.utc(rows[0].available_from).format(constants.DATE_TIME_FORMAT),
       availabilities: await this.getUserAvailabilities(id),
-      registeredOn: moment(rows[0].available_from).format(constants.DATE_TIME_FORMAT)
+      registeredOn: moment.utc(rows[0].available_from).format(constants.DATE_TIME_FORMAT)
     }
   }
 
