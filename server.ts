@@ -44,7 +44,7 @@ app.get('/', (request: express.Request, response: express.Response): void => {
 })
 
 const verifyAccessTokenFilter = function(request: Request, response: Response, next: NextFunction): void {
-  if (['signup', 'login', 'logout', 'access_token'].some(v => request.originalUrl.includes(v))) {
+  if (['signup', 'login', 'logout', 'access_token'].some(route => request.originalUrl.includes(route))) {
     next();
   } else {
     auth.verifyAccessToken(request, response, next);
