@@ -242,7 +242,6 @@ export class Auth {
   }  
 
   async verifyAccessToken(request: Request, response: Response, next: NextFunction): Promise<void> {
-    const { name, email, password }: User = request.body;
     if (!request.headers.authorization) {
       response.status(401).send({'message': 'Token is not provided'});
       return ;
@@ -260,7 +259,6 @@ export class Auth {
         response.status(401).send({'message': 'The token you provided is invalid'});
         return ;
       }
-      request.user = { id: decoded.userId, name: name as string, email: email as string, password: password as string };
       next();
     } catch (error) {
       response.status(401).send(error);
