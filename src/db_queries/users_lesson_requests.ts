@@ -113,7 +113,8 @@ export class UsersLessonRequests {
     const insertLessonQuery = `INSERT INTO users_lessons (mentor_id, subfield_id, date_time, meeting_url, is_recurrent, end_recurrence_date_time)
       VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`;
     const dateTime = moment.utc(lessonDateTime);
-    const values = [mentorId, subfieldId, dateTime, meetingUrl, isRecurrent, moment.utc(endRecurrenceDateTime)];
+    const endRecurrence = isRecurrent && endRecurrenceDateTime != undefined ? moment.utc(endRecurrenceDateTime) : null;
+    const values = [mentorId, subfieldId, dateTime, meetingUrl, isRecurrent, endRecurrence];
     const { rows }: pg.QueryResult = await pool.query(insertLessonQuery, values);
     const lesson: Lesson = {
       id: rows[0].id
