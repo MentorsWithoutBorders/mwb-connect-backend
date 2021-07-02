@@ -171,6 +171,13 @@ export class UsersLessons {
       if (lessonRow.end_recurrence_date_time != null) {
         lesson.endRecurrenceDateTime = moment.utc(lessonRow.end_recurrence_date_time).format(constants.DATE_TIME_FORMAT)
       }
+      if (lesson.isRecurrent) {
+        if (moment.utc(lesson.endRecurrenceDateTime).diff(moment.utc(lesson.dateTime), 'days') < 7) {
+          lesson.isRecurrent = false;
+          lesson.isRecurrenceDateSelected = undefined;
+          lesson.endRecurrenceDateTime = undefined;
+        }
+      }      
       if (isMentor) {
         lesson.students = students;
       } else {
