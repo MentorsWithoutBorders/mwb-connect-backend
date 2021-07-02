@@ -33,14 +33,14 @@ export class UsersLessons {
     const isMentor = await this.getIsMentor(userId);
     let getNextLessonQuery = '';
     if (isMentor) {
-      getNextLessonQuery = `SELECT ul.id, ul.mentor_id, ul.subfield_id, ul.date_time, s.name AS subfield_name, ul.meeting_url, ul.is_recurrent, ul.end_recurrence_date_time, ul.is_canceled
+      getNextLessonQuery = `SELECT ul.id, ul.mentor_id, ul.subfield_id, ul.date_time, s.name AS subfield_name, ul.meeting_url, ul.is_recurrent, ul.end_recurrence_date_time, ul.is_recurrence_date_selected, ul.is_canceled
         FROM users_lessons ul
         JOIN subfields s
         ON ul.subfield_id = s.id
         WHERE ul.mentor_id = $1 AND ul.is_canceled IS DISTINCT FROM true
         ORDER BY ul.date_time DESC LIMIT 1`;
     } else {
-      getNextLessonQuery = `SELECT ul.id, ul.mentor_id, ul.subfield_id, ul.date_time, s.name AS subfield_name, ul.meeting_url, ul.is_recurrent, ul.end_recurrence_date_time, ul.is_canceled
+      getNextLessonQuery = `SELECT ul.id, ul.mentor_id, ul.subfield_id, ul.date_time, s.name AS subfield_name, ul.meeting_url, ul.is_recurrent, ul.end_recurrence_date_time, ul.is_recurrence_date_selected, ul.is_canceled
         FROM users_lessons ul
         JOIN users_lessons_students uls
         ON ul.id = uls.lesson_id        
@@ -56,7 +56,8 @@ export class UsersLessons {
       const lesson: Lesson = {
         id: lessonRow.id,
         dateTime: moment.utc(lessonRow.date_time).format(constants.DATE_TIME_FORMAT),
-        isRecurrent: lessonRow.is_recurrent
+        isRecurrent: lessonRow.is_recurrent,
+        isRecurrenceDateSelected: lessonRow.is_recurrence_date_selected
       }
       if (lessonRow.end_recurrence_date_time != null) {
         lesson.endRecurrenceDateTime = moment.utc(lessonRow.end_recurrence_date_time).format(constants.DATE_TIME_FORMAT)
@@ -164,6 +165,7 @@ export class UsersLessons {
         dateTime: moment.utc(lessonRow.date_time).format(constants.DATE_TIME_FORMAT),
         meetingUrl: lessonRow.meeting_url,
         isRecurrent: lessonRow.is_recurrent,
+        isRecurrenceDateSelected: lessonRow.is_recurrence_date_selected,
         isCanceled: lessonRow.is_canceled
       }
       if (lessonRow.end_recurrence_date_time != null) {

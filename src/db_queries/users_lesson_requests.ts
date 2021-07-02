@@ -92,16 +92,32 @@ export class UsersLessonRequests {
 
   async acceptLessonRequest(request: Request, response: Response): Promise<void> {
     const lessonRequestId: string = request.params.id;
-    const { meetingUrl, isRecurrent, endRecurrenceDateTime }: Lesson = request.body
+    const { meetingUrl, isRecurrent, endRecurrenceDateTime, isRecurrenceDateSelected }: Lesson = request.body
     try {
       const getLessonRequestQuery = 'SELECT * FROM users_lesson_requests WHERE id = $1';
       const { rows }: pg.QueryResult = await pool.query(getLessonRequestQuery, [lessonRequestId]);
-      const studentId = rows[0].student_id;
-      const mentorId = rows[0].mentor_id;
-      const subfieldId = rows[0].subfield_id;
-      const lessonDateTime = rows[0].lesson_date_time;
-      const lesson = await this.addLesson(studentId, mentorId, subfieldId, lessonDateTime, meetingUrl as string, isRecurrent as boolean, endRecurrenceDateTime as string);
-      await this.addStudentSubfield(studentId, subfieldId);
+      const student: User = {
+        id: rows[0].student_id
+      };
+      const mentor: User = {
+        id: rows[0].mentor_id
+      };
+      const subfield: Subfield = {
+        id: rows[0].subfield_id
+      };        
+      let lesson: Lesson = {
+        id: rows[0].id,
+        students: [student],
+        mentor: mentor,
+        subfield: subfield,
+        dateTime: rows[0].lesson_date_time,
+        meetingUrl: meetingUrl,
+        isRecurrent: isRecurrent,
+        endRecurrenceDateTime: endRecurrenceDateTime,
+        isRecurrenceDateSelected: isRecurrenceDateSelected
+      }
+      lesson = await this.addLesson(lesson);
+      await this.addStudentSubfield(student.id as string, subfield.id);
       await this.deleteLessonRequest(lessonRequestId);
       response.status(200).send(lesson);
     } catch (error) {
@@ -109,18 +125,22 @@ export class UsersLessonRequests {
     }
   }
   
-  async addLesson(studentId: string, mentorId: string, subfieldId: string, lessonDateTime: string, meetingUrl: string, isRecurrent: boolean, endRecurrenceDateTime: string): Promise<Lesson> {
-    const insertLessonQuery = `INSERT INTO users_lessons (mentor_id, subfield_id, date_time, meeting_url, is_recurrent, end_recurrence_date_time)
-      VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`;
-    const dateTime = moment.utc(lessonDateTime);
-    const endRecurrence = isRecurrent && endRecurrenceDateTime != undefined ? moment.utc(endRecurrenceDateTime) : null;
-    const values = [mentorId, subfieldId, dateTime, meetingUrl, isRecurrent, endRecurrence];
+  async addLesson(lesson: Lesson): Promise<Lesson> {
+    const insertLessonQuery = `INSERT INTO users_lessons (mentor_id, subfield_id, date_time, meeting_url, is_recurrent, end_recurrence_date_time, is_recurrence_date_selected)
+      VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`;
+    const dateTime = moment.utc(lesson.dateTime);
+    const endRecurrence = lesson.isRecurrent && lesson.endRecurrenceDateTime != undefined ? moment.utc(lesson.endRecurrenceDateTime) : null;
+    const values = [lesson.mentor?.id, lesson.subfield?.id, dateTime, lesson.meetingUrl, lesson.isRecurrent, endRecurrence, lesson.isRecurrenceDateSelected];
     const { rows }: pg.QueryResult = await pool.query(insertLessonQuery, values);
-    const lesson: Lesson = {
+    const addedLesson = {
       id: rows[0].id
     }
-    await this.addStudent(lesson.id as string, studentId);
-    return usersLessons.getNextLessonFromDB(mentorId);
+    let student: User = {};
+    if (lesson.students != null) {
+      student = lesson.students[0];
+    }
+    await this.addStudent(addedLesson.id as string, student.id as string);
+    return usersLessons.getNextLessonFromDB(lesson.mentor?.id as string);
   }
 
   async addStudent(lessonId: string, studentId: string): Promise<void> {

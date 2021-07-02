@@ -11,5 +11,6 @@ export default interface Lesson {
   isMentorPresent?: boolean;
   isRecurrent?: boolean;
   endRecurrenceDateTime?: string;
+  isRecurrenceDateSelected?: boolean;
   isCanceled?: boolean;
 }
