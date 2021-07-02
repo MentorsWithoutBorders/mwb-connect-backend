@@ -96,6 +96,7 @@ app.get('/api/v1/users/:id/next_lesson', usersLessons.getNextLesson);
 app.get('/api/v1/users/:id/previous_lesson', usersLessons.getPreviousLesson);
 app.put('/api/v1/users/:user_id/lessons/:lesson_id/cancel_lesson', usersLessons.cancelLesson);
 app.put('/api/v1/lessons/:id/change_meeting_url', usersLessons.setLessonMeetingUrl);
+app.put('/api/v1/lessons/:id/update_recurrence', usersLessons.setLessonRecurrence);
 app.put('/api/v1/lessons/:id/mentor_presence', usersLessons.setLessonPresenceMentor);
 
 // Users skills

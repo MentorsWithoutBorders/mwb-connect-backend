@@ -324,7 +324,20 @@ export class UsersLessons {
     } catch (error) {
       response.status(400).send(error);
     }
-  } 
+  }
+  
+  async setLessonRecurrence(request: Request, response: Response): Promise<void> {
+    const lessonId: string = request.params.id;
+    const { isRecurrent, endRecurrenceDateTime, isRecurrenceDateSelected }: Lesson = request.body
+    try {
+      const updateLessonQuery = 'UPDATE users_lessons SET is_recurrent = $1, end_recurrence_date_time = $2, is_recurrence_date_selected = $3 WHERE id = $4';
+      const endRecurrence = isRecurrent && endRecurrenceDateTime != undefined ? moment.utc(endRecurrenceDateTime) : null;
+      await pool.query(updateLessonQuery, [isRecurrent, endRecurrence, isRecurrenceDateSelected, lessonId]);
+      response.status(200).send(`Lesson modified with ID: ${lessonId}`);
+    } catch (error) {
+      response.status(400).send(error);
+    }
+  }   
   
   async setLessonPresenceMentor(request: Request, response: Response): Promise<void> {
     const lessonId: string = request.params.id;
