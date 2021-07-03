@@ -165,8 +165,10 @@ export class UsersLessons {
         dateTime: moment.utc(lessonRow.date_time).format(constants.DATE_TIME_FORMAT),
         meetingUrl: lessonRow.meeting_url,
         isRecurrent: lessonRow.is_recurrent,
-        isRecurrenceDateSelected: lessonRow.is_recurrence_date_selected,
         isCanceled: lessonRow.is_canceled
+      }
+      if (isMentor) {
+        lesson.isRecurrenceDateSelected = lessonRow.is_recurrence_date_selected;
       }
       if (lessonRow.end_recurrence_date_time != null) {
         lesson.endRecurrenceDateTime = moment.utc(lessonRow.end_recurrence_date_time).format(constants.DATE_TIME_FORMAT)
