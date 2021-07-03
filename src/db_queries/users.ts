@@ -47,7 +47,7 @@ export class Users {
   }
 
   async getUserFromDB(id: string): Promise<User> {
-    const getUserQuery = `SELECT u.id, u.name, u.email, o.name AS organization, f.id AS field_id, f.name AS field_name, u.is_mentor, u.is_available, u.available_from
+    const getUserQuery = `SELECT u.id AS user_id, u.name, u.email, o.id AS organization_id, o.name AS organization_name, f.id AS field_id, f.name AS field_name, u.is_mentor, u.is_available, u.available_from
       FROM users u
       JOIN fields f
       ON u.field_id = f.id
@@ -56,8 +56,8 @@ export class Users {
       WHERE u.id = $1`;
     const { rows }: pg.QueryResult = await pool.query(getUserQuery, [id]);
     const organization: Organization = {
-      id: rows[0].id,
-      name: rows[0].organization
+      id: rows[0].organization_id,
+      name: rows[0].organization_name
     };    
     const field: Field = {
       id: rows[0].field_id,
@@ -65,7 +65,7 @@ export class Users {
       subfields: await this.getUserSubfields(id)
     };
     return {
-      id: rows[0].id,
+      id: rows[0].user_id,
       name: rows[0].name,
       email: rows[0].email,
       organization: organization,
@@ -161,7 +161,7 @@ export class Users {
       await this.insertUserSubfields(id, field?.subfields as Array<Subfield>);
       await this.insertUserAvailabilities(id, availabilities as Array<Availability>);
       await this.updateUserLessonsAvailability(id, lessonsAvailability as LessonsAvailability);
-      response.status(200).send(`User modified with ID: ${id}`);
+      response.status(200).send(id);
     } catch (error) {
       response.status(400).send(error);
     }
