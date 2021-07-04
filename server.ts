@@ -62,7 +62,10 @@ app.get('/api/v1/users/:id/access_token', auth.getAccessToken);
 // Users
 app.get('/api/v1/users', users.getUsers);
 app.get('/api/v1/users/:id', users.getUserById);
+app.put('/api/v1/user', users.updateUser);
 app.put('/api/v1/users/:id', users.updateUser);
+// delete the currently logged in user. DELETE /api/v1/users/:id can be deleted once its replaced with DELETE /api/v1/user 
+app.delete('/api/v1/user', users.deleteUser);
 app.delete('/api/v1/users/:id', users.deleteUser);
 
 // Users goals

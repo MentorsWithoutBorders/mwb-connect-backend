@@ -20,6 +20,7 @@ import Time from '../models/time.model';
 import LessonsAvailability from '../models/lessons_availability';
 import TimeZone from '../models/timezone.model';
 import NotificationsSettings from '../models/notifications_settings.model';
+import RequestWithUser from '../models/request.model';
 
 const helpers: Helpers = new Helpers();
 const conn: Conn = new Conn();
@@ -241,7 +242,7 @@ export class Auth {
     }    
   }  
 
-  async verifyAccessToken(request: Request, response: Response, next: NextFunction): Promise<void> {
+  async verifyAccessToken(request: RequestWithUser, response: Response, next: NextFunction): Promise<void> {
     if (!request.headers.authorization) {
       response.status(401).send({'message': 'Token is not provided'});
       return ;
@@ -259,6 +260,7 @@ export class Auth {
         response.status(401).send({'message': 'The token you provided is invalid'});
         return ;
       }
+      request.auth = {userId: decoded.userId}
       next();
     } catch (error) {
       response.status(401).send(error);

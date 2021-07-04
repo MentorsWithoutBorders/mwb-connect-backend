@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import autoBind from 'auto-bind';
 import moment from 'moment'
 import pg from 'pg';
+import { validate as uuidValidate } from 'uuid';
 import { Conn } from '../db/conn';
 import { Auth } from './auth';
 import { constants } from '../utils/constants';
@@ -13,6 +14,8 @@ import Skill from '../models/skill.model';
 import Availability from '../models/availability.model';
 import Time from '../models/time.model';
 import LessonsAvailability from '../models/lessons_availability';
+import { ValidationError } from '../utils/errors';
+import RequestWithUser from '../models/request.model';
 
 const conn: Conn = new Conn();
 const pool = conn.pool;
@@ -25,11 +28,11 @@ export class Users {
 
   async getUsers(request: Request, response: Response): Promise<void> {
     try {
-      const getUsersQuery = 'SELECT * FROM users ORDER BY id ASC';
+      const getUsersQuery = 'SELECT id, name, email, field_id, organization_id, is_mentor, is_available, available_from, registered_on FROM users ORDER BY id ASC';
       const { rows }: pg.QueryResult = await pool.query(getUsersQuery);
       response.status(200).json(rows);
     } catch (error) {
-      response.status(400).send(error);
+      response.status(500).send(error);
     }   
   }
 
@@ -42,11 +45,18 @@ export class Users {
       }
       response.status(200).json(user);
     } catch (error) {
-      response.status(400).send(error);
+      if(error instanceof ValidationError){
+        response.status(400).send({message: error.message});
+      } else {
+        response.status(500).send(error);
+      }
     }
   }
 
   async getUserFromDB(id: string): Promise<User> {
+    if(!uuidValidate(id)){
+      throw new ValidationError("Invalid ID")
+    }
     const getUserQuery = `SELECT u.id AS user_id, u.name, u.email, o.id AS organization_id, o.name AS organization_name, f.id AS field_id, f.name AS field_name, u.is_mentor, u.is_available, u.available_from
       FROM users u
       JOIN fields f
@@ -55,6 +65,9 @@ export class Users {
       ON u.organization_id = o.id
       WHERE u.id = $1`;
     const { rows }: pg.QueryResult = await pool.query(getUserQuery, [id]);
+    if(rows.length === 0) {
+      throw new ValidationError("User not found");
+    }
     const organization: Organization = {
       id: rows[0].organization_id,
       name: rows[0].organization_name
@@ -148,8 +161,9 @@ export class Users {
     };
   }    
 
-  async updateUser(request: Request, response: Response): Promise<void> {
-    const id: string = request.params.id;
+  async updateUser(request: RequestWithUser, response: Response): Promise<void> {
+    // id will never be ""
+    const id: string = request.auth?.userId??"";
     const { name, email, field, isAvailable, availableFrom, availabilities, lessonsAvailability }: User = request.body
     try {
       const updateUserQuery = 'UPDATE users SET name = $1, email = $2, field_id = $3, is_available = $4, available_from = $5 WHERE id = $6';
@@ -163,7 +177,7 @@ export class Users {
       await this.updateUserLessonsAvailability(id, lessonsAvailability as LessonsAvailability);
       response.status(200).send(id);
     } catch (error) {
-      response.status(400).send(error);
+      response.status(500).send(error);
     }
   }
 
@@ -224,8 +238,8 @@ export class Users {
     await pool.query(updateLessonsAvailabilityQuery, values);
   }  
 
-  async deleteUser(request: Request, response: Response): Promise<void> {
-    const id: string = request.params.id;
+  async deleteUser(request: RequestWithUser, response: Response): Promise<void> {
+    const id: string = request.auth?.userId??"";
     try {
       const deleteQuery = 'DELETE FROM users WHERE id = $1';
       await pool.query(deleteQuery, [id]);
