@@ -122,7 +122,7 @@ export class Users {
       ON us.skill_id = s.id
       WHERE us.user_id = $1 AND us.subfield_id = $2
       ORDER BY us.skill_index ASC`;
-    const { rows }: pg.QueryResult = await pool.query(getSkillsQuery , [userId, subfieldId]);
+    const { rows }: pg.QueryResult = await pool.query(getSkillsQuery, [userId, subfieldId]);
     const skills: Array<Skill> = [];
     rows.forEach(function (row) {
       const skill: Skill = {
