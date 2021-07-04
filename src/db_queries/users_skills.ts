@@ -16,8 +16,8 @@ export class UsersSkills {
   }
 
   async getUserSkills(request: Request, response: Response): Promise<void> {
-    const userId: string = request.user.id as string;
-    const subfieldId: string = request.params.id;
+    const userId: string = request.params.user_id;
+    const subfieldId: string = request.params.subfield_id;
     try {
       const skills: Array<Skill> = await users.getUserSkills(userId, subfieldId);
       response.status(200).json(skills);
@@ -27,8 +27,8 @@ export class UsersSkills {
   }
 
   async addUserSkills(request: Request, response: Response): Promise<void> {
-    const userId: string = request.user.id as string;
-    const subfieldId: string = request.params.id;
+    const userId: string = request.params.user_id;
+    const subfieldId: string = request.params.subfield_id;
     const skills  = request.body;
     try {
       const currentSkills = await users.getUserSkills(userId, subfieldId);

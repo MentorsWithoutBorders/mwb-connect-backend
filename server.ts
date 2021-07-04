@@ -100,8 +100,8 @@ app.put('/api/v1/lessons/:id/update_recurrence', usersLessons.setLessonRecurrenc
 app.put('/api/v1/lessons/:id/mentor_presence', usersLessons.setLessonPresenceMentor);
 
 // Users skills
-app.get('/api/v1/user/subfields/:id/skills', usersSkills.getUserSkills);
-app.post('/api/v1/user/subfields/:id/skills', usersSkills.addUserSkills);
+app.get('/api/v1/users/:user_id/subfields/:subfield_id/skills', usersSkills.getUserSkills);
+app.post('/api/v1/users/:user_id/subfields/:subfield_id/skills', usersSkills.addUserSkills);
 
 // Users notifications settings
 app.get('/api/v1/notifications_settings', usersNotificationsSettings.getNotificationsSettings);
