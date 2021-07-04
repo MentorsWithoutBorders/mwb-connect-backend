@@ -20,7 +20,6 @@ import Time from '../models/time.model';
 import LessonsAvailability from '../models/lessons_availability';
 import TimeZone from '../models/timezone.model';
 import NotificationsSettings from '../models/notifications_settings.model';
-import RequestWithUser from '../models/request.model';
 
 const helpers: Helpers = new Helpers();
 const conn: Conn = new Conn();
@@ -233,7 +232,7 @@ export class Auth {
   }  
 
   async logout(request: Request, response: Response): Promise<void> {
-    const userId: string = request.params.id;
+    const userId: string = request.user.id as string;
     try {
       await this.revokeRefreshToken(userId || '');
       response.status(200).json()
@@ -242,7 +241,7 @@ export class Auth {
     }    
   }  
 
-  async verifyAccessToken(request: RequestWithUser, response: Response, next: NextFunction): Promise<void> {
+  async verifyAccessToken(request: Request, response: Response, next: NextFunction): Promise<void> {
     if (!request.headers.authorization) {
       response.status(401).send({'message': 'Token is not provided'});
       return ;
@@ -260,7 +259,7 @@ export class Auth {
         response.status(401).send({'message': 'The token you provided is invalid'});
         return ;
       }
-      request.auth = {userId: decoded.userId}
+      request.user = {id: decoded.userId}
       next();
     } catch (error) {
       response.status(401).send(error);
@@ -268,7 +267,7 @@ export class Auth {
   }
 
   async getAccessToken(request: Request, response: Response): Promise<void> {
-    const userId: string = request.params.id;
+    const userId: string = request.user.id as string;
     const refreshToken: string = request.query.refreshToken as string;
     try {
       const getRefreshTokenQuery = 'SELECT * FROM users_refresh_tokens WHERE user_id = $1 AND refresh_token = $2';

@@ -15,8 +15,8 @@ export class Skills {
   async getSkills(request: Request, response: Response): Promise<void> {
     const subfieldId: string = request.params.id;
     try {
-      const skills = this.getSkillsFromDB(subfieldId);
-      response.status(200).json(skills);
+      const skills = await this.getSkillsFromDB(subfieldId);
+      response.status(200).send(skills);
     } catch (error) {
       response.status(400).send(error);
     } 

@@ -20,7 +20,7 @@ export class UsersLessons {
   }
 
   async getNextLesson(request: Request, response: Response): Promise<void> {
-    const userId: string = request.params.id;
+    const userId: string = request.user.id as string;
     try {
       const lesson = await this.getNextLessonFromDB(userId);
       response.status(200).json(lesson);
@@ -202,7 +202,7 @@ export class UsersLessons {
   }
   
   async getPreviousLesson(request: Request, response: Response): Promise<void> {
-    const userId: string = request.params.id;
+    const userId: string = request.user.id as string;
     try {
       const isMentor = await this.getIsMentor(userId);
       const now = moment.utc();
@@ -290,8 +290,8 @@ export class UsersLessons {
 
 
   async cancelLesson(request: Request, response: Response): Promise<void> {
-    const userId: string = request.params.user_id;
-    const lessonId: string = request.params.lesson_id;
+    const userId: string = request.user.id as string;
+    const lessonId: string = request.params.id;
     const { dateTime }: Lesson = request.body
     try {
       if (dateTime) {
@@ -317,11 +317,12 @@ export class UsersLessons {
   }
 
   async setLessonMeetingUrl(request: Request, response: Response): Promise<void> {
+    const mentorId: string = request.user.id as string;
     const lessonId: string = request.params.id;
     const { meetingUrl }: Lesson = request.body
     try {
-      const updateLessonQuery = 'UPDATE users_lessons SET meeting_url = $1 WHERE id = $2';
-      await pool.query(updateLessonQuery, [meetingUrl, lessonId]);
+      const updateLessonQuery = 'UPDATE users_lessons SET meeting_url = $1 WHERE mentor_id = $2 AND id = $3';
+      await pool.query(updateLessonQuery, [meetingUrl, mentorId, lessonId]);
       response.status(200).send(`Lesson modified with ID: ${lessonId}`);
     } catch (error) {
       response.status(400).send(error);
@@ -329,12 +330,13 @@ export class UsersLessons {
   }
   
   async setLessonRecurrence(request: Request, response: Response): Promise<void> {
+    const mentorId: string = request.user.id as string;
     const lessonId: string = request.params.id;
     const { isRecurrent, endRecurrenceDateTime, isRecurrenceDateSelected }: Lesson = request.body
     try {
-      const updateLessonQuery = 'UPDATE users_lessons SET is_recurrent = $1, end_recurrence_date_time = $2, is_recurrence_date_selected = $3 WHERE id = $4';
+      const updateLessonQuery = 'UPDATE users_lessons SET is_recurrent = $1, end_recurrence_date_time = $2, is_recurrence_date_selected = $3 WHERE mentor_id = $4 AND id = $5';
       const endRecurrence = isRecurrent && endRecurrenceDateTime != undefined ? moment.utc(endRecurrenceDateTime) : null;
-      await pool.query(updateLessonQuery, [isRecurrent, endRecurrence, isRecurrenceDateSelected, lessonId]);
+      await pool.query(updateLessonQuery, [isRecurrent, endRecurrence, isRecurrenceDateSelected, mentorId, lessonId]);
       response.status(200).send(`Lesson modified with ID: ${lessonId}`);
     } catch (error) {
       response.status(400).send(error);

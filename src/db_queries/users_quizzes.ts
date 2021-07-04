@@ -26,7 +26,7 @@ export class UsersQuizzes {
   }
 
   async getQuizNumber(request: Request, response: Response): Promise<void> {
-    const userId: string = request.params.id;
+    const userId: string = request.user.id as string;
     try {
       const getQuizzesSettingsQuery = 'SELECT * FROM quizzes_settings';
       let { rows }: pg.QueryResult = await pool.query(getQuizzesSettingsQuery);
@@ -138,7 +138,7 @@ export class UsersQuizzes {
   }
 
   async addQuiz(request: Request, response: Response): Promise<void> {
-    const userId: string = request.params.id;
+    const userId: string = request.user.id as string;
     const { number, isCorrect, isClosed }: Quiz = request.body
     try {
       const insertQuizQuery = `INSERT INTO users_quizzes (user_id, number, is_correct, is_closed, date_time)

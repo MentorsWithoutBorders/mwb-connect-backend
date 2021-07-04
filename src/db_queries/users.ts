@@ -15,7 +15,6 @@ import Availability from '../models/availability.model';
 import Time from '../models/time.model';
 import LessonsAvailability from '../models/lessons_availability';
 import { ValidationError } from '../utils/errors';
-import RequestWithUser from '../models/request.model';
 
 const conn: Conn = new Conn();
 const pool = conn.pool;
@@ -39,13 +38,17 @@ export class Users {
   async getUserById(request: Request, response: Response): Promise<void> {
     const id: string = request.params.id;
     try {
-      const user: User = await this.getUserFromDB(id);
-      if (user.isMentor) {
-        user.lessonsAvailability = await this.getUserLessonsAvailability(id)        
+      if (id === request.user.id) {
+        const user: User = await this.getUserFromDB(id);
+        if (user.isMentor) {
+          user.lessonsAvailability = await this.getUserLessonsAvailability(id)        
+        }
+        response.status(200).json(user);
+      } else {
+        throw new Error('Invalid user id');
       }
-      response.status(200).json(user);
     } catch (error) {
-      if(error instanceof ValidationError){
+      if (error instanceof ValidationError) {
         response.status(400).send({message: error.message});
       } else {
         response.status(500).send(error);
@@ -54,8 +57,8 @@ export class Users {
   }
 
   async getUserFromDB(id: string): Promise<User> {
-    if(!uuidValidate(id)){
-      throw new ValidationError("Invalid ID")
+    if (!uuidValidate(id)) {
+      throw new ValidationError('Invalid user id');
     }
     const getUserQuery = `SELECT u.id AS user_id, u.name, u.email, o.id AS organization_id, o.name AS organization_name, f.id AS field_id, f.name AS field_name, u.is_mentor, u.is_available, u.available_from
       FROM users u
@@ -65,8 +68,8 @@ export class Users {
       ON u.organization_id = o.id
       WHERE u.id = $1`;
     const { rows }: pg.QueryResult = await pool.query(getUserQuery, [id]);
-    if(rows.length === 0) {
-      throw new ValidationError("User not found");
+    if (rows.length === 0) {
+      throw new ValidationError('User not found');
     }
     const organization: Organization = {
       id: rows[0].organization_id,
@@ -161,9 +164,8 @@ export class Users {
     };
   }    
 
-  async updateUser(request: RequestWithUser, response: Response): Promise<void> {
-    // id will never be ""
-    const id: string = request.auth?.userId??"";
+  async updateUser(request: Request, response: Response): Promise<void> {
+    const id: string = request.user.id as string;
     const { name, email, field, isAvailable, availableFrom, availabilities, lessonsAvailability }: User = request.body
     try {
       const updateUserQuery = 'UPDATE users SET name = $1, email = $2, field_id = $3, is_available = $4, available_from = $5 WHERE id = $6';
@@ -238,8 +240,8 @@ export class Users {
     await pool.query(updateLessonsAvailabilityQuery, values);
   }  
 
-  async deleteUser(request: RequestWithUser, response: Response): Promise<void> {
-    const id: string = request.auth?.userId??"";
+  async deleteUser(request: Request, response: Response): Promise<void> {
+    const id: string = request.user.id as string;
     try {
       const deleteQuery = 'DELETE FROM users WHERE id = $1';
       await pool.query(deleteQuery, [id]);

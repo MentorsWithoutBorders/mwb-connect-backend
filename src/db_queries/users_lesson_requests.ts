@@ -23,7 +23,7 @@ export class UsersLessonRequests {
   }
 
   async addLessonRequest(request: Request, response: Response): Promise<void> {
-    const studentId: string = request.params.id;
+    const studentId: string = request.user.id as string;
     try {
       const insertLessonRequestQuery = `INSERT INTO users_lesson_requests (student_id, sent_date_time)
         VALUES ($1, $2) RETURNING *`;
@@ -40,7 +40,7 @@ export class UsersLessonRequests {
   }
   
   async getLessonRequest(request: Request, response: Response): Promise<void> {
-    const userId: string = request.params.id;
+    const userId: string = request.user.id as string;
     try {
       const isMentor = await this.getIsMentor(userId);
       const userTypeId = isMentor ? 'ulr.mentor_id' : 'ulr.student_id';
@@ -91,16 +91,17 @@ export class UsersLessonRequests {
   }  
 
   async acceptLessonRequest(request: Request, response: Response): Promise<void> {
+    const mentorId: string = request.user.id as string;
     const lessonRequestId: string = request.params.id;
     const { meetingUrl, isRecurrent, endRecurrenceDateTime, isRecurrenceDateSelected }: Lesson = request.body
     try {
-      const getLessonRequestQuery = 'SELECT * FROM users_lesson_requests WHERE id = $1';
-      const { rows }: pg.QueryResult = await pool.query(getLessonRequestQuery, [lessonRequestId]);
+      const getLessonRequestQuery = 'SELECT * FROM users_lesson_requests WHERE mentor_id = $1 AND id = $2';
+      const { rows }: pg.QueryResult = await pool.query(getLessonRequestQuery, [mentorId, lessonRequestId]);
       const student: User = {
         id: rows[0].student_id
       };
       const mentor: User = {
-        id: rows[0].mentor_id
+        id: mentorId
       };
       const subfield: Subfield = {
         id: rows[0].subfield_id
@@ -118,7 +119,7 @@ export class UsersLessonRequests {
       }
       lesson = await this.addLesson(lesson);
       await this.addStudentSubfield(student.id as string, subfield.id);
-      await this.deleteLessonRequest(lessonRequestId);
+      await this.deleteLessonRequest(mentorId, lessonRequestId);
       response.status(200).send(lesson);
     } catch (error) {
       response.status(400).send(error);
@@ -161,16 +162,17 @@ export class UsersLessonRequests {
     }
   }
 
-  async deleteLessonRequest(id: string): Promise<void> {
-    const deleteLessonRequestQuery = 'DELETE FROM users_lesson_requests WHERE id = $1';
-    await pool.query(deleteLessonRequestQuery, [id]);
+  async deleteLessonRequest(mentorId: string, lessonId: string): Promise<void> {
+    const deleteLessonRequestQuery = 'DELETE FROM users_lesson_requests WHERE mentor_id = $1 AND id = $2';
+    await pool.query(deleteLessonRequestQuery, [mentorId, lessonId]);
   }
   
   async rejectLessonRequest(request: Request, response: Response): Promise<void> {
+    const mentorId: string = request.user.id as string;
     const lessonRequestId: string = request.params.id;
     try {
-      const updateLessonRequestQuery = 'UPDATE users_lesson_requests SET is_rejected = true WHERE id = $1';
-      await pool.query(updateLessonRequestQuery, [lessonRequestId]);
+      const updateLessonRequestQuery = 'UPDATE users_lesson_requests SET is_rejected = true WHERE mentor_id = $1 AND id = $2';
+      await pool.query(updateLessonRequestQuery, [mentorId, lessonRequestId]);
       response.status(200).send(`Lesson request modified with ID: ${lessonRequestId}`);
     } catch (error) {
       response.status(400).send(error);
@@ -178,10 +180,11 @@ export class UsersLessonRequests {
   }
   
   async cancelLessonRequest(request: Request, response: Response): Promise<void> {
+    const studentId: string = request.user.id as string;
     const lessonRequestId: string = request.params.id;
     try {
-      const updateLessonRequestQuery = 'UPDATE users_lesson_requests SET is_canceled = true WHERE id = $1';
-      await pool.query(updateLessonRequestQuery, [lessonRequestId]);
+      const updateLessonRequestQuery = 'UPDATE users_lesson_requests SET is_canceled = true WHERE student_id = $1 AND id = $2';
+      await pool.query(updateLessonRequestQuery, [studentId, lessonRequestId]);
       response.status(200).send(`Lesson request modified with ID: ${lessonRequestId}`);
     } catch (error) {
       response.status(400).send(error);

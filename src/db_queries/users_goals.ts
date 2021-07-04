@@ -14,7 +14,7 @@ export class UsersGoals {
   }
 
   async getGoals(request: Request, response: Response): Promise<void> {
-    const userId: string = request.params.id;
+    const userId: string = request.user.id as string;
     try {
       const goals: Array<Goal> = await this.getGoalsFromDB(userId);
       response.status(200).json(goals);
@@ -41,10 +41,11 @@ export class UsersGoals {
   }
 
   async getGoalById(request: Request, response: Response): Promise<void> {
-    const id: string = request.params.id;
+    const userId: string = request.user.id as string;
+    const goalId: string = request.params.id;
     try {
-      const getGoalQuery = `SELECT * FROM users_goals WHERE id = $1`;
-      const { rows }: pg.QueryResult = await pool.query(getGoalQuery, [id]);
+      const getGoalQuery = 'SELECT * FROM users_goals WHERE user_id = $1 AND id = $2';
+      const { rows }: pg.QueryResult = await pool.query(getGoalQuery, [userId, goalId]);
       const goal: Goal = {
         id: rows[0].id,
         text: rows[0].text
@@ -56,7 +57,7 @@ export class UsersGoals {
   }
 
   async addGoal(request: Request, response: Response): Promise<void> {
-    const userId: string = request.params.id;
+    const userId: string = request.user.id as string;
     const { text }: Goal = request.body;
     try {
       const goal: Goal = await this.addGoalToDB(userId, text);
@@ -84,33 +85,35 @@ export class UsersGoals {
   }
 
   async updateGoal(request: Request, response: Response): Promise<void> {
-    const id: string = request.params.id;
+    const userId: string = request.user.id as string;
+    const goalId: string = request.params.id;
     const { text }: Goal = request.body
     try {
-      const updateGoalQuery = 'UPDATE users_goals SET text = $1, date_time = $2 WHERE id = $3';
+      const updateGoalQuery = 'UPDATE users_goals SET text = $1, date_time = $2 WHERE user_id = $3 AND id = $4';
       const dateTime = moment.utc();
-      await pool.query(updateGoalQuery, [text, dateTime, id]);
-      response.status(200).send(`Goal modified with ID: ${id}`);
+      await pool.query(updateGoalQuery, [text, dateTime, userId, goalId]);
+      response.status(200).send(`Goal modified with ID: ${goalId}`);
     } catch (error) {
       response.status(400).send(error);
     }
   }
 
   async deleteGoal(request: Request, response: Response): Promise<void> {
-    const id: string = request.params.id;
+    const userId: string = request.user.id as string;
+    const goalId: string = request.params.id;
     try {
-      await this.deleteSteps(id);
-      const deleteGoalQuery = 'DELETE FROM users_goals WHERE id = $1';
-      await pool.query(deleteGoalQuery, [id]);
-      response.status(200).send(`Goal deleted with ID: ${id}`);
+      await this.deleteSteps(userId, goalId);
+      const deleteGoalQuery = 'DELETE FROM users_goals WHERE user_id = $1 AND id = $2';
+      await pool.query(deleteGoalQuery, [userId, goalId]);
+      response.status(200).send(`Goal deleted with ID: ${goalId}`);
     } catch (error) {
       response.status(400).send(error);
     }    
   }
 
-  async deleteSteps(goalId: string): Promise<void> {
-    const deleteStepsQuery = 'DELETE FROM users_steps WHERE goal_id = $1';
-    await pool.query(deleteStepsQuery, [goalId]);
+  async deleteSteps(userId: string, goalId: string): Promise<void> {
+    const deleteStepsQuery = 'DELETE FROM users_steps WHERE user_id = $1 AND goal_id = $2';
+    await pool.query(deleteStepsQuery, [userId, goalId]);
   }  
 }
 

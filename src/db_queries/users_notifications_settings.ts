@@ -13,7 +13,7 @@ export class UsersNotificationsSettings {
   }
 
   async getNotificationsSettings(request: Request, response: Response): Promise<void> {
-    const userId: string = request.params.id;
+    const userId: string = request.user.id as string;
     try {
       const getNotificationsSettingsQuery = 'SELECT * FROM users_notifications_settings WHERE user_id = $1';
       const { rows }: pg.QueryResult = await pool.query(getNotificationsSettingsQuery, [userId]);
@@ -29,7 +29,7 @@ export class UsersNotificationsSettings {
   }
 
   async updateNotificationsSettings(request: Request, response: Response): Promise<void> {
-    const userId: string = request.params.id;
+    const userId: string = request.user.id as string;
     const { enabled, time }: NotificationsSettings = request.body
     try {
       const updateNotificationsSettingsQuery = `UPDATE users_notifications_settings
