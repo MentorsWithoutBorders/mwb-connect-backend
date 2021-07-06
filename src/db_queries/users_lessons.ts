@@ -350,7 +350,6 @@ export class UsersLessons {
     const mentorId: string = request.user.id as string;
     const lessonId: string = request.params.id;
     const { isRecurrent, endRecurrenceDateTime, isRecurrenceDateSelected }: Lesson = request.body
-    const client: pg.PoolClient = await pool.connect();
     try {
       const updateLessonQuery = 'UPDATE users_lessons SET is_recurrent = $1, end_recurrence_date_time = $2, is_recurrence_date_selected = $3 WHERE mentor_id = $4 AND id = $5';
       const endRecurrence = isRecurrent && endRecurrenceDateTime != undefined ? moment.utc(endRecurrenceDateTime) : null;
@@ -590,7 +589,6 @@ export class UsersLessons {
   async setLessonPresenceMentor(request: Request, response: Response): Promise<void> {
     const lessonId: string = request.params.id;
     const { isMentorPresent }: Lesson = request.body
-    const client: pg.PoolClient = await pool.connect();
     try {
       const updateLessonQuery = 'UPDATE users_lessons SET is_mentor_present = $1 WHERE id = $2';
       await pool.query(updateLessonQuery, [isMentorPresent, lessonId]);
