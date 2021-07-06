@@ -103,7 +103,7 @@ app.put('/api/v1/lessons/:id/add_skills', usersLessons.addStudentsSkills);
 app.put('/api/v1/lessons/:id/mentor_presence', usersLessons.setLessonPresenceMentor);
 
 // Users skills
-app.get('/api/v1/user/subfields/:id/skills', usersSkills.getUserSkills);
+app.get('/api/v1/users/:user_id/subfields/:subfield_id/skills', usersSkills.getUserSkills);
 app.post('/api/v1/user/subfields/:id/skills', usersSkills.addUserSkills);
 
 // Users lessons notes
