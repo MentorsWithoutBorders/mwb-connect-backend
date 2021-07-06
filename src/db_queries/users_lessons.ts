@@ -5,6 +5,7 @@ import pg from 'pg';
 import { Conn } from '../db/conn';
 import { constants } from '../utils/constants';
 import { Users } from './users';
+import { UsersSkills } from './users_skills';
 import User from '../models/user.model';
 import Organization from '../models/organization.model';
 import Lesson from '../models/lesson.model';
@@ -13,6 +14,7 @@ import Subfield from '../models/subfield.model';
 const conn: Conn = new Conn();
 const pool = conn.pool;
 const users: Users = new Users();
+const usersSkills: UsersSkills = new UsersSkills();
 
 export class UsersLessons {
   constructor() {
@@ -268,7 +270,6 @@ export class UsersLessons {
       return moment.utc(lessonDateTime).format(constants.DATE_TIME_FORMAT);
     } 
   }
-  
 
   async getPreviousValidLessonDateTime(lesson: Lesson, userId: string, lessonDateTime: moment.Moment): Promise<moment.Moment> {
     let updatedLessonDateTime = lessonDateTime.clone();
@@ -280,7 +281,6 @@ export class UsersLessons {
     });
     return updatedLessonDateTime;
   }
-
 
   async cancelLesson(request: Request, response: Response): Promise<void> {
     const userId: string = request.user.id as string;
@@ -334,7 +334,28 @@ export class UsersLessons {
     } catch (error) {
       response.status(400).send(error);
     }
-  }   
+  } 
+  
+  async addStudentsSkills(request: Request, response: Response): Promise<void> {
+    const lessonId: string = request.params.id;
+    const skills = request.body;
+    try {
+      const students = await this.getLessonStudents(lessonId);
+      for (const student of students) {
+        const subfieldId = await this.getLessonSubfieldId(lessonId);
+        await usersSkills.addUserSkillsToDB(student.id as string, subfieldId, skills);
+      }
+      response.status(200).send('Students skills have been added');
+    } catch (error) {
+      response.status(400).send(error);
+    }
+  }
+  
+  async getLessonSubfieldId(lessonId: string): Promise<string> {
+    const getLessonQuery = `SELECT * FROM users_lessons WHERE id = $1`;
+    const { rows }: pg.QueryResult = await pool.query(getLessonQuery, [lessonId]);
+    return rows[0].subfield_id;
+  }    
   
   async setLessonPresenceMentor(request: Request, response: Response): Promise<void> {
     const lessonId: string = request.params.id;
