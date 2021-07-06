@@ -14,7 +14,7 @@ export class UsersLessonsNotes {
     autoBind(this);
   }
   
-  async getStudentLessonNotes(request: Request, response: Response): Promise<void> {
+  async getStudentLessonsNotes(request: Request, response: Response): Promise<void> {
     const studentId: string = request.params.id;
     try {
       const getLessonNotesQuery = `SELECT ul.date_time, uln.text
