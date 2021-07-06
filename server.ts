@@ -100,6 +100,7 @@ app.put('/api/v1/lessons/:id/cancel_lesson', usersLessons.cancelLesson);
 app.put('/api/v1/lessons/:id/change_meeting_url', usersLessons.setLessonMeetingUrl);
 app.put('/api/v1/lessons/:id/update_recurrence', usersLessons.setLessonRecurrence);
 app.put('/api/v1/lessons/:id/add_skills', usersLessons.addStudentsSkills);
+app.post('/api/v1/lessons/:id/lesson_notes', usersLessons.addStudentsLessonNotes);
 app.put('/api/v1/lessons/:id/mentor_presence', usersLessons.setLessonPresenceMentor);
 
 // Users skills
@@ -107,7 +108,6 @@ app.get('/api/v1/users/:user_id/subfields/:subfield_id/skills', usersSkills.getU
 app.post('/api/v1/user/subfields/:id/skills', usersSkills.addUserSkills);
 
 // Users lessons notes
-app.post('/api/v1/lesson_notes', usersLessonsNotes.addStudentsLessonNote);
 app.get('/api/v1/users/:id/lesson_notes', usersLessonsNotes.getStudentLessonNotes);
 
 // Users notifications settings

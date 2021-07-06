@@ -10,6 +10,7 @@ import User from '../models/user.model';
 import Organization from '../models/organization.model';
 import Lesson from '../models/lesson.model';
 import Subfield from '../models/subfield.model';
+import LessonNote from '../models/lesson_note.model';
 
 const conn: Conn = new Conn();
 const pool = conn.pool;
@@ -346,6 +347,23 @@ export class UsersLessons {
         await usersSkills.addUserSkillsToDB(student.id as string, subfieldId, skills);
       }
       response.status(200).send('Students skills have been added');
+    } catch (error) {
+      response.status(400).send(error);
+    }
+  }
+
+  async addStudentsLessonNotes(request: Request, response: Response): Promise<void> {
+    const lessonId: string = request.params.id;
+    const { text }: LessonNote = request.body
+    try {
+      const students = await this.getLessonStudents(lessonId);
+      for (const student of students) {
+        const insertLessonNoteQuery = `INSERT INTO users_lessons_notes (student_id, lesson_id, text)
+          VALUES ($1, $2, $3)`;
+        const values = [student.id, lessonId, text];
+        await pool.query(insertLessonNoteQuery, values);
+      }
+      response.status(200).send('Lesson notes have been added');
     } catch (error) {
       response.status(400).send(error);
     }
