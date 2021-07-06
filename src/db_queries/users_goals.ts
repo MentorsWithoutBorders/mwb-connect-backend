@@ -4,6 +4,7 @@ import moment from 'moment';
 import pg from 'pg';
 import { Conn } from '../db/conn';
 import Goal from '../models/goal.model';
+import { constants } from '../utils/constants';
 
 const conn: Conn = new Conn();
 const pool = conn.pool;
@@ -15,19 +16,26 @@ export class UsersGoals {
 
   async getGoals(request: Request, response: Response): Promise<void> {
     const userId: string = request.user.id as string;
+    const client: pg.PoolClient = await pool.connect();
     try {
-      const goals: Array<Goal> = await this.getGoalsFromDB(userId);
+      await client.query('BEGIN');
+      await client.query(constants.READ_ONLY_TRANSACTION); //https://www.postgresql.org/docs/9.3/sql-set-transaction.html
+      const goals: Array<Goal> = await this.getGoalsFromDB(userId, client);
       response.status(200).json(goals);
+      await client.query('COMMIT'); // https://stackoverflow.com/questions/309834/should-i-commit-or-rollback-a-read-transaction
     } catch (error) {
       response.status(400).send(error);
-    }   
+      await client.query('ROLLBACK');
+    } finally {
+      client.release();
+    }
   }
 
-  async getGoalsFromDB(userId: string): Promise<Array<Goal>> {
+  async getGoalsFromDB(userId: string, client: pg.PoolClient): Promise<Array<Goal>> {
     const getGoalsQuery = `SELECT * FROM users_goals 
       WHERE user_id = $1
       ORDER BY index ASC`;
-    const { rows }: pg.QueryResult = await pool.query(getGoalsQuery, [userId]);
+    const { rows }: pg.QueryResult = await client.query(getGoalsQuery, [userId]);
     const goals: Array<Goal> = [];
     for (const row of rows) {
       const goal: Goal = {
@@ -43,32 +51,46 @@ export class UsersGoals {
   async getGoalById(request: Request, response: Response): Promise<void> {
     const userId: string = request.user.id as string;
     const goalId: string = request.params.id;
+    const getGoalQuery = 'SELECT * FROM users_goals WHERE user_id = $1 AND id = $2';
+    const client: pg.PoolClient = await pool.connect();
     try {
-      const getGoalQuery = 'SELECT * FROM users_goals WHERE user_id = $1 AND id = $2';
-      const { rows }: pg.QueryResult = await pool.query(getGoalQuery, [userId, goalId]);
+      await client.query('BEGIN');
+      await client.query(constants.READ_ONLY_TRANSACTION);
+      const { rows }: pg.QueryResult = await client.query(getGoalQuery, [userId, goalId]);
       const goal: Goal = {
         id: rows[0].id,
         text: rows[0].text
       };
       response.status(200).json(goal);
+      await client.query('COMMIT');
     } catch (error) {
+      console.log(error);
       response.status(400).send(error);
+      await client.query('ROLLBACK');
+    } finally {
+      client.release();
     }
   }
 
   async addGoal(request: Request, response: Response): Promise<void> {
     const userId: string = request.user.id as string;
     const { text }: Goal = request.body;
+    const client: pg.PoolClient = await pool.connect();
     try {
-      const goal: Goal = await this.addGoalToDB(userId, text);
+      await client.query('BEGIN');
+      const goal: Goal = await this.addGoalToDB(userId, text, client);
       response.status(200).send(goal);
+      await client.query('COMMIT');
     } catch (error) {
       response.status(400).send(error);
+      await client.query('ROLLBACK');
+    } finally {
+      client.release();
     }
   }
 
-  async addGoalToDB(userId: string, text: string): Promise<Goal> {
-    const goals: Array<Goal> = await this.getGoalsFromDB(userId);
+  async addGoalToDB(userId: string, text: string, client: pg.PoolClient): Promise<Goal> {
+    const goals: Array<Goal> = await this.getGoalsFromDB(userId, client);
     const insertGoalQuery = `INSERT INTO users_goals (user_id, text, index, date_time)
       VALUES ($1, $2, $3, $4) RETURNING *`;
     const dateTime = moment.utc();
@@ -77,7 +99,7 @@ export class UsersGoals {
       index = goals[goals.length-1].index as number + 1;
     }
     const values = [userId, text, index, dateTime];        
-    const { rows }: pg.QueryResult = await pool.query(insertGoalQuery, values);
+    const { rows }: pg.QueryResult = await client.query(insertGoalQuery, values);
     return {
       id: rows[0].id,
       text: rows[0].text
@@ -88,32 +110,44 @@ export class UsersGoals {
     const userId: string = request.user.id as string;
     const goalId: string = request.params.id;
     const { text }: Goal = request.body
+    const client: pg.PoolClient = await pool.connect();
+    const updateGoalQuery = 'UPDATE users_goals SET text = $1, date_time = $2 WHERE user_id = $3 AND id = $4';
+    const dateTime = moment.utc();
     try {
-      const updateGoalQuery = 'UPDATE users_goals SET text = $1, date_time = $2 WHERE user_id = $3 AND id = $4';
-      const dateTime = moment.utc();
-      await pool.query(updateGoalQuery, [text, dateTime, userId, goalId]);
+      await client.query('BEGIN');
+      await client.query(updateGoalQuery, [text, dateTime, userId, goalId]);
       response.status(200).send(`Goal modified with ID: ${goalId}`);
+      await client.query('COMMIT');
     } catch (error) {
       response.status(400).send(error);
+      await client.query('ROLLBACK');
+    } finally {
+      client.release();
     }
   }
 
   async deleteGoal(request: Request, response: Response): Promise<void> {
     const userId: string = request.user.id as string;
     const goalId: string = request.params.id;
+    const deleteGoalQuery = 'DELETE FROM users_goals WHERE user_id = $1 AND id = $2';
+    const client: pg.PoolClient = await pool.connect();
     try {
-      await this.deleteSteps(userId, goalId);
-      const deleteGoalQuery = 'DELETE FROM users_goals WHERE user_id = $1 AND id = $2';
-      await pool.query(deleteGoalQuery, [userId, goalId]);
+      await client.query('BEGIN');
+      await this.deleteSteps(userId, goalId, client);
+      await client.query(deleteGoalQuery, [userId, goalId]);
       response.status(200).send(`Goal deleted with ID: ${goalId}`);
+      await client.query('COMMIT');
     } catch (error) {
+      console.log(error);
       response.status(400).send(error);
-    }    
+      await client.query('ROLLBACK');
+    } finally {
+      client.release();
+    }
   }
 
-  async deleteSteps(userId: string, goalId: string): Promise<void> {
+  async deleteSteps(userId: string, goalId: string, client: pg.PoolClient): Promise<void> {
     const deleteStepsQuery = 'DELETE FROM users_steps WHERE user_id = $1 AND goal_id = $2';
-    await pool.query(deleteStepsQuery, [userId, goalId]);
+    await client.query(deleteStepsQuery, [userId, goalId]);
   }  
 }
-

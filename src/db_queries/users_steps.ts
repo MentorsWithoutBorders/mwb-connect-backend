@@ -40,17 +40,24 @@ export class UsersSteps {
   async getStepById(request: Request, response: Response): Promise<void> {
     const userId: string = request.user.id as string;
     const stepId: string = request.params.id;
+    const client: pg.PoolClient = await pool.connect();
     try {
-      const step: Step = await this.getStepByIdFromDB(userId, stepId);
+      await client.query('BEGIN');
+      await client.query(constants.READ_ONLY_TRANSACTION);
+      const step: Step = await this.getStepByIdFromDB(userId, stepId, client);
       response.status(200).json(step);
+      await client.query('COMMIT');
     } catch (error) {
       response.status(400).send(error);
+      await client.query('ROLLBACK');
+    } finally {
+      client.release();
     }
   }
 
-  async getStepByIdFromDB(userId: string, stepId: string): Promise<Step> {
+  async getStepByIdFromDB(userId: string, stepId: string, client: pg.PoolClient): Promise<Step> {
     const getStepQuery = `SELECT * FROM users_steps WHERE user_id = $1 AND id = $2`;
-    const { rows }: pg.QueryResult = await pool.query(getStepQuery, [userId, stepId]);
+    const { rows }: pg.QueryResult = await client.query(getStepQuery, [userId, stepId]);
     let step: Step = {};
     if (rows[0]) {    
       step = {
@@ -67,19 +74,26 @@ export class UsersSteps {
 
   async getLastStepAdded(request: Request, response: Response): Promise<void> {
     const userId: string = request.user.id as string;
+    const client: pg.PoolClient = await pool.connect();
     try {
-      const step: Step = await this.getLastStepAddedFromDB(userId);
+      await client.query('BEGIN');
+      await client.query(constants.READ_ONLY_TRANSACTION);
+      const step: Step = await this.getLastStepAddedFromDB(userId, client);
       response.status(200).json(step);
+      await client.query('COMMIT');
     } catch (error) {
       response.status(400).send(error);
+      await client.query('ROLLBACK');
+    } finally {
+      client.release();
     }
   }
   
-  async getLastStepAddedFromDB(userId: string): Promise<Step> {
+  async getLastStepAddedFromDB(userId: string, client: pg.PoolClient): Promise<Step> {
     const getStepQuery = `SELECT * FROM users_steps 
       WHERE user_id = $1
       ORDER BY date_time DESC LIMIT 1`;
-    const { rows }: pg.QueryResult = await pool.query(getStepQuery, [userId]);
+    const { rows }: pg.QueryResult = await client.query(getStepQuery, [userId]);
     let step: Step = {};
     if (rows[0]) {
       step = {
@@ -121,38 +135,51 @@ export class UsersSteps {
     const userId: string = request.user.id as string;
     const stepId: string = request.params.id;
     const { text, index, level, parentId }: Step = request.body
+    const client: pg.PoolClient = await pool.connect();
     try {
+      await client.query('BEGIN');
       const dateTime = moment.utc().format(constants.DATE_TIME_FORMAT);
-      await this.updateStepInDB(userId, stepId, text as string, index as number, level as number, parentId as string, dateTime);
+      await this.updateStepInDB(userId, stepId, text as string, index as number, level as number, parentId as string, dateTime, client);
       response.status(200).send(`Step modified with ID: ${stepId}`);
+      await client.query('COMMIT');
     } catch (error) {
+      console.log(error);
       response.status(400).send(error);
+      await client.query('ROLLBACK');
+    } finally {
+      client.release();
     }
   }
 
-  async updateStepInDB(userId: string, stepId: string, text: string, index: number, level: number, parentId: string, dateTime: string): Promise<void> {
+  async updateStepInDB(userId: string, stepId: string, text: string, index: number, level: number, parentId: string, dateTime: string, client: pg.PoolClient): Promise<void> {
     const updateStepQuery = 'UPDATE users_steps SET text = $1, index = $2, level = $3, parent_id = $4, date_time = $5 WHERE user_id = $6 AND id = $7';
-    await pool.query(updateStepQuery, [text, index, level, parentId, dateTime, userId, stepId]);    
+    await client.query(updateStepQuery, [text, index, level, parentId, dateTime, userId, stepId]);    
   }
 
   async deleteStep(request: Request, response: Response): Promise<void> {
     const userId: string = request.user.id as string;
     const stepId: string = request.params.id;
+    const client: pg.PoolClient = await pool.connect();
     try {
-      const stepToDelete = await this.getStepByIdFromDB(userId, stepId);
+      await client.query('BEGIN');
+      const stepToDelete = await this.getStepByIdFromDB(userId, stepId, client);
       const { dateTime }: Step = stepToDelete;
-      const lastStepAddedBeforeDelete = await this.getLastStepAddedFromDB(userId);
+      const lastStepAddedBeforeDelete = await this.getLastStepAddedFromDB(userId, client);
       const deleteStepQuery = 'DELETE FROM users_steps WHERE user_id = $1 AND id = $2';
-      await pool.query(deleteStepQuery, [userId, stepId]);
+      await client.query(deleteStepQuery, [userId, stepId]);
 
       if (lastStepAddedBeforeDelete.id == stepId) {
-        const lastStepAdded = await this.getLastStepAddedFromDB(userId);
+        const lastStepAdded = await this.getLastStepAddedFromDB(userId, client);
         const { id, text, index, level, parentId }: Step = lastStepAdded;
-        await this.updateStepInDB(userId, id as string, text as string, index as number, level as number, parentId as string, dateTime as string);
+        await this.updateStepInDB(userId, id as string, text as string, index as number, level as number, parentId as string, dateTime as string, client);
       }
       response.status(200).send(`Step deleted with ID: ${stepId}`);
+      await client.query('COMMIT');
     } catch (error) {
       response.status(400).send(error);
+      await client.query('ROLLBACK');
+    } finally {
+      client.release();
     }    
   }
 }

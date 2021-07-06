@@ -12,6 +12,7 @@ export class Subfields {
     autoBind(this);
   }
 
+  // not considered for transactions yet
   async getSubfields(request: Request, response: Response): Promise<void> {
     const fieldId: string = request.params.id;
     try {

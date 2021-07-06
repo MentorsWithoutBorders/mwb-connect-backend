@@ -12,6 +12,7 @@ export class UsersNotificationsSettings {
     autoBind(this);
   }
 
+  // not considered for transactions yet
   async getNotificationsSettings(request: Request, response: Response): Promise<void> {
     const userId: string = request.user.id as string;
     try {
@@ -28,6 +29,7 @@ export class UsersNotificationsSettings {
     } 
   }
 
+  // not considered for transactions yet
   async updateNotificationsSettings(request: Request, response: Response): Promise<void> {
     const userId: string = request.user.id as string;
     const { enabled, time }: NotificationsSettings = request.body

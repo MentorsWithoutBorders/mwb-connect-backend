@@ -14,6 +14,7 @@ export class Fields {
     autoBind(this);
   }
 
+  // not considered for transactions yet
   async getFields(request: Request, response: Response): Promise<void> {
     try {
       const getQuery = 'SELECT * FROM fields ORDER BY id ASC';
@@ -33,6 +34,7 @@ export class Fields {
     }   
   }
 
+  // not considered for transactions yet
   async getSubfields(fieldId: string): Promise<Array<Subfield>> {
     const getSubfieldsQuery = `SELECT s.id, s.name
       FROM subfields s
@@ -53,6 +55,7 @@ export class Fields {
     return subfields;
   }
   
+  // not considered for transactions yet
   async getSkills(subfieldId: string): Promise<Array<Skill>> {
     const getSkillsQuery = `SELECT s.id, s.name
       FROM skills s

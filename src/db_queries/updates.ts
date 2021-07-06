@@ -12,6 +12,7 @@ export class Updates {
     autoBind(this);
   }
 
+  // not considered for transactions yet
   async getUpdates(request: Request, response: Response): Promise<void> {
     try {
       const getUpdatesQuery = 'SELECT * FROM updates';

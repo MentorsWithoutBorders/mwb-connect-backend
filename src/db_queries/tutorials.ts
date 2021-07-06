@@ -12,6 +12,7 @@ export class Tutorials {
     autoBind(this);
   }
 
+  // not considered for transactions yet
   async getTutorials(request: Request, response: Response): Promise<void> {
     try {
       const getTutorialsQuery = 'SELECT * FROM tutorials ORDER BY index';
@@ -30,6 +31,7 @@ export class Tutorials {
     } 
   }
 
+  // not considered for transactions yet
   async getTutorialSections(id: string): Promise<Array<string>> {
     const getTutorialSectionsQuery = `SELECT * FROM tutorials_sections 
       WHERE tutorial_id = $1

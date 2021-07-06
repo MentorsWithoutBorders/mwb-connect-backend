@@ -17,6 +17,7 @@ export class UsersQuizzes {
     autoBind(this);
   }
 
+  // not considered for transactions yet
   async getQuizNumber(request: Request, response: Response): Promise<void> {
     const userId: string = request.user.id as string;
     try {
@@ -173,6 +174,7 @@ export class UsersQuizzes {
     return quizzesSetNumber;
   }
 
+  // not considered for transactions yet
   async addQuiz(request: Request, response: Response): Promise<void> {
     const userId: string = request.user.id as string;
     const { number, isCorrect, isClosed }: Quiz = request.body

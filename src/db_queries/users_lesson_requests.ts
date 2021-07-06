@@ -22,6 +22,7 @@ export class UsersLessonRequests {
     autoBind(this);
   }
 
+  
   async addLessonRequest(request: Request, response: Response): Promise<void> {
     const studentId: string = request.user.id as string;
     try {
@@ -94,9 +95,11 @@ export class UsersLessonRequests {
     const mentorId: string = request.user.id as string;
     const lessonRequestId: string = request.params.id;
     const { meetingUrl, isRecurrent, endRecurrenceDateTime, isRecurrenceDateSelected }: Lesson = request.body
+    const getLessonRequestQuery = 'SELECT * FROM users_lesson_requests WHERE mentor_id = $1 AND id = $2';
+    const client: pg.PoolClient = await pool.connect();
     try {
-      const getLessonRequestQuery = 'SELECT * FROM users_lesson_requests WHERE mentor_id = $1 AND id = $2';
-      const { rows }: pg.QueryResult = await pool.query(getLessonRequestQuery, [mentorId, lessonRequestId]);
+      await client.query('BEGIN');
+      const { rows }: pg.QueryResult = await client.query(getLessonRequestQuery, [mentorId, lessonRequestId]);
       const student: User = {
         id: rows[0].student_id
       };
@@ -117,22 +120,26 @@ export class UsersLessonRequests {
         endRecurrenceDateTime: endRecurrenceDateTime,
         isRecurrenceDateSelected: isRecurrenceDateSelected
       }
-      lesson = await this.addLesson(lesson);
-      await this.addStudentSubfield(student.id as string, subfield.id as string);
-      await this.deleteLessonRequest(mentorId, lessonRequestId);
+      lesson = await this.addLesson(lesson, client);
+      await this.addStudentSubfield(student.id as string, subfield.id, client);
+      await this.deleteLessonRequest(mentorId, lessonRequestId, client);
       response.status(200).send(lesson);
+      await client.query('COMMIT');
     } catch (error) {
       response.status(400).send(error);
+      await client.query('ROLLBACK');
+    } finally {
+      client.release();
     }
   }
   
-  async addLesson(lesson: Lesson): Promise<Lesson> {
+  async addLesson(lesson: Lesson, client: pg.PoolClient): Promise<Lesson> {
     const insertLessonQuery = `INSERT INTO users_lessons (mentor_id, subfield_id, date_time, meeting_url, is_recurrent, end_recurrence_date_time, is_recurrence_date_selected)
       VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`;
     const dateTime = moment.utc(lesson.dateTime);
     const endRecurrence = lesson.isRecurrent && lesson.endRecurrenceDateTime != undefined ? moment.utc(lesson.endRecurrenceDateTime) : null;
     const values = [lesson.mentor?.id, lesson.subfield?.id, dateTime, lesson.meetingUrl, lesson.isRecurrent, endRecurrence, lesson.isRecurrenceDateSelected];
-    const { rows }: pg.QueryResult = await pool.query(insertLessonQuery, values);
+    const { rows }: pg.QueryResult = await client.query(insertLessonQuery, values);
     const addedLesson = {
       id: rows[0].id
     }
@@ -140,31 +147,31 @@ export class UsersLessonRequests {
     if (lesson.students != null) {
       student = lesson.students[0];
     }
-    await this.addStudent(addedLesson.id as string, student.id as string);
-    return usersLessons.getNextLessonFromDB(lesson.mentor?.id as string);
+    await this.addStudent(addedLesson.id as string, student.id as string, client);
+    return usersLessons.getNextLessonFromDB(lesson.mentor?.id as string, client);
   }
 
-  async addStudent(lessonId: string, studentId: string): Promise<void> {
+  async addStudent(lessonId: string, studentId: string, client: pg.PoolClient): Promise<void> {
     const insertStudentQuery = `INSERT INTO users_lessons_students (lesson_id, student_id)
       VALUES ($1, $2)`;
     const values = [lessonId, studentId];
-    await pool.query(insertStudentQuery, values);          
+    await client.query(insertStudentQuery, values);          
   }  
 
-  async addStudentSubfield(studentId: string, subfieldId: string): Promise<void> {
+  async addStudentSubfield(studentId: string, subfieldId: string, client: pg.PoolClient): Promise<void> {
     const getSubfieldQuery = 'SELECT * FROM users_subfields WHERE user_id = $1';
-    const { rows }: pg.QueryResult = await pool.query(getSubfieldQuery, [studentId]);
+    const { rows }: pg.QueryResult = await client.query(getSubfieldQuery, [studentId]);
     if (!rows[0]) {
       const insertSubfieldQuery = `INSERT INTO users_subfields (user_id, subfield_id)
         VALUES ($1, $2)`;
       const values = [studentId, subfieldId];
-      await pool.query(insertSubfieldQuery, values);          
+      await client.query(insertSubfieldQuery, values);          
     }
   }
 
-  async deleteLessonRequest(mentorId: string, lessonId: string): Promise<void> {
+  async deleteLessonRequest(mentorId: string, lessonId: string, client: pg.PoolClient): Promise<void> {
     const deleteLessonRequestQuery = 'DELETE FROM users_lesson_requests WHERE mentor_id = $1 AND id = $2';
-    await pool.query(deleteLessonRequestQuery, [mentorId, lessonId]);
+    await client.query(deleteLessonRequestQuery, [mentorId, lessonId]);
   }
   
   async rejectLessonRequest(request: Request, response: Response): Promise<void> {
