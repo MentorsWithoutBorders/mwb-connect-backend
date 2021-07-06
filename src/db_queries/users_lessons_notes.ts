@@ -4,23 +4,28 @@ import moment from 'moment';
 import autoBind from 'auto-bind';
 import { Conn } from '../db/conn';
 import { constants } from '../utils/constants';
+import { UsersLessons } from './users_lessons';
 import LessonNote from '../models/lesson_note.model';
 
 const conn: Conn = new Conn();
 const pool = conn.pool;
+const usersLessons: UsersLessons = new UsersLessons();
 
 export class UsersLessonsNotes {
   constructor() {
     autoBind(this);
   }
 
-  async addLessonNote(request: Request, response: Response): Promise<void> {
-    const { studentId, lessonId, text }: LessonNote = request.body
+  async addStudentsLessonNote(request: Request, response: Response): Promise<void> {
+    const { lessonId, text }: LessonNote = request.body
     try {
-      const insertLessonNoteQuery = `INSERT INTO users_lessons_notes (student_id, lesson_id, text)
-        VALUES ($1, $2, $3)`;
-      const values = [studentId, lessonId, text];
-      await pool.query(insertLessonNoteQuery, values);
+      const students = await usersLessons.getLessonStudents(lessonId as string);
+      for (const student of students) {
+        const insertLessonNoteQuery = `INSERT INTO users_lessons_notes (student_id, lesson_id, text)
+          VALUES ($1, $2, $3)`;
+        const values = [student.id, lessonId, text];
+        await pool.query(insertLessonNoteQuery, values);
+      }
       response.status(200).send('Lesson note has been added');
     } catch (error) {
       response.status(400).send(error);

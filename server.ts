@@ -106,7 +106,7 @@ app.get('/api/v1/users/:user_id/subfields/:subfield_id/skills', usersSkills.getU
 app.post('/api/v1/users/:user_id/subfields/:subfield_id/skills', usersSkills.addUserSkills);
 
 // Users lessons notes
-app.post('/api/v1/lessons_notes', usersLessonsNotes.addLessonNote);
+app.post('/api/v1/lessons_notes', usersLessonsNotes.addStudentsLessonNote);
 app.get('/api/v1/users/:id/lesson_notes', usersLessonsNotes.getStudentLessonNotes);
 
 // Users notifications settings
