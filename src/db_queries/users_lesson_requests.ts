@@ -42,7 +42,10 @@ export class UsersLessonRequests {
   
   async getLessonRequest(request: Request, response: Response): Promise<void> {
     const userId: string = request.user.id as string;
+    const client: pg.PoolClient = await pool.connect();
     try {
+      await client.query("BEGIN");
+      await client.query(constants.READ_ONLY_TRANSACTION);
       const isMentor = await this.getIsMentor(userId);
       const userTypeId = isMentor ? 'ulr.mentor_id' : 'ulr.student_id';
       const getLessonRequestQuery = `SELECT ulr.id, ulr.student_id, ulr.subfield_id, ulr.sent_date_time, ulr.lesson_date_time, s.name AS subfield_name, ulr.is_canceled
@@ -51,7 +54,7 @@ export class UsersLessonRequests {
         ON ulr.subfield_id = s.id
         WHERE ${userTypeId} = $1
         ORDER BY ulr.sent_date_time DESC LIMIT 1`;
-      const { rows }: pg.QueryResult = await pool.query(getLessonRequestQuery, [userId]);
+      const { rows }: pg.QueryResult = await client.query(getLessonRequestQuery, [userId]);
       let lessonRequest: LessonRequest = {};
       if (rows[0]) {
         const subfield: Subfield = {
@@ -70,7 +73,7 @@ export class UsersLessonRequests {
           isCanceled: rows[0].is_canceled,
         }
         if (isMentor) {
-          const user: User = await users.getUserFromDB(rows[0].student_id);
+          const user: User = await users.getUserFromDB(rows[0].student_id, client);
           const student: User = {
             id: user.id as string,
             name: user.name as string,
@@ -80,8 +83,12 @@ export class UsersLessonRequests {
         } 
       }   
       response.status(200).json(lessonRequest);
+      await client.query("COMMIT");
     } catch (error) {
-      response.status(400).send(error);
+      response.status(500).send(error);
+      await client.query("ROLLBACK");
+    } finally {
+      client.release();
     }
   }
 

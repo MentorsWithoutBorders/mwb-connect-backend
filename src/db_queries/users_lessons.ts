@@ -34,10 +34,16 @@ export class UsersLessons {
     const userId: string = request.user.id as string;
     const client: pg.PoolClient = await pool.connect();
     try {
+      await client.query("BEGIN");
+      await client.query(constants.READ_ONLY_TRANSACTION);
       const lesson = await this.getNextLessonFromDB(userId, client);
       response.status(200).json(lesson);
+      await client.query("COMMIT");
     } catch (error) {
-      response.status(400).send(error);
+      response.status(500).send(error);
+      await client.query("ROLLBACK");
+    } finally {
+      client.release();
     }
   }
 
@@ -82,7 +88,7 @@ export class UsersLessons {
         students = await this.getLessonStudents(lessonRow.id, client);
       }
     }
-    return this.setLesson(lessonRow, students, isMentor);
+    return this.setLesson(lessonRow, students, isMentor, client);
   }
 
   async getNextLessonDateTime(lesson: Lesson, userId: string, client: pg.PoolClient): Promise<string | undefined> {
@@ -164,7 +170,7 @@ export class UsersLessons {
     return students;  
   }
 
-  async setLesson(lessonRow: pg.QueryResultRow, students: Array<User>, isMentor: boolean): Promise<Lesson> {
+  async setLesson(lessonRow: pg.QueryResultRow, students: Array<User>, isMentor: boolean, client: pg.PoolClient): Promise<Lesson> {
     let lesson: Lesson = {};
     if (lessonRow) {    
       const subfield: Subfield = {
@@ -188,7 +194,7 @@ export class UsersLessons {
       if (isMentor) {
         lesson.students = students;
       } else {
-        const user: User = await users.getUserFromDB(lessonRow.mentor_id);
+        const user: User = await users.getUserFromDB(lessonRow.mentor_id, client);
         const mentor: User = {
           id: user.id as string,
           name: user.name as string,
@@ -210,6 +216,8 @@ export class UsersLessons {
     const userId: string = request.user.id as string;
     const client: pg.PoolClient = await pool.connect();
     try {
+      await client.query("BEGIN");
+      await client.query(constants.READ_ONLY_TRANSACTION);
       const isMentor = await this.getIsMentor(userId, client);
       const now = moment.utc();
       let getPreviousLessonQuery = '';
@@ -230,7 +238,7 @@ export class UsersLessons {
           WHERE uls.student_id = $1 AND ul.date_time::timestamp < $2
           ORDER BY ul.date_time DESC LIMIT 1`;      
       }
-      const { rows }: pg.QueryResult = await pool.query(getPreviousLessonQuery, [userId, now]);
+      const { rows }: pg.QueryResult = await client.query(getPreviousLessonQuery, [userId, now]);
       let lessonRow = rows[0];
       let students: Array<User> = [];
       let lesson: Lesson = {};
@@ -243,22 +251,26 @@ export class UsersLessons {
         if (lessonRow.end_recurrence_date_time != null) {
           lesson.endRecurrenceDateTime = moment.utc(lessonRow.end_recurrence_date_time).format(constants.DATE_TIME_FORMAT);
         }
-        const lessonDateTime = await this.getPreviousLessonDateTime(lesson, userId);
+        const lessonDateTime = await this.getPreviousLessonDateTime(lesson, userId, client);
         if (lessonDateTime == undefined) {
           lessonRow = null;
         } else {
           lessonRow.date_time = lessonDateTime;
-          students = await this.getLessonStudents(lessonRow.id);
+          students = await this.getLessonStudents(lessonRow.id, client);
         }
       }
-      lesson = await this.setLesson(lessonRow, students, isMentor);
+      lesson = await this.setLesson(lessonRow, students, isMentor, client);
       response.status(200).json(lesson);
+      await client.query("COMMIT");
     } catch (error) {
-      response.status(400).send(error);
+      response.status(500).send(error);
+      await client.query("ROLLBACK");
+    } finally {
+      client.release();
     }
   }
   
-  async getPreviousLessonDateTime(lesson: Lesson, userId: string): Promise<string | undefined> {
+  async getPreviousLessonDateTime(lesson: Lesson, userId: string, client: pg.PoolClient): Promise<string | undefined> {
     const now = moment.utc();
     const endRecurrenceDateTime = moment.utc(lesson.endRecurrenceDateTime);
     let lessonDateTime = moment.utc(lesson.dateTime);
@@ -267,7 +279,7 @@ export class UsersLessons {
         lessonDateTime = lessonDateTime.add(7, 'd');
       }
       lessonDateTime = lessonDateTime.subtract(7, 'd');
-      const previousValidLessonDateTime = await this.getPreviousValidLessonDateTime(lesson, userId, lessonDateTime);
+      const previousValidLessonDateTime = await this.getPreviousValidLessonDateTime(lesson, userId, lessonDateTime, client);
       if (endRecurrenceDateTime.isAfter(now)) {
         if (previousValidLessonDateTime.isBefore(now)) {
           return moment.utc(previousValidLessonDateTime).format(constants.DATE_TIME_FORMAT);
@@ -282,9 +294,9 @@ export class UsersLessons {
     } 
   }
 
-  async getPreviousValidLessonDateTime(lesson: Lesson, userId: string, lessonDateTime: moment.Moment): Promise<moment.Moment> {
+  async getPreviousValidLessonDateTime(lesson: Lesson, userId: string, lessonDateTime: moment.Moment, client: pg.PoolClient): Promise<moment.Moment> {
     let updatedLessonDateTime = lessonDateTime.clone();
-    const lessonsCanceledDateTimes = await this.getLessonsCanceledDateTimes(userId, lesson.id as string);
+    const lessonsCanceledDateTimes = await this.getLessonsCanceledDateTimes(userId, lesson.id as string, client);
     lessonsCanceledDateTimes.slice().reverse().forEach(function (dateTime) {
       if (moment.utc(dateTime).isSame(moment.utc(updatedLessonDateTime))) {
         updatedLessonDateTime = updatedLessonDateTime.subtract(7, 'd');
@@ -324,8 +336,7 @@ export class UsersLessons {
   async setLessonMeetingUrl(request: Request, response: Response): Promise<void> {
     const mentorId: string = request.user.id as string;
     const lessonId: string = request.params.id;
-    const { meetingUrl }: Lesson = request.body
-    const client: pg.PoolClient = await pool.connect();
+    const { meetingUrl }: Lesson = request.body;
     try {
       const updateLessonQuery = 'UPDATE users_lessons SET meeting_url = $1 WHERE mentor_id = $2 AND id = $3';
       await pool.query(updateLessonQuery, [meetingUrl, mentorId, lessonId]);
