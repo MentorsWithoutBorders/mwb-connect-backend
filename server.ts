@@ -63,7 +63,7 @@ app.get('/api/v1/users/:id/access_token', auth.getAccessToken);
 
 // Users
 app.get('/api/v1/users', users.getUsers);
-app.get('/api/v1/users/:id', users.getUserById);
+app.get('/api/v1/user', users.getUser);
 app.put('/api/v1/user', users.updateUser);
 app.delete('/api/v1/user', users.deleteUser);
 

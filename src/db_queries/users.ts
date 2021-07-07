@@ -27,37 +27,25 @@ export class Users {
 
   async getUsers(request: Request, response: Response): Promise<void> {
     const getUsersQuery = 'SELECT id, name, email, field_id, organization_id, is_mentor, is_available, available_from, registered_on FROM users ORDER BY id ASC';
-    const client: pg.PoolClient = await pool.connect();
     try {
-      await client.query("BEGIN");
-      await client.query(constants.READ_ONLY_TRANSACTION);
-      const { rows }: pg.QueryResult = await client.query(getUsersQuery);
+      const { rows }: pg.QueryResult = await pool.query(getUsersQuery);
       response.status(200).json(rows);
-      await client.query("COMMIT");
     } catch (error) {
       response.status(500).send(error);
-      await client.query("ROLLBACK");
-    } finally {
-      client.release();
     }
   }
 
-  async getUserById(request: Request, response: Response): Promise<void> {
-    const id: string = request.params.id;
+  async getUser(request: Request, response: Response): Promise<void> {
     const client: pg.PoolClient = await pool.connect();
     try {
       await client.query("BEGIN");
       await client.query(constants.READ_ONLY_TRANSACTION);
-      if (id === request.user.id) {
-        const user: User = await this.getUserFromDB(id, client);
-        if (user.isMentor) {
-          user.lessonsAvailability = await this.getUserLessonsAvailability(id, client)        
-        }
-        response.status(200).json(user);
-        await client.query("COMMIT");
-      } else {
-        throw new Error('Invalid user id');
+      const user: User = await this.getUserFromDB(request.user.id as string, client);
+      if (user.isMentor) {
+        user.lessonsAvailability = await this.getUserLessonsAvailability(request.user.id as string, client)        
       }
+      response.status(200).json(user);
+      await client.query("COMMIT");
     } catch (error) {
       if (error instanceof ValidationError) {
         response.status(400).send({message: error.message});

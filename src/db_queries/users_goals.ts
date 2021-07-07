@@ -64,7 +64,6 @@ export class UsersGoals {
       response.status(200).json(goal);
       await client.query('COMMIT');
     } catch (error) {
-      console.log(error);
       response.status(400).send(error);
       await client.query('ROLLBACK');
     } finally {
