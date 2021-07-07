@@ -8,7 +8,6 @@ import { UsersQuizzes } from './src/db_queries/users_quizzes';
 import { UsersLessonRequests } from './src/db_queries/users_lesson_requests';
 import { UsersLessons } from './src/db_queries/users_lessons';
 import { UsersSkills } from './src/db_queries/users_skills';
-import { UsersLessonsNotes } from './src/db_queries/users_lessons_notes';
 import { UsersNotificationsSettings } from './src/db_queries/users_notifications_settings';
 import { UsersSupportRequests } from './src/db_queries/users_support_requests';
 import { Fields } from './src/db_queries/fields';
@@ -28,7 +27,6 @@ const usersQuizzes: UsersQuizzes = new UsersQuizzes();
 const usersLessonRequests: UsersLessonRequests = new UsersLessonRequests();
 const usersLessons: UsersLessons = new UsersLessons();
 const usersSkills: UsersSkills = new UsersSkills();
-const usersLessonsNotes: UsersLessonsNotes = new UsersLessonsNotes();
 const usersNotificationsSettings: UsersNotificationsSettings = new UsersNotificationsSettings();
 const usersSupportRequests: UsersSupportRequests = new UsersSupportRequests();
 const fields: Fields = new Fields();
@@ -101,14 +99,13 @@ app.put('/api/v1/lessons/:id/change_meeting_url', usersLessons.setLessonMeetingU
 app.put('/api/v1/lessons/:id/update_recurrence', usersLessons.setLessonRecurrence);
 app.put('/api/v1/lessons/:id/add_skills', usersLessons.addStudentsSkills);
 app.post('/api/v1/lessons/:id/lesson_notes', usersLessons.addStudentsLessonNotes);
+app.get('/api/v1/users/:id/lessons_notes', usersLessons.getStudentLessonNotes);
+app.get('/api/v1/lessons/:id/lesson_guide_tutorials', usersLessons.getLessonGuideTutorials);
 app.put('/api/v1/lessons/:id/mentor_presence', usersLessons.setLessonPresenceMentor);
 
 // Users skills
 app.get('/api/v1/users/:user_id/subfields/:subfield_id/skills', usersSkills.getUserSkills);
 app.post('/api/v1/user/subfields/:id/skills', usersSkills.addUserSkills);
-
-// Users lessons notes
-app.get('/api/v1/users/:id/lessons_notes', usersLessonsNotes.getStudentLessonsNotes);
 
 // Users notifications settings
 app.get('/api/v1/notifications_settings', usersNotificationsSettings.getNotificationsSettings);

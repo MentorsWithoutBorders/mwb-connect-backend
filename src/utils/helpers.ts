@@ -29,4 +29,8 @@ export class Helpers {
   generateRefreshToken(): string {
     return uuidv4();
   }
+
+  checkArraysEqual(a1: Array<string>, a2: Array<string>): boolean {
+    return JSON.stringify(a1) == JSON.stringify(a2);
+  }  
 }

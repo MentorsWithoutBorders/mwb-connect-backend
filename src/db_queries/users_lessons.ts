@@ -4,18 +4,24 @@ import moment from 'moment';
 import pg from 'pg';
 import { Conn } from '../db/conn';
 import { constants } from '../utils/constants';
+import { Helpers } from '../utils/helpers';
 import { Users } from './users';
 import { UsersSkills } from './users_skills';
+import { Skills } from './skills';
 import User from '../models/user.model';
 import Organization from '../models/organization.model';
 import Lesson from '../models/lesson.model';
 import Subfield from '../models/subfield.model';
 import LessonNote from '../models/lesson_note.model';
+import GuideTutorial from '../models/guide_tutorial.model';
+import Skill from '../models/skill.model';
 
 const conn: Conn = new Conn();
 const pool = conn.pool;
+const helpers: Helpers = new Helpers();
 const users: Users = new Users();
 const usersSkills: UsersSkills = new UsersSkills();
+const skillsQueries: Skills = new Skills();
 
 export class UsersLessons {
   constructor() {
@@ -373,7 +379,137 @@ export class UsersLessons {
     const getLessonQuery = `SELECT * FROM users_lessons WHERE id = $1`;
     const { rows }: pg.QueryResult = await pool.query(getLessonQuery, [lessonId]);
     return rows[0].subfield_id;
+  }
+
+  async getStudentLessonNotes(request: Request, response: Response): Promise<void> {
+    const studentId: string = request.params.id;
+    try {
+      const getLessonNotesQuery = `SELECT ul.date_time, uln.text
+        FROM users_lessons_notes uln
+        JOIN users_lessons ul
+        ON uln.lesson_id = ul.id
+        WHERE uln.student_id = $1
+        ORDER BY ul.date_time DESC`;
+      const { rows }: pg.QueryResult = await pool.query(getLessonNotesQuery, [studentId]);
+      const lessonNotes: Array<LessonNote> = [];
+      rows.forEach(function (row) {
+        const lessonNote: LessonNote = {
+          dateTime: moment.utc(rows[0].date_time).format(constants.DATE_TIME_FORMAT),
+          text: row.text
+        };
+        lessonNotes.push(lessonNote);
+      });      
+      response.status(200).json(lessonNotes);
+    } catch (error) {
+      response.status(400).send(error);
+    }   
   }    
+  
+  async getLessonGuideTutorials(request: Request, response: Response): Promise<void> {
+    const userId: string = request.user.id as string;
+    const lessonId: string = request.params.id;
+    try {
+      const user = await users.getUserFromDB(userId);
+      const subfieldId = await this.getLessonSubfieldId(lessonId);
+      const subfields = user.field?.subfields as Array<Subfield>;
+      const skills = await this.getLessonSkills(subfieldId, subfields);
+      const guideTutorialsInitial: Array<GuideTutorial> = [];
+      for (const skill of skills) {
+        const getGuideTutorialsQuery = `SELECT gst.skill_id, gst.tutorial_index, gt.tutorial_url
+          FROM guides_tutorials gt
+          JOIN guides_skills_tutorials gst
+          ON gt.id = gst.tutorial_id
+          WHERE gst.skill_id = $1
+          ORDER BY gst.tutorial_index ASC`;
+        const { rows }: pg.QueryResult = await pool.query(getGuideTutorialsQuery, [skill.id]);
+        for (const row of rows) {
+          const guideTutorial: GuideTutorial = {
+            skills: [row.skill_id],
+            tutorialUrls: [row.tutorial_url]
+          }
+          guideTutorialsInitial.push(guideTutorial);
+        }
+      }
+      const guideTutorials = this.groupGuideTutorials(guideTutorialsInitial);
+      for (const guideTutorial of guideTutorials) {
+        guideTutorial.skills = this.replaceSkillsIdsWithNames(guideTutorial.skills, skills);
+      }      
+      response.status(200).json(guideTutorials);
+    } catch (error) {
+      response.status(400).send(error);
+    }   
+  }
+
+  async getLessonSkills(subfieldId: string, subfields: Array<Subfield>): Promise<Array<Skill>> {
+    let skills: Array<Skill> = [];
+    for (const subfield of subfields) {
+      if (subfield.id === subfieldId) {
+        skills = subfield.skills as Array<Skill>;
+        break;
+      }
+    }
+    const subfieldSkills = await skillsQueries.getSkillsFromDB(subfieldId);
+    const orderedSkills: Array<Skill> = []; 
+    for (const subfieldSkill of subfieldSkills) {
+      for (const skill of skills) {
+        if (skill.id === subfieldSkill.id) {
+          orderedSkills.push(skill);
+          break;
+        }
+      }
+    }
+    return orderedSkills;
+  }
+
+  groupGuideTutorials(guideTutorialsInitial: Array<GuideTutorial>): Array<GuideTutorial> {
+    const tutorialUrls: Array<string> = [];
+    for (const guideTutorial of guideTutorialsInitial) {
+      if (!tutorialUrls.includes(guideTutorial.tutorialUrls[0])) {
+        tutorialUrls.push(guideTutorial.tutorialUrls[0]);
+      }
+    }
+    return this.addGuideTutorials(guideTutorialsInitial, tutorialUrls);
+  }
+
+  addGuideTutorials(guideTutorialsInitial: Array<GuideTutorial>, tutorialUrls: Array<string>): Array<GuideTutorial> {
+    const guideTutorials: Array<GuideTutorial> = [];
+    for (const tutorialUrl of tutorialUrls) {
+      const skillsIds: Array<string> = [];
+      for (const guideTutorial of guideTutorialsInitial) {
+        if (guideTutorial.tutorialUrls[0] === tutorialUrl) {
+          skillsIds.push(guideTutorial.skills[0]);
+        }
+      }    
+      let found = false;
+      for (const guideTutorial of guideTutorials) {
+        if (helpers.checkArraysEqual(guideTutorial.skills, skillsIds)) {
+          guideTutorial.tutorialUrls.push(tutorialUrl);
+          found = true;
+          break;
+        }
+      }
+      if (!found) {
+        guideTutorials.push({
+          skills: skillsIds,
+          tutorialUrls: [tutorialUrl]
+        })
+      }
+    }
+    return guideTutorials;   
+  }
+  
+  replaceSkillsIdsWithNames(skillsIds: Array<string>, skills: Array<Skill>): Array<string> {
+    const skillsNames: Array<string> = [];
+    for (const skill of skills) {
+      for (const skillId of skillsIds) {
+        if (skillId === skill.id) {
+          skillsNames.push(skill.name);
+          break;
+        }
+      }
+    }
+    return skillsNames;
+  }
   
   async setLessonPresenceMentor(request: Request, response: Response): Promise<void> {
     const lessonId: string = request.params.id;
