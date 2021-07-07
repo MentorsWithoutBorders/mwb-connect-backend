@@ -363,23 +363,31 @@ export class UsersLessons {
   async addStudentsSkills(request: Request, response: Response): Promise<void> {
     const lessonId: string = request.params.id;
     const skills = request.body;
+    const client: pg.PoolClient = await pool.connect();
     try {
-      const students = await this.getLessonStudents(lessonId);
+      await client.query("BEGIN");
+      const students = await this.getLessonStudents(lessonId, client);
       for (const student of students) {
         const subfieldId = await this.getLessonSubfieldId(lessonId);
-        await usersSkills.addUserSkillsToDB(student.id as string, subfieldId, skills);
+        await usersSkills.addUserSkillsToDB(student.id as string, subfieldId, skills, client);
       }
       response.status(200).send('Students skills have been added');
+      await client.query('COMMIT');
     } catch (error) {
       response.status(400).send(error);
+      await client.query('ROLLBACK');
+    } finally {
+      client.release();
     }
   }
 
   async addStudentsLessonNotes(request: Request, response: Response): Promise<void> {
     const lessonId: string = request.params.id;
     const { text }: LessonNote = request.body
+    const client: pg.PoolClient = await pool.connect();
     try {
-      const students = await this.getLessonStudents(lessonId);
+      await client.query("BEGIN");
+      const students = await this.getLessonStudents(lessonId, client);
       for (const student of students) {
         const insertLessonNoteQuery = `INSERT INTO users_lessons_notes (student_id, lesson_id, text)
           VALUES ($1, $2, $3)`;
@@ -387,9 +395,13 @@ export class UsersLessons {
         await pool.query(insertLessonNoteQuery, values);
       }
       response.status(200).send('Lesson notes have been added');
+      await client.query('COMMIT');
     } catch (error) {
       response.status(400).send(error);
-    }
+      await client.query('ROLLBACK');
+    } finally {
+      client.release();
+    }  
   }
   
   async getLessonSubfieldId(lessonId: string): Promise<string> {

@@ -39,8 +39,9 @@ export class UsersSkills {
     const userId: string = request.user.id as string;
     const subfieldId: string = request.params.id;
     const skills = request.body;
+    const client: pg.PoolClient = await pool.connect();
     try {
-      await this.addUserSkillsToDB(userId, subfieldId, skills);
+      await this.addUserSkillsToDB(userId, subfieldId, skills, client);
       response.status(200).send('User skills have been added');
       await client.query('COMMIT');
     } catch (error) {
@@ -49,6 +50,23 @@ export class UsersSkills {
     } finally {
       client.release();
     }  
+  }
+
+  async addUserSkillsToDB(userId: string, subfieldId: string, skills: Array<string>, client: pg.PoolClient): Promise<void> {
+    const currentSkills = await users.getUserSkills(userId, subfieldId, client);
+    const subfieldSkills = await skillsQueries.getSkillsFromDB(subfieldId, client);
+    const skillsToAdd: Array<Skill> = [];
+    for (const subfieldSkill of subfieldSkills) {
+      if (currentSkills.some(currentSkill => currentSkill.id === subfieldSkill.id) ||
+          skills.some(skill => skill === subfieldSkill.id)) {
+        skillsToAdd.push(subfieldSkill);
+      }
+    }
+    await this.deleteSkills(userId, client);
+    for (let i = 1; i <= skillsToAdd.length; i++) {
+      skillsToAdd[i-1].index = i;
+      await this.addSkillToDB(userId, subfieldId, skillsToAdd[i-1], client);
+    }    
   }
 
   async deleteSkills(userId: string, client: pg.PoolClient): Promise<void> {
