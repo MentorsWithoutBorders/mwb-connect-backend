@@ -21,9 +21,9 @@ import LessonsAvailability from '../models/lessons_availability';
 import TimeZone from '../models/timezone.model';
 import NotificationsSettings from '../models/notifications_settings.model';
 
-const helpers: Helpers = new Helpers();
 const conn: Conn = new Conn();
 const pool = conn.pool;
+const helpers: Helpers = new Helpers();
 const usersGoals: UsersGoals = new UsersGoals();
 const usersTimeZones: UsersTimeZones = new UsersTimeZones();
 dotenv.config();

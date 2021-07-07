@@ -207,7 +207,7 @@ export class Users {
         VALUES ($1, $2, $3)`;
       await pool.query(insertSubfieldQuery, [userId, i+1, subfields[i].id]); 
       if (subfields[i].skills != null && (subfields[i].skills as Array<Skill>).length > 0) {
-        await this.updateUserSkills(userId, subfields[i].id, subfields[i].skills as Array<Skill>);
+        await this.updateUserSkills(userId, subfields[i].id as string, subfields[i].skills as Array<Skill>);
       }
     }
   }

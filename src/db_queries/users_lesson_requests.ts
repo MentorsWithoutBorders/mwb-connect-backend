@@ -118,7 +118,7 @@ export class UsersLessonRequests {
         isRecurrenceDateSelected: isRecurrenceDateSelected
       }
       lesson = await this.addLesson(lesson);
-      await this.addStudentSubfield(student.id as string, subfield.id);
+      await this.addStudentSubfield(student.id as string, subfield.id as string);
       await this.deleteLessonRequest(mentorId, lessonRequestId);
       response.status(200).send(lesson);
     } catch (error) {

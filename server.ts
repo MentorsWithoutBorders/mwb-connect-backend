@@ -95,12 +95,13 @@ app.put('/api/v1/lesson_requests/:id/cancel_lesson_request', usersLessonRequests
 app.get('/api/v1/next_lesson', usersLessons.getNextLesson);
 app.get('/api/v1/previous_lesson', usersLessons.getPreviousLesson);
 app.put('/api/v1/lessons/:id/cancel_lesson', usersLessons.cancelLesson);
-app.put('/api/v1/lessons/:id/change_meeting_url', usersLessons.setLessonMeetingUrl);
-app.put('/api/v1/lessons/:id/update_recurrence', usersLessons.setLessonRecurrence);
-app.put('/api/v1/lessons/:id/add_skills', usersLessons.addStudentsSkills);
-app.post('/api/v1/lessons/:id/lesson_notes', usersLessons.addStudentsLessonNotes);
+app.put('/api/v1/lessons/:id/meeting_url', usersLessons.setLessonMeetingUrl);
+app.put('/api/v1/lessons/:id/recurrence', usersLessons.setLessonRecurrence);
+app.put('/api/v1/lessons/:id/skills', usersLessons.addStudentsSkills);
+app.post('/api/v1/lessons/:id/notes', usersLessons.addStudentsLessonNotes);
 app.get('/api/v1/users/:id/lessons_notes', usersLessons.getStudentLessonNotes);
-app.get('/api/v1/lessons/:id/lesson_guide_tutorials', usersLessons.getLessonGuideTutorials);
+app.get('/api/v1/lessons/:id/guide_tutorials', usersLessons.getLessonGuideTutorials);
+app.get('/api/v1/lessons/:id/guide_recommendations', usersLessons.getLessonGuideRecommendations);
 app.put('/api/v1/lessons/:id/mentor_presence', usersLessons.setLessonPresenceMentor);
 
 // Users skills

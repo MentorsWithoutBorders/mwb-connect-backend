@@ -9,12 +9,14 @@ import { Users } from './users';
 import { UsersSkills } from './users_skills';
 import { Skills } from './skills';
 import User from '../models/user.model';
+import Field from '../models/field.model';
+import Subfield from '../models/subfield.model';
 import Organization from '../models/organization.model';
 import Lesson from '../models/lesson.model';
-import Subfield from '../models/subfield.model';
 import LessonNote from '../models/lesson_note.model';
 import GuideTutorial from '../models/guide_tutorial.model';
 import Skill from '../models/skill.model';
+import GuideRecommendation from '../models/guide_recommendation.model';
 
 const conn: Conn = new Conn();
 const pool = conn.pool;
@@ -403,7 +405,65 @@ export class UsersLessons {
     } catch (error) {
       response.status(400).send(error);
     }   
-  }    
+  }
+  
+  async getLessonGuideRecommendations(request: Request, response: Response): Promise<void> {
+    const userId: string = request.user.id as string;
+    const lessonId: string = request.params.id;
+    try {
+      const user = await users.getUserFromDB(userId);
+      const field = user.field;
+      const subfields = field?.subfields as Array<Subfield>;
+      const subfieldId = await this.getLessonSubfieldId(lessonId);
+      let lessonSubfield: Subfield = {};
+      const guideRecommendations: Array<GuideRecommendation> = [];
+      for (const subfield of subfields) {
+        if (subfield.id === subfieldId) {
+          lessonSubfield = subfield;
+          break;
+        }
+      }
+      guideRecommendations.push(await this.getGeneralGuideRecommendations());
+      guideRecommendations.push(await this.getFieldGuideRecommendations(field as Field));
+      guideRecommendations.push(await this.getSubfieldGuideRecommendations(lessonSubfield));
+      response.status(200).json(guideRecommendations);
+    } catch (error) {
+      response.status(400).send(error);
+    }   
+  }
+
+  async getGeneralGuideRecommendations(): Promise<GuideRecommendation> {
+    const getGuideRecommendationsQuery = `SELECT text
+      FROM guides_recommendations
+      WHERE field_id IS NULL AND subfield_id IS NULL`;
+    const { rows }: pg.QueryResult = await pool.query(getGuideRecommendationsQuery);
+    return {
+      type: 'General',
+      recommendations: rows[0].text.split(/\r?\n/)
+    }    
+  }
+
+  async getFieldGuideRecommendations(field: Field): Promise<GuideRecommendation> {
+    const getGuideRecommendationsQuery = `SELECT text
+      FROM guides_recommendations
+      WHERE field_id = $1`;
+    const { rows }: pg.QueryResult = await pool.query(getGuideRecommendationsQuery, [field.id]);
+    return {
+      type: field.name as string,
+      recommendations: rows[0].text.split(/\r?\n/)
+    }    
+  }
+  
+  async getSubfieldGuideRecommendations(subfield: Subfield): Promise<GuideRecommendation> {
+    const getGuideRecommendationsQuery = `SELECT text
+      FROM guides_recommendations
+      WHERE subfield_id = $1`;
+    const { rows }: pg.QueryResult = await pool.query(getGuideRecommendationsQuery, [subfield.id]);
+    return {
+      type: subfield.name as string,
+      recommendations: rows[0].text.split(/\r?\n/)
+    }    
+  }   
   
   async getLessonGuideTutorials(request: Request, response: Response): Promise<void> {
     const userId: string = request.user.id as string;
@@ -509,7 +569,7 @@ export class UsersLessons {
       }
     }
     return skillsNames;
-  }
+  }   
   
   async setLessonPresenceMentor(request: Request, response: Response): Promise<void> {
     const lessonId: string = request.params.id;
