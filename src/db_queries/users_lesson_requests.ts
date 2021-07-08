@@ -46,7 +46,7 @@ export class UsersLessonRequests {
     try {
       await client.query("BEGIN");
       await client.query(constants.READ_ONLY_TRANSACTION);
-      const isMentor = await this.getIsMentor(userId);
+      const isMentor = await this.getIsMentor(userId, client);
       const userTypeId = isMentor ? 'ulr.mentor_id' : 'ulr.student_id';
       const getLessonRequestQuery = `SELECT ulr.id, ulr.student_id, ulr.subfield_id, ulr.sent_date_time, ulr.lesson_date_time, s.name AS subfield_name, ulr.is_canceled
         FROM users_lesson_requests ulr
@@ -92,9 +92,9 @@ export class UsersLessonRequests {
     }
   }
 
-  async getIsMentor(userId: string): Promise<boolean> {
+  async getIsMentor(userId: string, client: pg.PoolClient): Promise<boolean> {
     const getUserQuery = 'SELECT * FROM users WHERE id = $1';
-    const { rows }: pg.QueryResult = await pool.query(getUserQuery, [userId]);
+    const { rows }: pg.QueryResult = await client.query(getUserQuery, [userId]);
     return rows[0].is_mentor;
   }  
 

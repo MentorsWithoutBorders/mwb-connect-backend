@@ -397,7 +397,7 @@ export class UsersLessons {
         const insertLessonNoteQuery = `INSERT INTO users_lessons_notes (student_id, lesson_id, text)
           VALUES ($1, $2, $3)`;
         const values = [student.id, lessonId, text];
-        await pool.query(insertLessonNoteQuery, values);
+        await client.query(insertLessonNoteQuery, values);
       }
       response.status(200).send('Lesson notes have been added');
       await client.query('COMMIT');
