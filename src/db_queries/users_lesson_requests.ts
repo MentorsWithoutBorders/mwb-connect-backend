@@ -128,7 +128,7 @@ export class UsersLessonRequests {
         isRecurrenceDateSelected: isRecurrenceDateSelected
       }
       lesson = await this.addLesson(lesson, client);
-      await this.addStudentSubfield(student.id as string, subfield.id, client);
+      await this.addStudentSubfield(student.id as string, subfield.id as string, client);
       await this.deleteLessonRequest(mentorId, lessonRequestId, client);
       response.status(200).send(lesson);
       await client.query('COMMIT');

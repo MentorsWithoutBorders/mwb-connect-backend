@@ -442,11 +442,14 @@ export class UsersLessons {
   async getLessonGuideRecommendations(request: Request, response: Response): Promise<void> {
     const userId: string = request.user.id as string;
     const lessonId: string = request.params.id;
+    const client: pg.PoolClient = await pool.connect();
     try {
-      const user = await users.getUserFromDB(userId);
+      await client.query("BEGIN");
+      await client.query(constants.READ_ONLY_TRANSACTION);
+      const user = await users.getUserFromDB(userId, client);
       const field = user.field;
       const subfields = field?.subfields as Array<Subfield>;
-      const subfieldId = await this.getLessonSubfieldId(lessonId);
+      const subfieldId = await this.getLessonSubfieldId(lessonId, client);
       let lessonSubfield: Subfield = {};
       const guideRecommendations: Array<GuideRecommendation> = [];
       for (const subfield of subfields) {
@@ -455,42 +458,45 @@ export class UsersLessons {
           break;
         }
       }
-      guideRecommendations.push(await this.getGeneralGuideRecommendations());
-      guideRecommendations.push(await this.getFieldGuideRecommendations(field as Field));
-      guideRecommendations.push(await this.getSubfieldGuideRecommendations(lessonSubfield));
+      guideRecommendations.push(await this.getGeneralGuideRecommendations(client));
+      guideRecommendations.push(await this.getFieldGuideRecommendations(field as Field, client));
+      guideRecommendations.push(await this.getSubfieldGuideRecommendations(lessonSubfield, client));
       response.status(200).json(guideRecommendations);
+      await client.query("COMMIT");
     } catch (error) {
-      response.status(400).send(error);
-    }   
+      await client.query("ROLLBACK");
+    } finally {
+      client.release();
+    }
   }
 
-  async getGeneralGuideRecommendations(): Promise<GuideRecommendation> {
+  async getGeneralGuideRecommendations( client: pg.PoolClient ): Promise<GuideRecommendation> {
     const getGuideRecommendationsQuery = `SELECT text
       FROM guides_recommendations
       WHERE field_id IS NULL AND subfield_id IS NULL`;
-    const { rows }: pg.QueryResult = await pool.query(getGuideRecommendationsQuery);
+    const { rows }: pg.QueryResult = await client.query(getGuideRecommendationsQuery);
     return {
       type: 'General',
       recommendations: rows[0].text.split(/\r?\n/)
     }    
   }
 
-  async getFieldGuideRecommendations(field: Field): Promise<GuideRecommendation> {
+  async getFieldGuideRecommendations(field: Field, client: pg.PoolClient): Promise<GuideRecommendation> {
     const getGuideRecommendationsQuery = `SELECT text
       FROM guides_recommendations
       WHERE field_id = $1`;
-    const { rows }: pg.QueryResult = await pool.query(getGuideRecommendationsQuery, [field.id]);
+    const { rows }: pg.QueryResult = await client.query(getGuideRecommendationsQuery, [field.id]);
     return {
       type: field.name as string,
       recommendations: rows[0].text.split(/\r?\n/)
     }    
   }
   
-  async getSubfieldGuideRecommendations(subfield: Subfield): Promise<GuideRecommendation> {
+  async getSubfieldGuideRecommendations(subfield: Subfield,client: pg.PoolClient): Promise<GuideRecommendation> {
     const getGuideRecommendationsQuery = `SELECT text
       FROM guides_recommendations
       WHERE subfield_id = $1`;
-    const { rows }: pg.QueryResult = await pool.query(getGuideRecommendationsQuery, [subfield.id]);
+    const { rows }: pg.QueryResult = await client.query(getGuideRecommendationsQuery, [subfield.id]);
     return {
       type: subfield.name as string,
       recommendations: rows[0].text.split(/\r?\n/)
@@ -500,11 +506,14 @@ export class UsersLessons {
   async getLessonGuideTutorials(request: Request, response: Response): Promise<void> {
     const userId: string = request.user.id as string;
     const lessonId: string = request.params.id;
+    const client: pg.PoolClient = await pool.connect();
     try {
-      const user = await users.getUserFromDB(userId);
-      const subfieldId = await this.getLessonSubfieldId(lessonId);
+      await client.query("BEGIN");
+      await client.query(constants.READ_ONLY_TRANSACTION);
+      const user = await users.getUserFromDB(userId, client);
+      const subfieldId = await this.getLessonSubfieldId(lessonId, client);
       const subfields = user.field?.subfields as Array<Subfield>;
-      const skills = await this.getLessonSkills(subfieldId, subfields);
+      const skills = await this.getLessonSkills(subfieldId, subfields, client);
       const guideTutorialsInitial: Array<GuideTutorial> = [];
       for (const skill of skills) {
         const getGuideTutorialsQuery = `SELECT gst.skill_id, gst.tutorial_index, gt.tutorial_url
@@ -513,7 +522,7 @@ export class UsersLessons {
           ON gt.id = gst.tutorial_id
           WHERE gst.skill_id = $1
           ORDER BY gst.tutorial_index ASC`;
-        const { rows }: pg.QueryResult = await pool.query(getGuideTutorialsQuery, [skill.id]);
+        const { rows }: pg.QueryResult = await client.query(getGuideTutorialsQuery, [skill.id]);
         for (const row of rows) {
           const guideTutorial: GuideTutorial = {
             skills: [row.skill_id],
@@ -527,12 +536,16 @@ export class UsersLessons {
         guideTutorial.skills = this.replaceSkillsIdsWithNames(guideTutorial.skills, skills);
       }      
       response.status(200).json(guideTutorials);
+      await client.query("COMMIT");
     } catch (error) {
       response.status(400).send(error);
-    }   
+      await client.query("ROLLBACK");
+    } finally {
+      client.release();
+    }  
   }
 
-  async getLessonSkills(subfieldId: string, subfields: Array<Subfield>): Promise<Array<Skill>> {
+  async getLessonSkills(subfieldId: string, subfields: Array<Subfield>, client: pg.PoolClient): Promise<Array<Skill>> {
     let skills: Array<Skill> = [];
     for (const subfield of subfields) {
       if (subfield.id === subfieldId) {
@@ -540,7 +553,7 @@ export class UsersLessons {
         break;
       }
     }
-    const subfieldSkills = await skillsQueries.getSkillsFromDB(subfieldId);
+    const subfieldSkills = await skillsQueries.getSkillsFromDB(subfieldId, client);
     const orderedSkills: Array<Skill> = []; 
     for (const subfieldSkill of subfieldSkills) {
       for (const skill of skills) {
