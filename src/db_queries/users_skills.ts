@@ -41,12 +41,15 @@ export class UsersSkills {
     const skills = request.body;
     const client: pg.PoolClient = await pool.connect();
     try {
+      await client.query('BEGIN');
       await this.addUserSkillsToDB(userId, subfieldId, skills, client);
       response.status(200).send('User skills have been added');
       await client.query('COMMIT');
     } catch (error) {
+      console.log(error)
       response.status(400).send(error);
       await client.query('ROLLBACK');
+      console.log("rolled back");
     } finally {
       client.release();
     }  

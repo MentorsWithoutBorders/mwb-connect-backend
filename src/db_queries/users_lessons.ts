@@ -311,25 +311,30 @@ export class UsersLessons {
     const { dateTime }: Lesson = request.body
     const client: pg.PoolClient = await pool.connect();
     try {
+      await client.query("BEGIN");
       if (dateTime) {
         const insertLessonCanceledQuery = `INSERT INTO users_lessons_canceled (user_id, lesson_id, lesson_date_time)
           VALUES ($1, $2, $3)`;
         const lessonDateTime = moment.utc(dateTime);
         const values = [userId, lessonId, lessonDateTime];
-        await pool.query(insertLessonCanceledQuery, values);        
+        await client.query(insertLessonCanceledQuery, values);        
       } else {
         const isMentor = await this.getIsMentor(userId, client);
         if (isMentor) {
           const updateMentorLessonQuery = 'UPDATE users_lessons SET is_canceled = true WHERE id = $1';
-          await pool.query(updateMentorLessonQuery, [lessonId]);
+          await client.query(updateMentorLessonQuery, [lessonId]);
         } else {
           const updateStudentLessonQuery = 'UPDATE users_lessons_students SET is_canceled = true  WHERE lesson_id = $1 AND student_id = $2';
-          await pool.query(updateStudentLessonQuery, [lessonId, userId]);
+          await client.query(updateStudentLessonQuery, [lessonId, userId]);
         }
       }
       response.status(200).send(`Lesson modified with ID: ${lessonId}`);
+      await client.query("COMMIT");
     } catch (error) {
       response.status(400).send(error);
+      await client.query("ROLLBACK");
+    } finally {
+      client.release();
     }
   }
 
@@ -368,7 +373,7 @@ export class UsersLessons {
       await client.query("BEGIN");
       const students = await this.getLessonStudents(lessonId, client);
       for (const student of students) {
-        const subfieldId = await this.getLessonSubfieldId(lessonId);
+        const subfieldId = await this.getLessonSubfieldId(lessonId, client);
         await usersSkills.addUserSkillsToDB(student.id as string, subfieldId, skills, client);
       }
       response.status(200).send('Students skills have been added');
@@ -404,9 +409,9 @@ export class UsersLessons {
     }  
   }
   
-  async getLessonSubfieldId(lessonId: string): Promise<string> {
+  async getLessonSubfieldId(lessonId: string, client: pg.PoolClient): Promise<string> {
     const getLessonQuery = `SELECT * FROM users_lessons WHERE id = $1`;
-    const { rows }: pg.QueryResult = await pool.query(getLessonQuery, [lessonId]);
+    const { rows }: pg.QueryResult = await client.query(getLessonQuery, [lessonId]);
     return rows[0].subfield_id;
   }
 
