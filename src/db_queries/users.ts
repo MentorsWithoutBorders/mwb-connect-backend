@@ -166,6 +166,7 @@ export class Users {
     };
   }    
 
+  // not tested for transactions as it will be modified
   async updateUser(request: Request, response: Response): Promise<void> {
     const id: string = request.user.id as string;
     const { name, email, field, isAvailable, availableFrom, availabilities, lessonsAvailability }: User = request.body
@@ -248,6 +249,7 @@ export class Users {
     await client.query(updateLessonsAvailabilityQuery, values);
   }  
 
+  // not tested for transactions yet.
   async deleteUser(request: Request, response: Response): Promise<void> {
     const id: string = request.user.id as string;
     const deleteQuery = 'DELETE FROM users WHERE id = $1';

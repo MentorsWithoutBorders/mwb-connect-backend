@@ -177,13 +177,11 @@ export class Auth {
       if (!rows[0]) {
         response.status(400).send({'message': 'The credentials you provided are incorrect'});
         await client.query('ROLLBACK');
-        client.release();
         return ;
       }
       if (!helpers.comparePassword(rows[0].password, password)) {
         response.status(400).send({'message': 'The credentials you provided are incorrect'});
         await client.query('ROLLBACK');
-        client.release();
         return ;
       }
       const userId: string = rows[0].id;

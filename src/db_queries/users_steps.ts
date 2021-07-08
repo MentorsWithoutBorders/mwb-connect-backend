@@ -153,9 +153,9 @@ export class UsersSteps {
 
   async updateStepInDB(userId: string, stepId: string, text: string, index: number, level: number, parentId: string, dateTime: string, client: pg.PoolClient): Promise<void> {
     const updateStepQuery = 'UPDATE users_steps SET text = $1, index = $2, level = $3, parent_id = $4, date_time = $5 WHERE user_id = $6 AND id = $7';
-    await client.query(updateStepQuery, [text, index, level, parentId, dateTime, userId, stepId]);    
+    await client.query(updateStepQuery, [text, index, level, parentId, dateTime, userId, stepId]);
   }
-
+  
   async deleteStep(request: Request, response: Response): Promise<void> {
     const userId: string = request.user.id as string;
     const stepId: string = request.params.id;
@@ -167,7 +167,6 @@ export class UsersSteps {
       const lastStepAddedBeforeDelete = await this.getLastStepAddedFromDB(userId, client);
       const deleteStepQuery = 'DELETE FROM users_steps WHERE user_id = $1 AND id = $2';
       await client.query(deleteStepQuery, [userId, stepId]);
-
       if (lastStepAddedBeforeDelete.id == stepId) {
         const lastStepAdded = await this.getLastStepAddedFromDB(userId, client);
         const { id, text, index, level, parentId }: Step = lastStepAdded;
