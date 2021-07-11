@@ -7,6 +7,7 @@ import { UsersSteps } from './src/db_queries/users_steps';
 import { UsersQuizzes } from './src/db_queries/users_quizzes';
 import { UsersLessonRequests } from './src/db_queries/users_lesson_requests';
 import { UsersLessons } from './src/db_queries/users_lessons';
+import { UsersCertificatesPauses } from './src/db_queries/users_certificates_pauses';
 import { UsersSkills } from './src/db_queries/users_skills';
 import { UsersNotificationsSettings } from './src/db_queries/users_notifications_settings';
 import { UsersSupportRequests } from './src/db_queries/users_support_requests';
@@ -26,6 +27,7 @@ const usersSteps: UsersSteps = new UsersSteps();
 const usersQuizzes: UsersQuizzes = new UsersQuizzes();
 const usersLessonRequests: UsersLessonRequests = new UsersLessonRequests();
 const usersLessons: UsersLessons = new UsersLessons();
+const usersCertificatesPauses: UsersCertificatesPauses = new UsersCertificatesPauses();
 const usersSkills: UsersSkills = new UsersSkills();
 const usersNotificationsSettings: UsersNotificationsSettings = new UsersNotificationsSettings();
 const usersSupportRequests: UsersSupportRequests = new UsersSupportRequests();
@@ -103,6 +105,10 @@ app.get('/api/v1/users/:id/lessons_notes', usersLessons.getStudentLessonNotes);
 app.get('/api/v1/lessons/:id/guide_tutorials', usersLessons.getLessonGuideTutorials);
 app.get('/api/v1/lessons/:id/guide_recommendations', usersLessons.getLessonGuideRecommendations);
 app.put('/api/v1/lessons/:id/mentor_presence', usersLessons.setLessonPresenceMentor);
+
+// Users certificates pauses
+app.get('/api/v1/certificate_pause', usersCertificatesPauses.getUserCertificatePause);
+app.post('/api/v1/certificate_pause', usersCertificatesPauses.addUserCertificatePause);
 
 // Users skills
 app.get('/api/v1/users/:user_id/subfields/:subfield_id/skills', usersSkills.getUserSkills);

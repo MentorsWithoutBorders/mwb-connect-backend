@@ -1,0 +1,47 @@
+import { Request, Response } from 'express';
+import autoBind from 'auto-bind';
+import pg from 'pg';
+import moment from 'moment'
+import { Conn } from '../db/conn';
+import CertificatePause from '../models/certificate_pause.model';
+
+const conn: Conn = new Conn();
+const pool = conn.pool;
+
+export class UsersCertificatesPauses {
+  constructor() {
+    autoBind(this);
+  }
+
+  async getUserCertificatePause(request: Request, response: Response): Promise<void> {
+    const userId: string = request.user.id as string;
+    try {
+      const getCertificatePauseQuery = `SELECT * FROM users_certificates_pauses 
+        WHERE user_id = $1 
+        ORDER BY pause_datetime DESC 
+        LIMIT 1`;
+      const { rows }: pg.QueryResult = await pool.query(getCertificatePauseQuery, [userId]);
+      const certificatePause: CertificatePause = {
+        isResuming: rows[0].is_resuming
+      }
+      response.status(200).send(certificatePause);
+    } catch (error) {
+      response.status(400).send(error);
+    }
+  }   
+
+  async addUserCertificatePause(request: Request, response: Response): Promise<void> {
+    const userId: string = request.user.id as string;
+    try {
+      const insertCertificatePauseQuery = `INSERT INTO users_certificates_pauses (user_id, pause_datetime, is_resuming)
+        VALUES ($1, $2, $3)`;
+      const pauseDateTime = moment.utc();
+      const values = [userId, pauseDateTime, false];        
+      await pool.query(insertCertificatePauseQuery, values);
+      response.status(200).send('Certificate pause inserted');
+    } catch (error) {
+      console.log(error)
+    }
+  }
+}
+
