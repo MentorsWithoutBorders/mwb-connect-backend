@@ -30,20 +30,22 @@ export class UsersQuizzes {
       let quizzes = await this.getQuizzes(userId);
       let quizNumber = 0;
       if (user.isMentor) {
-        const quizStartNumber = this.getQuizStartNumber(weekNumber, quizSettings.mentorWeeklyCount);
-        const quizEndNumber = this.getQuizEndNumber(weekNumber, quizSettings.mentorWeeklyCount);
+        const weeklyCount = quizSettings.mentorWeeklyCount;
+        const quizStartNumber = this.getQuizStartNumber(weekNumber, weeklyCount);
+        const quizEndNumber = this.getQuizEndNumber(weekNumber, weeklyCount);
         quizzes = this.getQuizzesBetweenDates(quizzes, weekStartDate, weekEndDate); 
-        quizNumber = this.calculateQuizNumber(quizzes, quizStartNumber, quizEndNumber);
+        quizNumber = this.calculateQuizNumber(quizzes, weeklyCount, quizStartNumber, quizEndNumber);
       } else {
         if (weekNumber <= constants.STUDENT_MAX_QUIZZES_SETS + constants.STUDENT_MAX_QUIZZES_SETS / 2 + 1) {
-          const quizzesSetNumber = this.getQuizzesSetNumber(quizzes, registeredOn, quizSettings.studentWeeklyCount);
-          const quizStartNumber = this.getQuizStartNumber(quizzesSetNumber, quizSettings.studentWeeklyCount);
-          const quizEndNumber = this.getQuizEndNumber(quizzesSetNumber, quizSettings.studentWeeklyCount);
+          const weeklyCount = quizSettings.studentWeeklyCount;
+          const quizzesSetNumber = this.getQuizzesSetNumber(quizzes, registeredOn, weeklyCount);
+          const quizStartNumber = this.getQuizStartNumber(quizzesSetNumber, weeklyCount);
+          const quizEndNumber = this.getQuizEndNumber(quizzesSetNumber, weeklyCount);
           quizzes = this.getQuizzesBetweenDates(quizzes, weekStartDate, weekEndDate); 
-          quizNumber = this.calculateQuizNumber(quizzes, quizStartNumber, quizEndNumber);
+          quizNumber = this.calculateQuizNumber(quizzes, weeklyCount, quizStartNumber, quizEndNumber);
         } else {
           const quizStartNumber = this.getQuizzesRemainingStartNumber(quizzes, registeredOn);
-          quizNumber = this.calculateQuizNumber(quizzes, quizStartNumber, quizSettings.studentWeeklyCount * 4);
+          quizNumber = this.calculateQuizNumber(quizzes, quizSettings.studentWeeklyCount, quizStartNumber, quizSettings.studentWeeklyCount * constants.WEEKS_PER_MONTH);
         }
       }
       response.status(200).json(quizNumber);
@@ -107,10 +109,11 @@ export class UsersQuizzes {
     return quizzesBetweenDates;
   }
 
-  calculateQuizNumber(quizzes: Array<Quiz>, quizStartNumber: number, quizEndNumber: number): number {
+  calculateQuizNumber(quizzes: Array<Quiz>, weeklyCount: number, quizStartNumber: number, quizEndNumber: number): number {
     let quizNumber = 0;
     const weekQuizzesSolved = this.getWeekQuizzesSolved(quizzes, quizStartNumber, quizEndNumber);
-    if (weekQuizzesSolved < quizEndNumber - quizStartNumber + 1) {
+    if (quizStartNumber < constants.WEEKS_PER_MONTH * weeklyCount && 
+        weekQuizzesSolved < quizEndNumber - quizStartNumber + 1) {
       if (weekQuizzesSolved == 0) {
         quizNumber = quizStartNumber;
       } else {
