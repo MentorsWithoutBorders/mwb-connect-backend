@@ -14,18 +14,20 @@ export class QuizzesSettings {
 
   async getQuizzesSettings(request: Request, response: Response): Promise<void> {
     try {
-      const getQuizzesSettingsQuery = 'SELECT * FROM quizzes_settings';
-      const { rows }: pg.QueryResult = await pool.query(getQuizzesSettingsQuery);
-      const quizzesSettings: QuizSettings = {
-        count: rows[0].count,
-        rounds: rows[0].rounds,
-        showTimer: rows[0].show_timer,
-        timeBetweenRounds: rows[0].time_between_rounds
-      }
+      const quizzesSettings = await this.getQuizzesSettingsFromDB();
       response.status(200).json(quizzesSettings);
     } catch (error) {
       response.status(400).send(error);
     } 
+  }
+
+  async getQuizzesSettingsFromDB(): Promise<QuizSettings> {
+    const getQuizzesSettingsQuery = 'SELECT * FROM quizzes_settings';
+    const { rows }: pg.QueryResult = await pool.query(getQuizzesSettingsQuery);
+    return {
+      studentWeeklyCount: rows[0].student_weekly_count,
+      mentorWeeklyCount: rows[0].mentor_weekly_count
+    }    
   }
 }
 

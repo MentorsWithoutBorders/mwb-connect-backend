@@ -60,7 +60,7 @@ export class Users {
     if (!uuidValidate(id)) {
       throw new ValidationError('Invalid user id');
     }
-    const getUserQuery = `SELECT u.id AS user_id, u.name, u.email, o.id AS organization_id, o.name AS organization_name, f.id AS field_id, f.name AS field_name, u.is_mentor, u.is_available, u.available_from
+    const getUserQuery = `SELECT u.id AS user_id, u.name, u.email, o.id AS organization_id, o.name AS organization_name, f.id AS field_id, f.name AS field_name, u.is_mentor, u.is_available, u.available_from, u.registered_on
       FROM users u
       JOIN fields f
       ON u.field_id = f.id
@@ -90,7 +90,7 @@ export class Users {
       isAvailable: rows[0].is_available,
       availableFrom: moment.utc(rows[0].available_from).format(constants.DATE_TIME_FORMAT),
       availabilities: await this.getUserAvailabilities(id),
-      registeredOn: moment.utc(rows[0].available_from).format(constants.DATE_TIME_FORMAT)
+      registeredOn: moment.utc(rows[0].registered_on).format(constants.DATE_TIME_FORMAT)
     }
   }
 

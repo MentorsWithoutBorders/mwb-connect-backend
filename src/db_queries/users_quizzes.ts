@@ -1,24 +1,16 @@
 import { Request, Response } from 'express';
 import autoBind from 'auto-bind';
-import pg from 'pg';
 import moment from 'moment';
 import { Conn } from '../db/conn';
+import { Users } from './users';
+import { QuizzesSettings } from './quizzes_settings';
+import { constants } from '../utils/constants';
 import Quiz from '../models/quiz.model';
-import QuizSettings from '../models/quiz_settings.model';
 
 const conn: Conn = new Conn();
 const pool = conn.pool;
-
-interface QuizData {
-  round: number;
-  roundCompleted: boolean;
-  start: number;
-}
-
-interface QuizNumberData {
-  quizNumber: number;
-  quizNumberUpdated: boolean;
-}
+const users: Users = new Users();
+const quizzesSettings: QuizzesSettings = new QuizzesSettings();
 
 export class UsersQuizzes {
   constructor() {
@@ -28,113 +20,157 @@ export class UsersQuizzes {
   async getQuizNumber(request: Request, response: Response): Promise<void> {
     const userId: string = request.user.id as string;
     try {
-      const getQuizzesSettingsQuery = 'SELECT * FROM quizzes_settings';
-      let { rows }: pg.QueryResult = await pool.query(getQuizzesSettingsQuery);
-      const quizSettings: QuizSettings = {
-        count: rows[0].count,
-        rounds: rows[0].rounds,
-        timeBetweenRounds: rows[0].time_between_rounds
-      }
-      const getQuizzesQuery = `SELECT * FROM users_quizzes 
-        WHERE user_id = $1
-        ORDER BY date_time DESC`;
-      ({ rows } = await pool.query(getQuizzesQuery, [userId]));
-      const quizzes: Array<Quiz> = [];
-      for (const row of rows) {
-        const quiz: Quiz = {
-          number: row.number,
-          isCorrect: row.is_correct,
-          dateTime: row.date_time
-        }
-        quizzes.push(quiz);
-      }
-      const solvedQuizzesRounds: Array<number> = [];
-      for (let i = 1; i <= quizSettings.count; i++) {
-        solvedQuizzesRounds[i] = 0;
-      }      
-      for (const quiz of quizzes) {
-        if (quiz.isCorrect) {
-          solvedQuizzesRounds[quiz.number]++;
+      const quizSettings = await quizzesSettings.getQuizzesSettingsFromDB();
+      const user = await users.getUserFromDB(userId);
+      const registeredOn = moment.utc(user.registeredOn).startOf('day');
+      const today = moment.utc().startOf('day');
+      const weekNumber = today.diff(registeredOn, 'weeks');
+      const weekStartDate = this.getWeekStartDate(registeredOn, weekNumber);
+      const weekEndDate = this.getWeekEndDate(registeredOn, weekNumber);      
+      let quizzes = await this.getQuizzes(userId);
+      let quizNumber = 0;
+      if (user.isMentor) {
+        const quizStartNumber = this.getQuizStartNumber(weekNumber, quizSettings.mentorWeeklyCount);
+        const quizEndNumber = this.getQuizEndNumber(weekNumber, quizSettings.mentorWeeklyCount);
+        quizzes = this.getQuizzesBetweenDates(quizzes, weekStartDate, weekEndDate); 
+        quizNumber = this.calculateQuizNumber(quizzes, quizStartNumber, quizEndNumber);
+      } else {
+        if (weekNumber <= constants.STUDENT_MAX_QUIZZES_SETS + constants.STUDENT_MAX_QUIZZES_SETS / 2 + 1) {
+          const quizzesSetNumber = this.getQuizzesSetNumber(quizzes, registeredOn, quizSettings.studentWeeklyCount);
+          const quizStartNumber = this.getQuizStartNumber(quizzesSetNumber, quizSettings.studentWeeklyCount);
+          const quizEndNumber = this.getQuizEndNumber(quizzesSetNumber, quizSettings.studentWeeklyCount);
+          quizzes = this.getQuizzesBetweenDates(quizzes, weekStartDate, weekEndDate); 
+          quizNumber = this.calculateQuizNumber(quizzes, quizStartNumber, quizEndNumber);
+        } else {
+          const quizStartNumber = this.getQuizzesRemainingStartNumber(quizzes, registeredOn);
+          quizNumber = this.calculateQuizNumber(quizzes, quizStartNumber, quizSettings.studentWeeklyCount * 4);
         }
       }
-      const lastQuizSubmitted = quizzes[0];
-      const quizNumber = this.setQuizNumber(solvedQuizzesRounds, lastQuizSubmitted, quizSettings);
       response.status(200).json(quizNumber);
     } catch (error) {
       response.status(400).send(error);
     } 
   }
-  
-  setQuizNumber(solvedQuizzesRounds: Array<number>, lastQuizSubmitted: Quiz, quizSettings: QuizSettings): number {
-    const { round, roundCompleted, start }: QuizData = this.getQuizData(solvedQuizzesRounds, lastQuizSubmitted, quizSettings);
-    let quizNumber;
-    if (this.shouldSkipQuiz(lastQuizSubmitted, round, roundCompleted, quizSettings)) {
-      quizNumber = 0;
-    } else {
-      let quizData = this.getQuizNumberData(start + 1, quizSettings.count, solvedQuizzesRounds, round);
-      if (!quizData.quizNumberUpdated) {
-        quizData = this.getQuizNumberData(1, start, solvedQuizzesRounds, round);
-      }
-      quizNumber = quizData.quizNumber;
-    }
-    return quizNumber;
-  }
- 
-  getQuizData(solvedQuizzesRounds: Array<number>, lastQuizSubmitted: Quiz, quizSettings: QuizSettings): QuizData {
-    let round = 1;
-    let shouldIncrementRound = true;
-    for (const solvedQuizRound of solvedQuizzesRounds) {
-      if (solvedQuizRound > round) {
-        round = solvedQuizRound;
-      } else if (solvedQuizRound < round) {
-        shouldIncrementRound = false;
+
+  getQuizzesRemainingStartNumber(quizzes: Array<Quiz>, registeredOn: moment.Moment): number {
+    const quizzesStartDate = moment.utc(registeredOn).add(constants.STUDENT_MAX_QUIZZES_SETS * 7, 'days');
+    let startNumber = 0;
+    for (const quiz of quizzes) {
+      if (moment.utc(quiz.dateTime).isAfter(moment.utc(quizzesStartDate)) && quiz.isCorrect && quiz.number > startNumber) {
+        startNumber = quiz.number + 1;
       }
     }
-    let start = 0;
-    if (lastQuizSubmitted != null) {
-      start = lastQuizSubmitted.number;
-    }
-    let roundCompleted = false;
-    if (solvedQuizzesRounds.length - 1 == quizSettings.count && shouldIncrementRound) {
-      roundCompleted = true;
-      round++;
-      if (lastQuizSubmitted != null && lastQuizSubmitted.isCorrect) {
-        start = 0;
-      }           
-    }
-    return {
-      round: round,
-      start: start,
-      roundCompleted: roundCompleted
-    };
-  }
-  
-  shouldSkipQuiz(lastQuizSubmitted: Quiz, round: number, roundCompleted: boolean, quizSettings: QuizSettings): boolean {
-    const today = moment.utc();
-    let dayLastQuizSubmitted;
-    if (lastQuizSubmitted != null) {
-      dayLastQuizSubmitted = moment.utc(lastQuizSubmitted.dateTime);
-    } else {
-      dayLastQuizSubmitted = today;
-    }
-    const diff = today.diff(dayLastQuizSubmitted, 'days');
-    return round > quizSettings.rounds || roundCompleted && diff < (quizSettings.timeBetweenRounds as number);
+    return startNumber;
+  }  
+
+  getWeekStartDate(registeredOn: moment.Moment, weekNumber: number): moment.Moment {
+    return moment.utc(registeredOn).add(weekNumber * 7, 'days');    
   }
 
-  getQuizNumberData(start: number, end: number, solvedQuizzesRounds: Array<number>, round: number): QuizNumberData {
-    let quizNumber = 1;
-    let quizNumberUpdated = false;
-    for (let i = start; i <= end; i++) {
-      if (solvedQuizzesRounds[i] < round) {
-        quizNumber = i;
-        quizNumberUpdated = true;
-        break;
+  getWeekEndDate(registeredOn: moment.Moment, weekNumber: number): moment.Moment {
+    return moment.utc(registeredOn).endOf('day').add((weekNumber + 1) * 7, 'days');
+  }  
+
+  getQuizStartNumber(weekNumber: number, weeklyCount: number): number {
+    return weekNumber * weeklyCount + 1;
+  }
+
+  getQuizEndNumber(weekNumber: number, weeklyCount: number): number {
+    return weekNumber * weeklyCount + weeklyCount;  
+  }
+
+  async getQuizzes(userId: string): Promise<Array<Quiz>> {
+    const getQuizzesQuery = `SELECT * FROM users_quizzes 
+      WHERE user_id = $1
+      ORDER BY date_time DESC`;
+    const { rows } = await pool.query(getQuizzesQuery, [userId]);
+    const quizzes: Array<Quiz> = [];
+    for (const row of rows) {
+      const quiz: Quiz = {
+        number: row.number,
+        isCorrect: row.is_correct,
+        dateTime: moment.utc(row.date_time).format(constants.DATE_TIME_FORMAT)
+      }
+      quizzes.push(quiz);
+    }
+    return quizzes;
+  }
+
+  getQuizzesBetweenDates(quizzes: Array<Quiz>, weekStartDate: moment.Moment, weekEndDate: moment.Moment): Array<Quiz> {
+    const quizzesBetweenDates: Array<Quiz> = [];
+    for (const quiz of quizzes) {
+      if (moment.utc(quiz.dateTime).isAfter(moment.utc(weekStartDate)) 
+          && moment.utc(quiz.dateTime).isBefore(moment.utc(weekEndDate))) {
+        quizzesBetweenDates.push(quiz);
+      }
+    }   
+    return quizzesBetweenDates;
+  }
+
+  calculateQuizNumber(quizzes: Array<Quiz>, quizStartNumber: number, quizEndNumber: number): number {
+    let quizNumber = 0;
+    const weekQuizzesSolved = this.getWeekQuizzesSolved(quizzes, quizStartNumber, quizEndNumber);
+    if (weekQuizzesSolved < quizEndNumber - quizStartNumber + 1) {
+      if (weekQuizzesSolved == 0) {
+        quizNumber = quizStartNumber;
+      } else {
+        if (!quizzes[0].isCorrect) {
+          quizNumber = quizzes[0].number;
+        } else {
+          quizNumber = quizzes[0].number + 1;
+          if (quizNumber > quizEndNumber) {
+            quizNumber = quizStartNumber;
+          }
+        }
       }
     }
-    return {
-      quizNumber: quizNumber,
-      quizNumberUpdated: quizNumberUpdated
-    }    
+    return quizNumber;    
+  }
+
+  getWeekQuizzesSolved(quizzes: Array<Quiz>, quizStartNumber: number, quizEndNumber: number): number {
+    let solvedQuizzes = 0;
+    for (let i = quizStartNumber; i <= quizEndNumber; i++) {
+      for (const quiz of quizzes) {
+        if (quiz.number === i && quiz.isCorrect) {
+          solvedQuizzes++;
+        }
+      }
+    }
+    return solvedQuizzes;
+  }
+
+  getQuizzesSetNumber(quizzes: Array<Quiz>, registeredOn: moment.Moment, weeklyCount: number): number {
+    let quizzesSetNumber = 0;
+    const today = moment.utc().startOf('day');
+    const weekNumber = today.diff(registeredOn, 'weeks');
+    let quizzesSetsStart = 0;
+    let quizzesSetsEnd = constants.STUDENT_MAX_QUIZZES_SETS;
+    if (weekNumber < quizzesSetsEnd + 1) {
+      quizzesSetsEnd = weekNumber;
+    } else {
+      quizzesSetsStart = constants.STUDENT_MAX_QUIZZES_SETS + 1;
+      quizzesSetsEnd = constants.STUDENT_MAX_QUIZZES_SETS + constants.STUDENT_MAX_QUIZZES_SETS / 2 + 1;
+      if (weekNumber < quizzesSetsEnd) {
+        quizzesSetsEnd = weekNumber;
+      }
+    }
+    for (let i = 0; i < constants.STUDENT_MAX_QUIZZES_SETS / 2; i++) {
+      const quizStartNumber = this.getQuizStartNumber(i, weeklyCount);
+      const quizEndNumber = this.getQuizEndNumber(i, weeklyCount); 
+      let areQuizzesSolved = false;
+      for (let j = quizzesSetsStart; j < quizzesSetsEnd; j++) {
+        const weekStartDate = this.getWeekStartDate(registeredOn, j);
+        const weekEndDate = this.getWeekEndDate(registeredOn, j);        
+        const quizzesBetweenDates = this.getQuizzesBetweenDates(quizzes, weekStartDate, weekEndDate);
+        if (this.getWeekQuizzesSolved(quizzesBetweenDates, quizStartNumber, quizEndNumber) == weeklyCount) {
+          areQuizzesSolved = true;
+        } 
+      }
+      if (areQuizzesSolved) {
+        quizzesSetNumber++;
+      }
+    }
+    return quizzesSetNumber;
   }
 
   async addQuiz(request: Request, response: Response): Promise<void> {
