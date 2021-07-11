@@ -14,7 +14,6 @@ export class UsersGoals {
     autoBind(this);
   }
 
-  // cannt remove transaction
   async getGoals(request: Request, response: Response): Promise<void> {
     const userId: string = request.user.id as string;
     const client: pg.PoolClient = await pool.connect();
@@ -32,7 +31,6 @@ export class UsersGoals {
     }
   }
 
-  // cannt remove transaction
   async getGoalsFromDB(userId: string, client: pg.PoolClient): Promise<Array<Goal>> {
     const getGoalsQuery = `SELECT * FROM users_goals 
       WHERE user_id = $1
@@ -50,7 +48,6 @@ export class UsersGoals {
     return goals;
   }
 
-  // removed transaction
   async getGoalById(request: Request, response: Response): Promise<void> {
     const userId: string = request.user.id as string;
     const goalId: string = request.params.id;
@@ -67,7 +64,6 @@ export class UsersGoals {
     }
   }
 
-  // cannt remove transaction
   async addGoal(request: Request, response: Response): Promise<void> {
     const userId: string = request.user.id as string;
     const { text }: Goal = request.body;
@@ -85,7 +81,6 @@ export class UsersGoals {
     }
   }
 
-  // cannt remove transaction
   async addGoalToDB(userId: string, text: string, client: pg.PoolClient): Promise<Goal> {
     const goals: Array<Goal> = await this.getGoalsFromDB(userId, client);
     const insertGoalQuery = `INSERT INTO users_goals (user_id, text, index, date_time)
@@ -103,7 +98,6 @@ export class UsersGoals {
     }   
   }
 
-  // removed transaction
   async updateGoal(request: Request, response: Response): Promise<void> {
     const userId: string = request.user.id as string;
     const goalId: string = request.params.id;
@@ -118,7 +112,6 @@ export class UsersGoals {
     }
   }
 
-  // cannt remove transaction
   async deleteGoal(request: Request, response: Response): Promise<void> {
     const userId: string = request.user.id as string;
     const goalId: string = request.params.id;
@@ -139,7 +132,6 @@ export class UsersGoals {
     }
   }
 
-  // cannt remove transaction
   async deleteSteps(userId: string, goalId: string, client: pg.PoolClient): Promise<void> {
     const deleteStepsQuery = 'DELETE FROM users_steps WHERE user_id = $1 AND goal_id = $2';
     await client.query(deleteStepsQuery, [userId, goalId]);

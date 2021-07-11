@@ -17,7 +17,6 @@ export class UsersSkills {
     autoBind(this);
   }
 
-  // cannt remove transaction - getUserSkills used in addUserSkillsToDB which performs two mutations
   async getUserSkills(request: Request, response: Response): Promise<void> {
     const userId: string = request.params.user_id;
     const subfieldId: string = request.params.subfield_id;
@@ -36,7 +35,6 @@ export class UsersSkills {
     }  
   }
 
-  // cannt remove transaction
   async addUserSkills(request: Request, response: Response): Promise<void> {
     const userId: string = request.user.id as string;
     const subfieldId: string = request.params.id;
@@ -57,7 +55,6 @@ export class UsersSkills {
     }  
   }
 
-  // cannt remove transaction
   async addUserSkillsToDB(userId: string, subfieldId: string, skills: Array<string>, client: pg.PoolClient): Promise<void> {
     const currentSkills = await users.getUserSkills(userId, subfieldId, client);
     const subfieldSkills = await skillsQueries.getSkillsFromDB(subfieldId, client);
@@ -75,13 +72,11 @@ export class UsersSkills {
     }    
   }
 
-  // cannt remove transaction
   async deleteSkills(userId: string, client: pg.PoolClient): Promise<void> {
     const deleteSkillsQuery = 'DELETE FROM users_skills WHERE user_id = $1';
     await client.query(deleteSkillsQuery, [userId]);
   }    
 
-  // cannt remove transaction
   async addSkillToDB(userId: string, subfieldId: string, skill: Skill, client: pg.PoolClient): Promise<void> {
     const insertSkillQuery = `INSERT INTO users_skills (user_id, subfield_id, skill_index, skill_id)
       VALUES ($1, $2, $3, $4)`;

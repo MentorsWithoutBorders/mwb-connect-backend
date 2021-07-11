@@ -14,7 +14,6 @@ export class UsersSteps {
     autoBind(this);
   }
 
-  // no transaction needed
   async getSteps(request: Request, response: Response): Promise<void> {
     const userId: string = request.user.id as string;
     const goalId: string = request.params.id;
@@ -38,7 +37,6 @@ export class UsersSteps {
     }   
   }
 
-  //cannt remove transaction - getStepByIdFromDB
   async getStepById(request: Request, response: Response): Promise<void> {
     const userId: string = request.user.id as string;
     const stepId: string = request.params.id;
@@ -57,7 +55,6 @@ export class UsersSteps {
     }
   }
 
-  //cannt remove transaction - being used in deleteStep
   async getStepByIdFromDB(userId: string, stepId: string, client: pg.PoolClient): Promise<Step> {
     const getStepQuery = `SELECT * FROM users_steps WHERE user_id = $1 AND id = $2`;
     const { rows }: pg.QueryResult = await client.query(getStepQuery, [userId, stepId]);
@@ -75,7 +72,6 @@ export class UsersSteps {
     return step;
   }
 
-  //cannt remove transaction - getLastStepAddedFromDB
   async getLastStepAdded(request: Request, response: Response): Promise<void> {
     const userId: string = request.user.id as string;
     const client: pg.PoolClient = await pool.connect();
@@ -93,7 +89,6 @@ export class UsersSteps {
     }
   }
   
-  //cannt remove transaction - deleteStep
   async getLastStepAddedFromDB(userId: string, client: pg.PoolClient): Promise<Step> {
     const getStepQuery = `SELECT * FROM users_steps 
       WHERE user_id = $1
@@ -113,7 +108,6 @@ export class UsersSteps {
     return step;  
   }
 
-  // no transaction needed 
   async addStep(request: Request, response: Response): Promise<void> {
     const userId: string = request.user.id as string;
     const goalId: string = request.params.id;
@@ -137,7 +131,6 @@ export class UsersSteps {
     }
   }
 
-  // cannt remove transaction - updateStepInDB>deleteStep
   async updateStep(request: Request, response: Response): Promise<void> {
     const userId: string = request.user.id as string;
     const stepId: string = request.params.id;
@@ -158,13 +151,11 @@ export class UsersSteps {
     }
   }
 
-  // cannt remove transaction
   async updateStepInDB(userId: string, stepId: string, text: string, index: number, level: number, parentId: string, dateTime: string, client: pg.PoolClient): Promise<void> {
     const updateStepQuery = 'UPDATE users_steps SET text = $1, index = $2, level = $3, parent_id = $4, date_time = $5 WHERE user_id = $6 AND id = $7';
     await client.query(updateStepQuery, [text, index, level, parentId, dateTime, userId, stepId]);
   }
   
-  // cannot remove transaction
   async deleteStep(request: Request, response: Response): Promise<void> {
     const userId: string = request.user.id as string;
     const stepId: string = request.params.id;

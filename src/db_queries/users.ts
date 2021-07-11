@@ -25,7 +25,6 @@ export class Users {
     autoBind(this);
   }
 
-  // works without transaction
   async getUsers(request: Request, response: Response): Promise<void> {
     try {
       const getUsersQuery = 'SELECT id, name, email, field_id, organization_id, is_mentor, is_available, available_from, registered_on FROM users ORDER BY id ASC';
@@ -36,7 +35,6 @@ export class Users {
     }
   }
 
-  // cannt remove transaction > getUserFromDB
   async getUser(request: Request, response: Response): Promise<void> {
     const client: pg.PoolClient = await pool.connect();
     try {
@@ -60,7 +58,6 @@ export class Users {
     }
   }
 
-  // cannt remove transaction because of user_lessons.getNextLesson
   async getUserFromDB(id: string, client: pg.PoolClient): Promise<User> {
     if (!uuidValidate(id)) {
       throw new ValidationError('Invalid user id');
@@ -99,7 +96,6 @@ export class Users {
     }
   }
 
-  // cannt remove transaction
   async getUserSubfields(userId: string, client: pg.PoolClient): Promise<Array<Subfield>> {
     const getSubfieldsQuery = `SELECT s.id, s.name
       FROM subfields s
@@ -121,7 +117,6 @@ export class Users {
     return subfields;    
   }
 
-  // cannt remove transaction - used in user_skills  
   async getUserSkills(userId: string, subfieldId: string, client: pg.PoolClient): Promise<Array<Skill>> {
     const getSkillsQuery = `SELECT s.id, s.name
       FROM skills s
@@ -141,7 +136,6 @@ export class Users {
     return skills;    
   }
   
-  // cannt remove transaction
   async getUserAvailabilities(userId: string, client: pg.PoolClient): Promise<Array<Availability>> {
     const getAvailabilitiesQuery = `SELECT * FROM users_availabilities
       WHERE user_id = $1`;
@@ -161,7 +155,6 @@ export class Users {
     return availabilities;
   }
   
-  // cannt remove transaction
   async getUserLessonsAvailability(userId: string, client: pg.PoolClient): Promise<LessonsAvailability> {
     const getLessonsAvailabilityQuery = `SELECT * FROM users_lessons_availabilities
       WHERE user_id = $1`;
@@ -173,7 +166,6 @@ export class Users {
     };
   }    
 
-  // cannt remove transaction
   async updateUser(request: Request, response: Response): Promise<void> {
     const id: string = request.user.id as string;
     const { name, email, field, isAvailable, availableFrom, availabilities, lessonsAvailability }: User = request.body
@@ -199,28 +191,24 @@ export class Users {
     }
   }
 
-  // cannt remove transaction
   async deleteUserSubfields(userId: string, client: pg.PoolClient): Promise<void> {
     const deleteSubfieldsQuery = `DELETE FROM users_subfields
       WHERE user_id = $1`;
     await client.query(deleteSubfieldsQuery, [userId]);
   }
 
-  // cannt remove transaction
   async deleteUserSkills(userId: string, client: pg.PoolClient): Promise<void> {
     const deleteSkillsQuery = `DELETE FROM users_skills
       WHERE user_id = $1`;
     await client.query(deleteSkillsQuery, [userId]);    
   }
-  
-  // cannt remove transaction
+
   async deleteUserAvailabilities(userId: string, client: pg.PoolClient): Promise<void> {
     const deleteAvailabilitiesQuery = `DELETE FROM users_availabilities
       WHERE user_id = $1`;
     await client.query(deleteAvailabilitiesQuery, [userId]);    
   }  
 
-  // cannt remove transaction
   async insertUserSubfields(userId: string, subfields: Array<Subfield>, client: pg.PoolClient): Promise<void> {
     for (let i = 0; i < subfields.length; i++) {
       const insertSubfieldQuery = `INSERT INTO users_subfields (user_id, subfield_index, subfield_id)
@@ -232,7 +220,6 @@ export class Users {
     }
   }
   
-  // cannt remove transaction
   async updateUserSkills(userId: string, subfieldId: string, skills: Array<Skill>, client: pg.PoolClient): Promise<void> {
     for (let i = 0; i < skills.length; i++) {
       const insertSkillQuery = `INSERT INTO users_skills (user_id, subfield_id, skill_index, skill_id)
@@ -242,7 +229,6 @@ export class Users {
     }
   }
   
-  // cannt remove transaction
   async insertUserAvailabilities(userId: string, availabilities: Array<Availability>, client: pg.PoolClient): Promise<void> {
     for (const availability of availabilities) {
       const insertAvailabilityQuery = `INSERT INTO users_availabilities (user_id, day_of_week, time_from, time_to)
@@ -254,7 +240,6 @@ export class Users {
     }
   }
 
-  // cannt remove transaction
   async updateUserLessonsAvailability(userId: string, lessonsAvailability: LessonsAvailability, client: pg.PoolClient): Promise<void> {
     const updateLessonsAvailabilityQuery = `UPDATE users_lessons_availabilities 
       SET min_interval = $1, min_interval_unit = $2, max_students = $3
@@ -263,7 +248,6 @@ export class Users {
     await client.query(updateLessonsAvailabilityQuery, values);
   }  
 
-  // cannt remove transaction
   async deleteUser(request: Request, response: Response): Promise<void> {
     const id: string = request.user.id as string;
     const client: pg.PoolClient = await pool.connect();

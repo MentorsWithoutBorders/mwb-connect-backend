@@ -18,7 +18,6 @@ export class UsersQuizzes {
     autoBind(this);
   }
 
-  // cannt remove transaction - getUserFromDB
   async getQuizNumber(request: Request, response: Response): Promise<void> {
     const userId: string = request.user.id as string;
     const client: pg.PoolClient = await pool.connect();
@@ -182,7 +181,6 @@ export class UsersQuizzes {
     return quizzesSetNumber;
   }
 
-  // works well - no transaction
   async addQuiz(request: Request, response: Response): Promise<void> {
     const userId: string = request.user.id as string;
     const { number, isCorrect, isClosed }: Quiz = request.body

@@ -30,7 +30,6 @@ export class UsersLessons {
     autoBind(this);
   }
  
-  // cannt remove transaction because of getNextLessonFromDB>getLessonStudents>users.getUserSkills>users.getUserSkills>user.getUserFromDB>
   async getNextLesson(request: Request, response: Response): Promise<void> {
     const userId: string = request.user.id as string;
     const client: pg.PoolClient = await pool.connect();
@@ -48,7 +47,6 @@ export class UsersLessons {
     }
   }
 
-  //cannt remove transaction
   async getNextLessonFromDB(userId: string, client: pg.PoolClient): Promise<Lesson> {
     const isMentor = await this.getIsMentor(userId, client);
     let getNextLessonQuery = '';
@@ -93,7 +91,6 @@ export class UsersLessons {
     return this.setLesson(lessonRow, students, isMentor, client);
   }
 
-  //cannt remove transaction
   async getNextLessonDateTime(lesson: Lesson, userId: string, client: pg.PoolClient): Promise<string | undefined> {
     const now = moment.utc();
     const endRecurrenceDateTime = moment.utc(lesson.endRecurrenceDateTime);
@@ -121,7 +118,6 @@ export class UsersLessons {
     }
   }
 
-  //cannt remove transaction
   async getNextValidLessonDateTime(lesson: Lesson, userId: string, lessonDateTime: moment.Moment, client: pg.PoolClient): Promise<moment.Moment> {
     let updatedLessonDateTime = lessonDateTime.clone();
     const lessonsCanceledDateTimes = await this.getLessonsCanceledDateTimes(userId, lesson.id as string, client);
@@ -133,7 +129,6 @@ export class UsersLessons {
     return updatedLessonDateTime;
   }
 
-  //cannt remove transaction
   async getLessonsCanceledDateTimes(userId: string, lessonId: string, client: pg.PoolClient): Promise<Array<string>> {
     const getLessonCanceledQuery = `SELECT lesson_date_time
       FROM users_lessons_canceled
@@ -155,7 +150,6 @@ export class UsersLessons {
     return lessonsCanceledDateTimes;
   }
 
-  //cannt remove transaction - also has getUsersFromDB
   async getLessonStudents(lessonId: string, client: pg.PoolClient): Promise<Array<User>> {
     const getLessonStudentsQuery = `SELECT student_id, is_canceled
       FROM users_lessons_students
@@ -176,7 +170,6 @@ export class UsersLessons {
     return students;  
   }
 
-  //cannt remove transaction - users.getUserFromDB
   async setLesson(lessonRow: pg.QueryResultRow, students: Array<User>, isMentor: boolean, client: pg.PoolClient): Promise<Lesson> {
     let lesson: Lesson = {};
     if (lessonRow) {    
@@ -213,14 +206,12 @@ export class UsersLessons {
     return lesson;
   }
 
-  //cannt remove transaction
   async getIsMentor(userId: string, client: pg.PoolClient): Promise<boolean> {
     const getUserQuery = 'SELECT * FROM users WHERE id = $1';
     const { rows }: pg.QueryResult = await client.query(getUserQuery, [userId]);
     return rows[0].is_mentor;
   }
   
-  //cannt remove transaction - setLesson
   async getPreviousLesson(request: Request, response: Response): Promise<void> {
     const userId: string = request.user.id as string;
     const client: pg.PoolClient = await pool.connect();
@@ -279,7 +270,6 @@ export class UsersLessons {
     }
   }
   
-  //cannt remove transaction 
   async getPreviousLessonDateTime(lesson: Lesson, userId: string, client: pg.PoolClient): Promise<string | undefined> {
     const now = moment.utc();
     const endRecurrenceDateTime = moment.utc(lesson.endRecurrenceDateTime);
@@ -304,7 +294,6 @@ export class UsersLessons {
     } 
   }
 
-  //cannt remove transaction 
   async getPreviousValidLessonDateTime(lesson: Lesson, userId: string, lessonDateTime: moment.Moment, client: pg.PoolClient): Promise<moment.Moment> {
     let updatedLessonDateTime = lessonDateTime.clone();
     const lessonsCanceledDateTimes = await this.getLessonsCanceledDateTimes(userId, lesson.id as string, client);
@@ -316,7 +305,6 @@ export class UsersLessons {
     return updatedLessonDateTime;
   }
 
-  //cannt remove transaction - getIsMentor
   async cancelLesson(request: Request, response: Response): Promise<void> {
     const userId: string = request.user.id as string;
     const lessonId: string = request.params.id;
@@ -350,7 +338,6 @@ export class UsersLessons {
     }
   }
 
-  // works standalone
   async setLessonMeetingUrl(request: Request, response: Response): Promise<void> {
     const mentorId: string = request.user.id as string;
     const lessonId: string = request.params.id;
@@ -364,7 +351,6 @@ export class UsersLessons {
     }
   }
   
-  // works standalone
   async setLessonRecurrence(request: Request, response: Response): Promise<void> {
     const mentorId: string = request.user.id as string;
     const lessonId: string = request.params.id;
@@ -379,7 +365,6 @@ export class UsersLessons {
     }
   } 
   
-  //cannt remove transaction - getLessonStudents
   async addStudentsSkills(request: Request, response: Response): Promise<void> {
     const lessonId: string = request.params.id;
     const skills = request.body;
@@ -401,7 +386,6 @@ export class UsersLessons {
     }
   }
 
-  //cannt remove transaction - getLessonStudents
   async addStudentsLessonNotes(request: Request, response: Response): Promise<void> {
     const lessonId: string = request.params.id;
     const { text }: LessonNote = request.body
@@ -425,14 +409,12 @@ export class UsersLessons {
     }  
   }
   
-  //cannt remove transaction
   async getLessonSubfieldId(lessonId: string, client: pg.PoolClient): Promise<string> {
     const getLessonQuery = `SELECT * FROM users_lessons WHERE id = $1`;
     const { rows }: pg.QueryResult = await client.query(getLessonQuery, [lessonId]);
     return rows[0].subfield_id;
   }
 
-  //removed transaction
   async getStudentLessonNotes(request: Request, response: Response): Promise<void> {
     const studentId: string = request.params.id;
     try {
@@ -457,7 +439,6 @@ export class UsersLessons {
     }   
   }
   
-  //cannt remove transaction - getUserFromDB
   async getLessonGuideRecommendations(request: Request, response: Response): Promise<void> {
     const userId: string = request.user.id as string;
     const lessonId: string = request.params.id;
@@ -489,7 +470,6 @@ export class UsersLessons {
     }
   }
 
-  //cannt remove transaction  
   async getGeneralGuideRecommendations( client: pg.PoolClient ): Promise<GuideRecommendation> {
     const getGuideRecommendationsQuery = `SELECT text
       FROM guides_recommendations
@@ -501,7 +481,6 @@ export class UsersLessons {
     }    
   }
 
-  //cannt remove transaction
   async getFieldGuideRecommendations(field: Field, client: pg.PoolClient): Promise<GuideRecommendation> {
     const getGuideRecommendationsQuery = `SELECT text
       FROM guides_recommendations
@@ -512,8 +491,7 @@ export class UsersLessons {
       recommendations: rows[0].text.split(/\r?\n/)
     }    
   }
-  
-  //cannt remove transaction
+
   async getSubfieldGuideRecommendations(subfield: Subfield,client: pg.PoolClient): Promise<GuideRecommendation> {
     const getGuideRecommendationsQuery = `SELECT text
       FROM guides_recommendations
@@ -525,7 +503,6 @@ export class UsersLessons {
     }    
   }   
 
-  //cannt remove transaction - getUserFromDB
   async getLessonGuideTutorials(request: Request, response: Response): Promise<void> {
     const userId: string = request.user.id as string;
     const lessonId: string = request.params.id;
@@ -568,7 +545,6 @@ export class UsersLessons {
     }  
   }
 
-  //canntremove transaction
   async getLessonSkills(subfieldId: string, subfields: Array<Subfield>, client: pg.PoolClient): Promise<Array<Skill>> {
     let skills: Array<Skill> = [];
     for (const subfield of subfields) {
@@ -640,7 +616,6 @@ export class UsersLessons {
     return skillsNames;
   }   
   
-  // works standalone
   async setLessonPresenceMentor(request: Request, response: Response): Promise<void> {
     const lessonId: string = request.params.id;
     const { isMentorPresent }: Lesson = request.body
