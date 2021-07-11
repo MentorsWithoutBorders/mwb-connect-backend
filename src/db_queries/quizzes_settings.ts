@@ -12,7 +12,6 @@ export class QuizzesSettings {
     autoBind(this);
   }
 
-  // not considered for transactions yet
   async getQuizzesSettings(request: Request, response: Response): Promise<void> {
     try {
       const quizzesSettings = await this.getQuizzesSettingsFromDB();

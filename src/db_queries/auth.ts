@@ -33,6 +33,7 @@ export class Auth {
     autoBind(this);
   }
 
+  // cannt remove transaction
   async signUp(request: Request, response: Response): Promise<void> {
     const { name, email, password, timeZone }: User = request.body;
     if (!email || !password) {
@@ -43,9 +44,9 @@ export class Auth {
       response.status(400).send({'message': 'Please enter a valid email address'});
       return ;
     }
-    const getUsersQuery = 'SELECT * FROM users WHERE email = $1';
     const client: pg.PoolClient = await pool.connect();
     try {
+      const getUsersQuery = 'SELECT * FROM users WHERE email = $1';
       await client.query("BEGIN");
       let { rows }: pg.QueryResult = await client.query(getUsersQuery, [email]);
       if (rows[0]) {
@@ -92,6 +93,7 @@ export class Auth {
     }
   }
 
+  // cannt remove transaction > signUp
   async getApprovedUser(email: string, client: pg.PoolClient): Promise<ApprovedUser> {
     let approvedUser: ApprovedUser = {
       email: email
@@ -119,6 +121,7 @@ export class Auth {
     return approvedUser;
   }
 
+  // cannt remove transaction here.
   async setDefaultUserProfile(userId: string, isMentor: boolean, client: pg.PoolClient): Promise<void> {
     const getDefaultUserQuery = 'SELECT * FROM user_default_profile';
     const { rows }: pg.QueryResult = await client.query(getDefaultUserQuery);
@@ -159,6 +162,7 @@ export class Auth {
     await client.query(insertNotificationsSettingsQuery, [userId, notificationsSettings.enabled, notificationsSettings.time]);    
   }  
 
+  //cannt remove transaction - setToken
   async login(request: Request, response: Response): Promise<void> {
     const { email, password }: User = request.body;
     if (!email || !password) {
@@ -169,10 +173,10 @@ export class Auth {
       response.status(400).send({'message': 'Please enter a valid email address'});
       return ;
     }
-    const loginQuery = 'SELECT * FROM users WHERE email = $1';
     const client: pg.PoolClient = await pool.connect();
     try {
       await client.query("BEGIN");
+      const loginQuery = 'SELECT * FROM users WHERE email = $1';
       const { rows }: pg.QueryResult = await client.query(loginQuery, [email]);
       if (!rows[0]) {
         response.status(400).send({'message': 'The credentials you provided are incorrect'});
@@ -196,6 +200,7 @@ export class Auth {
     }
   }
   
+  //cannt remove transaction used in getAccessToken
   async setTokens(userId: string, client: pg.PoolClient): Promise<Tokens> {
     const accessToken: string = helpers.generateAccessToken(userId);
     const refreshToken: string = helpers.generateRefreshToken();
@@ -207,6 +212,7 @@ export class Auth {
     }
   }
 
+  // cannt remove used in setTokens
   async setRefreshToken(userId: string, refreshToken: string, client: pg.PoolClient): Promise<void> {
     const getRefreshTokenQuery = 'SELECT * FROM users_refresh_tokens WHERE user_id = $1';
     const { rows }: pg.QueryResult = await client.query(getRefreshTokenQuery, [userId]);
@@ -217,6 +223,7 @@ export class Auth {
     }
   }
 
+  // cannt remove - used in addRefreshToken
   async addRefreshToken(userId: string, refreshToken: string, client: pg.PoolClient): Promise<void> {
     const insertRefreshTokenQuery = `INSERT INTO 
       users_refresh_tokens (user_id, refresh_token) 
@@ -228,6 +235,7 @@ export class Auth {
     await client.query(insertRefreshTokenQuery, values);
   }
 
+  // cannt remove - used in addRefreshToken
   async updateRefreshToken(userId: string, refreshToken: string, client: pg.PoolClient): Promise<void> {
     const updateRefreshTokenQuery = `UPDATE users_refresh_tokens SET refresh_token = $1 WHERE user_id = $2`;
     const values: Array<string> = [
@@ -237,11 +245,13 @@ export class Auth {
     await client.query(updateRefreshTokenQuery, values);
   }
 
+  // cannt remove transaction > used in users>delete
   async revokeRefreshToken(userId: string, client: pg.PoolClient): Promise<void> {
     const deleteRefreshTokenQuery = 'DELETE FROM users_refresh_tokens WHERE user_id = $1';
     await client.query(deleteRefreshTokenQuery, [userId]);
   }  
 
+  // cannot remove transaction - revokeRefreshToken
   async logout(request: Request, response: Response): Promise<void> {
     const userId: string = request.user.id as string;
     const client: pg.PoolClient = await pool.connect();
@@ -258,7 +268,7 @@ export class Auth {
     }    
   }  
 
-  // not considered for transactions yet
+  //works without transaction
   async verifyAccessToken(request: Request, response: Response, next: NextFunction): Promise<void> {
     if (!request.headers.authorization) {
       response.status(401).send({'message': 'Token is not provided'});
@@ -284,13 +294,14 @@ export class Auth {
     }
   }
 
+  // cannt remove transaction > revokeRefreshToken
   async getAccessToken(request: Request, response: Response): Promise<void> {
     const userId: string = request.user.id as string;
     const refreshToken: string = request.query.refreshToken as string;
-    const getRefreshTokenQuery = 'SELECT * FROM users_refresh_tokens WHERE user_id = $1 AND refresh_token = $2';
     const client: pg.PoolClient = await pool.connect();
     try {
       await client.query('BEGIN');
+      const getRefreshTokenQuery = 'SELECT * FROM users_refresh_tokens WHERE user_id = $1 AND refresh_token = $2';
       const { rows }: pg.QueryResult = await pool.query(getRefreshTokenQuery, [userId, refreshToken]);
       if (rows[0]) {
         const tokens: Tokens = await this.setTokens(userId, client);

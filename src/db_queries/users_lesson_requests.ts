@@ -22,7 +22,7 @@ export class UsersLessonRequests {
     autoBind(this);
   }
 
-  
+  //works standalone
   async addLessonRequest(request: Request, response: Response): Promise<void> {
     const studentId: string = request.user.id as string;
     try {
@@ -40,6 +40,7 @@ export class UsersLessonRequests {
     }
   }
   
+  //cannt remove transaction - getUserFromDB
   async getLessonRequest(request: Request, response: Response): Promise<void> {
     const userId: string = request.user.id as string;
     const client: pg.PoolClient = await pool.connect();
@@ -92,20 +93,22 @@ export class UsersLessonRequests {
     }
   }
 
+  // cannt remove transaction - getLessonRequest
   async getIsMentor(userId: string, client: pg.PoolClient): Promise<boolean> {
     const getUserQuery = 'SELECT * FROM users WHERE id = $1';
     const { rows }: pg.QueryResult = await client.query(getUserQuery, [userId]);
     return rows[0].is_mentor;
   }  
 
+  // transaction is necessary
   async acceptLessonRequest(request: Request, response: Response): Promise<void> {
     const mentorId: string = request.user.id as string;
     const lessonRequestId: string = request.params.id;
     const { meetingUrl, isRecurrent, endRecurrenceDateTime, isRecurrenceDateSelected }: Lesson = request.body
-    const getLessonRequestQuery = 'SELECT * FROM users_lesson_requests WHERE mentor_id = $1 AND id = $2';
     const client: pg.PoolClient = await pool.connect();
     try {
       await client.query('BEGIN');
+      const getLessonRequestQuery = 'SELECT * FROM users_lesson_requests WHERE mentor_id = $1 AND id = $2';
       const { rows }: pg.QueryResult = await client.query(getLessonRequestQuery, [mentorId, lessonRequestId]);
       const student: User = {
         id: rows[0].student_id
@@ -140,6 +143,7 @@ export class UsersLessonRequests {
     }
   }
   
+  // cannt remove transaction - acceptLessonRequest
   async addLesson(lesson: Lesson, client: pg.PoolClient): Promise<Lesson> {
     const insertLessonQuery = `INSERT INTO users_lessons (mentor_id, subfield_id, date_time, meeting_url, is_recurrent, end_recurrence_date_time, is_recurrence_date_selected)
       VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`;
@@ -158,6 +162,7 @@ export class UsersLessonRequests {
     return usersLessons.getNextLessonFromDB(lesson.mentor?.id as string, client);
   }
 
+  // cannt remove transaction
   async addStudent(lessonId: string, studentId: string, client: pg.PoolClient): Promise<void> {
     const insertStudentQuery = `INSERT INTO users_lessons_students (lesson_id, student_id)
       VALUES ($1, $2)`;
@@ -165,6 +170,7 @@ export class UsersLessonRequests {
     await client.query(insertStudentQuery, values);          
   }  
 
+  // cannt remove transaction
   async addStudentSubfield(studentId: string, subfieldId: string, client: pg.PoolClient): Promise<void> {
     const getSubfieldQuery = 'SELECT * FROM users_subfields WHERE user_id = $1';
     const { rows }: pg.QueryResult = await client.query(getSubfieldQuery, [studentId]);
@@ -176,11 +182,13 @@ export class UsersLessonRequests {
     }
   }
 
+  // cannt remove transaction
   async deleteLessonRequest(mentorId: string, lessonId: string, client: pg.PoolClient): Promise<void> {
     const deleteLessonRequestQuery = 'DELETE FROM users_lesson_requests WHERE mentor_id = $1 AND id = $2';
     await client.query(deleteLessonRequestQuery, [mentorId, lessonId]);
   }
   
+  // works well
   async rejectLessonRequest(request: Request, response: Response): Promise<void> {
     const mentorId: string = request.user.id as string;
     const lessonRequestId: string = request.params.id;
@@ -193,6 +201,7 @@ export class UsersLessonRequests {
     }
   }
   
+  //works well
   async cancelLessonRequest(request: Request, response: Response): Promise<void> {
     const studentId: string = request.user.id as string;
     const lessonRequestId: string = request.params.id;

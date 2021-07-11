@@ -12,7 +12,6 @@ export class UsersSupportRequests {
     autoBind(this);
   }
 
-  // not considered for transactions yet
   async addSupportRequest(request: Request, response: Response): Promise<void> {
     const userId: string = request.user.id as string;
     const { text }: SupportRequest = request.body

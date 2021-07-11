@@ -13,6 +13,7 @@ export class Skills {
     autoBind(this);
   }
 
+  // cannt remove transaction
   async getSkills(request: Request, response: Response): Promise<void> {
     const subfieldId: string = request.params.id;
     const client: pg.PoolClient = await pool.connect();
@@ -30,6 +31,7 @@ export class Skills {
     }  
   }
 
+  // cannt remove transaction
   async getSkillsFromDB(subfieldId: string, client: pg.PoolClient): Promise<Array<Skill>> {
     const getSkillsQuery = `SELECT s.id, s.name
       FROM skills s
