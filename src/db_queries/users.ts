@@ -92,7 +92,7 @@ export class Users {
       isAvailable: rows[0].is_available,
       availableFrom: moment.utc(rows[0].available_from).format(constants.DATE_TIME_FORMAT),
       availabilities: await this.getUserAvailabilities(id, client),
-      registeredOn: moment.utc(rows[0].available_from).format(constants.DATE_TIME_FORMAT)
+      registeredOn: moment.utc(rows[0].registered_on).format(constants.DATE_TIME_FORMAT)
     }
   }
 
