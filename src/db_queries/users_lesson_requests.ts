@@ -43,7 +43,7 @@ export class UsersLessonRequests {
     const userId: string = request.user.id as string;
     const client: pg.PoolClient = await pool.connect();
     try {
-      await client.query("BEGIN");
+      await client.query('BEGIN');
       await client.query(constants.READ_ONLY_TRANSACTION);
       const isMentor = await this.getIsMentor(userId, client);
       const userTypeId = isMentor ? 'ulr.mentor_id' : 'ulr.student_id';
@@ -82,10 +82,10 @@ export class UsersLessonRequests {
         } 
       }   
       response.status(200).json(lessonRequest);
-      await client.query("COMMIT");
+      await client.query('COMMIT');
     } catch (error) {
       response.status(500).send(error);
-      await client.query("ROLLBACK");
+      await client.query('ROLLBACK');
     } finally {
       client.release();
     }

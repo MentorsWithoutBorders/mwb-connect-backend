@@ -38,21 +38,21 @@ export class Users {
   async getUser(request: Request, response: Response): Promise<void> {
     const client: pg.PoolClient = await pool.connect();
     try {
-      await client.query("BEGIN");
+      await client.query('BEGIN');
       await client.query(constants.READ_ONLY_TRANSACTION);
       const user: User = await this.getUserFromDB(request.user.id as string, client);
       if (user.isMentor) {
         user.lessonsAvailability = await this.getUserLessonsAvailability(request.user.id as string, client)        
       }
       response.status(200).json(user);
-      await client.query("COMMIT");
+      await client.query('COMMIT');
     } catch (error) {
       if (error instanceof ValidationError) {
         response.status(400).send({message: error.message});
       } else {
         response.status(500).send(error);
       }
-      await client.query("ROLLBACK");
+      await client.query('ROLLBACK');
     } finally {
       client.release();
     }
@@ -172,7 +172,7 @@ export class Users {
     const values = [name, email, field?.id, isAvailable, availableFrom, id];
     const client: pg.PoolClient = await pool.connect();
     try {
-      await client.query("BEGIN");
+      await client.query('BEGIN');
       const updateUserQuery = 'UPDATE users SET name = $1, email = $2, field_id = $3, is_available = $4, available_from = $5 WHERE id = $6';
       await client.query(updateUserQuery, values);
       await this.deleteUserSubfields(id, client);
@@ -182,10 +182,10 @@ export class Users {
       await this.insertUserAvailabilities(id, availabilities as Array<Availability>, client);
       await this.updateUserLessonsAvailability(id, lessonsAvailability as LessonsAvailability, client);
       response.status(200).send(id);
-      await client.query("COMMIT");
+      await client.query('COMMIT');
     } catch (error) {
       response.status(500).send(error);
-      await client.query("ROLLBACK");
+      await client.query('ROLLBACK');
     } finally {
       client.release();
     }
@@ -252,15 +252,15 @@ export class Users {
     const id: string = request.user.id as string;
     const client: pg.PoolClient = await pool.connect();
     try {
-      await client.query("BEGIN");
+      await client.query('BEGIN');
       const deleteQuery = 'DELETE FROM users WHERE id = $1';
       await client.query(deleteQuery, [id]);
       await auth.revokeRefreshToken(id, client);
       response.status(200).send(`User deleted with ID: ${id}`);
-      await client.query("COMMIT");
+      await client.query('COMMIT');
     } catch (error) {
       response.status(400).send(error);
-      await client.query("ROLLBACK");
+      await client.query('ROLLBACK');
     } finally {
       client.release();
     }

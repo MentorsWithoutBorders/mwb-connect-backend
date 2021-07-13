@@ -34,14 +34,14 @@ export class UsersLessons {
     const userId: string = request.user.id as string;
     const client: pg.PoolClient = await pool.connect();
     try {
-      await client.query("BEGIN");
+      await client.query('BEGIN');
       await client.query(constants.READ_ONLY_TRANSACTION);
       const lesson = await this.getNextLessonFromDB(userId, client);
       response.status(200).json(lesson);
-      await client.query("COMMIT");
+      await client.query('COMMIT');
     } catch (error) {
       response.status(500).send(error);
-      await client.query("ROLLBACK");
+      await client.query('ROLLBACK');
     } finally {
       client.release();
     }
@@ -216,7 +216,7 @@ export class UsersLessons {
     const userId: string = request.user.id as string;
     const client: pg.PoolClient = await pool.connect();
     try {
-      await client.query("BEGIN");
+      await client.query('BEGIN');
       await client.query(constants.READ_ONLY_TRANSACTION);
       const isMentor = await this.getIsMentor(userId, client);
       const now = moment.utc();
@@ -261,10 +261,10 @@ export class UsersLessons {
       }
       lesson = await this.setLesson(lessonRow, students, isMentor, client);
       response.status(200).json(lesson);
-      await client.query("COMMIT");
+      await client.query('COMMIT');
     } catch (error) {
       response.status(500).send(error);
-      await client.query("ROLLBACK");
+      await client.query('ROLLBACK');
     } finally {
       client.release();
     }
@@ -311,7 +311,7 @@ export class UsersLessons {
     const { dateTime }: Lesson = request.body
     const client: pg.PoolClient = await pool.connect();
     try {
-      await client.query("BEGIN");
+      await client.query('BEGIN');
       if (dateTime) {
         const insertLessonCanceledQuery = `INSERT INTO users_lessons_canceled (user_id, lesson_id, lesson_date_time)
           VALUES ($1, $2, $3)`;
@@ -329,10 +329,10 @@ export class UsersLessons {
         }
       }
       response.status(200).send(`Lesson modified with ID: ${lessonId}`);
-      await client.query("COMMIT");
+      await client.query('COMMIT');
     } catch (error) {
       response.status(400).send(error);
-      await client.query("ROLLBACK");
+      await client.query('ROLLBACK');
     } finally {
       client.release();
     }
@@ -370,7 +370,7 @@ export class UsersLessons {
     const skills = request.body;
     const client: pg.PoolClient = await pool.connect();
     try {
-      await client.query("BEGIN");
+      await client.query('BEGIN');
       const students = await this.getLessonStudents(lessonId, client);
       for (const student of students) {
         const subfieldId = await this.getLessonSubfieldId(lessonId, client);
@@ -391,7 +391,7 @@ export class UsersLessons {
     const { text }: LessonNote = request.body
     const client: pg.PoolClient = await pool.connect();
     try {
-      await client.query("BEGIN");
+      await client.query('BEGIN');
       const students = await this.getLessonStudents(lessonId, client);
       for (const student of students) {
         const insertLessonNoteQuery = `INSERT INTO users_lessons_notes (student_id, lesson_id, text)
@@ -444,7 +444,7 @@ export class UsersLessons {
     const lessonId: string = request.params.id;
     const client: pg.PoolClient = await pool.connect();
     try {
-      await client.query("BEGIN");
+      await client.query('BEGIN');
       await client.query(constants.READ_ONLY_TRANSACTION);
       const user = await users.getUserFromDB(userId, client);
       const field = user.field;
@@ -462,9 +462,9 @@ export class UsersLessons {
       guideRecommendations.push(await this.getFieldGuideRecommendations(field as Field, client));
       guideRecommendations.push(await this.getSubfieldGuideRecommendations(lessonSubfield, client));
       response.status(200).json(guideRecommendations);
-      await client.query("COMMIT");
+      await client.query('COMMIT');
     } catch (error) {
-      await client.query("ROLLBACK");
+      await client.query('ROLLBACK');
     } finally {
       client.release();
     }
@@ -508,7 +508,7 @@ export class UsersLessons {
     const lessonId: string = request.params.id;
     const client: pg.PoolClient = await pool.connect();
     try {
-      await client.query("BEGIN");
+      await client.query('BEGIN');
       await client.query(constants.READ_ONLY_TRANSACTION);
       const user = await users.getUserFromDB(userId, client);
       const subfieldId = await this.getLessonSubfieldId(lessonId, client);
@@ -536,10 +536,10 @@ export class UsersLessons {
         guideTutorial.skills = this.replaceSkillsIdsWithNames(guideTutorial.skills, skills);
       }      
       response.status(200).json(guideTutorials);
-      await client.query("COMMIT");
+      await client.query('COMMIT');
     } catch (error) {
       response.status(400).send(error);
-      await client.query("ROLLBACK");
+      await client.query('ROLLBACK');
     } finally {
       client.release();
     }  

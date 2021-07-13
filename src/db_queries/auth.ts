@@ -46,7 +46,7 @@ export class Auth {
     const client: pg.PoolClient = await pool.connect();
     try {
       const getUsersQuery = 'SELECT * FROM users WHERE email = $1';
-      await client.query("BEGIN");
+      await client.query('BEGIN');
       let { rows }: pg.QueryResult = await client.query(getUsersQuery, [email]);
       if (rows[0]) {
         response.status(400).send({'message': 'User already exists.'});
@@ -84,9 +84,10 @@ export class Auth {
       }
       const tokens: Tokens = await this.setTokens(userId, client);
       response.status(200).send(tokens);
-      await client.query("COMMIT");
+      await client.query('COMMIT');
     } catch (error) {
-      response.status(400).send(error);await client.query('ROLLBACK');
+      response.status(400).send(error);
+      await client.query('ROLLBACK');
     } finally {
       client.release();
     }
@@ -171,7 +172,7 @@ export class Auth {
     }
     const client: pg.PoolClient = await pool.connect();
     try {
-      await client.query("BEGIN");
+      await client.query('BEGIN');
       const loginQuery = 'SELECT * FROM users WHERE email = $1';
       const { rows }: pg.QueryResult = await client.query(loginQuery, [email]);
       if (!rows[0]) {
@@ -246,10 +247,10 @@ export class Auth {
     const userId: string = request.user.id as string;
     const client: pg.PoolClient = await pool.connect();
     try {
-      await client.query("BEGIN");
+      await client.query('BEGIN');
       await this.revokeRefreshToken(userId || '', client);
       response.status(200).json()
-      await client.query("COMMIT");
+      await client.query('COMMIT');
     } catch (error) {
       response.status(400).send(error);
       await client.query('ROLLBACK');
