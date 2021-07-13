@@ -21,15 +21,10 @@ export class UsersTimeZones {
     }
   }
 
-  async addTimeZone(userId: string, timeZone: TimeZone): Promise<void> {
-    try {
-      const insertTimeZoneQuery = `INSERT INTO users_timezones (user_id, abbreviation, name, utc_offset)
-        VALUES ($1, $2, $3, $4)`;
-      const values = [userId, timeZone.abbreviation, timeZone.name, timeZone.offset];        
-      await pool.query(insertTimeZoneQuery, values);
-    } catch (error) {
-      console.log(error)
-    }
+  async addTimeZone(userId: string, timeZone: TimeZone, client: pg.PoolClient): Promise<void> {
+    const insertTimeZoneQuery = `INSERT INTO users_timezones (user_id, abbreviation, name, utc_offset) VALUES ($1, $2, $3, $4)`;
+    const values = [userId, timeZone.abbreviation, timeZone.name, timeZone.offset];        
+    await client.query(insertTimeZoneQuery, values);
   }
 }
 

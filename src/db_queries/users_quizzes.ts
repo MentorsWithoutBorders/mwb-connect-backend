@@ -6,6 +6,7 @@ import { Users } from './users';
 import { QuizzesSettings } from './quizzes_settings';
 import { constants } from '../utils/constants';
 import Quiz from '../models/quiz.model';
+import pg from 'pg';
 
 const conn: Conn = new Conn();
 const pool = conn.pool;
@@ -19,15 +20,18 @@ export class UsersQuizzes {
 
   async getQuizNumber(request: Request, response: Response): Promise<void> {
     const userId: string = request.user.id as string;
+    const client: pg.PoolClient = await pool.connect();
     try {
+      await client.query('BEGIN');
+      await client.query(constants.READ_ONLY_TRANSACTION);
       const quizSettings = await quizzesSettings.getQuizzesSettingsFromDB();
-      const user = await users.getUserFromDB(userId);
+      const user = await users.getUserFromDB(userId, client);
       const registeredOn = moment.utc(user.registeredOn).startOf('day');
       const today = moment.utc().startOf('day');
       const weekNumber = today.diff(registeredOn, 'weeks');
       const weekStartDate = this.getWeekStartDate(registeredOn, weekNumber);
       const weekEndDate = this.getWeekEndDate(registeredOn, weekNumber);      
-      let quizzes = await this.getQuizzes(userId);
+      let quizzes = await this.getQuizzes(userId, client);
       let quizNumber = 0;
       if (user.isMentor) {
         const weeklyCount = quizSettings.mentorWeeklyCount;
@@ -49,9 +53,13 @@ export class UsersQuizzes {
         }
       }
       response.status(200).json(quizNumber);
+      await client.query('COMMIT');
     } catch (error) {
       response.status(400).send(error);
-    } 
+      await client.query('ROLLBACK');
+    } finally {
+      client.release();
+    }
   }
 
   getQuizzesRemainingStartNumber(quizzes: Array<Quiz>, registeredOn: moment.Moment): number {
@@ -81,11 +89,11 @@ export class UsersQuizzes {
     return weekNumber * weeklyCount + weeklyCount;  
   }
 
-  async getQuizzes(userId: string): Promise<Array<Quiz>> {
+  async getQuizzes(userId: string, client: pg.PoolClient): Promise<Array<Quiz>> {
     const getQuizzesQuery = `SELECT * FROM users_quizzes 
       WHERE user_id = $1
       ORDER BY date_time DESC`;
-    const { rows } = await pool.query(getQuizzesQuery, [userId]);
+    const { rows } = await client.query(getQuizzesQuery, [userId]);
     const quizzes: Array<Quiz> = [];
     for (const row of rows) {
       const quiz: Quiz = {

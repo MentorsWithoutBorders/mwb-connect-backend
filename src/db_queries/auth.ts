@@ -43,16 +43,17 @@ export class Auth {
       response.status(400).send({'message': 'Please enter a valid email address'});
       return ;
     }
-    
+    const client: pg.PoolClient = await pool.connect();
     try {
       const getUsersQuery = 'SELECT * FROM users WHERE email = $1';
-      let { rows }: pg.QueryResult = await pool.query(getUsersQuery, [email]);
+      await client.query("BEGIN");
+      let { rows }: pg.QueryResult = await client.query(getUsersQuery, [email]);
       if (rows[0]) {
         response.status(400).send({'message': 'User already exists.'});
         return ;
       }
 
-      const approvedUser: ApprovedUser = await this.getApprovedUser(email);
+      const approvedUser: ApprovedUser = await this.getApprovedUser(email, client);
       if (approvedUser.email == '') {
         response.status(400).send({'message': 'You have to be a student from one of our partner NGOs or an employee of one of our partner companies.'});
         return ;
@@ -74,26 +75,29 @@ export class Auth {
         moment.utc(),
         moment.utc()
       ];
-      ({ rows } = await pool.query(createUserQuery, values));
+      ({ rows } = await client.query(createUserQuery, values));
       const userId: string = rows[0].id;
-      await this.setDefaultUserProfile(userId, approvedUser.isMentor as boolean);
-      await usersTimeZones.addTimeZone(userId, timeZone as TimeZone);
+      await this.setDefaultUserProfile(userId, approvedUser.isMentor as boolean, client);
+      await usersTimeZones.addTimeZone(userId, timeZone as TimeZone, client);
       if (!approvedUser.isMentor) {
-        await usersGoals.addGoalToDB(userId, approvedUser.goal as string);
+        await usersGoals.addGoalToDB(userId, approvedUser.goal as string, client);
       }
-      const tokens: Tokens = await this.setTokens(userId);
+      const tokens: Tokens = await this.setTokens(userId, client);
       response.status(200).send(tokens);
+      await client.query("COMMIT");
     } catch (error) {
-      response.status(400).send(error);
+      response.status(400).send(error);await client.query('ROLLBACK');
+    } finally {
+      client.release();
     }
   }
 
-  async getApprovedUser(email: string): Promise<ApprovedUser> {
+  async getApprovedUser(email: string, client: pg.PoolClient): Promise<ApprovedUser> {
     let approvedUser: ApprovedUser = {
       email: email
     };
     const getApprovedUserQuery = 'SELECT * FROM approved_users WHERE email = $1';
-    const { rows }: pg.QueryResult = await pool.query(getApprovedUserQuery, [email]);
+    const { rows }: pg.QueryResult = await client.query(getApprovedUserQuery, [email]);
     if (!rows[0]) {
       approvedUser.email = '';
     } else {
@@ -115,9 +119,9 @@ export class Auth {
     return approvedUser;
   }
 
-  async setDefaultUserProfile(userId: string, isMentor: boolean): Promise<void> {
+  async setDefaultUserProfile(userId: string, isMentor: boolean, client: pg.PoolClient): Promise<void> {
     const getDefaultUserQuery = 'SELECT * FROM user_default_profile';
-    const { rows }: pg.QueryResult = await pool.query(getDefaultUserQuery);
+    const { rows }: pg.QueryResult = await client.query(getDefaultUserQuery);
     const time: Time = {
       from: rows[0].availability_time_from,
       to: rows[0].availability_time_to
@@ -141,18 +145,18 @@ export class Auth {
       lessonsAvailability: lessonsAvailability
     };
     const updateUserQuery = `UPDATE users SET is_available = $1 WHERE id = $2`;
-    await pool.query(updateUserQuery, [defaultUser.isAvailable, userId]);    
+    await client.query(updateUserQuery, [defaultUser.isAvailable, userId]);    
     const insertUserAvailabilityQuery = `INSERT INTO users_availabilities (user_id, day_of_week, time_from, time_to)
       VALUES ($1, $2, $3, $4)`;
-    await pool.query(insertUserAvailabilityQuery, [userId, availability.dayOfWeek, availability.time.from, availability.time.to]);
+    await client.query(insertUserAvailabilityQuery, [userId, availability.dayOfWeek, availability.time.from, availability.time.to]);
     if (isMentor) {
       const insertUserLessonsAvailabilityQuery = `INSERT INTO users_lessons_availabilities (user_id, min_interval, min_interval_unit, max_students)
         VALUES ($1, $2, $3, $4)`;
-      await pool.query(insertUserLessonsAvailabilityQuery, [userId, lessonsAvailability.minInterval, lessonsAvailability.minIntervalUnit, lessonsAvailability.maxStudents]);
+      await client.query(insertUserLessonsAvailabilityQuery, [userId, lessonsAvailability.minInterval, lessonsAvailability.minIntervalUnit, lessonsAvailability.maxStudents]);
     }
     const insertNotificationsSettingsQuery = `INSERT INTO users_notifications_settings (user_id, enabled, time)
       VALUES ($1, $2, $3)`;
-    await pool.query(insertNotificationsSettingsQuery, [userId, notificationsSettings.enabled, notificationsSettings.time]);    
+    await client.query(insertNotificationsSettingsQuery, [userId, notificationsSettings.enabled, notificationsSettings.time]);    
   }  
 
   async login(request: Request, response: Response): Promise<void> {
@@ -165,30 +169,37 @@ export class Auth {
       response.status(400).send({'message': 'Please enter a valid email address'});
       return ;
     }
-    
+    const client: pg.PoolClient = await pool.connect();
     try {
+      await client.query("BEGIN");
       const loginQuery = 'SELECT * FROM users WHERE email = $1';
-      const { rows }: pg.QueryResult = await pool.query(loginQuery, [email]);
+      const { rows }: pg.QueryResult = await client.query(loginQuery, [email]);
       if (!rows[0]) {
         response.status(400).send({'message': 'The credentials you provided are incorrect'});
+        await client.query('ROLLBACK');
         return ;
       }
       if (!helpers.comparePassword(rows[0].password, password)) {
         response.status(400).send({'message': 'The credentials you provided are incorrect'});
+        await client.query('ROLLBACK');
         return ;
       }
       const userId: string = rows[0].id;
-      const tokens: Tokens = await this.setTokens(userId);
+      const tokens: Tokens = await this.setTokens(userId, client);
       response.status(200).send(tokens);
+      await client.query('COMMIT');
     } catch (error) {
       response.status(400).send(error);
+      await client.query('ROLLBACK');
+    } finally {
+      client.release();
     }
   }
   
-  async setTokens(userId: string): Promise<Tokens> {
+  async setTokens(userId: string, client: pg.PoolClient): Promise<Tokens> {
     const accessToken: string = helpers.generateAccessToken(userId);
     const refreshToken: string = helpers.generateRefreshToken();
-    await this.setRefreshToken(userId, refreshToken);
+    await this.setRefreshToken(userId, refreshToken, client);
     return {
       userId: userId,
       accessToken: accessToken,
@@ -196,17 +207,17 @@ export class Auth {
     }
   }
 
-  async setRefreshToken(userId: string, refreshToken: string): Promise<void> {
+  async setRefreshToken(userId: string, refreshToken: string, client: pg.PoolClient): Promise<void> {
     const getRefreshTokenQuery = 'SELECT * FROM users_refresh_tokens WHERE user_id = $1';
-    const { rows }: pg.QueryResult = await pool.query(getRefreshTokenQuery, [userId]);
+    const { rows }: pg.QueryResult = await client.query(getRefreshTokenQuery, [userId]);
     if (!rows[0]) {
-      await this.addRefreshToken(userId, refreshToken);
+      await this.addRefreshToken(userId, refreshToken, client);
     } else {
-      await this.updateRefreshToken(userId, refreshToken);
+      await this.updateRefreshToken(userId, refreshToken, client);
     }
   }
 
-  async addRefreshToken(userId: string, refreshToken: string): Promise<void> {
+  async addRefreshToken(userId: string, refreshToken: string, client: pg.PoolClient): Promise<void> {
     const insertRefreshTokenQuery = `INSERT INTO 
       users_refresh_tokens (user_id, refresh_token) 
       VALUES ($1, $2)`;
@@ -214,30 +225,36 @@ export class Auth {
       userId,
       refreshToken
     ];     
-    await pool.query(insertRefreshTokenQuery, values);
+    await client.query(insertRefreshTokenQuery, values);
   }
 
-  async updateRefreshToken(userId: string, refreshToken: string): Promise<void> {
+  async updateRefreshToken(userId: string, refreshToken: string, client: pg.PoolClient): Promise<void> {
     const updateRefreshTokenQuery = `UPDATE users_refresh_tokens SET refresh_token = $1 WHERE user_id = $2`;
     const values: Array<string> = [
       refreshToken,
       userId
     ];      
-    await pool.query(updateRefreshTokenQuery, values);
+    await client.query(updateRefreshTokenQuery, values);
   }
 
-  async revokeRefreshToken(userId: string): Promise<void> {
+  async revokeRefreshToken(userId: string, client: pg.PoolClient): Promise<void> {
     const deleteRefreshTokenQuery = 'DELETE FROM users_refresh_tokens WHERE user_id = $1';
-    await pool.query(deleteRefreshTokenQuery, [userId]);
+    await client.query(deleteRefreshTokenQuery, [userId]);
   }  
 
   async logout(request: Request, response: Response): Promise<void> {
     const userId: string = request.user.id as string;
+    const client: pg.PoolClient = await pool.connect();
     try {
-      await this.revokeRefreshToken(userId || '');
+      await client.query("BEGIN");
+      await this.revokeRefreshToken(userId || '', client);
       response.status(200).json()
+      await client.query("COMMIT");
     } catch (error) {
       response.status(400).send(error);
+      await client.query('ROLLBACK');
+    } finally {
+      client.release();
     }    
   }  
 
@@ -269,18 +286,24 @@ export class Auth {
   async getAccessToken(request: Request, response: Response): Promise<void> {
     const userId: string = request.user.id as string;
     const refreshToken: string = request.query.refreshToken as string;
+    const client: pg.PoolClient = await pool.connect();
     try {
+      await client.query('BEGIN');
       const getRefreshTokenQuery = 'SELECT * FROM users_refresh_tokens WHERE user_id = $1 AND refresh_token = $2';
       const { rows }: pg.QueryResult = await pool.query(getRefreshTokenQuery, [userId, refreshToken]);
       if (rows[0]) {
-        const tokens: Tokens = await this.setTokens(userId);
+        const tokens: Tokens = await this.setTokens(userId, client);
         response.status(200).send(tokens);
       } else {
-        this.revokeRefreshToken(userId);
+        this.revokeRefreshToken(userId, client);
         response.status(401).send({'message': 'Refresh token is invalid'});
-      }      
+      }
+      await client.query('COMMIT'); 
     } catch (error) {
       response.status(400).send(error);
-    } 
+      await client.query('ROLLBACK');
+    } finally {
+      client.release();
+    }
   }
 }

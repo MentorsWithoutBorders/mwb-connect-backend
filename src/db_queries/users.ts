@@ -32,31 +32,33 @@ export class Users {
       response.status(200).json(rows);
     } catch (error) {
       response.status(500).send(error);
-    }   
+    }
   }
 
-  async getUserById(request: Request, response: Response): Promise<void> {
-    const id: string = request.params.id;
+  async getUser(request: Request, response: Response): Promise<void> {
+    const client: pg.PoolClient = await pool.connect();
     try {
-      if (id === request.user.id) {
-        const user: User = await this.getUserFromDB(id);
-        if (user.isMentor) {
-          user.lessonsAvailability = await this.getUserLessonsAvailability(id)        
-        }
-        response.status(200).json(user);
-      } else {
-        throw new Error('Invalid user id');
+      await client.query("BEGIN");
+      await client.query(constants.READ_ONLY_TRANSACTION);
+      const user: User = await this.getUserFromDB(request.user.id as string, client);
+      if (user.isMentor) {
+        user.lessonsAvailability = await this.getUserLessonsAvailability(request.user.id as string, client)        
       }
+      response.status(200).json(user);
+      await client.query("COMMIT");
     } catch (error) {
       if (error instanceof ValidationError) {
         response.status(400).send({message: error.message});
       } else {
         response.status(500).send(error);
       }
+      await client.query("ROLLBACK");
+    } finally {
+      client.release();
     }
   }
 
-  async getUserFromDB(id: string): Promise<User> {
+  async getUserFromDB(id: string, client: pg.PoolClient): Promise<User> {
     if (!uuidValidate(id)) {
       throw new ValidationError('Invalid user id');
     }
@@ -67,7 +69,7 @@ export class Users {
       JOIN organizations o
       ON u.organization_id = o.id
       WHERE u.id = $1`;
-    const { rows }: pg.QueryResult = await pool.query(getUserQuery, [id]);
+    const { rows }: pg.QueryResult = await client.query(getUserQuery, [id]);
     if (rows.length === 0) {
       throw new ValidationError('User not found');
     }
@@ -78,7 +80,7 @@ export class Users {
     const field: Field = {
       id: rows[0].field_id,
       name: rows[0].field_name,
-      subfields: await this.getUserSubfields(id)
+      subfields: await this.getUserSubfields(id, client)
     };
     return {
       id: rows[0].user_id,
@@ -89,22 +91,22 @@ export class Users {
       isMentor: rows[0].is_mentor,
       isAvailable: rows[0].is_available,
       availableFrom: moment.utc(rows[0].available_from).format(constants.DATE_TIME_FORMAT),
-      availabilities: await this.getUserAvailabilities(id),
-      registeredOn: moment.utc(rows[0].registered_on).format(constants.DATE_TIME_FORMAT)
+      availabilities: await this.getUserAvailabilities(id, client),
+      registeredOn: moment.utc(rows[0].available_from).format(constants.DATE_TIME_FORMAT)
     }
   }
 
-  async getUserSubfields(userId: string): Promise<Array<Subfield>> {
+  async getUserSubfields(userId: string, client: pg.PoolClient): Promise<Array<Subfield>> {
     const getSubfieldsQuery = `SELECT s.id, s.name
       FROM subfields s
       JOIN users_subfields us
       ON us.subfield_id = s.id
       WHERE us.user_id = $1
       ORDER BY us.subfield_index ASC`;
-    const { rows }: pg.QueryResult = await pool.query(getSubfieldsQuery, [userId]);
+    const { rows }: pg.QueryResult = await client.query(getSubfieldsQuery, [userId]);
     const subfields: Array<Subfield> = [];
     for (const row of rows) {
-      const skills: Array<Skill> = await this.getUserSkills(userId, row.id);
+      const skills: Array<Skill> = await this.getUserSkills(userId, row.id, client);
       const subfield: Subfield = {
         id: row.id,
         name: row.name,
@@ -115,14 +117,14 @@ export class Users {
     return subfields;    
   }
 
-  async getUserSkills(userId: string, subfieldId: string): Promise<Array<Skill>> {
+  async getUserSkills(userId: string, subfieldId: string, client: pg.PoolClient): Promise<Array<Skill>> {
     const getSkillsQuery = `SELECT s.id, s.name
       FROM skills s
       JOIN users_skills us
       ON us.skill_id = s.id
       WHERE us.user_id = $1 AND us.subfield_id = $2
       ORDER BY us.skill_index ASC`;
-    const { rows }: pg.QueryResult = await pool.query(getSkillsQuery, [userId, subfieldId]);
+    const { rows }: pg.QueryResult = await client.query(getSkillsQuery, [userId, subfieldId]);
     const skills: Array<Skill> = [];
     rows.forEach(function (row) {
       const skill: Skill = {
@@ -134,10 +136,10 @@ export class Users {
     return skills;    
   }
   
-  async getUserAvailabilities(userId: string): Promise<Array<Availability>> {
+  async getUserAvailabilities(userId: string, client: pg.PoolClient): Promise<Array<Availability>> {
     const getAvailabilitiesQuery = `SELECT * FROM users_availabilities
       WHERE user_id = $1`;
-    const { rows }: pg.QueryResult = await pool.query(getAvailabilitiesQuery, [userId]);
+    const { rows }: pg.QueryResult = await client.query(getAvailabilitiesQuery, [userId]);
     const availabilities: Array<Availability> = [];
     for (const row of rows) {
       const time: Time = {
@@ -153,10 +155,10 @@ export class Users {
     return availabilities;
   }
   
-  async getUserLessonsAvailability(userId: string): Promise<LessonsAvailability> {
+  async getUserLessonsAvailability(userId: string, client: pg.PoolClient): Promise<LessonsAvailability> {
     const getLessonsAvailabilityQuery = `SELECT * FROM users_lessons_availabilities
       WHERE user_id = $1`;
-    const { rows }: pg.QueryResult = await pool.query(getLessonsAvailabilityQuery, [userId]);
+    const { rows }: pg.QueryResult = await client.query(getLessonsAvailabilityQuery, [userId]);
     return {
       minInterval: rows[0].min_interval,
       minIntervalUnit: rows[0].min_interval_unit,
@@ -167,89 +169,101 @@ export class Users {
   async updateUser(request: Request, response: Response): Promise<void> {
     const id: string = request.user.id as string;
     const { name, email, field, isAvailable, availableFrom, availabilities, lessonsAvailability }: User = request.body
+    const values = [name, email, field?.id, isAvailable, availableFrom, id];
+    const client: pg.PoolClient = await pool.connect();
     try {
+      await client.query("BEGIN");
       const updateUserQuery = 'UPDATE users SET name = $1, email = $2, field_id = $3, is_available = $4, available_from = $5 WHERE id = $6';
-      const values = [name, email, field?.id, isAvailable, availableFrom, id];
-      await pool.query(updateUserQuery, values);
-      await this.deleteUserSubfields(id);
-      await this.deleteUserSkills(id);
-      await this.deleteUserAvailabilities(id);      
-      await this.insertUserSubfields(id, field?.subfields as Array<Subfield>);
-      await this.insertUserAvailabilities(id, availabilities as Array<Availability>);
-      await this.updateUserLessonsAvailability(id, lessonsAvailability as LessonsAvailability);
+      await client.query(updateUserQuery, values);
+      await this.deleteUserSubfields(id, client);
+      await this.deleteUserSkills(id, client);
+      await this.deleteUserAvailabilities(id, client);      
+      await this.insertUserSubfields(id, field?.subfields as Array<Subfield>, client);
+      await this.insertUserAvailabilities(id, availabilities as Array<Availability>, client);
+      await this.updateUserLessonsAvailability(id, lessonsAvailability as LessonsAvailability, client);
       response.status(200).send(id);
+      await client.query("COMMIT");
     } catch (error) {
       response.status(500).send(error);
+      await client.query("ROLLBACK");
+    } finally {
+      client.release();
     }
   }
 
-  async deleteUserSubfields(userId: string): Promise<void> {
+  async deleteUserSubfields(userId: string, client: pg.PoolClient): Promise<void> {
     const deleteSubfieldsQuery = `DELETE FROM users_subfields
       WHERE user_id = $1`;
-    await pool.query(deleteSubfieldsQuery, [userId]);
+    await client.query(deleteSubfieldsQuery, [userId]);
   }
 
-  async deleteUserSkills(userId: string): Promise<void> {
+  async deleteUserSkills(userId: string, client: pg.PoolClient): Promise<void> {
     const deleteSkillsQuery = `DELETE FROM users_skills
       WHERE user_id = $1`;
-    await pool.query(deleteSkillsQuery, [userId]);    
+    await client.query(deleteSkillsQuery, [userId]);    
   }
-  
-  async deleteUserAvailabilities(userId: string): Promise<void> {
+
+  async deleteUserAvailabilities(userId: string, client: pg.PoolClient): Promise<void> {
     const deleteAvailabilitiesQuery = `DELETE FROM users_availabilities
       WHERE user_id = $1`;
-    await pool.query(deleteAvailabilitiesQuery, [userId]);    
+    await client.query(deleteAvailabilitiesQuery, [userId]);    
   }  
 
-  async insertUserSubfields(userId: string, subfields: Array<Subfield>): Promise<void> {
+  async insertUserSubfields(userId: string, subfields: Array<Subfield>, client: pg.PoolClient): Promise<void> {
     for (let i = 0; i < subfields.length; i++) {
       const insertSubfieldQuery = `INSERT INTO users_subfields (user_id, subfield_index, subfield_id)
         VALUES ($1, $2, $3)`;
-      await pool.query(insertSubfieldQuery, [userId, i+1, subfields[i].id]); 
+      await client.query(insertSubfieldQuery, [userId, i+1, subfields[i].id]); 
       if (subfields[i].skills != null && (subfields[i].skills as Array<Skill>).length > 0) {
-        await this.updateUserSkills(userId, subfields[i].id as string, subfields[i].skills as Array<Skill>);
+        await this.updateUserSkills(userId, subfields[i].id as string, subfields[i].skills as Array<Skill>, client);
       }
     }
   }
   
-  async updateUserSkills(userId: string, subfieldId: string, skills: Array<Skill>): Promise<void> {
+  async updateUserSkills(userId: string, subfieldId: string, skills: Array<Skill>, client: pg.PoolClient): Promise<void> {
     for (let i = 0; i < skills.length; i++) {
       const insertSkillQuery = `INSERT INTO users_skills (user_id, subfield_id, skill_index, skill_id)
         VALUES ($1, $2, $3, $4)`;
       const values = [userId, subfieldId, i+1, skills[i].id];
-      await pool.query(insertSkillQuery, values);
+      await client.query(insertSkillQuery, values);
     }
   }
   
-  async insertUserAvailabilities(userId: string, availabilities: Array<Availability>): Promise<void> {
+  async insertUserAvailabilities(userId: string, availabilities: Array<Availability>, client: pg.PoolClient): Promise<void> {
     for (const availability of availabilities) {
       const insertAvailabilityQuery = `INSERT INTO users_availabilities (user_id, day_of_week, time_from, time_to)
         VALUES ($1, $2, $3, $4)`;
       const timeFrom = moment(availability.time.from, 'ha').format('HH:mm');
       const timeto = moment(availability.time.to, 'ha').format('HH:mm');
       const values = [userId, availability.dayOfWeek, timeFrom, timeto];
-      await pool.query(insertAvailabilityQuery, values);
+      await client.query(insertAvailabilityQuery, values);
     }
   }
 
-  async updateUserLessonsAvailability(userId: string, lessonsAvailability: LessonsAvailability): Promise<void> {
+  async updateUserLessonsAvailability(userId: string, lessonsAvailability: LessonsAvailability, client: pg.PoolClient): Promise<void> {
     const updateLessonsAvailabilityQuery = `UPDATE users_lessons_availabilities 
       SET min_interval = $1, min_interval_unit = $2, max_students = $3
       WHERE user_id = $4`;
     const values = [lessonsAvailability.minInterval, lessonsAvailability.minIntervalUnit, lessonsAvailability.maxStudents, userId];
-    await pool.query(updateLessonsAvailabilityQuery, values);
+    await client.query(updateLessonsAvailabilityQuery, values);
   }  
 
   async deleteUser(request: Request, response: Response): Promise<void> {
     const id: string = request.user.id as string;
+    const client: pg.PoolClient = await pool.connect();
     try {
+      await client.query("BEGIN");
       const deleteQuery = 'DELETE FROM users WHERE id = $1';
-      await pool.query(deleteQuery, [id]);
-      await auth.revokeRefreshToken(id);
+      await client.query(deleteQuery, [id]);
+      await auth.revokeRefreshToken(id, client);
       response.status(200).send(`User deleted with ID: ${id}`);
+      await client.query("COMMIT");
     } catch (error) {
       response.status(400).send(error);
-    }    
+      await client.query("ROLLBACK");
+    } finally {
+      client.release();
+    }
   }
 }
 
