@@ -24,34 +24,7 @@ export class UsersQuizzes {
     try {
       await client.query('BEGIN');
       await client.query(constants.READ_ONLY_TRANSACTION);
-      const quizSettings = await quizzesSettings.getQuizzesSettingsFromDB();
-      const user = await users.getUserFromDB(userId, client);
-      const registeredOn = moment.utc(user.registeredOn).startOf('day');
-      const today = moment.utc().startOf('day');
-      const weekNumber = today.diff(registeredOn, 'weeks');
-      const weekStartDate = this.getWeekStartDate(registeredOn, weekNumber);
-      const weekEndDate = this.getWeekEndDate(registeredOn, weekNumber);      
-      let quizzes = await this.getQuizzes(userId, client);
-      let quizNumber = 0;
-      if (user.isMentor) {
-        const weeklyCount = quizSettings.mentorWeeklyCount;
-        const quizStartNumber = this.getQuizStartNumber(weekNumber, weeklyCount);
-        const quizEndNumber = this.getQuizEndNumber(weekNumber, weeklyCount);
-        quizzes = this.getQuizzesBetweenDates(quizzes, weekStartDate, weekEndDate); 
-        quizNumber = this.calculateQuizNumber(quizzes, weeklyCount, quizStartNumber, quizEndNumber);
-      } else {
-        if (weekNumber <= constants.STUDENT_MAX_QUIZZES_SETS + constants.STUDENT_MAX_QUIZZES_SETS / 2 + 1) {
-          const weeklyCount = quizSettings.studentWeeklyCount;
-          const quizzesSetNumber = this.getQuizzesSetNumber(quizzes, registeredOn, weeklyCount);
-          const quizStartNumber = this.getQuizStartNumber(quizzesSetNumber, weeklyCount);
-          const quizEndNumber = this.getQuizEndNumber(quizzesSetNumber, weeklyCount);
-          quizzes = this.getQuizzesBetweenDates(quizzes, weekStartDate, weekEndDate); 
-          quizNumber = this.calculateQuizNumber(quizzes, weeklyCount, quizStartNumber, quizEndNumber);
-        } else {
-          const quizStartNumber = this.getQuizzesRemainingStartNumber(quizzes, registeredOn);
-          quizNumber = this.calculateQuizNumber(quizzes, quizSettings.studentWeeklyCount, quizStartNumber, quizSettings.studentWeeklyCount * constants.WEEKS_PER_MONTH);
-        }
-      }
+      const quizNumber = await this.getQuizNumberFromDB(userId, client);
       response.status(200).json(quizNumber);
       await client.query('COMMIT');
     } catch (error) {
@@ -60,6 +33,38 @@ export class UsersQuizzes {
     } finally {
       client.release();
     }
+  }
+
+  async getQuizNumberFromDB(userId: string, client: pg.PoolClient): Promise<number> {
+    const quizSettings = await quizzesSettings.getQuizzesSettingsFromDB();
+    const user = await users.getUserFromDB(userId, client);
+    const registeredOn = moment.utc(user.registeredOn).startOf('day');
+    const today = moment.utc().startOf('day');
+    const weekNumber = today.diff(registeredOn, 'weeks');
+    const weekStartDate = this.getWeekStartDate(registeredOn, weekNumber);
+    const weekEndDate = this.getWeekEndDate(registeredOn, weekNumber);      
+    let quizzes = await this.getQuizzes(userId, client);
+    let quizNumber = 0;
+    if (user.isMentor) {
+      const weeklyCount = quizSettings.mentorWeeklyCount;
+      const quizStartNumber = this.getQuizStartNumber(weekNumber, weeklyCount);
+      const quizEndNumber = this.getQuizEndNumber(weekNumber, weeklyCount);
+      quizzes = this.getQuizzesBetweenDates(quizzes, weekStartDate, weekEndDate); 
+      quizNumber = this.calculateQuizNumber(quizzes, weeklyCount, quizStartNumber, quizEndNumber);
+    } else {
+      if (weekNumber <= constants.STUDENT_MAX_QUIZZES_SETS + constants.STUDENT_MAX_QUIZZES_SETS / 2 + 1) {
+        const weeklyCount = quizSettings.studentWeeklyCount;
+        const quizzesSetNumber = this.getQuizzesSetNumber(quizzes, registeredOn, weeklyCount);
+        const quizStartNumber = this.getQuizStartNumber(quizzesSetNumber, weeklyCount);
+        const quizEndNumber = this.getQuizEndNumber(quizzesSetNumber, weeklyCount);
+        quizzes = this.getQuizzesBetweenDates(quizzes, weekStartDate, weekEndDate); 
+        quizNumber = this.calculateQuizNumber(quizzes, weeklyCount, quizStartNumber, quizEndNumber);
+      } else {
+        const quizStartNumber = this.getQuizzesRemainingStartNumber(quizzes, registeredOn);
+        quizNumber = this.calculateQuizNumber(quizzes, quizSettings.studentWeeklyCount, quizStartNumber, quizSettings.studentWeeklyCount * constants.WEEKS_PER_MONTH);
+      }
+    }
+    return quizNumber;    
   }
 
   getQuizzesRemainingStartNumber(quizzes: Array<Quiz>, registeredOn: moment.Moment): number {
@@ -187,15 +192,22 @@ export class UsersQuizzes {
   async addQuiz(request: Request, response: Response): Promise<void> {
     const userId: string = request.user.id as string;
     const { number, isCorrect, isClosed }: Quiz = request.body
+    const client: pg.PoolClient = await pool.connect();
     try {
+      await client.query('BEGIN');      
       const insertQuizQuery = `INSERT INTO users_quizzes (user_id, number, is_correct, is_closed, date_time)
         VALUES ($1, $2, $3, $4, $5) RETURNING *`;
       const dateTime = moment.utc();
       const values = [userId, number, isCorrect, isClosed, dateTime];
       await pool.query(insertQuizQuery, values);
-      response.status(200).send('Quiz has been added');
+      const quizNumber = await this.getQuizNumberFromDB(userId, client);
+      response.status(200).json(quizNumber);
+      await client.query('COMMIT');
     } catch (error) {
       response.status(400).send(error);
+      await client.query('ROLLBACK');
+    } finally {
+      client.release();
     }
   }  
 }
