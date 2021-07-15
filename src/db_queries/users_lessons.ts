@@ -459,8 +459,14 @@ export class UsersLessons {
         }
       }
       guideRecommendations.push(await this.getGeneralGuideRecommendations(client));
-      guideRecommendations.push(await this.getFieldGuideRecommendations(field as Field, client));
-      guideRecommendations.push(await this.getSubfieldGuideRecommendations(lessonSubfield, client));
+      const fieldGuideRecommendation = await this.getFieldGuideRecommendations(field as Field, client);
+      if (Object.keys(fieldGuideRecommendation).length > 0) {
+        guideRecommendations.push(fieldGuideRecommendation);
+      }
+      const subfieldGuideRecommendation = await this.getSubfieldGuideRecommendations(lessonSubfield, client);
+      if (Object.keys(subfieldGuideRecommendation).length > 0) {
+        guideRecommendations.push(subfieldGuideRecommendation);
+      }      
       response.status(200).json(guideRecommendations);
       await client.query('COMMIT');
     } catch (error) {
@@ -486,10 +492,14 @@ export class UsersLessons {
       FROM guides_recommendations
       WHERE field_id = $1`;
     const { rows }: pg.QueryResult = await client.query(getGuideRecommendationsQuery, [field.id]);
-    return {
-      type: field.name as string,
-      recommendations: rows[0].text.split(/\r?\n/)
-    }    
+    let fieldGuideRecommendation: GuideRecommendation = {};
+    if (rows[0]) {
+      fieldGuideRecommendation = {
+        type: field.name as string,
+        recommendations: rows[0].text.split(/\r?\n/)
+      }  
+    }
+    return fieldGuideRecommendation;
   }
 
   async getSubfieldGuideRecommendations(subfield: Subfield,client: pg.PoolClient): Promise<GuideRecommendation> {
@@ -497,10 +507,14 @@ export class UsersLessons {
       FROM guides_recommendations
       WHERE subfield_id = $1`;
     const { rows }: pg.QueryResult = await client.query(getGuideRecommendationsQuery, [subfield.id]);
-    return {
-      type: subfield.name as string,
-      recommendations: rows[0].text.split(/\r?\n/)
-    }    
+    let subfieldGuideRecommendation: GuideRecommendation = {};
+    if (rows[0]) {
+      subfieldGuideRecommendation = {
+        type: subfield.name as string,
+        recommendations: rows[0].text.split(/\r?\n/)
+      }  
+    }
+    return subfieldGuideRecommendation; 
   }   
 
   async getLessonGuideTutorials(request: Request, response: Response): Promise<void> {
