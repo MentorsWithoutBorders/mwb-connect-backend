@@ -80,7 +80,7 @@ export class UsersLessons {
       if (lessonRow.end_recurrence_date_time != null) {
         lesson.endRecurrenceDateTime = moment.utc(lessonRow.end_recurrence_date_time).format(constants.DATE_TIME_FORMAT)
       }
-      const lessonDateTime = await this.getNextLessonDateTime(lesson, userId, client);
+      const lessonDateTime = await this.getNextLessonDateTime(lesson, userId, isMentor, client);
       if (lessonDateTime == undefined) {
         lessonRow = null;
       } else {
@@ -91,7 +91,7 @@ export class UsersLessons {
     return this.setLesson(lessonRow, students, isMentor, client);
   }
 
-  async getNextLessonDateTime(lesson: Lesson, userId: string, client: pg.PoolClient): Promise<string | undefined> {
+  async getNextLessonDateTime(lesson: Lesson, userId: string, isMentor: boolean, client: pg.PoolClient): Promise<string | undefined> {
     const now = moment.utc();
     const endRecurrenceDateTime = moment.utc(lesson.endRecurrenceDateTime);
     let lessonDateTime = moment.utc(lesson.dateTime);
@@ -102,7 +102,7 @@ export class UsersLessons {
         while (lessonDateTime.isBefore(now)) {
           lessonDateTime = lessonDateTime.add(7, 'd');
         }
-        const nextValidLessonDateTime = await this.getNextValidLessonDateTime(lesson, userId, lessonDateTime, client);
+        const nextValidLessonDateTime = await this.getNextValidLessonDateTime(lesson, userId, isMentor, lessonDateTime, client);
         if (nextValidLessonDateTime.isAfter(endRecurrenceDateTime)) {
           return undefined;
         } else {
@@ -118,9 +118,9 @@ export class UsersLessons {
     }
   }
 
-  async getNextValidLessonDateTime(lesson: Lesson, userId: string, lessonDateTime: moment.Moment, client: pg.PoolClient): Promise<moment.Moment> {
+  async getNextValidLessonDateTime(lesson: Lesson, userId: string, isMentor: boolean, lessonDateTime: moment.Moment, client: pg.PoolClient): Promise<moment.Moment> {
     let updatedLessonDateTime = lessonDateTime.clone();
-    const lessonsCanceledDateTimes = await this.getLessonsCanceledDateTimes(userId, lesson.id as string, client);
+    const lessonsCanceledDateTimes = await this.getLessonsCanceledDateTimes(userId, isMentor, lesson.id as string, client);
     lessonsCanceledDateTimes.forEach(function (dateTime) {
       if (moment.utc(dateTime).isSame(moment.utc(updatedLessonDateTime))) {
         updatedLessonDateTime = updatedLessonDateTime.add(7, 'd');
@@ -129,11 +129,21 @@ export class UsersLessons {
     return updatedLessonDateTime;
   }
 
-  async getLessonsCanceledDateTimes(userId: string, lessonId: string, client: pg.PoolClient): Promise<Array<string>> {
-    const getLessonCanceledQuery = `SELECT lesson_date_time
-      FROM users_lessons_canceled
-      WHERE user_id = $1 AND lesson_id = $2`;
-    const { rows }: pg.QueryResult = await client.query(getLessonCanceledQuery, [userId, lessonId]);
+  async getLessonsCanceledDateTimes(userId: string, isMentor: boolean, lessonId: string, client: pg.PoolClient): Promise<Array<string>> {
+    let getLessonCanceledQuery = '';
+    let values = [];
+    if (isMentor) {
+      getLessonCanceledQuery = `SELECT lesson_date_time
+        FROM users_lessons_canceled
+        WHERE user_id = $1 AND lesson_id = $2`;
+      values = [userId, lessonId];
+    } else {
+      getLessonCanceledQuery = `SELECT lesson_date_time
+        FROM users_lessons_canceled
+        WHERE lesson_id = $1`;
+      values = [lessonId];      
+    }
+    const { rows }: pg.QueryResult = await client.query(getLessonCanceledQuery, values);
     let lessonsCanceledDateTimes: Array<string> = [];
     rows.forEach(function (row) {
       lessonsCanceledDateTimes.push(row.lesson_date_time);
@@ -251,7 +261,7 @@ export class UsersLessons {
         if (lessonRow.end_recurrence_date_time != null) {
           lesson.endRecurrenceDateTime = moment.utc(lessonRow.end_recurrence_date_time).format(constants.DATE_TIME_FORMAT);
         }
-        const lessonDateTime = await this.getPreviousLessonDateTime(lesson, userId, client);
+        const lessonDateTime = await this.getPreviousLessonDateTime(lesson, userId, isMentor, client);
         if (lessonDateTime == undefined) {
           lessonRow = null;
         } else {
@@ -270,7 +280,7 @@ export class UsersLessons {
     }
   }
   
-  async getPreviousLessonDateTime(lesson: Lesson, userId: string, client: pg.PoolClient): Promise<string | undefined> {
+  async getPreviousLessonDateTime(lesson: Lesson, userId: string, isMentor: boolean, client: pg.PoolClient): Promise<string | undefined> {
     const now = moment.utc();
     const endRecurrenceDateTime = moment.utc(lesson.endRecurrenceDateTime);
     let lessonDateTime = moment.utc(lesson.dateTime);
@@ -279,7 +289,7 @@ export class UsersLessons {
         lessonDateTime = lessonDateTime.add(7, 'd');
       }
       lessonDateTime = lessonDateTime.subtract(7, 'd');
-      const previousValidLessonDateTime = await this.getPreviousValidLessonDateTime(lesson, userId, lessonDateTime, client);
+      const previousValidLessonDateTime = await this.getPreviousValidLessonDateTime(lesson, userId, isMentor, lessonDateTime, client);
       if (endRecurrenceDateTime.isAfter(now)) {
         if (previousValidLessonDateTime.isBefore(now)) {
           return moment.utc(previousValidLessonDateTime).format(constants.DATE_TIME_FORMAT);
@@ -294,9 +304,9 @@ export class UsersLessons {
     } 
   }
 
-  async getPreviousValidLessonDateTime(lesson: Lesson, userId: string, lessonDateTime: moment.Moment, client: pg.PoolClient): Promise<moment.Moment> {
+  async getPreviousValidLessonDateTime(lesson: Lesson, userId: string, isMentor: boolean,lessonDateTime: moment.Moment, client: pg.PoolClient): Promise<moment.Moment> {
     let updatedLessonDateTime = lessonDateTime.clone();
-    const lessonsCanceledDateTimes = await this.getLessonsCanceledDateTimes(userId, lesson.id as string, client);
+    const lessonsCanceledDateTimes = await this.getLessonsCanceledDateTimes(userId, isMentor, lesson.id as string, client);
     lessonsCanceledDateTimes.slice().reverse().forEach(function (dateTime) {
       if (moment.utc(dateTime).isSame(moment.utc(updatedLessonDateTime))) {
         updatedLessonDateTime = updatedLessonDateTime.subtract(7, 'd');
