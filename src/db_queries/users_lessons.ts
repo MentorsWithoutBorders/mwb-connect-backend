@@ -428,7 +428,7 @@ export class UsersLessons {
       const lessonNotes: Array<LessonNote> = [];
       rows.forEach(function (row) {
         const lessonNote: LessonNote = {
-          dateTime: moment.utc(rows[0].date_time).format(constants.DATE_TIME_FORMAT),
+          dateTime: moment.utc(row.date_time).format(constants.DATE_TIME_FORMAT),
           text: row.text
         };
         lessonNotes.push(lessonNote);
