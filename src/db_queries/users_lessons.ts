@@ -69,7 +69,6 @@ export class UsersLessons {
     }
     const { rows }: pg.QueryResult = await client.query(getNextLessonQuery, [userId]);
     let lessonRow = rows[0];
-    let students: Array<User> = [];
     if (lessonRow) {
       const lesson: Lesson = {
         id: lessonRow.id,
@@ -85,10 +84,9 @@ export class UsersLessons {
         lessonRow = null;
       } else {
         lessonRow.date_time = lessonDateTime;
-        students = await this.getLessonStudents(lessonRow.id, client);
       }
     }
-    return this.setLesson(lessonRow, students, isMentor, client);
+    return this.setLesson(lessonRow, isMentor, client);
   }
 
   async getNextLessonDateTime(lesson: Lesson, userId: string, isMentor: boolean, client: pg.PoolClient): Promise<string | undefined> {
@@ -146,7 +144,7 @@ export class UsersLessons {
     const { rows }: pg.QueryResult = await client.query(getLessonCanceledQuery, values);
     let lessonsCanceledDateTimes: Array<string> = [];
     rows.forEach(function (row) {
-      lessonsCanceledDateTimes.push(row.lesson_date_time);
+      lessonsCanceledDateTimes.push(moment.utc(row.lesson_date_time).format(constants.DATE_TIME_FORMAT));
     });
     lessonsCanceledDateTimes = lessonsCanceledDateTimes.sort((d1, d2) => {
       if (moment.utc(d1).isAfter(moment.utc(d2))) {
@@ -160,11 +158,11 @@ export class UsersLessons {
     return lessonsCanceledDateTimes;
   }
 
-  async getLessonStudents(lessonId: string, client: pg.PoolClient): Promise<Array<User>> {
+  async getLessonStudents(lesson: Lesson, client: pg.PoolClient): Promise<Array<User>> {
     const getLessonStudentsQuery = `SELECT student_id, is_canceled
       FROM users_lessons_students
       WHERE lesson_id = $1`;
-    const { rows }: pg.QueryResult = await client.query(getLessonStudentsQuery, [lessonId]);
+    const { rows }: pg.QueryResult = await client.query(getLessonStudentsQuery, [lesson.id]);
     const students: Array<User> = [];
     for (const studentRow of rows) {
       if (!studentRow.is_canceled) {
@@ -174,13 +172,22 @@ export class UsersLessons {
           name: user.name as string,
           organization: user.organization as Organization
         }
-        students.push(student);
+        let shouldAddStudent = true;
+        if (lesson.dateTime) {
+          const lessonsCanceledDateTimes = await this.getLessonsCanceledDateTimes(student.id as string, false, lesson.id as string, client);
+          if (lessonsCanceledDateTimes.includes(lesson.dateTime)) {
+            shouldAddStudent = false;
+          }
+        }
+        if (shouldAddStudent) {
+          students.push(student);
+        }
       }
     }  
     return students;  
   }
 
-  async setLesson(lessonRow: pg.QueryResultRow, students: Array<User>, isMentor: boolean, client: pg.PoolClient): Promise<Lesson> {
+  async setLesson(lessonRow: pg.QueryResultRow, isMentor: boolean, client: pg.PoolClient): Promise<Lesson> {
     let lesson: Lesson = {};
     if (lessonRow) {    
       const subfield: Subfield = {
@@ -202,7 +209,7 @@ export class UsersLessons {
         lesson.endRecurrenceDateTime = moment.utc(lessonRow.end_recurrence_date_time).format(constants.DATE_TIME_FORMAT)
       }
       if (isMentor) {
-        lesson.students = students;
+        lesson.students = await this.getLessonStudents(lesson, client);
       } else {
         const user: User = await users.getUserFromDB(lessonRow.mentor_id, client);
         const mentor: User = {
@@ -250,7 +257,6 @@ export class UsersLessons {
       }
       const { rows }: pg.QueryResult = await client.query(getPreviousLessonQuery, [userId, now]);
       let lessonRow = rows[0];
-      let students: Array<User> = [];
       let lesson: Lesson = {};
       if (lessonRow != null) {
         lesson = {
@@ -266,10 +272,9 @@ export class UsersLessons {
           lessonRow = null;
         } else {
           lessonRow.date_time = lessonDateTime;
-          students = await this.getLessonStudents(lessonRow.id, client);
         }
       }
-      lesson = await this.setLesson(lessonRow, students, isMentor, client);
+      lesson = await this.setLesson(lessonRow, isMentor, client);
       response.status(200).json(lesson);
       await client.query('COMMIT');
     } catch (error) {
@@ -381,7 +386,10 @@ export class UsersLessons {
     const client: pg.PoolClient = await pool.connect();
     try {
       await client.query('BEGIN');
-      const students = await this.getLessonStudents(lessonId, client);
+      const lesson: Lesson = {
+        id: lessonId
+      }
+      const students = await this.getLessonStudents(lesson, client);
       for (const student of students) {
         const subfieldId = await this.getLessonSubfieldId(lessonId, client);
         await usersSkills.addUserSkillsToDB(student.id as string, subfieldId, skills, client);
@@ -402,7 +410,10 @@ export class UsersLessons {
     const client: pg.PoolClient = await pool.connect();
     try {
       await client.query('BEGIN');
-      const students = await this.getLessonStudents(lessonId, client);
+      const lesson: Lesson = {
+        id: lessonId
+      }      
+      const students = await this.getLessonStudents(lesson, client);
       for (const student of students) {
         const insertLessonNoteQuery = `INSERT INTO users_lessons_notes (student_id, lesson_id, text)
           VALUES ($1, $2, $3)`;
