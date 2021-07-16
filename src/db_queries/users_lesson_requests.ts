@@ -154,7 +154,7 @@ export class UsersLessonRequests {
       student = lesson.students[0];
     }
     await this.addStudent(addedLesson.id as string, student.id as string, client);
-    return usersLessons.getNextLessonFromDB(lesson.mentor?.id as string, client);
+    return usersLessons.getNextLessonFromDB(lesson.mentor?.id as string, true, client);
   }
 
   async addStudent(lessonId: string, studentId: string, client: pg.PoolClient): Promise<void> {
