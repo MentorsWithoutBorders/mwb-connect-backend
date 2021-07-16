@@ -77,11 +77,11 @@ export class Auth {
       ];
       ({ rows } = await client.query(createUserQuery, values));
       const userId: string = rows[0].id;
-      // await this.setDefaultUserProfile(userId, approvedUser.isMentor as boolean, client);
-      // await usersTimeZones.addTimeZone(userId, timeZone as TimeZone, client);
-      // if (!approvedUser.isMentor) {
-      //   await usersGoals.addGoalToDB(userId, approvedUser.goal as string, client);
-      // }
+      await this.setDefaultUserProfile(userId, approvedUser.isMentor as boolean, client);
+      await usersTimeZones.addTimeZone(userId, timeZone as TimeZone, client);
+      if (!approvedUser.isMentor) {
+        await usersGoals.addGoalToDB(userId, approvedUser.goal as string, client);
+      }
       const tokens: Tokens = await this.setTokens(userId, client);
       response.status(200).send(tokens);
       await client.query('COMMIT');
