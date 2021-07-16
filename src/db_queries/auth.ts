@@ -285,7 +285,7 @@ export class Auth {
   }
 
   async getAccessToken(request: Request, response: Response): Promise<void> {
-    const userId: string = request.user.id as string;
+    const userId: string = request.params.id;
     const refreshToken: string = request.query.refreshToken as string;
     const client: pg.PoolClient = await pool.connect();
     try {
