@@ -168,7 +168,7 @@ export class Users {
 
   async updateUser(request: Request, response: Response): Promise<void> {
     const id: string = request.user.id as string;
-    const { name, email, field, isAvailable, availableFrom, availabilities, lessonsAvailability }: User = request.body
+    const { name, email, isMentor, field, isAvailable, availableFrom, availabilities, lessonsAvailability }: User = request.body
     const values = [name, email, field?.id, isAvailable, availableFrom, id];
     const client: pg.PoolClient = await pool.connect();
     try {
@@ -180,7 +180,9 @@ export class Users {
       await this.deleteUserAvailabilities(id, client);      
       await this.insertUserSubfields(id, field?.subfields as Array<Subfield>, client);
       await this.insertUserAvailabilities(id, availabilities as Array<Availability>, client);
-      await this.updateUserLessonsAvailability(id, lessonsAvailability as LessonsAvailability, client);
+      if (isMentor) {
+        await this.updateUserLessonsAvailability(id, lessonsAvailability as LessonsAvailability, client);
+      }
       response.status(200).send(id);
       await client.query('COMMIT');
     } catch (error) {
