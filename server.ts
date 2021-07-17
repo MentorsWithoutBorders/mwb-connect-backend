@@ -1,4 +1,5 @@
 import express from 'express';
+import cron from 'node-cron';
 import { Request, Response, NextFunction } from 'express';
 import { Auth } from './src/db_queries/auth';
 import { Users } from './src/db_queries/users';
@@ -139,6 +140,9 @@ app.get('/api/v1/quizzes_settings', quizzesSettings.getQuizzesSettings);
 // Updates
 app.get('/api/v1/updates', updates.getUpdates);
 
+// cron.schedule('* * * * *', function() {
+//   console.log('running a task every minute');
+// });
 
 app.listen(port, () => {
   console.log(`App running on port ${port}.`);
