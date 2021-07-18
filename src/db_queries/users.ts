@@ -159,8 +159,20 @@ export class Users {
     const getLessonsAvailabilityQuery = `SELECT * FROM users_lessons_availabilities
       WHERE user_id = $1`;
     const { rows }: pg.QueryResult = await client.query(getLessonsAvailabilityQuery, [userId]);
+    let minInterval = rows[0].min_interval_in_days;
+    switch(rows[0].min_interval_unit) {
+      case 'week':
+        minInterval /= 7;
+        break;
+      case 'month':
+        minInterval /= 30;
+        break;
+      case 'year':
+        minInterval /= 365;
+        break;        
+    }    
     return {
-      minInterval: rows[0].min_interval_in_days,
+      minInterval: minInterval,
       minIntervalUnit: rows[0].min_interval_unit,
       maxStudents: rows[0].max_students
     };
@@ -246,7 +258,19 @@ export class Users {
     const updateLessonsAvailabilityQuery = `UPDATE users_lessons_availabilities 
       SET min_interval_in_days = $1, min_interval_unit = $2, max_students = $3
       WHERE user_id = $4`;
-    const values = [lessonsAvailability.minInterval, lessonsAvailability.minIntervalUnit, lessonsAvailability.maxStudents, userId];
+    let minIntervalInDays = lessonsAvailability.minInterval;
+    switch(lessonsAvailability.minIntervalUnit) {
+      case 'week':
+        minIntervalInDays *= 7;
+        break;
+      case 'month':
+        minIntervalInDays *= 30;
+        break;
+      case 'year':
+        minIntervalInDays *= 365;
+        break;        
+    }
+    const values = [minIntervalInDays, lessonsAvailability.minIntervalUnit, lessonsAvailability.maxStudents, userId];
     await client.query(updateLessonsAvailabilityQuery, values);
   }  
 
