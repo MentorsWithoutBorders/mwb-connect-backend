@@ -12,7 +12,7 @@ import Field from '../models/field.model';
 import Subfield from '../models/subfield.model';
 import Skill from '../models/skill.model';
 import Availability from '../models/availability.model';
-import Time from '../models/time.model';
+import AvailabilityTime from '../models/availability_time.model';
 import LessonsAvailability from '../models/lessons_availability';
 import { ValidationError } from '../utils/errors';
 
@@ -142,12 +142,12 @@ export class Users {
     const { rows }: pg.QueryResult = await client.query(getAvailabilitiesQuery, [userId]);
     const availabilities: Array<Availability> = [];
     for (const row of rows) {
-      const time: Time = {
-        from: moment(row.time_from, 'HH:mm').format('ha'),
-        to: moment(row.time_to, 'HH:mm').format('ha')
+      const time: AvailabilityTime = {
+        from: moment(row.utc_time_from, 'HH:mm').format('ha'),
+        to: moment(row.utc_time_to, 'HH:mm').format('ha')
       }
       const availability: Availability = {
-        dayOfWeek: row.day_of_week,
+        dayOfWeek: row.utc_day_of_week,
         time: time
       };
       availabilities.push(availability);
@@ -160,7 +160,7 @@ export class Users {
       WHERE user_id = $1`;
     const { rows }: pg.QueryResult = await client.query(getLessonsAvailabilityQuery, [userId]);
     return {
-      minInterval: rows[0].min_interval,
+      minInterval: rows[0].min_interval_in_days,
       minIntervalUnit: rows[0].min_interval_unit,
       maxStudents: rows[0].max_students
     };
@@ -233,7 +233,7 @@ export class Users {
   
   async insertUserAvailabilities(userId: string, availabilities: Array<Availability>, client: pg.PoolClient): Promise<void> {
     for (const availability of availabilities) {
-      const insertAvailabilityQuery = `INSERT INTO users_availabilities (user_id, day_of_week, time_from, time_to)
+      const insertAvailabilityQuery = `INSERT INTO users_availabilities (user_id, utc_day_of_week, utc_time_from, utc_time_to)
         VALUES ($1, $2, $3, $4)`;
       const timeFrom = moment(availability.time.from, 'ha').format('HH:mm');
       const timeto = moment(availability.time.to, 'ha').format('HH:mm');
@@ -244,7 +244,7 @@ export class Users {
 
   async updateUserLessonsAvailability(userId: string, lessonsAvailability: LessonsAvailability, client: pg.PoolClient): Promise<void> {
     const updateLessonsAvailabilityQuery = `UPDATE users_lessons_availabilities 
-      SET min_interval = $1, min_interval_unit = $2, max_students = $3
+      SET min_interval_in_days = $1, min_interval_unit = $2, max_students = $3
       WHERE user_id = $4`;
     const values = [lessonsAvailability.minInterval, lessonsAvailability.minIntervalUnit, lessonsAvailability.maxStudents, userId];
     await client.query(updateLessonsAvailabilityQuery, values);

@@ -15,8 +15,6 @@ import User from '../models/user.model';
 import ApprovedUser from '../models/approved_user.model';
 import Field from '../models/field.model';
 import Organization from '../models/organization.model';
-import Availability from '../models/availability.model';
-import Time from '../models/time.model';
 import LessonsAvailability from '../models/lessons_availability';
 import TimeZone from '../models/timezone.model';
 import NotificationsSettings from '../models/notifications_settings.model';
@@ -123,16 +121,8 @@ export class Auth {
   async setDefaultUserProfile(userId: string, isMentor: boolean, client: pg.PoolClient): Promise<void> {
     const getDefaultUserQuery = 'SELECT * FROM user_default_profile';
     const { rows }: pg.QueryResult = await client.query(getDefaultUserQuery);
-    const time: Time = {
-      from: rows[0].availability_time_from,
-      to: rows[0].availability_time_to
-    };
-    const availability: Availability = {
-      dayOfWeek: rows[0].availability_day_of_week,
-      time: time
-    };
     const lessonsAvailability: LessonsAvailability = {
-      minInterval: rows[0].lessons_availability_min_interval,
+      minInterval: rows[0].lessons_availability_min_interval_in_days,
       minIntervalUnit: rows[0].lessons_availability_min_interval_unit,
       maxStudents: rows[0].lessons_availability_max_students
     };
@@ -142,16 +132,12 @@ export class Auth {
     }
     const defaultUser: User = {
       isAvailable: rows[0].is_available,
-      availabilities: [availability],
       lessonsAvailability: lessonsAvailability
     };
     const updateUserQuery = `UPDATE users SET is_available = $1 WHERE id = $2`;
-    await client.query(updateUserQuery, [defaultUser.isAvailable, userId]);    
-    const insertUserAvailabilityQuery = `INSERT INTO users_availabilities (user_id, day_of_week, time_from, time_to)
-      VALUES ($1, $2, $3, $4)`;
-    await client.query(insertUserAvailabilityQuery, [userId, availability.dayOfWeek, availability.time.from, availability.time.to]);
+    await client.query(updateUserQuery, [defaultUser.isAvailable, userId]);
     if (isMentor) {
-      const insertUserLessonsAvailabilityQuery = `INSERT INTO users_lessons_availabilities (user_id, min_interval, min_interval_unit, max_students)
+      const insertUserLessonsAvailabilityQuery = `INSERT INTO users_lessons_availabilities (user_id, min_interval_in_days, min_interval_unit, max_students)
         VALUES ($1, $2, $3, $4)`;
       await client.query(insertUserLessonsAvailabilityQuery, [userId, lessonsAvailability.minInterval, lessonsAvailability.minIntervalUnit, lessonsAvailability.maxStudents]);
     }

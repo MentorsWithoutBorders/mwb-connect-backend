@@ -1,6 +1,6 @@
-import Time from "./time.model";
+import AvailabilityTime from "./availability_time.model";
 
 export default interface Availability {
   dayOfWeek: string;
-  time: Time;
+  time: AvailabilityTime;
 }
