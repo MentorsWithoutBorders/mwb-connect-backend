@@ -142,9 +142,10 @@ export class Users {
     const { rows }: pg.QueryResult = await client.query(getAvailabilitiesQuery, [userId]);
     const availabilities: Array<Availability> = [];
     for (const row of rows) {
+      const timeTo = row.utc_time_to_2 ? row.utc_time_to_2 : row.utc_time_to_1;
       const time: AvailabilityTime = {
-        from: moment(row.utc_time_from, 'HH:mm').format('ha'),
-        to: moment(row.utc_time_to, 'HH:mm').format('ha')
+        from: moment(row.utc_time_from_1, 'HH:mm').format('ha'),
+        to: moment(timeTo, 'HH:mm').format('ha')
       }
       const availability: Availability = {
         dayOfWeek: row.utc_day_of_week,
@@ -245,11 +246,18 @@ export class Users {
   
   async insertUserAvailabilities(userId: string, availabilities: Array<Availability>, client: pg.PoolClient): Promise<void> {
     for (const availability of availabilities) {
-      const insertAvailabilityQuery = `INSERT INTO users_availabilities (user_id, utc_day_of_week, utc_time_from, utc_time_to)
-        VALUES ($1, $2, $3, $4)`;
-      const timeFrom = moment(availability.time.from, 'ha').format('HH:mm');
-      const timeto = moment(availability.time.to, 'ha').format('HH:mm');
-      const values = [userId, availability.dayOfWeek, timeFrom, timeto];
+      const insertAvailabilityQuery = `INSERT INTO users_availabilities (user_id, utc_day_of_week, utc_time_from_1, utc_time_to_1, utc_time_from_2, utc_time_to_2)
+        VALUES ($1, $2, $3, $4, $5, $6)`;
+      const timeFrom1 = moment(availability.time.from, 'ha').format('HH:mm');
+      let timeTo1 = moment(availability.time.to, 'ha').format('HH:mm');
+      let timeFrom2 = null;
+      let timeTo2 = null;
+      if (moment(availability.time.to, 'ha').isBefore(moment(availability.time.from, 'ha'))) {
+        timeTo2 = timeTo1;
+        timeTo1 = '24:00';
+        timeFrom2 = '00:00';
+      }
+      const values = [userId, availability.dayOfWeek, timeFrom1, timeTo1, timeFrom2, timeTo2];
       await client.query(insertAvailabilityQuery, values);
     }
   }

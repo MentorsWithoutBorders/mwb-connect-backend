@@ -93,6 +93,7 @@ app.get('/api/v1/lesson_request', usersLessonRequests.getLessonRequest);
 app.post('/api/v1/lesson_requests/:id/accept_lesson_request', usersLessonRequests.acceptLessonRequest);
 app.put('/api/v1/lesson_requests/:id/reject_lesson_request', usersLessonRequests.rejectLessonRequest);
 app.put('/api/v1/lesson_requests/:id/cancel_lesson_request', usersLessonRequests.cancelLessonRequest);
+app.get('/api/v1/send_lesson_request', usersLessonRequests.sendLessonRequest);
 
 // Users lessons
 app.get('/api/v1/next_lesson', usersLessons.getNextLesson);

@@ -11,6 +11,7 @@ import Subfield from '../models/subfield.model';
 import LessonRequest from '../models/lesson_request.model';
 import Lesson from '../models/lesson.model';
 import Organization from '../models/organization.model';
+import Skill from '../models/skill.model';
 
 const conn: Conn = new Conn();
 const pool = conn.pool;
@@ -202,6 +203,32 @@ export class UsersLessonRequests {
     } catch (error) {
       response.status(400).send(error);
     }
-  }   
+  }
+
+  async sendLessonRequest(request: Request, response: Response): Promise<void> {
+    try {
+      await this.sendLessonRequestFromDB();
+      response.status(200).send('Lesson request sent');
+    } catch (error) {
+      response.status(400).send(error);
+    }    
+  }
+
+  async sendLessonRequestFromDB(): Promise<void> {
+    const client: pg.PoolClient = await pool.connect();    
+    try {
+      await client.query('BEGIN');
+      const getLessonRequestsQuery = `SELECT u.id, u.field_id, u.is_mentor, u.available_from, ua.utc_day_of_week, ua.utc_time_from_1, ua.utc_time_to_1, , ua.utc_time_from_2, ua.utc_time_to_2
+        FROM users u
+        LEFT OUTER JOIN users_availabilities ua
+        ON u.id = ua.user_id`;
+      const { rows }: pg.QueryResult = await client.query(getLessonRequestsQuery);
+      await client.query('COMMIT');
+    } catch (error) {
+      await client.query('ROLLBACK');
+    } finally {
+      client.release();
+    }  
+  }  
 }
 
