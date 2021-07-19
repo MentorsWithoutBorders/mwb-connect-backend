@@ -11,7 +11,6 @@ import Subfield from '../models/subfield.model';
 import LessonRequest from '../models/lesson_request.model';
 import Lesson from '../models/lesson.model';
 import Organization from '../models/organization.model';
-import Skill from '../models/skill.model';
 
 const conn: Conn = new Conn();
 const pool = conn.pool;

@@ -1,6 +1,8 @@
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import dotenv from 'dotenv';
+import moment from 'moment';
+import { constants } from '../utils/constants';
 import { v4 as uuidv4 } from 'uuid';
 
 dotenv.config();
@@ -32,5 +34,13 @@ export class Helpers {
 
   checkArraysEqual(a1: Array<string>, a2: Array<string>): boolean {
     return JSON.stringify(a1) == JSON.stringify(a2);
-  }  
+  }
+  
+  getNextDayOfWeek(dayOfWeek: string): string {
+    let date = moment();
+    while (constants.DAYS_OF_WEEK[date.isoWeekday() - 1] != dayOfWeek) {
+      date = date.add(1, 'd');
+    }
+    return constants.DAYS_OF_WEEK[date.add(1, 'd').isoWeekday() - 1];
+  }
 }

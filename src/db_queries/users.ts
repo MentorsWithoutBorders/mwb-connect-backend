@@ -6,6 +6,7 @@ import { validate as uuidValidate } from 'uuid';
 import { Conn } from '../db/conn';
 import { Auth } from './auth';
 import { constants } from '../utils/constants';
+import { Helpers } from '../utils/helpers';
 import User from '../models/user.model';
 import Organization from '../models/organization.model';
 import Field from '../models/field.model';
@@ -19,6 +20,7 @@ import { ValidationError } from '../utils/errors';
 const conn: Conn = new Conn();
 const pool = conn.pool;
 const auth: Auth = new Auth();
+const helpers: Helpers = new Helpers();
 
 export class Users {
   constructor() {
@@ -142,16 +144,24 @@ export class Users {
     const { rows }: pg.QueryResult = await client.query(getAvailabilitiesQuery, [userId]);
     const availabilities: Array<Availability> = [];
     for (const row of rows) {
-      const timeTo = row.utc_time_to_2 ? row.utc_time_to_2 : row.utc_time_to_1;
-      const time: AvailabilityTime = {
-        from: moment(row.utc_time_from_1, 'HH:mm').format('ha'),
-        to: moment(timeTo, 'HH:mm').format('ha')
+      let timeTo = row.utc_time_to;
+      for (const rowConnectedTo of rows) {
+        if (rowConnectedTo.connected_to == row.id) {
+          timeTo = rowConnectedTo.utc_time_to;
+          break;
+        }
       }
-      const availability: Availability = {
-        dayOfWeek: row.utc_day_of_week,
-        time: time
-      };
-      availabilities.push(availability);
+      if (!row.connected_to) {
+        const time: AvailabilityTime = {
+          from: moment(row.utc_time_from, 'HH:mm').format('ha'),
+          to: moment(timeTo, 'HH:mm').format('ha')
+        }
+        const availability: Availability = {
+          dayOfWeek: row.utc_day_of_week,
+          time: time
+        };
+        availabilities.push(availability);
+      }
     }
     return availabilities;
   }
@@ -246,19 +256,28 @@ export class Users {
   
   async insertUserAvailabilities(userId: string, availabilities: Array<Availability>, client: pg.PoolClient): Promise<void> {
     for (const availability of availabilities) {
-      const insertAvailabilityQuery = `INSERT INTO users_availabilities (user_id, utc_day_of_week, utc_time_from_1, utc_time_to_1, utc_time_from_2, utc_time_to_2)
-        VALUES ($1, $2, $3, $4, $5, $6)`;
-      const timeFrom1 = moment(availability.time.from, 'ha').format('HH:mm');
-      let timeTo1 = moment(availability.time.to, 'ha').format('HH:mm');
-      let timeFrom2 = null;
-      let timeTo2 = null;
+      const insertAvailabilityQuery = `INSERT INTO users_availabilities (user_id, utc_day_of_week, utc_time_from, utc_time_to)
+        VALUES ($1, $2, $3, $4) RETURNING id`;
+      const timeFrom = moment(availability.time.from, 'ha').format('HH:mm');
+      let timeTo = moment(availability.time.to, 'ha').format('HH:mm');
+      let dayOfWeekConnected = null;
+      let timeFromConnected = null;
+      let timeToConnected = null;
       if (moment(availability.time.to, 'ha').isBefore(moment(availability.time.from, 'ha'))) {
-        timeTo2 = timeTo1;
-        timeTo1 = '24:00';
-        timeFrom2 = '00:00';
+        timeFromConnected = '00:00';
+        timeToConnected = timeTo;
+        dayOfWeekConnected = helpers.getNextDayOfWeek(availability.dayOfWeek);
+        timeTo = '24:00';
       }
-      const values = [userId, availability.dayOfWeek, timeFrom1, timeTo1, timeFrom2, timeTo2];
-      await client.query(insertAvailabilityQuery, values);
+      let values = [userId, availability.dayOfWeek, timeFrom, timeTo];
+      const { rows }: pg.QueryResult = await client.query(insertAvailabilityQuery, values);
+      const id = rows[0].id;
+      if (dayOfWeekConnected) {
+        const insertAvailabilityConnectedQuery = `INSERT INTO users_availabilities (user_id, utc_day_of_week, utc_time_from, utc_time_to, connected_to)
+          VALUES ($1, $2, $3, $4, $5)`;
+        values = [userId, dayOfWeekConnected, timeFromConnected as string, timeToConnected as string, id];
+        await client.query(insertAvailabilityConnectedQuery, values);
+      }
     }
   }
 
