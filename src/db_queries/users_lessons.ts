@@ -36,15 +36,7 @@ export class UsersLessons {
     try {
       await client.query('BEGIN');
       const isMentor = await this.getIsMentor(userId, client);
-      let lesson = await this.getNextLessonFromDB(userId, isMentor, client);
-      if (isMentor) {
-        while (Object.keys(lesson).length > 0 && lesson.students?.length == 0) {
-          if (lesson.students?.length == 0) {
-            await this.cancelLessonFromDB(userId, lesson.dateTime as string, lesson.id as string, client);
-            lesson = await this.getNextLessonFromDB(userId, isMentor, client);
-          }
-        }
-      }
+      const lesson = await this.getNextLessonFromDB(userId, isMentor, client);
       response.status(200).json(lesson);
       await client.query('COMMIT');
     } catch (error) {
@@ -221,7 +213,7 @@ export class UsersLessons {
           id: user.id as string,
           name: user.name as string,
           organization: user.organization as Organization
-        }        
+        }
         lesson.mentor = mentor;
       }
     }
@@ -328,11 +320,28 @@ export class UsersLessons {
   async cancelLesson(request: Request, response: Response): Promise<void> {
     const userId: string = request.user.id as string;
     const lessonId: string = request.params.id;
-    const { dateTime }: Lesson = request.body
+    const lesson: Lesson = request.body
     const client: pg.PoolClient = await pool.connect();
     try {
       await client.query('BEGIN');
-      await this.cancelLessonFromDB(userId, dateTime as string, lessonId, client);
+      await this.cancelLessonFromDB(userId, lesson.dateTime as string, lessonId, client);
+      if (lesson.mentor == null) {
+        if (lesson.dateTime) {
+          const nextLesson = await this.getNextLessonFromDB(userId, true, client);
+          if (Object.keys(nextLesson).length == 0) {
+            await this.cancelLessonFromDB(userId, '', lessonId, client);
+          }
+        }
+      } else {
+        let nextLessonMentor = await this.getNextLessonFromDB(lesson.mentor.id as string, true, client);
+        if (nextLessonMentor.students?.length == 0) {
+          await this.cancelLessonFromDB(lesson.mentor.id as string, lesson.dateTime as string, lessonId, client);
+        }
+        nextLessonMentor = await this.getNextLessonFromDB(lesson.mentor.id as string, true, client);
+        if (Object.keys(nextLessonMentor).length == 0) {
+          await this.cancelLessonFromDB(lesson.mentor.id as string, '', lessonId, client);
+        }        
+      }       
       response.status(200).send(`Lesson modified with ID: ${lessonId}`);
       await client.query('COMMIT');
     } catch (error) {
