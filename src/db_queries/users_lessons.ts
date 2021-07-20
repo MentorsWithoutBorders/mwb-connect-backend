@@ -127,19 +127,10 @@ export class UsersLessons {
   }
 
   async getLessonCanceledDateTimes(userId: string, isMentor: boolean, lessonId: string, client: pg.PoolClient): Promise<Array<string>> {
-    let getLessonCanceledQuery = '';
-    let values = [];
-    if (isMentor) {
-      getLessonCanceledQuery = `SELECT lesson_date_time
+    const getLessonCanceledQuery = `SELECT lesson_date_time
         FROM users_lessons_canceled
         WHERE user_id = $1 AND lesson_id = $2`;
-      values = [userId, lessonId];
-    } else {
-      getLessonCanceledQuery = `SELECT lesson_date_time
-        FROM users_lessons_canceled
-        WHERE lesson_id = $1`;
-      values = [lessonId];      
-    }
+    const values = [userId, lessonId];
     const { rows }: pg.QueryResult = await client.query(getLessonCanceledQuery, values);
     let lessonCanceledDateTimes: Array<string> = [];
     rows.forEach(function (row) {
