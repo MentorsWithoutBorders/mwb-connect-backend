@@ -324,16 +324,7 @@ export class UsersLessons {
           }
         }
       } else {
-        let nextLessonMentor = await this.getNextLessonFromDB(lesson.mentor.id as string, true, client);
-        while (Object.keys(nextLessonMentor).length > 0 && nextLessonMentor.students?.length == 0) {
-          if (nextLessonMentor.students?.length == 0) {
-            await this.cancelLessonFromDB(lesson.mentor.id as string, nextLessonMentor.dateTime as string, lessonId, client);
-            nextLessonMentor = await this.getNextLessonFromDB(lesson.mentor.id as string, true, client);
-          }
-        }
-        if (Object.keys(nextLessonMentor).length == 0) {
-          await this.cancelLessonFromDB(lesson.mentor.id as string, '', lessonId, client);
-        }      
+        await this.cancelNextLessonNoStudents(lesson, lessonId, client);
       }       
       response.status(200).send(`Lesson modified with ID: ${lessonId}`);
       await client.query('COMMIT');
@@ -342,6 +333,19 @@ export class UsersLessons {
       await client.query('ROLLBACK');
     } finally {
       client.release();
+    }
+  }
+
+  async cancelNextLessonNoStudents(lesson: Lesson, lessonId: string, client: pg.PoolClient): Promise<void> {
+    let nextLessonMentor = await this.getNextLessonFromDB(lesson.mentor?.id as string, true, client);
+    while (Object.keys(nextLessonMentor).length > 0 && nextLessonMentor.students?.length == 0) {
+      if (nextLessonMentor.students?.length == 0) {
+        await this.cancelLessonFromDB(lesson.mentor?.id as string, nextLessonMentor.dateTime as string, lessonId, client);
+        nextLessonMentor = await this.getNextLessonFromDB(lesson.mentor?.id as string, true, client);
+      }
+    }
+    if (Object.keys(nextLessonMentor).length == 0) {
+      await this.cancelLessonFromDB(lesson.mentor?.id as string, '', lessonId, client);
     }
   }
 

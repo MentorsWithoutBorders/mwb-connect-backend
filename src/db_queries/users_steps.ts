@@ -139,7 +139,15 @@ export class UsersSteps {
     try {
       await client.query('BEGIN');
       const dateTime = moment.utc().format(constants.DATE_TIME_FORMAT);
-      await this.updateStepInDB(userId, stepId, text as string, index as number, level as number, parentId as string, dateTime, client);
+      const step: Step = {
+        id: stepId, 
+        text: text, 
+        index: index, 
+        level: level, 
+        parentId: parentId, 
+        dateTime: dateTime
+      }
+      await this.updateStepInDB(userId, step, client);
       response.status(200).send(`Step modified with ID: ${stepId}`);
       await client.query('COMMIT');
     } catch (error) {
@@ -151,9 +159,9 @@ export class UsersSteps {
     }
   }
 
-  async updateStepInDB(userId: string, stepId: string, text: string, index: number, level: number, parentId: string, dateTime: string, client: pg.PoolClient): Promise<void> {
+  async updateStepInDB(userId: string, step: Step, client: pg.PoolClient): Promise<void> {
     const updateStepQuery = 'UPDATE users_steps SET text = $1, index = $2, level = $3, parent_id = $4, date_time = $5 WHERE user_id = $6 AND id = $7';
-    await client.query(updateStepQuery, [text, index, level, parentId, dateTime, userId, stepId]);
+    await client.query(updateStepQuery, [step.text, step.index, step.level, step.parentId, step.dateTime, userId, step.id]);
   }
   
   async deleteStep(request: Request, response: Response): Promise<void> {
@@ -170,7 +178,15 @@ export class UsersSteps {
       if (lastStepAddedBeforeDelete.id == stepId) {
         const lastStepAdded = await this.getLastStepAddedFromDB(userId, client);
         const { id, text, index, level, parentId }: Step = lastStepAdded;
-        await this.updateStepInDB(userId, id as string, text as string, index as number, level as number, parentId as string, dateTime as string, client);
+        const step: Step = {
+          id: id, 
+          text: text, 
+          index: index, 
+          level: level, 
+          parentId: parentId, 
+          dateTime: dateTime
+        }        
+        await this.updateStepInDB(userId, step, client);
       }
       response.status(200).send(`Step deleted with ID: ${stepId}`);
       await client.query('COMMIT');
