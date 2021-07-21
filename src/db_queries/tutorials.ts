@@ -14,7 +14,7 @@ export class Tutorials {
 
   async getTutorials(request: Request, response: Response): Promise<void> {
     try {
-      const getTutorialsQuery = 'SELECT * FROM tutorials ORDER BY index';
+      const getTutorialsQuery = 'SELECT type, id FROM tutorials ORDER BY index';
       const { rows }: pg.QueryResult = await pool.query(getTutorialsQuery);
       const tutorials: Array<Tutorial> = [];
       for (const row of rows) {
@@ -31,7 +31,7 @@ export class Tutorials {
   }
 
   async getTutorialSections(id: string): Promise<Array<string>> {
-    const getTutorialSectionsQuery = `SELECT * FROM tutorials_sections 
+    const getTutorialSectionsQuery = `SELECT type FROM tutorials_sections 
       WHERE tutorial_id = $1
       ORDER BY index`;
     const { rows }: pg.QueryResult = await pool.query(getTutorialSectionsQuery, [id]);

@@ -139,13 +139,14 @@ export class Users {
   }
   
   async getUserAvailabilities(userId: string, client: pg.PoolClient): Promise<Array<Availability>> {
-    const getAvailabilitiesQuery = `SELECT * FROM users_availabilities
+    const getAvailabilitiesQuery = `SELECT utc_time_to,connected_to, id, utc_time_from, utc_day_of_week FROM users_availabilities
       WHERE user_id = $1`;
     const { rows }: pg.QueryResult = await client.query(getAvailabilitiesQuery, [userId]);
     const availabilities: Array<Availability> = [];
     for (const row of rows) {
       let timeTo = row.utc_time_to;
       for (const rowConnectedTo of rows) {
+        console.log(rowConnectedTo);
         if (rowConnectedTo.connected_to == row.id) {
           timeTo = rowConnectedTo.utc_time_to;
           break;
@@ -167,7 +168,7 @@ export class Users {
   }
   
   async getUserLessonsAvailability(userId: string, client: pg.PoolClient): Promise<LessonsAvailability> {
-    const getLessonsAvailabilityQuery = `SELECT * FROM users_lessons_availabilities
+    const getLessonsAvailabilityQuery = `SELECT min_interval_in_days, min_interval_unit, max_students FROM users_lessons_availabilities
       WHERE user_id = $1`;
     const { rows }: pg.QueryResult = await client.query(getLessonsAvailabilityQuery, [userId]);
     let minInterval = rows[0].min_interval_in_days;

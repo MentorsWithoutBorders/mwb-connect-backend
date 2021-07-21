@@ -32,7 +32,7 @@ export class UsersGoals {
   }
 
   async getGoalsFromDB(userId: string, client: pg.PoolClient): Promise<Array<Goal>> {
-    const getGoalsQuery = `SELECT * FROM users_goals 
+    const getGoalsQuery = `SELECT id, text, index FROM users_goals 
       WHERE user_id = $1
       ORDER BY index ASC`;
     const { rows }: pg.QueryResult = await client.query(getGoalsQuery, [userId]);
@@ -52,7 +52,7 @@ export class UsersGoals {
     const userId: string = request.user.id as string;
     const goalId: string = request.params.id;
     try {
-      const getGoalQuery = 'SELECT * FROM users_goals WHERE user_id = $1 AND id = $2';
+      const getGoalQuery = 'SELECT id, text FROM users_goals WHERE user_id = $1 AND id = $2';
       const { rows }: pg.QueryResult = await pool.query(getGoalQuery, [userId, goalId]);
       const goal: Goal = {
         id: rows[0].id,
