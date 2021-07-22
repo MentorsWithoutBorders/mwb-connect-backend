@@ -92,7 +92,7 @@ export class UsersLessonRequests {
   }
 
   async getIsMentor(userId: string, client: pg.PoolClient): Promise<boolean> {
-    const getUserQuery = 'SELECT * FROM users WHERE id = $1';
+    const getUserQuery = 'SELECT is_mentor FROM users WHERE id = $1';
     const { rows }: pg.QueryResult = await client.query(getUserQuery, [userId]);
     return rows[0].is_mentor;
   }  
@@ -104,7 +104,7 @@ export class UsersLessonRequests {
     const client: pg.PoolClient = await pool.connect();
     try {
       await client.query('BEGIN');
-      const getLessonRequestQuery = 'SELECT * FROM users_lesson_requests WHERE mentor_id = $1 AND id = $2';
+      const getLessonRequestQuery = 'SELECT student_id, subfield_id, id, lesson_date_time FROM users_lesson_requests WHERE mentor_id = $1 AND id = $2';
       const { rows }: pg.QueryResult = await client.query(getLessonRequestQuery, [mentorId, lessonRequestId]);
       const student: User = {
         id: rows[0].student_id
@@ -165,7 +165,7 @@ export class UsersLessonRequests {
   }  
 
   async addStudentSubfield(studentId: string, subfieldId: string, client: pg.PoolClient): Promise<void> {
-    const getSubfieldQuery = 'SELECT * FROM users_subfields WHERE user_id = $1';
+    const getSubfieldQuery = 'SELECT user_id FROM users_subfields WHERE user_id = $1';
     const { rows }: pg.QueryResult = await client.query(getSubfieldQuery, [studentId]);
     if (!rows[0]) {
       const insertSubfieldQuery = `INSERT INTO users_subfields (user_id, subfield_id)
