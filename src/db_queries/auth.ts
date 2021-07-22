@@ -119,7 +119,7 @@ export class Auth {
   }
 
   async setDefaultUserProfile(userId: string, isMentor: boolean, client: pg.PoolClient): Promise<void> {
-    const getDefaultUserQuery = 'SELECT lessons_availability_min_interval_in_days, lessons_availability_min_interval_unit, lessons_availability_max_students, notifications_enabled, notifications_time, is_available, FROM user_default_profile';
+    const getDefaultUserQuery = 'SELECT lessons_availability_min_interval_in_days, lessons_availability_min_interval_unit, lessons_availability_max_students, notifications_enabled, notifications_time, is_available FROM user_default_profile';
     const { rows }: pg.QueryResult = await client.query(getDefaultUserQuery);
     const lessonsAvailability: LessonsAvailability = {
       minInterval: rows[0].lessons_availability_min_interval_in_days,
