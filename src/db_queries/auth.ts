@@ -43,7 +43,7 @@ export class Auth {
     }
     const client: pg.PoolClient = await pool.connect();
     try {
-      const getUsersQuery = 'SELECT * FROM users WHERE email = $1';
+      const getUsersQuery = 'SELECT email FROM users WHERE email = $1';
       await client.query('BEGIN');
       let { rows }: pg.QueryResult = await client.query(getUsersQuery, [email]);
       if (rows[0]) {
@@ -95,7 +95,7 @@ export class Auth {
     let approvedUser: ApprovedUser = {
       email: email
     };
-    const getApprovedUserQuery = 'SELECT * FROM approved_users WHERE email = $1';
+    const getApprovedUserQuery = 'SELECT field_id, organization_id, name, is_mentor, goal FROM approved_users WHERE email = $1';
     const { rows }: pg.QueryResult = await client.query(getApprovedUserQuery, [email]);
     if (!rows[0]) {
       approvedUser.email = '';
@@ -119,7 +119,7 @@ export class Auth {
   }
 
   async setDefaultUserProfile(userId: string, isMentor: boolean, client: pg.PoolClient): Promise<void> {
-    const getDefaultUserQuery = 'SELECT * FROM user_default_profile';
+    const getDefaultUserQuery = 'SELECT lessons_availability_min_interval_in_days, lessons_availability_min_interval_unit, lessons_availability_max_students, notifications_enabled, notifications_time, is_available FROM user_default_profile';
     const { rows }: pg.QueryResult = await client.query(getDefaultUserQuery);
     const lessonsAvailability: LessonsAvailability = {
       minInterval: rows[0].lessons_availability_min_interval_in_days,
@@ -159,7 +159,7 @@ export class Auth {
     const client: pg.PoolClient = await pool.connect();
     try {
       await client.query('BEGIN');
-      const loginQuery = 'SELECT * FROM users WHERE email = $1';
+      const loginQuery = 'SELECT password, id FROM users WHERE email = $1';
       const { rows }: pg.QueryResult = await client.query(loginQuery, [email]);
       if (!rows[0]) {
         response.status(400).send({'message': 'The credentials you provided are incorrect'});
@@ -195,7 +195,7 @@ export class Auth {
   }
 
   async setRefreshToken(userId: string, refreshToken: string, client: pg.PoolClient): Promise<void> {
-    const getRefreshTokenQuery = 'SELECT * FROM users_refresh_tokens WHERE user_id = $1';
+    const getRefreshTokenQuery = 'SELECT user_id FROM users_refresh_tokens WHERE user_id = $1';
     const { rows }: pg.QueryResult = await client.query(getRefreshTokenQuery, [userId]);
     if (!rows[0]) {
       await this.addRefreshToken(userId, refreshToken, client);
@@ -257,7 +257,7 @@ export class Auth {
     }
     try {
       const decoded: Token = await jwt.verify(token, process.env.JWT_SECRET_KEY as string) as Token;
-      const getUsersQuery = 'SELECT * FROM users WHERE id = $1';
+      const getUsersQuery = 'SELECT id FROM users WHERE id = $1';
       const { rows }: pg.QueryResult = await pool.query(getUsersQuery, [decoded.userId]);
       if (!rows[0]) {
         response.status(401).send({'message': 'The token you provided is invalid'});
@@ -276,7 +276,7 @@ export class Auth {
     const client: pg.PoolClient = await pool.connect();
     try {
       await client.query('BEGIN');
-      const getRefreshTokenQuery = 'SELECT * FROM users_refresh_tokens WHERE user_id = $1 AND refresh_token = $2';
+      const getRefreshTokenQuery = 'SELECT user_id FROM users_refresh_tokens WHERE user_id = $1 AND refresh_token = $2';
       const { rows }: pg.QueryResult = await pool.query(getRefreshTokenQuery, [userId, refreshToken]);
       if (rows[0]) {
         const tokens: Tokens = await this.setTokens(userId, client);

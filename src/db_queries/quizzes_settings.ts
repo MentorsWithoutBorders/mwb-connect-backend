@@ -22,7 +22,7 @@ export class QuizzesSettings {
   }
 
   async getQuizzesSettingsFromDB(): Promise<QuizSettings> {
-    const getQuizzesSettingsQuery = 'SELECT * FROM quizzes_settings';
+    const getQuizzesSettingsQuery = 'SELECT student_weekly_count, mentor_weekly_count FROM quizzes_settings';
     const { rows }: pg.QueryResult = await pool.query(getQuizzesSettingsQuery);
     return {
       studentWeeklyCount: rows[0].student_weekly_count,

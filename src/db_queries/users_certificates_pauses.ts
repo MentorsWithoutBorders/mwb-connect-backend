@@ -16,7 +16,7 @@ export class UsersCertificatesPauses {
   async getUserCertificatePause(request: Request, response: Response): Promise<void> {
     const userId: string = request.user.id as string;
     try {
-      const getCertificatePauseQuery = `SELECT * FROM users_certificates_pauses 
+      const getCertificatePauseQuery = `SELECT is_resuming FROM users_certificates_pauses 
         WHERE user_id = $1 
         ORDER BY pause_datetime DESC 
         LIMIT 1`;

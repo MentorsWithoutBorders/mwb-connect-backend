@@ -12,7 +12,7 @@ export class UsersTimeZones {
   }
 
   async getUserTimeZone(userId: string): Promise<TimeZone> {
-    const getTimeZoneQuery = 'SELECT * FROM users_timezones WHERE user_id = $1';
+    const getTimeZoneQuery = 'SELECT abbreviation, name, offset FROM users_timezones WHERE user_id = $1';
     const { rows }: pg.QueryResult = await pool.query(getTimeZoneQuery, [userId]);
     return {
       abbreviation: rows[0].abbreviation,

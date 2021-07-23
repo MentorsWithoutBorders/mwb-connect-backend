@@ -212,7 +212,7 @@ export class UsersLessons {
   }
 
   async getIsMentor(userId: string, client: pg.PoolClient): Promise<boolean> {
-    const getUserQuery = 'SELECT * FROM users WHERE id = $1';
+    const getUserQuery = 'SELECT is_mentor FROM users WHERE id = $1';
     const { rows }: pg.QueryResult = await client.query(getUserQuery, [userId]);
     return rows[0].is_mentor;
   }
@@ -450,7 +450,7 @@ export class UsersLessons {
   }
   
   async getLessonSubfieldId(lessonId: string, client: pg.PoolClient): Promise<string> {
-    const getLessonQuery = `SELECT * FROM users_lessons WHERE id = $1`;
+    const getLessonQuery = `SELECT subfield_id FROM users_lessons WHERE id = $1`;
     const { rows }: pg.QueryResult = await client.query(getLessonQuery, [lessonId]);
     return rows[0].subfield_id;
   }
