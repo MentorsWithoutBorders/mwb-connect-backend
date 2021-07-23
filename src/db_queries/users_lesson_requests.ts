@@ -254,8 +254,8 @@ export class UsersLessonRequests {
         const student: User = await users.getUserFromDB(lessonRequest.student?.id as string, client);
         const studentSubfields = student.field?.subfields;
         const studentSubfield = studentSubfields != null && studentSubfields.length > 0 ? studentSubfields[0].id : null;
-        const availableMentorsMap = await this.getAvailableMentors(student, client);
         const studentSkills = this.getStudentSkills(studentSubfields as Array<Subfield>);
+        const availableMentorsMap = await this.getAvailableMentors(student, client);
         const lessonRequestOptions = await this.getLessonRequestOptions(availableMentorsMap, studentSubfield as string, studentSkills, client);
         await this.addNewLessonRequest(lessonRequest, lessonRequestOptions, client);
         await client.query('COMMIT');
