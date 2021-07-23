@@ -15,7 +15,7 @@ export class UsersNotificationsSettings {
   async getNotificationsSettings(request: Request, response: Response): Promise<void> {
     const userId: string = request.user.id as string;
     try {
-      const getNotificationsSettingsQuery = 'SELECT * FROM users_notifications_settings WHERE user_id = $1';
+      const getNotificationsSettingsQuery = 'SELECT enabled, time FROM users_notifications_settings WHERE user_id = $1';
       const { rows }: pg.QueryResult = await pool.query(getNotificationsSettingsQuery, [userId]);
       const time = rows[0].time.substring(0, rows[0].time.lastIndexOf(':'));
       const notificationsSettings: NotificationsSettings = {

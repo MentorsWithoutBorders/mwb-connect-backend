@@ -14,7 +14,7 @@ export class Updates {
 
   async getUpdates(request: Request, response: Response): Promise<void> {
     try {
-      const getUpdatesQuery = 'SELECT * FROM updates';
+      const getUpdatesQuery = 'SELECT build, major, minor, release FROM updates';
       const { rows }: pg.QueryResult = await pool.query(getUpdatesQuery);
       const updates: Update = {
         build: rows[0].build,

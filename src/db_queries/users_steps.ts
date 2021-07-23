@@ -18,7 +18,7 @@ export class UsersSteps {
     const userId: string = request.user.id as string;
     const goalId: string = request.params.id;
     try {
-      const getStepsQuery = 'SELECT * FROM users_steps WHERE user_id = $1 AND goal_id = $2';
+      const getStepsQuery = 'SELECT id, text, index, level, parent_id FROM users_steps WHERE user_id = $1 AND goal_id = $2';
       const { rows }: pg.QueryResult = await pool.query(getStepsQuery, [userId, goalId]);
       const steps: Array<Step> = [];
       for (const row of rows) {
@@ -56,7 +56,7 @@ export class UsersSteps {
   }
 
   async getStepByIdFromDB(userId: string, stepId: string, client: pg.PoolClient): Promise<Step> {
-    const getStepQuery = `SELECT * FROM users_steps WHERE user_id = $1 AND id = $2`;
+    const getStepQuery = `SELECT id, text, index, level, parent_id, date_time FROM users_steps WHERE user_id = $1 AND id = $2`;
     const { rows }: pg.QueryResult = await client.query(getStepQuery, [userId, stepId]);
     let step: Step = {};
     if (rows[0]) {    
@@ -90,7 +90,7 @@ export class UsersSteps {
   }
   
   async getLastStepAddedFromDB(userId: string, client: pg.PoolClient): Promise<Step> {
-    const getStepQuery = `SELECT * FROM users_steps 
+    const getStepQuery = `SELECT id, text, index, level, parent_id, date_time FROM users_steps 
       WHERE user_id = $1
       ORDER BY date_time DESC LIMIT 1`;
     const { rows }: pg.QueryResult = await client.query(getStepQuery, [userId]);

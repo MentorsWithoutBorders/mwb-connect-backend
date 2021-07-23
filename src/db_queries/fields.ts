@@ -16,7 +16,7 @@ export class Fields {
 
   async getFields(request: Request, response: Response): Promise<void> {
     try {
-      const getQuery = 'SELECT * FROM fields ORDER BY id ASC';
+      const getQuery = 'SELECT id, name FROM fields ORDER BY id ASC';
       const { rows }: pg.QueryResult = await pool.query(getQuery);
       const fields: Array<Field> = [];
       for (const row of rows) {

@@ -95,7 +95,7 @@ export class UsersQuizzes {
   }
 
   async getQuizzes(userId: string, client: pg.PoolClient): Promise<Array<Quiz>> {
-    const getQuizzesQuery = `SELECT * FROM users_quizzes 
+    const getQuizzesQuery = `SELECT number, is_correct, date_time FROM users_quizzes 
       WHERE user_id = $1
       ORDER BY date_time DESC`;
     const { rows } = await client.query(getQuizzesQuery, [userId]);
