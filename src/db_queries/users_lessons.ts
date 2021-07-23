@@ -223,46 +223,7 @@ export class UsersLessons {
     try {
       await client.query('BEGIN');
       await client.query(constants.READ_ONLY_TRANSACTION);
-      const isMentor = await this.getIsMentor(userId, client);
-      const now = moment.utc();
-      let getPreviousLessonQuery = '';
-      if (isMentor) {
-        getPreviousLessonQuery = `SELECT ul.id, ul.mentor_id, ul.subfield_id, ul.date_time, s.name AS subfield_name, ul.meeting_url, ul.is_recurrent, ul.end_recurrence_date_time, ul.is_canceled
-          FROM users_lessons ul
-          JOIN subfields s
-          ON ul.subfield_id = s.id
-          WHERE ul.mentor_id = $1 AND ul.date_time::timestamp < $2
-          ORDER BY ul.date_time DESC LIMIT 1`;
-      } else {
-        getPreviousLessonQuery = `SELECT ul.id, ul.mentor_id, ul.subfield_id, ul.date_time, s.name AS subfield_name, ul.meeting_url, ul.is_recurrent, ul.end_recurrence_date_time, ul.is_canceled
-          FROM users_lessons ul
-          JOIN users_lessons_students uls
-          ON ul.id = uls.lesson_id        
-          JOIN subfields s
-          ON ul.subfield_id = s.id
-          WHERE uls.student_id = $1 AND ul.date_time::timestamp < $2
-          ORDER BY ul.date_time DESC LIMIT 1`;      
-      }
-      const { rows }: pg.QueryResult = await client.query(getPreviousLessonQuery, [userId, now]);
-      let lessonRow = rows[0];
-      let lesson: Lesson = {};
-      if (lessonRow != null) {
-        lesson = {
-          id: lessonRow.id,
-          dateTime: moment.utc(lessonRow.date_time).format(constants.DATE_TIME_FORMAT),
-          isRecurrent: lessonRow.is_recurrent
-        }
-        if (lessonRow.end_recurrence_date_time != null) {
-          lesson.endRecurrenceDateTime = moment.utc(lessonRow.end_recurrence_date_time).format(constants.DATE_TIME_FORMAT);
-        }
-        const lessonDateTime = await this.getPreviousLessonDateTime(lesson, userId, isMentor, client);
-        if (lessonDateTime == undefined) {
-          lessonRow = null;
-        } else {
-          lessonRow.date_time = lessonDateTime;
-        }
-      }
-      lesson = await this.setLesson(lessonRow, isMentor, client);
+      const lesson: Lesson = await this.getPreviousLessonFromDB(userId, client);
       response.status(200).json(lesson);
       await client.query('COMMIT');
     } catch (error) {
@@ -271,6 +232,49 @@ export class UsersLessons {
     } finally {
       client.release();
     }
+  }
+
+  async getPreviousLessonFromDB(userId: string, client: pg.PoolClient): Promise<Lesson> {
+    const isMentor = await this.getIsMentor(userId, client);
+    const now = moment.utc();
+    let getPreviousLessonQuery = '';
+    if (isMentor) {
+      getPreviousLessonQuery = `SELECT ul.id, ul.mentor_id, ul.subfield_id, ul.date_time, s.name AS subfield_name, ul.meeting_url, ul.is_recurrent, ul.end_recurrence_date_time, ul.is_canceled
+        FROM users_lessons ul
+        JOIN subfields s
+        ON ul.subfield_id = s.id
+        WHERE ul.mentor_id = $1 AND ul.date_time::timestamp < $2
+        ORDER BY ul.date_time DESC LIMIT 1`;
+    } else {
+      getPreviousLessonQuery = `SELECT ul.id, ul.mentor_id, ul.subfield_id, ul.date_time, s.name AS subfield_name, ul.meeting_url, ul.is_recurrent, ul.end_recurrence_date_time, ul.is_canceled
+        FROM users_lessons ul
+        JOIN users_lessons_students uls
+        ON ul.id = uls.lesson_id        
+        JOIN subfields s
+        ON ul.subfield_id = s.id
+        WHERE uls.student_id = $1 AND ul.date_time::timestamp < $2
+        ORDER BY ul.date_time DESC LIMIT 1`;      
+    }
+    const { rows }: pg.QueryResult = await client.query(getPreviousLessonQuery, [userId, now]);
+    let lessonRow = rows[0];
+    let lesson: Lesson = {};
+    if (lessonRow != null) {
+      lesson = {
+        id: lessonRow.id,
+        dateTime: moment.utc(lessonRow.date_time).format(constants.DATE_TIME_FORMAT),
+        isRecurrent: lessonRow.is_recurrent
+      }
+      if (lessonRow.end_recurrence_date_time != null) {
+        lesson.endRecurrenceDateTime = moment.utc(lessonRow.end_recurrence_date_time).format(constants.DATE_TIME_FORMAT);
+      }
+      const lessonDateTime = await this.getPreviousLessonDateTime(lesson, userId, isMentor, client);
+      if (lessonDateTime == undefined) {
+        lessonRow = null;
+      } else {
+        lessonRow.date_time = lessonDateTime;
+      }
+    }
+    return this.setLesson(lessonRow, isMentor, client);    
   }
   
   async getPreviousLessonDateTime(lesson: Lesson, userId: string, isMentor: boolean, client: pg.PoolClient): Promise<string | undefined> {

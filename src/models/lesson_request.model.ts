@@ -9,4 +9,7 @@ export default interface LessonRequest {
   sentDateTime?: string;
   lessonDateTime?: string;
   isCanceled?: boolean
+  isRejected?: boolean
+  isExpired?: boolean
+  score?: number;
 }

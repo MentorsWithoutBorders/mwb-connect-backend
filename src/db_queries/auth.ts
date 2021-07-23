@@ -61,7 +61,7 @@ export class Auth {
       const createUserQuery = `INSERT INTO 
         users (id, name, email, password, field_id, organization_id, is_mentor, available_from, registered_on) 
         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) 
-        returning *`;
+        RETURNING *`;
       const values = [
         uuidv4(),
         name || approvedUser.name || '',
