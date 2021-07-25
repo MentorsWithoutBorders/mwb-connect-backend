@@ -24,7 +24,10 @@ export class UsersFCMTokens {
     const userId: string = request.user.id as string;
     const { token }: FCMToken = request.body
     try {
-      const insertFCMTokenQuery = `INSERT INTO users_fcm_tokens (user_id, fcm_token) VALUES ($1, $2)`;
+      const insertFCMTokenQuery = `INSERT INTO users_fcm_tokens (user_id, fcm_token) 
+        VALUES ($1, $2)
+        ON CONFLICT (user_id) DO 
+          UPDATE SET fcm_token = EXCLUDED.fcm_token`;
       const values = [userId, token];        
       await pool.query(insertFCMTokenQuery, values);
       response.status(200).send('FCM token has been added');
