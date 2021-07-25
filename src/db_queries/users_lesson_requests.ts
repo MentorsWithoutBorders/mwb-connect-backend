@@ -113,9 +113,7 @@ export class UsersLessonRequests {
       const student: User = {
         id: rows[0].student_id
       };
-      const mentor: User = {
-        id: mentorId
-      };
+      const mentor = await users.getUserFromDB(mentorId, client);
       const subfield: Subfield = {
         id: rows[0].subfield_id
       };        
@@ -135,6 +133,8 @@ export class UsersLessonRequests {
       await this.deleteLessonRequest(mentorId, lessonRequestId, client);
       response.status(200).send(lesson);
       await client.query('COMMIT');
+      lesson.mentor = mentor;
+      usersPushNotifications.sendPNLessonRequestAccepted(lesson);
     } catch (error) {
       response.status(400).send(error);
       await client.query('ROLLBACK');
@@ -255,13 +255,13 @@ export class UsersLessonRequests {
         }        
         const student: User = await users.getUserFromDB(lessonRequest.student?.id as string, client);
         const studentSubfields = student.field?.subfields;
-        const studentSubfieldId = studentSubfields != null && studentSubfields.length > 0 ? studentSubfields[0].id : null;
+        const studentSubfield = studentSubfields != null && studentSubfields.length > 0 ? studentSubfields[0] : null;
         const studentSkills = this.getStudentSkills(studentSubfields as Array<Subfield>);
         const availableMentorsMap = await this.getAvailableMentors(student, client);
-        const lessonRequestOptions = await this.getLessonRequestOptions(availableMentorsMap, studentSubfieldId as string, studentSkills, client);
+        const lessonRequestOptions = await this.getLessonRequestOptions(availableMentorsMap, studentSubfield as Subfield, studentSkills, client);
         await this.addNewLessonRequest(lessonRequest, lessonRequestOptions, client);
         await client.query('COMMIT');
-        usersPushNotifications.sendPushNotificationLessonRequest(student, lessonRequestOptions);
+        usersPushNotifications.sendPNLessonRequest(student, lessonRequestOptions);
       } catch (error) {
         await client.query('ROLLBACK');
       } finally {
@@ -409,16 +409,14 @@ export class UsersLessonRequests {
     return lessonTime;
   }
 
-  async getLessonRequestOptions(availableMentorsMap: Map<string, string>, studentSubfieldId: string, studentSkills: Array<string>, client: pg.PoolClient): Promise<Array<LessonRequest>> {
+  async getLessonRequestOptions(availableMentorsMap: Map<string, string>, studentSubfield: Subfield | null, studentSkills: Array<string>, client: pg.PoolClient): Promise<Array<LessonRequest>> {
     const lessonRequestOptions: Array<LessonRequest> = [];
     for (const [mentorId, lessonDateTime] of availableMentorsMap) {
-      let mentorSubfieldId = studentSubfieldId;
-      let mentorSubfieldName = '';
-      if (studentSubfieldId == null) {
+      let mentorSubfield = studentSubfield;
+      if (studentSubfield == null) {
         const mentorSubfields = await users.getUserSubfields(mentorId, client);
         if (mentorSubfields != null && mentorSubfields.length > 0) {
-          mentorSubfieldId = mentorSubfields[0].id as string;
-          mentorSubfieldName = mentorSubfields[0].name as string;
+          mentorSubfield = mentorSubfields[0];
         }
       }          
       let skillsScore = 0;
@@ -429,7 +427,7 @@ export class UsersLessonRequests {
           ON us.skill_id = ss.skill_id
           WHERE us.user_id = $1 AND ss.subfield_id = $2
           ORDER BY ss.skill_index`;
-        const { rows } = await client.query(getMentorSkillsQuery, [mentorId, mentorSubfieldId]);
+        const { rows } = await client.query(getMentorSkillsQuery, [mentorId, mentorSubfield?.id]);
         const commonSkills = rows.filter(rowMentorSkill => studentSkills.includes(rowMentorSkill.skill_id));
         for (let i = 1; i <= commonSkills.length; i++) {
           skillsScore += i;
@@ -440,13 +438,10 @@ export class UsersLessonRequests {
       const mentor: User = {
         id: mentorId
       }
-      const subfield: Subfield = {
-        id: mentorSubfieldId,
-        name: mentorSubfieldName
-      }
+      const subfield = mentorSubfield;
       const lessonRequestOption: LessonRequest = {
         mentor: mentor,
-        subfield: subfield,
+        subfield: subfield as Subfield,
         lessonDateTime: lessonDateTime,
         score: lessonRequestScore
       }
