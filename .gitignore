@@ -1,3 +1,4 @@
 .env
+mwb-connect-firebase-adminsdk.json
 \node_modules
 \dist

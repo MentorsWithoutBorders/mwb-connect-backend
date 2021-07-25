@@ -3,7 +3,7 @@ import cron from 'node-cron';
 import { Request, Response, NextFunction } from 'express';
 import { Auth } from './src/db_queries/auth';
 import { Users } from './src/db_queries/users';
-import { UsersFCMTokens } from './src/db_queries/users_fcm_tokens';
+import { UsersPushNotifications } from './src/db_queries/users_push_notifications';
 import { UsersGoals } from './src/db_queries/users_goals';
 import { UsersSteps } from './src/db_queries/users_steps';
 import { UsersQuizzes } from './src/db_queries/users_quizzes';
@@ -24,7 +24,7 @@ const port = 3000;
 const app: express.Express = express();
 const auth: Auth = new Auth();
 const users: Users = new Users();
-const usersFCMTokens: UsersFCMTokens = new UsersFCMTokens();
+const usersPushNotifications: UsersPushNotifications = new UsersPushNotifications();
 const usersGoals: UsersGoals = new UsersGoals();
 const usersSteps: UsersSteps = new UsersSteps();
 const usersQuizzes: UsersQuizzes = new UsersQuizzes();
@@ -71,7 +71,7 @@ app.put('/api/v1/user', users.updateUser);
 app.delete('/api/v1/user', users.deleteUser);
 
 // Users FCM tokesn
-app.post('/api/v1/fcm_tokens', usersFCMTokens.addFCMToken);
+app.post('/api/v1/fcm_tokens', usersPushNotifications.addFCMToken);
 
 // Users goals
 app.get('/api/v1/goals', usersGoals.getGoals);

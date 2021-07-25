@@ -6,6 +6,7 @@ import { Conn } from '../db/conn';
 import { constants } from '../utils/constants';
 import { Users } from './users';
 import { UsersLessons } from './users_lessons';
+import { UsersPushNotifications } from './users_push_notifications';
 import User from '../models/user.model';
 import Subfield from '../models/subfield.model';
 import LessonRequest from '../models/lesson_request.model';
@@ -18,6 +19,7 @@ const conn: Conn = new Conn();
 const pool = conn.pool;
 const users: Users = new Users();
 const usersLessons: UsersLessons = new UsersLessons();
+const usersPushNotifications: UsersPushNotifications = new UsersPushNotifications();
 
 export class UsersLessonRequests {
   constructor() {
@@ -253,12 +255,13 @@ export class UsersLessonRequests {
         }        
         const student: User = await users.getUserFromDB(lessonRequest.student?.id as string, client);
         const studentSubfields = student.field?.subfields;
-        const studentSubfield = studentSubfields != null && studentSubfields.length > 0 ? studentSubfields[0].id : null;
+        const studentSubfieldId = studentSubfields != null && studentSubfields.length > 0 ? studentSubfields[0].id : null;
         const studentSkills = this.getStudentSkills(studentSubfields as Array<Subfield>);
         const availableMentorsMap = await this.getAvailableMentors(student, client);
-        const lessonRequestOptions = await this.getLessonRequestOptions(availableMentorsMap, studentSubfield as string, studentSkills, client);
+        const lessonRequestOptions = await this.getLessonRequestOptions(availableMentorsMap, studentSubfieldId as string, studentSkills, client);
         await this.addNewLessonRequest(lessonRequest, lessonRequestOptions, client);
         await client.query('COMMIT');
+        usersPushNotifications.sendPushNotificationLessonRequest(student, lessonRequestOptions);
       } catch (error) {
         await client.query('ROLLBACK');
       } finally {
@@ -281,8 +284,8 @@ export class UsersLessonRequests {
   
   async getAvailableMentors(student: User, client: pg.PoolClient): Promise<Map<string, string>> {
     const studentSubfields = student.field?.subfields;
-    const studentSubfield = studentSubfields != null && studentSubfields.length > 0 ? studentSubfields[0].id : null;
-    const queryWhereSubfield = studentSubfield != null ? `AND us.subfield_id = '${studentSubfield}'` : '';
+    const studentSubfieldId = studentSubfields != null && studentSubfields.length > 0 ? studentSubfields[0].id : null;
+    const queryWhereSubfield = studentSubfieldId != null ? `AND us.subfield_id = '${studentSubfieldId}'` : '';
     const studentAvailabilities = student.availabilities != null ? student.availabilities : null; 
     let queryWhereAvailabilities = '';
     if (studentAvailabilities != null && studentAvailabilities.length > 0) {
@@ -406,14 +409,16 @@ export class UsersLessonRequests {
     return lessonTime;
   }
 
-  async getLessonRequestOptions(availableMentorsMap: Map<string, string>, studentSubfield: string, studentSkills: Array<string>, client: pg.PoolClient): Promise<Array<LessonRequest>> {
+  async getLessonRequestOptions(availableMentorsMap: Map<string, string>, studentSubfieldId: string, studentSkills: Array<string>, client: pg.PoolClient): Promise<Array<LessonRequest>> {
     const lessonRequestOptions: Array<LessonRequest> = [];
     for (const [mentorId, lessonDateTime] of availableMentorsMap) {
-      let mentorSubfield = studentSubfield;
-      if (studentSubfield == null) {
+      let mentorSubfieldId = studentSubfieldId;
+      let mentorSubfieldName = '';
+      if (studentSubfieldId == null) {
         const mentorSubfields = await users.getUserSubfields(mentorId, client);
         if (mentorSubfields != null && mentorSubfields.length > 0) {
-          mentorSubfield = mentorSubfields[0].id as string;
+          mentorSubfieldId = mentorSubfields[0].id as string;
+          mentorSubfieldName = mentorSubfields[0].name as string;
         }
       }          
       let skillsScore = 0;
@@ -424,7 +429,7 @@ export class UsersLessonRequests {
           ON us.skill_id = ss.skill_id
           WHERE us.user_id = $1 AND ss.subfield_id = $2
           ORDER BY ss.skill_index`;
-        const { rows } = await client.query(getMentorSkillsQuery, [mentorId, mentorSubfield]);
+        const { rows } = await client.query(getMentorSkillsQuery, [mentorId, mentorSubfieldId]);
         const commonSkills = rows.filter(rowMentorSkill => studentSkills.includes(rowMentorSkill.skill_id));
         for (let i = 1; i <= commonSkills.length; i++) {
           skillsScore += i;
@@ -436,7 +441,8 @@ export class UsersLessonRequests {
         id: mentorId
       }
       const subfield: Subfield = {
-        id: mentorSubfield
+        id: mentorSubfieldId,
+        name: mentorSubfieldName
       }
       const lessonRequestOption: LessonRequest = {
         mentor: mentor,
@@ -451,7 +457,7 @@ export class UsersLessonRequests {
 
   async addNewLessonRequest(lessonRequest: LessonRequest, lessonRequestOptions: Array<LessonRequest>, client: pg.PoolClient): Promise<void> {
     if (lessonRequestOptions.length > 0) {
-      const mentorId = lessonRequestOptions[0].mentor?.id;
+      const mentorId = lessonRequestOptions[0].mentor?.id as string;
       const subfieldId = lessonRequestOptions[0].subfield?.id;
       const lessonDateTime = lessonRequestOptions[0].lessonDateTime;          
       if (lessonRequest.isRejected) {
@@ -460,7 +466,7 @@ export class UsersLessonRequests {
           VALUES ($1, $2, $3, $4, $5)`;
         const values: Array<string> = [
           lessonRequest.student?.id as string,
-          mentorId as string,
+          mentorId,
           lessonRequest.subfield?.id as string,
           lessonDateTime as string,
           moment.utc().format(constants.DATE_TIME_FORMAT)
@@ -474,7 +480,7 @@ export class UsersLessonRequests {
           VALUES ($1, $2, $3, $4, $5)`;
         const values: Array<string> = [
           lessonRequest.student?.id as string,
-          mentorId as string,
+          mentorId,
           lessonRequest.subfield?.id as string,
           lessonDateTime as string,
           moment.utc().format(constants.DATE_TIME_FORMAT)
@@ -485,7 +491,7 @@ export class UsersLessonRequests {
           SET mentor_id = $1, subfield_id = $2, lesson_date_time = $3 WHERE id = $4`;
         await client.query(updateLessonRequest, [mentorId, subfieldId, lessonDateTime, lessonRequest.id]);
       }
-    }    
+    }
   }
 }
 
