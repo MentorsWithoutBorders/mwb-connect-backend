@@ -146,7 +146,6 @@ export class Users {
     for (const row of rows) {
       let timeTo = row.utc_time_to;
       for (const rowConnectedTo of rows) {
-        console.log(rowConnectedTo);
         if (rowConnectedTo.connected_to == row.id) {
           timeTo = rowConnectedTo.utc_time_to;
           break;
