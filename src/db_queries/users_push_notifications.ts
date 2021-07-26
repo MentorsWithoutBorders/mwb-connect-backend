@@ -139,6 +139,18 @@ export class UsersPushNotifications {
     if (lesson.mentor != null) {
       this.sendPushNotification(lesson.mentor.id as string, pushNotification);
     }
+  }
+  
+  sendPNLessonRecurrenceUpdated(students: Array<User>): void {
+    const pushNotification: PushNotification = {
+      title: 'Lesson recurrence updated',
+      body: 'The mentor has updated the lesson recurrence'
+    }    
+    if (students != null) {
+      for (const student of students) {
+        this.sendPushNotification(student.id as string, pushNotification);
+      }
+    }
   }  
 }
 

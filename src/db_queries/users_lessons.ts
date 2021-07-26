@@ -348,11 +348,11 @@ export class UsersLessons {
       } else {
         lessonsCanceled = await this.cancelNextLessonNoStudents(lesson, client);
       }
-      response.status(200).send(`Lesson modified with ID: ${lessonId}`);
-      await client.query('COMMIT');
       if (isMentor) {
         lesson.students = await this.getLessonStudents(lesson, client);
       }
+      await client.query('COMMIT');
+      response.status(200).send(`Lesson modified with ID: ${lessonId}`);
       usersPushNotifications.sendPNLessonCanceled(lesson, isCancelAll, lessonsCanceled);
     } catch (error) {
       response.status(400).send(error);
@@ -364,7 +364,7 @@ export class UsersLessons {
 
   async cancelNextLessonNoStudents(lesson: Lesson, client: pg.PoolClient): Promise<number> {
     let nextLessonMentor = await this.getNextLessonFromDB(lesson.mentor?.id as string, true, client);
-    let lessonsCanceled = 1;
+    let lessonsCanceled = 0;
     while (Object.keys(nextLessonMentor).length > 0 && nextLessonMentor.students?.length == 0) {
       if (nextLessonMentor.students?.length == 0) {
         await this.cancelLessonFromDB(lesson.mentor?.id as string, nextLessonMentor, client);
@@ -415,13 +415,27 @@ export class UsersLessons {
     const mentorId: string = request.user.id as string;
     const lessonId: string = request.params.id;
     const { isRecurrent, endRecurrenceDateTime, isRecurrenceDateSelected }: Lesson = request.body
+    const client: pg.PoolClient = await pool.connect();
     try {
+      await client.query('BEGIN');
+      const nextLesson = await this.getNextLessonFromDB(mentorId, true, client);
       const updateLessonQuery = 'UPDATE users_lessons SET is_recurrent = $1, end_recurrence_date_time = $2, is_recurrence_date_selected = $3 WHERE mentor_id = $4 AND id = $5';
       const endRecurrence = isRecurrent && endRecurrenceDateTime != undefined ? moment.utc(endRecurrenceDateTime) : null;
-      await pool.query(updateLessonQuery, [isRecurrent, endRecurrence, isRecurrenceDateSelected, mentorId, lessonId]);
+      await client.query(updateLessonQuery, [isRecurrent, endRecurrence, isRecurrenceDateSelected, mentorId, lessonId]);
+      const lesson: Lesson = {
+        id: lessonId
+      }      
+      const students = await this.getLessonStudents(lesson, client);
       response.status(200).send(`Lesson modified with ID: ${lessonId}`);
+      await client.query('COMMIT');
+      if (nextLesson.isRecurrent != isRecurrent || nextLesson.endRecurrenceDateTime != endRecurrenceDateTime) {
+        usersPushNotifications.sendPNLessonRecurrenceUpdated(students);
+      }
     } catch (error) {
       response.status(400).send(error);
+      await client.query('ROLLBACK');
+    } finally {
+      client.release();
     }
   } 
   
