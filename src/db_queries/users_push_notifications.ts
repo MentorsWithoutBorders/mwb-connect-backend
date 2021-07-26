@@ -23,7 +23,7 @@ admin.initializeApp({
 });
 const notificationOptions = {
   priority: "high",
-  timeToLive: 3
+  timeToLive: 60 * 60 * 24
 };
 
 export class UsersPushNotifications {
@@ -84,13 +84,61 @@ export class UsersPushNotifications {
   
   sendPNLessonRequestAccepted(lesson: Lesson): void {
     const recurring = lesson.isRecurrent ? 'recurring' : '';
+    const mentor = lesson.mentor?.name;
+    const subfield = lesson.subfield?.name?.toLowerCase();
     const pushNotification: PushNotification = {
       title: 'Lesson request accepted',
-      body: `${lesson.mentor?.name} has scheduled a ${recurring} ${lesson.subfield?.name} lesson with you`
+      body: `${mentor} has scheduled a ${recurring} ${subfield} lesson with you`
     }
     const students = lesson.students;
     const student = students != null ? students[0] : {};
     this.sendPushNotification(student.id as string, pushNotification);
+  }
+  
+  sendPNLessonCanceled(lesson: Lesson, isCancelAll: boolean, lessonsCanceled: number): void {
+    let title = '';
+    let body = '';
+    const isMentor = lesson.mentor == null ? true : false;
+    if (isMentor) { // canceled by mentor
+      if (!isCancelAll) {
+        title = 'Next lesson canceled';
+        body = `We're sorry but the mentor has canceled the next lesson`;
+      } else {
+        title = 'Lessons recurrence canceled';
+        body = `We're sorry but the mentor has canceled the lesson recurrence`;
+      }
+    } else {
+      if (lessonsCanceled == 1) {
+        title = 'Next lesson canceled';
+        body = `The next lesson has been canceled for lack of participants`;
+      } else {
+        title = 'Next lessons canceled';
+        body = `The next ${lessonsCanceled} lessons have been canceled for lack of participants`;
+      }
+    }
+    const pushNotification: PushNotification = {
+      title: title,
+      body: body
+    }
+    if (isMentor) {
+      this.sendPNLessonCanceledStudents(lesson, pushNotification);
+    } else {
+      this.sendPNLessonCanceledMentor(lesson, pushNotification);
+    }
+  }
+  
+  sendPNLessonCanceledStudents(lesson: Lesson, pushNotification: PushNotification): void {
+    if (lesson.students != null) {
+      for (const student of lesson.students) {
+        this.sendPushNotification(student.id as string, pushNotification);
+      }
+    }
+  }
+
+  sendPNLessonCanceledMentor(lesson: Lesson, pushNotification: PushNotification): void {
+    if (lesson.mentor != null) {
+      this.sendPushNotification(lesson.mentor.id as string, pushNotification);
+    }
   }  
 }
 
