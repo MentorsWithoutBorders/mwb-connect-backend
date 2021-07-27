@@ -299,7 +299,7 @@ export class UsersLessonRequests {
       }
       queryWhereAvailabilities = queryWhereAvailabilities.slice(0, -4) + ')';
     }
-    const getAvailableMentorsQuery = `SELECT DISTINCT u.id, u.available_from, ula.min_interval_in_days, ua.utc_day_of_week, ua.utc_time_from, ua.utc_time_to, ul.date_time, ul.is_recurrent, ul.end_recurrence_date_time
+    const getAvailableMentorsQuery = `SELECT DISTINCT u.id, u.available_from, ula.min_interval_in_days, ua.utc_day_of_week, ua.utc_time_from, ua.utc_time_to, ul.date_time, ul.is_recurrent, ul.end_recurrence_date_time, ul.is_canceled
       FROM users u
       FULL OUTER JOIN users_availabilities ua
       ON u.id = ua.user_id
@@ -328,6 +328,7 @@ export class UsersLessonRequests {
         AND (ulr.row_number_lesson_requests = 1 AND (ulr.is_canceled IS true OR EXTRACT(EPOCH FROM (NOW() - ulr.sent_date_time))/3600 > 72)
             OR ulr.id IS NULL)                 
         ${queryWhereAvailabilities}`;
+    console.log(getAvailableMentorsQuery);
     const { rows } = await client.query(getAvailableMentorsQuery, [student.field?.id]);
     const availableMentorsMap: Map<string, string> = new Map();
     for (const rowMentor of rows) {
@@ -340,7 +341,8 @@ export class UsersLessonRequests {
         timeTo: rowMentor.utc_time_to,
         dateTime: rowMentor.date_time,
         isRecurrent: rowMentor.is_recurrent,
-        endRecurrenceDateTime: rowMentor.end_recurrence_date_time
+        endRecurrenceDateTime: rowMentor.end_recurrence_date_time,
+        isCanceled: rowMentor.is_canceled
       }
       const lessonDateTime = await this.getLessonDateTime(student, availableMentor, studentAvailabilities as Array<Availability>, client);
       if (availableMentorsMap.has(availableMentor.id)) {
@@ -357,22 +359,23 @@ export class UsersLessonRequests {
   async getLessonDateTime(student: User, availableMentor: AvailableMentor, studentAvailabilities: Array<Availability>, client: pg.PoolClient): Promise<moment.Moment> {
     const studentPreviousLesson: Lesson = await usersLessons.getPreviousLessonFromDB(student.id as string, client);
     let lessonDateTime;
-    if (availableMentor.endRecurrenceDateTime) {
+    if (availableMentor.isCanceled) {
+      lessonDateTime = moment.utc();
+    } else if (availableMentor.endRecurrenceDateTime) {
       lessonDateTime = moment.utc(availableMentor.endRecurrenceDateTime).add(availableMentor.minInterval, 'd');
-      if (lessonDateTime.isBefore(moment.utc(availableMentor.availableFrom))) {
-        lessonDateTime = moment.utc(availableMentor.availableFrom);
-      }             
     } else if (availableMentor.dateTime) {
       lessonDateTime = moment.utc(availableMentor.dateTime).add(availableMentor.minInterval, 'd');
-      if (lessonDateTime.isBefore(moment.utc(availableMentor.availableFrom))) {
-        lessonDateTime = moment.utc(availableMentor.availableFrom);
-      }
     } else {
       lessonDateTime = moment.utc(availableMentor.availableFrom);
-      if (lessonDateTime.isBefore(moment.utc())) {
-        lessonDateTime = moment.utc();
-      }            
     }
+
+    if (lessonDateTime.isBefore(moment.utc(availableMentor.availableFrom))) {
+      lessonDateTime = moment.utc(availableMentor.availableFrom);
+    }
+    if (lessonDateTime.isBefore(moment.utc())) {
+      lessonDateTime = moment.utc();
+    }   
+     
     if (lessonDateTime.isBefore(moment.utc(studentPreviousLesson.dateTime).add(7, 'd'))) {
       lessonDateTime = moment.utc(studentPreviousLesson.dateTime).add(7, 'd');
     }          

@@ -8,4 +8,5 @@ export default interface AvailableMentor {
   dateTime: string;
   isRecurrent: boolean;
   endRecurrenceDateTime: string;
+  isCanceled: boolean;
 }
