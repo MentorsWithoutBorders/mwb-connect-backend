@@ -396,7 +396,7 @@ export class UsersLessons {
 
   async cancelLessonFromDB(userId: string, lesson: Lesson, client: pg.PoolClient): Promise<void> {
     const isMentor = await this.getIsMentor(userId, client);
-    const canceledDateTime = moment.utc();
+    const canceledDateTime = moment.utc().format(constants.DATE_TIME_FORMAT);
     if (lesson.dateTime) {
       const insertLessonCanceledQuery = `INSERT INTO users_lessons_canceled (user_id, lesson_id, lesson_date_time, canceled_date_time)
         VALUES ($1, $2, $3, $4)`;
