@@ -52,18 +52,18 @@ export class UsersLessonRequests {
       const isMentor = await this.getIsMentor(userId, client);
       let getLessonRequestQuery = '';
       if (isMentor) {
-        getLessonRequestQuery = `SELECT ulr.id, ulr.student_id, ulr.subfield_id, ulr.sent_date_time, ulr.lesson_date_time, s.name AS subfield_name, ulr.is_canceled, ulr.is_rejected
+        getLessonRequestQuery = `SELECT ulr.id, ulr.student_id, ulr.subfield_id, ulr.sent_date_time, ulr.lesson_date_time, s.name AS subfield_name, ulr.is_canceled, ulr.is_rejected, ulr.is_expired
           FROM users_lesson_requests ulr
           LEFT OUTER JOIN subfields s
           ON ulr.subfield_id = s.id
-          WHERE ulr.mentor_id = $1 AND ulr.is_canceled IS DISTINCT FROM true AND ulr.is_rejected IS DISTINCT FROM true
+          WHERE ulr.mentor_id = $1 AND ulr.is_canceled IS DISTINCT FROM true AND ulr.is_rejected IS DISTINCT FROM true AND ulr.is_expired IS DISTINCT FROM true
           ORDER BY ulr.sent_date_time DESC LIMIT 1`;
       } else {
-        getLessonRequestQuery = `SELECT ulr.id, ulr.student_id, ulr.subfield_id, ulr.sent_date_time, ulr.lesson_date_time, s.name AS subfield_name, ulr.is_canceled
+        getLessonRequestQuery = `SELECT ulr.id, ulr.student_id, ulr.subfield_id, ulr.sent_date_time, ulr.lesson_date_time, s.name AS subfield_name, ulr.is_canceled, ulr.is_obsolete
           FROM users_lesson_requests ulr
           LEFT OUTER JOIN subfields s
           ON ulr.subfield_id = s.id
-          WHERE ulr.student_id = $1 AND ulr.is_canceled IS DISTINCT FROM true
+          WHERE ulr.student_id = $1 AND ulr.is_canceled IS DISTINCT FROM true AND ulr.is_obsolete IS DISTINCT FROM true
           ORDER BY ulr.sent_date_time DESC LIMIT 1`;
       }
       const { rows }: pg.QueryResult = await client.query(getLessonRequestQuery, [userId]);
@@ -482,8 +482,8 @@ export class UsersLessonRequests {
       } else if (lessonRequest.lessonDateTime != null) {
         const updatePreviousLessonRequest = `UPDATE users_lesson_requests SET is_expired = true WHERE id = $1`;
         await client.query(updatePreviousLessonRequest, [lessonRequest.id]);            
-        const insertLessonRequestQuery = `INSERT INTO 
-          users_lesson_requests (student_id, mentor_id, subfield_id, lesson_date_time, sent_date_time) 
+        const insertLessonRequestQuery = `INSERT INTO users_lesson_requests 
+          (student_id, mentor_id, subfield_id, lesson_date_time, sent_date_time) 
           VALUES ($1, $2, $3, $4, $5)`;
         const values: Array<string> = [
           lessonRequest.student?.id as string,
@@ -498,7 +498,14 @@ export class UsersLessonRequests {
           SET mentor_id = $1, subfield_id = $2, lesson_date_time = $3 WHERE id = $4`;
         await client.query(updateLessonRequest, [mentorId, subfieldId, lessonDateTime, lessonRequest.id]);
       }
+      await this.flagLessonRequestsObsolete(lessonRequest, client);
     }
+  }
+
+  async flagLessonRequestsObsolete(lessonRequest: LessonRequest, client: pg.PoolClient): Promise<void> {
+    const updateLessonRequests = `UPDATE users_lesson_requests 
+      SET is_obsolete = true WHERE is_rejected = true OR is_expired = true`;
+    await client.query(updateLessonRequests, [lessonRequest.student?.id]); 
   }
 }
 
