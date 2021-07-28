@@ -332,7 +332,7 @@ export class UsersLessonRequests {
         AND u.field_id = $1
         AND us.subfield_id IS NOT NULL
         ${queryWhereSubfield}
-        AND (ul.row_number_lessons = 1 AND (ul.is_recurrent IS DISTINCT FROM true AND ul.date_time < now() OR ul.is_recurrent IS true AND ul.end_recurrence_date_time < now() OR ul.is_canceled IS true) 
+        AND (ul.row_number_lessons = 1 AND (ul.is_recurrent IS DISTINCT FROM true AND ul.date_time < now() OR ul.is_recurrent IS true AND ul.end_recurrence_date_time < now() OR ul.is_canceled IS true AND EXTRACT(EPOCH FROM (NOW() - ulr.sent_date_time))/3600 > 168) 
             OR ul.id IS NULL)
         AND (ulr.row_number_lesson_requests = 1 AND (ulr.is_canceled IS true OR EXTRACT(EPOCH FROM (NOW() - ulr.sent_date_time))/3600 > 72)
             OR ulr.id IS NULL)                 
