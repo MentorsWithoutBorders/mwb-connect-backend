@@ -396,19 +396,20 @@ export class UsersLessons {
 
   async cancelLessonFromDB(userId: string, lesson: Lesson, client: pg.PoolClient): Promise<void> {
     const isMentor = await this.getIsMentor(userId, client);
+    const canceledDateTime = moment.utc();
     if (lesson.dateTime) {
-      const insertLessonCanceledQuery = `INSERT INTO users_lessons_canceled (user_id, lesson_id, lesson_date_time)
-        VALUES ($1, $2, $3)`;
+      const insertLessonCanceledQuery = `INSERT INTO users_lessons_canceled (user_id, lesson_id, lesson_date_time, canceled_date_time)
+        VALUES ($1, $2, $3, $4)`;
       const lessonDateTime = moment.utc(lesson.dateTime);
-      const values = [userId, lesson.id, lessonDateTime];
+      const values = [userId, lesson.id, lessonDateTime, canceledDateTime];
       await client.query(insertLessonCanceledQuery, values);        
     } else {
       if (isMentor) {
-        const updateMentorLessonQuery = 'UPDATE users_lessons SET is_canceled = true WHERE id = $1';
-        await client.query(updateMentorLessonQuery, [lesson.id]);
+        const updateMentorLessonQuery = 'UPDATE users_lessons SET is_canceled = true, canceled_date_time = $1 WHERE id = $2';
+        await client.query(updateMentorLessonQuery, [canceledDateTime, lesson.id]);
       } else {
-        const updateStudentLessonQuery = 'UPDATE users_lessons_students SET is_canceled = true WHERE lesson_id = $1 AND student_id = $2';
-        await client.query(updateStudentLessonQuery, [lesson.id, userId]);
+        const updateStudentLessonQuery = 'UPDATE users_lessons_students SET is_canceled = true, canceled_date_time = $1 WHERE lesson_id = $2 AND student_id = $3';
+        await client.query(updateStudentLessonQuery, [canceledDateTime, lesson.id, userId]);
       }
     }    
   }

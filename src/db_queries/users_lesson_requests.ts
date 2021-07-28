@@ -234,7 +234,7 @@ export class UsersLessonRequests {
       WHERE is_canceled IS DISTINCT FROM true
         AND is_expired IS DISTINCT FROM true
         AND (lesson_date_time IS NULL
-          OR lesson_date_time IS DISTINCT FROM NULL AND EXTRACT(EPOCH FROM (NOW() - sent_date_time))/3600 > 1)
+          OR lesson_date_time IS DISTINCT FROM NULL AND EXTRACT(EPOCH FROM (now() - sent_date_time))/3600 > 1)
         OR is_rejected = true
       ORDER BY sent_date_time`;
     const { rows }: pg.QueryResult = await pool.query(getLessonRequestsQuery);
@@ -332,9 +332,11 @@ export class UsersLessonRequests {
         AND u.field_id = $1
         AND us.subfield_id IS NOT NULL
         ${queryWhereSubfield}
-        AND (ul.row_number_lessons = 1 AND (ul.is_recurrent IS DISTINCT FROM true AND ul.date_time < now() OR ul.is_recurrent IS true AND ul.end_recurrence_date_time < now() OR ul.is_canceled IS true AND EXTRACT(EPOCH FROM (NOW() - ulr.sent_date_time))/3600 > 168) 
+        AND (ul.row_number_lessons = 1 AND (ul.is_recurrent IS DISTINCT FROM true AND ul.date_time < now() 
+            OR ul.is_recurrent IS true AND ul.end_recurrence_date_time < now() 
+            OR ul.is_canceled IS true AND EXTRACT(EPOCH FROM (now() - ul.canceled_date_time))/3600 > 168) 
             OR ul.id IS NULL)
-        AND (ulr.row_number_lesson_requests = 1 AND (ulr.is_canceled IS true OR EXTRACT(EPOCH FROM (NOW() - ulr.sent_date_time))/3600 > 72)
+        AND (ulr.row_number_lesson_requests = 1 AND (ulr.is_canceled IS true OR EXTRACT(EPOCH FROM (now() - ulr.sent_date_time))/3600 > 72)
             OR ulr.id IS NULL)                 
         ${queryWhereAvailabilities}`;
     console.log(getAvailableMentorsQuery);
@@ -504,7 +506,7 @@ export class UsersLessonRequests {
 
   async flagLessonRequestsObsolete(lessonRequest: LessonRequest, client: pg.PoolClient): Promise<void> {
     const updateLessonRequests = `UPDATE users_lesson_requests 
-      SET is_obsolete = true WHERE is_rejected = true OR is_expired = true`;
+      SET is_obsolete = true WHERE student_id = $1 AND (is_rejected = true OR is_expired = true)`;
     await client.query(updateLessonRequests, [lessonRequest.student?.id]); 
   }
 }
