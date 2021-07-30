@@ -3,7 +3,6 @@ import cron from 'node-cron';
 import { Request, Response, NextFunction } from 'express';
 import { Auth } from './src/db_queries/auth';
 import { Users } from './src/db_queries/users';
-import { UsersPushNotifications } from './src/db_queries/users_push_notifications';
 import { UsersGoals } from './src/db_queries/users_goals';
 import { UsersSteps } from './src/db_queries/users_steps';
 import { UsersQuizzes } from './src/db_queries/users_quizzes';
@@ -13,6 +12,8 @@ import { UsersCertificatesPauses } from './src/db_queries/users_certificates_pau
 import { UsersSkills } from './src/db_queries/users_skills';
 import { UsersNotificationsSettings } from './src/db_queries/users_notifications_settings';
 import { UsersSupportRequests } from './src/db_queries/users_support_requests';
+import { UsersPushNotifications } from './src/db_queries/users_push_notifications';
+import { UsersBackgroundProcesses } from './src/db_queries/users_background_processes';
 import { Fields } from './src/db_queries/fields';
 import { Subfields } from './src/db_queries/subfields';
 import { Skills } from './src/db_queries/skills';
@@ -34,6 +35,7 @@ const usersCertificatesPauses: UsersCertificatesPauses = new UsersCertificatesPa
 const usersSkills: UsersSkills = new UsersSkills();
 const usersNotificationsSettings: UsersNotificationsSettings = new UsersNotificationsSettings();
 const usersSupportRequests: UsersSupportRequests = new UsersSupportRequests();
+const usersBackgroundProcesses: UsersBackgroundProcesses = new UsersBackgroundProcesses();
 const fields: Fields = new Fields();
 const subfields: Subfields = new Subfields();
 const skills: Skills = new Skills();
@@ -98,7 +100,6 @@ app.get('/api/v1/lesson_request', usersLessonRequests.getLessonRequest);
 app.post('/api/v1/lesson_requests/:id/accept_lesson_request', usersLessonRequests.acceptLessonRequest);
 app.put('/api/v1/lesson_requests/:id/reject_lesson_request', usersLessonRequests.rejectLessonRequest);
 app.put('/api/v1/lesson_requests/:id/cancel_lesson_request', usersLessonRequests.cancelLessonRequest);
-app.get('/api/v1/send_lesson_request', usersLessonRequests.sendLessonRequest);
 
 // Users lessons
 app.get('/api/v1/next_lesson', usersLessons.getNextLesson);
@@ -127,6 +128,9 @@ app.put('/api/v1/notifications_settings', usersNotificationsSettings.updateNotif
 
 // Users support requests
 app.post('/api/v1/support_requests', usersSupportRequests.addSupportRequest);
+
+// Users background processes
+app.get('/api/v1/send_lesson_request', usersBackgroundProcesses.sendLessonRequest);
 
 // Fields
 app.get('/api/v1/fields', fields.getFields);

@@ -60,7 +60,11 @@ export class UsersPushNotifications {
         notification: {
           title: pushNotification.title,
           body: pushNotification.body
-        }       
+        },
+        data: {
+          title: pushNotification.title,
+          body: pushNotification.body
+        }                
       };
       admin.messaging().sendToDevice(registrationToken, payload, notificationOptions)
       .then()

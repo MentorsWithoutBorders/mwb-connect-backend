@@ -102,14 +102,14 @@ export class UsersLessons {
 
   async getNextLessonRecurrentDateTime(lesson: Lesson, userId: string, isMentor: boolean, endRecurrenceDateTime: moment.Moment, lessonDateTime: moment.Moment, client: pg.PoolClient): Promise<string | undefined> {
     const now = moment.utc();
-    if (endRecurrenceDateTime.isBefore(now)) {
+    if (endRecurrenceDateTime.isBefore(now.subtract(3, 'h'))) {
       return undefined;
     } else {
-      while (lessonDateTime.isBefore(now)) {
+      while (lessonDateTime.isBefore(now.subtract(3, 'h'))) {
         lessonDateTime = lessonDateTime.add(7, 'd');
       }
       const nextValidLessonDateTime = await this.getNextValidLessonDateTime(lesson, userId, isMentor, lessonDateTime, client);
-      if (nextValidLessonDateTime.isAfter(endRecurrenceDateTime)) {
+      if (nextValidLessonDateTime.isAfter(endRecurrenceDateTime.add(3, 'h')) || nextValidLessonDateTime.isBefore(now.subtract(3, 'h'))) {
         return undefined;
       } else {
         return moment.utc(nextValidLessonDateTime).format(constants.DATE_TIME_FORMAT);
@@ -119,9 +119,10 @@ export class UsersLessons {
 
   async getNextLessonSingleDateTime(lesson: Lesson, userId: string, isMentor: boolean, lessonDateTime: moment.Moment, client: pg.PoolClient): Promise<string | undefined> {
     const now = moment.utc();
-    if (lessonDateTime.isBefore(now)) {
+    if (lessonDateTime.isBefore(now.subtract(3, 'h'))) {
       return undefined;
     } else {
+      // Check if the single lesson has been canceled
       const nextValidLessonDateTime = await this.getNextValidLessonDateTime(lesson, userId, isMentor, lessonDateTime, client);
       if (moment.utc(nextValidLessonDateTime).format(constants.DATE_TIME_FORMAT) != moment.utc(lessonDateTime).format(constants.DATE_TIME_FORMAT)) {
         return undefined;
