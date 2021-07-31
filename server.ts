@@ -130,7 +130,8 @@ app.put('/api/v1/notifications_settings', usersNotificationsSettings.updateNotif
 app.post('/api/v1/support_requests', usersSupportRequests.addSupportRequest);
 
 // Users background processes
-app.get('/api/v1/send_lesson_request', usersBackgroundProcesses.sendLessonRequest);
+app.post('/api/v1/send_lesson_request', usersBackgroundProcesses.sendLessonRequest);
+app.post('/api/v1/send_after_lesson', usersBackgroundProcesses.sendAfterLesson);
 
 // Fields
 app.get('/api/v1/fields', fields.getFields);

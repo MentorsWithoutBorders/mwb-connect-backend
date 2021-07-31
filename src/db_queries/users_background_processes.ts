@@ -316,5 +316,54 @@ export class UsersBackgroundProcesses {
       SET is_obsolete = true WHERE student_id = $1 AND (is_rejected = true OR is_expired = true)`;
     await client.query(updateLessonRequests, [lessonRequest.student?.id]); 
   }
+
+  async sendAfterLesson(request: Request, response: Response): Promise<void> {
+    try {
+      await this.sendAfterLessonFromDB();
+      response.status(200).send('After lesson sent');
+    } catch (error) {
+      response.status(400).send(error);
+    }    
+  }
+  
+  async sendAfterLessonFromDB(): Promise<void> {
+    try {
+      const getAfterLessonQuery = `SELECT * FROM
+        (SELECT id, mentor_id, is_recurrent, EXTRACT(EPOCH FROM (now() - interval '3 hours' - end_recurrence_date_time)) AS diff_end_recurrence_date_time, ROUND(EXTRACT(EPOCH FROM (now() - interval '3 hours' - date_time))/60)/60/24/7 AS diff_date_time
+            FROM users_lessons
+            GROUP BY id) ul
+        WHERE is_recurrent IS DISTINCT FROM true AND diff_date_time = 0
+          OR is_recurrent = true AND diff_end_recurrence_date_time < 60 AND diff_date_time = FLOOR(diff_date_time)`;
+      const { rows }: pg.QueryResult = await pool.query(getAfterLessonQuery);
+      for (const row of rows) {
+        const mentor: User = {
+          id: row.mentor_id
+        }
+        const client: pg.PoolClient = await pool.connect();
+        try {
+          await client.query('BEGIN');
+          const previousLesson = await usersLessons.getPreviousLessonFromDB(mentor.id as string, client);
+          let difference = moment.duration(moment.utc(previousLesson.dateTime).diff(moment.utc().subtract(3, 'h')));
+          if (moment.utc(previousLesson.dateTime).isBefore(moment.utc().subtract(3, 'h'))) {
+            difference = moment.duration(moment.utc().subtract(3, 'h').diff(moment.utc(previousLesson.dateTime)));
+          }
+          if (difference.asSeconds() < 60) {
+            previousLesson.mentor = mentor;
+            const students = previousLesson.students;
+            if (students != null && students.length > 0) {
+              usersPushNotifications.sendPNAfterLesson(previousLesson);
+            }
+          }
+          await client.query('COMMIT');
+        } catch (error) {
+          await client.query('ROLLBACK');
+        } finally {
+          client.release();
+        }        
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  }
 }
 

@@ -9,6 +9,7 @@ import PushNotification from '../models/push_notification.model';
 import User from '../models/user.model';
 import LessonRequest from '../models/lesson_request.model';
 import Lesson from '../models/lesson.model';
+import { PushNotificationType } from '../utils/push_notification_type';
 
 
 const conn: Conn = new Conn();
@@ -56,14 +57,16 @@ export class UsersPushNotifications {
   async sendPushNotification(userId: string, pushNotification: PushNotification): Promise<void> {
     const registrationToken = await this.getUserFCMToken(userId);
     if (registrationToken) {
+      if (pushNotification.type == null) {
+        pushNotification.type = PushNotificationType.Normal
+      }
       const payload = {
         notification: {
           title: pushNotification.title,
           body: pushNotification.body
         },
         data: {
-          title: pushNotification.title,
-          body: pushNotification.body
+          type: pushNotification.type.toString()
         }                
       };
       admin.messaging().sendToDevice(registrationToken, payload, notificationOptions)
@@ -155,6 +158,27 @@ export class UsersPushNotifications {
         this.sendPushNotification(student.id as string, pushNotification);
       }
     }
-  }  
+  }
+  
+  sendPNAfterLesson(lesson: Lesson): void {
+    const pushNotificationMentor: PushNotification = {
+      title: 'Taught today',
+      body: 'Please mention briefly what you have taught today',
+      type: PushNotificationType.AfterLesson
+    }
+    const pushNotificationStudent: PushNotification = {
+      title: 'Learned today',
+      body: 'Please mention briefly what you have learned today',
+      type: PushNotificationType.AfterLesson
+    }
+    const mentor = lesson.mentor;
+    this.sendPushNotification(mentor?.id as string, pushNotificationMentor);
+    const students = lesson.students;
+    if (students != null) {
+      for (const student of students) {
+        this.sendPushNotification(student.id as string, pushNotificationStudent);
+      }
+    }
+  }
 }
 
