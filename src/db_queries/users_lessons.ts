@@ -182,30 +182,28 @@ export class UsersLessons {
     return lessonCanceledDateTimes;
   }
 
-  async getLessonStudents(lesson: Lesson, client: pg.PoolClient): Promise<Array<User>> {
-    const getLessonStudentsQuery = `SELECT student_id, is_canceled
+  async getLessonStudents(lesson: Lesson, shouldAddCanceled: boolean, client: pg.PoolClient): Promise<Array<User>> {
+    const getLessonStudentsQuery = `SELECT student_id
       FROM users_lessons_students
       WHERE lesson_id = $1`;
     const { rows }: pg.QueryResult = await client.query(getLessonStudentsQuery, [lesson.id]);
     const students: Array<User> = [];
     for (const studentRow of rows) {
-      if (!studentRow.is_canceled) {
-        const user: User = await users.getUserFromDB(studentRow.student_id, client);
-        const student: User = {
-          id: user.id as string,
-          name: user.name as string,
-          organization: user.organization as Organization
+      const user: User = await users.getUserFromDB(studentRow.student_id, client);
+      const student: User = {
+        id: user.id as string,
+        name: user.name as string,
+        organization: user.organization as Organization
+      }
+      let shouldAddStudent = true;
+      if (lesson.dateTime && !shouldAddCanceled) {
+        const lessonCanceledDateTimes = await this.getLessonCanceledDateTimes(student.id as string, false, lesson.id as string, client);
+        if (lessonCanceledDateTimes.includes(lesson.dateTime)) {
+          shouldAddStudent = false;
         }
-        let shouldAddStudent = true;
-        if (lesson.dateTime) {
-          const lessonCanceledDateTimes = await this.getLessonCanceledDateTimes(student.id as string, false, lesson.id as string, client);
-          if (lessonCanceledDateTimes.includes(lesson.dateTime)) {
-            shouldAddStudent = false;
-          }
-        }
-        if (shouldAddStudent) {
-          students.push(student);
-        }
+      }
+      if (shouldAddStudent) {
+        students.push(student);
       }
     }  
     return students;  
@@ -231,7 +229,7 @@ export class UsersLessons {
       }
       if (isMentor) {
         lesson.isRecurrenceDateSelected = lessonRow.is_recurrence_date_selected;
-        lesson.students = await this.getLessonStudents(lesson, client);
+        lesson.students = await this.getLessonStudents(lesson, false,client);
       } else {
         const user: User = await users.getUserFromDB(lessonRow.mentor_id, client);
         const mentor: User = {
@@ -373,7 +371,7 @@ export class UsersLessons {
       }
       // For the push notification
       if (isMentor) {
-        lesson.students = await this.getLessonStudents(lesson, client);
+        lesson.students = await this.getLessonStudents(lesson, false, client);
       }
       await client.query('COMMIT');
       response.status(200).send(`Lesson modified with ID: ${lessonId}`);
@@ -406,21 +404,54 @@ export class UsersLessons {
   async cancelLessonFromDB(userId: string, lesson: Lesson, client: pg.PoolClient): Promise<void> {
     const isMentor = await this.getIsMentor(userId, client);
     const canceledDateTime = moment.utc().format(constants.DATE_TIME_FORMAT);
+    let nextLessonMentor: Lesson = {};
+    let students: Array<User> = [];
+    if (isMentor) {
+      nextLessonMentor = await this.getNextLessonFromDB(userId, true, client);
+      students = await this.getLessonStudents(lesson, true, client);
+    }    
     if (lesson.dateTime) {
       const insertLessonCanceledQuery = `INSERT INTO users_lessons_canceled (user_id, lesson_id, lesson_date_time, canceled_date_time)
         VALUES ($1, $2, $3, $4)`;
       const lessonDateTime = moment.utc(lesson.dateTime);
       const values = [userId, lesson.id, lessonDateTime, canceledDateTime];
-      await client.query(insertLessonCanceledQuery, values);        
+      await client.query(insertLessonCanceledQuery, values);
+      if (isMentor) {
+        for (const student of students) {
+          await this.cancelUserLessons(student.id as string, nextLessonMentor, client);
+        }
+      }
     } else {
       if (isMentor) {
         const updateMentorLessonQuery = 'UPDATE users_lessons SET is_canceled = true, canceled_date_time = $1 WHERE id = $2';
         await client.query(updateMentorLessonQuery, [canceledDateTime, lesson.id]);
+        await this.cancelUserLessons(userId, nextLessonMentor, client);
+        for (const student of students) {
+          await this.cancelUserLessons(student.id as string, nextLessonMentor, client);
+        }        
       } else {
+        const nextLessonStudent = await this.getNextLessonFromDB(userId, false, client);
         const updateStudentLessonQuery = 'UPDATE users_lessons_students SET is_canceled = true, canceled_date_time = $1 WHERE lesson_id = $2 AND student_id = $3';
         await client.query(updateStudentLessonQuery, [canceledDateTime, lesson.id, userId]);
+        await this.cancelUserLessons(userId, nextLessonStudent, client);
       }
     }    
+  }
+
+  async cancelUserLessons(userId: string, lesson: Lesson, client: pg.PoolClient): Promise<void> {
+    let endDateTime = moment.utc(lesson.dateTime);
+    if (lesson.isRecurrent) {
+      endDateTime = moment.utc(lesson.endRecurrenceDateTime);
+    }
+    let lessonDateTime = moment.utc(lesson.dateTime).clone();
+    while (lessonDateTime.isSameOrBefore(endDateTime)) {
+      const insertLessonCanceledQuery = `INSERT INTO users_lessons_canceled (user_id, lesson_id, lesson_date_time, canceled_date_time)
+        VALUES ($1, $2, $3, $4)`;
+      const canceledDateTime = moment.utc().format(constants.DATE_TIME_FORMAT);
+      const values = [userId, lesson.id, lessonDateTime, canceledDateTime];
+      await client.query(insertLessonCanceledQuery, values);
+      lessonDateTime = lessonDateTime.add(7, 'd');
+    }
   }
 
   async setLessonMeetingUrl(request: Request, response: Response): Promise<void> {
@@ -450,7 +481,7 @@ export class UsersLessons {
       const lesson: Lesson = {
         id: lessonId
       }      
-      const students = await this.getLessonStudents(lesson, client);
+      const students = await this.getLessonStudents(lesson, false, client);
       response.status(200).send(`Lesson modified with ID: ${lessonId}`);
       await client.query('COMMIT');
       if (nextLesson.isRecurrent != isRecurrent || nextLesson.endRecurrenceDateTime != endRecurrenceDateTime) {
@@ -473,7 +504,7 @@ export class UsersLessons {
       const lesson: Lesson = {
         id: lessonId
       }
-      const students = await this.getLessonStudents(lesson, client);
+      const students = await this.getLessonStudents(lesson, false, client);
       for (const student of students) {
         const subfieldId = await this.getLessonSubfieldId(lessonId, client);
         await usersSkills.addUserSkillsToDB(student.id as string, subfieldId, skills, client);
@@ -497,7 +528,7 @@ export class UsersLessons {
       const lesson: Lesson = {
         id: lessonId
       }      
-      const students = await this.getLessonStudents(lesson, client);
+      const students = await this.getLessonStudents(lesson, false, client);
       for (const student of students) {
         const insertLessonNoteQuery = `INSERT INTO users_lessons_notes (student_id, lesson_id, text)
           VALUES ($1, $2, $3)`;
