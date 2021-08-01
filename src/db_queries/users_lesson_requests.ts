@@ -116,33 +116,40 @@ export class UsersLessonRequests {
     const client: pg.PoolClient = await pool.connect();
     try {
       await client.query('BEGIN');
-      const getLessonRequestQuery = 'SELECT id, student_id, subfield_id, lesson_date_time FROM users_lesson_requests WHERE mentor_id = $1 AND id = $2';
+      const getLessonRequestQuery = `SELECT id, student_id, subfield_id, lesson_date_time 
+        FROM users_lesson_requests 
+        WHERE mentor_id = $1 AND id = $2 AND is_expired IS DISTINCT FROM true AND is_canceled IS DISTINCT FROM true`;
       const { rows }: pg.QueryResult = await client.query(getLessonRequestQuery, [mentorId, lessonRequestId]);
-      const student: User = {
-        id: rows[0].student_id
-      };
       const mentor = await users.getUserFromDB(mentorId, client);
-      const subfield: Subfield = {
-        id: rows[0].subfield_id
-      };        
-      let lesson: Lesson = {
-        id: rows[0].id,
-        students: [student],
-        mentor: mentor,
-        subfield: subfield,
-        dateTime: rows[0].lesson_date_time,
-        meetingUrl: meetingUrl,
-        isRecurrent: isRecurrent,
-        endRecurrenceDateTime: endRecurrenceDateTime,
-        isRecurrenceDateSelected: isRecurrenceDateSelected
+      let lesson: Lesson = {};
+      if (rows[0]) {
+        const student: User = {
+          id: rows[0].student_id
+        };
+        const subfield: Subfield = {
+          id: rows[0].subfield_id
+        };        
+        lesson = {
+          id: rows[0].id,
+          students: [student],
+          mentor: mentor,
+          subfield: subfield,
+          dateTime: rows[0].lesson_date_time,
+          meetingUrl: meetingUrl,
+          isRecurrent: isRecurrent,
+          endRecurrenceDateTime: endRecurrenceDateTime,
+          isRecurrenceDateSelected: isRecurrenceDateSelected
+        }
+        lesson = await this.addLesson(lesson, client);
+        await this.addStudentSubfield(student.id as string, subfield.id as string, client);
+        await this.deleteLessonRequest(mentorId, lessonRequestId, client);
       }
-      lesson = await this.addLesson(lesson, client);
-      await this.addStudentSubfield(student.id as string, subfield.id as string, client);
-      await this.deleteLessonRequest(mentorId, lessonRequestId, client);
       response.status(200).send(lesson);
       await client.query('COMMIT');
-      lesson.mentor = mentor;
-      usersPushNotifications.sendPNLessonRequestAccepted(lesson);
+      if (Object.keys(lesson).length > 0) {
+        lesson.mentor = mentor;
+        usersPushNotifications.sendPNLessonRequestAccepted(lesson);
+      }
     } catch (error) {
       response.status(400).send(error);
       await client.query('ROLLBACK');
