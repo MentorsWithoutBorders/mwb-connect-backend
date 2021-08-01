@@ -6,6 +6,7 @@ import autoBind from 'auto-bind';
 import moment from 'moment';
 import { v4 as uuidv4 } from 'uuid';
 import { Conn } from '../db/conn';
+import { constants } from '../utils/constants';
 import { Helpers } from '../utils/helpers';
 import { UsersGoals } from './users_goals';
 import { UsersTimeZones } from './users_timezones';
@@ -70,8 +71,8 @@ export class Auth {
         approvedUser.field != null ? approvedUser.field.id : '',
         approvedUser.organization != null ? approvedUser.organization.id as string : '',
         String(approvedUser.isMentor),
-        moment.utc(),
-        moment.utc()
+        moment.utc().format(constants.DATE_TIME_FORMAT),
+        moment.utc().format(constants.DATE_TIME_FORMAT),
       ];
       ({ rows } = await client.query(createUserQuery, values));
       const userId: string = rows[0].id;

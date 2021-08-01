@@ -444,7 +444,7 @@ export class UsersLessons {
       endDateTime = moment.utc(lesson.endRecurrenceDateTime);
     }
     let lessonDateTime = moment.utc(lesson.dateTime).clone();
-    while (lessonDateTime.isSameOrBefore(endDateTime)) {
+    while (lesson.id != null && lessonDateTime.isSameOrBefore(endDateTime)) {
       const insertLessonCanceledQuery = `INSERT INTO users_lessons_canceled (user_id, lesson_id, lesson_date_time, canceled_date_time)
         VALUES ($1, $2, $3, $4)`;
       const canceledDateTime = moment.utc().format(constants.DATE_TIME_FORMAT);
