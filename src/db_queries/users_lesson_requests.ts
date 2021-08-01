@@ -54,7 +54,7 @@ export class UsersLessonRequests {
           FROM users_lesson_requests ulr
           LEFT OUTER JOIN subfields s
           ON ulr.subfield_id = s.id
-          WHERE ulr.mentor_id = $1 AND ulr.is_canceled IS DISTINCT FROM true AND ulr.is_rejected IS DISTINCT FROM true
+          WHERE ulr.mentor_id = $1 AND ulr.is_rejected IS DISTINCT FROM true
           ORDER BY ulr.sent_date_time DESC LIMIT 1`;
       } else {
         getLessonRequestQuery = `SELECT ulr.id, ulr.student_id, ulr.subfield_id, ulr.sent_date_time, ulr.lesson_date_time, s.name AS subfield_name, ulr.is_canceled, ulr.is_obsolete
