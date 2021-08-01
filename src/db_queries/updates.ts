@@ -14,13 +14,13 @@ export class Updates {
 
   async getUpdates(request: Request, response: Response): Promise<void> {
     try {
-      const getUpdatesQuery = 'SELECT build, major, minor, release FROM updates';
+      const getUpdatesQuery = 'SELECT build, major, minor, revision FROM updates';
       const { rows }: pg.QueryResult = await pool.query(getUpdatesQuery);
       const updates: Update = {
-        build: rows[0].build,
         major: rows[0].major,
         minor: rows[0].minor,
-        release: rows[0].release
+        revision: rows[0].revision,
+        build: rows[0].build
       }
       response.status(200).json(updates);
     } catch (error) {
