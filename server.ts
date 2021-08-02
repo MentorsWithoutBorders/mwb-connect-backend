@@ -1,5 +1,6 @@
 import express from 'express';
 import cron from 'node-cron';
+import dotenv from 'dotenv';
 import { Request, Response, NextFunction } from 'express';
 import { Auth } from './src/db_queries/auth';
 import { Users } from './src/db_queries/users';
@@ -21,7 +22,8 @@ import { Tutorials } from './src/db_queries/tutorials';
 import { QuizzesSettings } from './src/db_queries/quizzes_settings';
 import { Updates } from './src/db_queries/updates';
 
-const port = 3000;
+dotenv.config();
+const port = process.env.PORT;
 const app: express.Express = express();
 const auth: Auth = new Auth();
 const users: Users = new Users();
