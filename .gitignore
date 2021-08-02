@@ -1,5 +1,6 @@
 .env
 .env.prod
 mwb-connect-firebase-adminsdk.json
+mwb-connect-firebase-adminsdk.json.prod
 \node_modules
 \dist
