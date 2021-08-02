@@ -153,9 +153,9 @@ app.get('/api/v1/quizzes_settings', quizzesSettings.getQuizzesSettings);
 // Updates
 app.get('/api/v1/updates', updates.getUpdates);
 
-// cron.schedule('* * * * *', function() {
-//   console.log('running a task every minute');
-// });
+cron.schedule('* * * * *', function() {
+  usersBackgroundProcesses.sendLessonRequestFromDB();
+});
 
 app.listen(port, () => {
   console.log(`App running on port ${port}.`);
