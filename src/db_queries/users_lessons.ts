@@ -402,37 +402,45 @@ export class UsersLessons {
       students = await this.getLessonStudents(lesson, true, client);
     }    
     if (lesson.dateTime) {
-      const isCanceled = await this.isLessonAlreadyCanceled(userId, lesson.id as string, lesson.dateTime, client);
-      if (!isCanceled) {
-        const insertLessonCanceledQuery = `INSERT INTO users_lessons_canceled (user_id, lesson_id, lesson_date_time, canceled_date_time)
-          VALUES ($1, $2, $3, $4)`;
-        const lessonDateTime = moment.utc(lesson.dateTime);
-        const values = [userId, lesson.id, lessonDateTime, canceledDateTime];
-        await client.query(insertLessonCanceledQuery, values);
-      }
-      if (isMentor) {
-        nextLessonMentor.isRecurrent = false;
-        nextLessonMentor.endRecurrenceDateTime = undefined;
-        for (const student of students) {
-          await this.cancelUserLessons(student.id as string, nextLessonMentor, client);
-        }
-      }
+      await this.cancelSingleLesson(userId, isMentor, lesson, canceledDateTime, nextLessonMentor, students, client);
     } else {
-      if (isMentor) {
-        const updateMentorLessonQuery = 'UPDATE users_lessons SET is_canceled = true, canceled_date_time = $1 WHERE id = $2';
-        await client.query(updateMentorLessonQuery, [canceledDateTime, lesson.id]);
-        await this.cancelUserLessons(userId, nextLessonMentor, client);
-        for (const student of students) {
-          await this.cancelUserLessons(student.id as string, nextLessonMentor, client);
-        }        
-      } else {
-        const nextLessonStudent = await this.getNextLessonFromDB(userId, false, client);
-        const updateStudentLessonQuery = 'UPDATE users_lessons_students SET is_canceled = true, canceled_date_time = $1 WHERE lesson_id = $2 AND student_id = $3';
-        await client.query(updateStudentLessonQuery, [canceledDateTime, lesson.id, userId]);
-        await this.cancelUserLessons(userId, nextLessonStudent, client);
+      await this.cancelRecurrentLesson(userId, isMentor, lesson, canceledDateTime, nextLessonMentor, students, client);
+    }     
+  }
+
+  async cancelSingleLesson(userId: string, isMentor: boolean, lesson: Lesson, canceledDateTime: string, nextLessonMentor: Lesson, students: Array<User>, client: pg.PoolClient): Promise<void> {
+    const isCanceled = await this.isLessonAlreadyCanceled(userId, lesson.id as string, lesson.dateTime as string, client);
+    if (!isCanceled) {
+      const insertLessonCanceledQuery = `INSERT INTO users_lessons_canceled (user_id, lesson_id, lesson_date_time, canceled_date_time)
+        VALUES ($1, $2, $3, $4)`;
+      const lessonDateTime = moment.utc(lesson.dateTime);
+      const values = [userId, lesson.id, lessonDateTime, canceledDateTime];
+      await client.query(insertLessonCanceledQuery, values);
+    }
+    if (isMentor) {
+      nextLessonMentor.isRecurrent = false;
+      nextLessonMentor.endRecurrenceDateTime = undefined;
+      for (const student of students) {
+        await this.cancelUserLessons(student.id as string, nextLessonMentor, client);
       }
     }    
   }
+
+  async cancelRecurrentLesson(userId: string, isMentor: boolean, lesson: Lesson, canceledDateTime: string, nextLessonMentor: Lesson, students: Array<User>, client: pg.PoolClient): Promise<void> {
+    if (isMentor) {     
+      const updateMentorLessonQuery = 'UPDATE users_lessons SET is_canceled = true, canceled_date_time = $1 WHERE id = $2';
+      await client.query(updateMentorLessonQuery, [canceledDateTime, lesson.id]);     
+      await this.cancelUserLessons(userId, nextLessonMentor, client);
+      for (const student of students) {
+        await this.cancelUserLessons(student.id as string, nextLessonMentor, client);
+      }        
+    } else {
+      const nextLessonStudent = await this.getNextLessonFromDB(userId, false, client);
+      const updateStudentLessonQuery = 'UPDATE users_lessons_students SET is_canceled = true, canceled_date_time = $1 WHERE lesson_id = $2 AND student_id = $3';
+      await client.query(updateStudentLessonQuery, [canceledDateTime, lesson.id, userId]);
+      await this.cancelUserLessons(userId, nextLessonStudent, client);
+    }    
+  }  
 
   async isLessonAlreadyCanceled(userId: string, lessonId: string, lessonDateTime: string, client: pg.PoolClient): Promise<boolean> {
     const getLessonCanceledDateTimesQuery = `SELECT user_id, lesson_id, lesson_date_time
