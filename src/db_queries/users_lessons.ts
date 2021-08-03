@@ -142,7 +142,7 @@ export class UsersLessons {
 
   async getNextValidLessonDateTime(lesson: Lesson, userId: string, isMentor: boolean, lessonDateTime: moment.Moment, client: pg.PoolClient): Promise<moment.Moment> {
     let updatedLessonDateTime = lessonDateTime.clone();
-    const lessonCanceledDateTimes = await this.getLessonCanceledDateTimes(userId, isMentor, lesson.id as string, client);
+    const lessonCanceledDateTimes = await this.getLessonCanceledDateTimes(userId, lesson.id as string, client);
     lessonCanceledDateTimes.forEach(function (dateTime) {
       if (moment.utc(dateTime).isSame(moment.utc(updatedLessonDateTime))) {
         updatedLessonDateTime = updatedLessonDateTime.add(7, 'd');
@@ -151,7 +151,7 @@ export class UsersLessons {
     return updatedLessonDateTime;
   }
 
-  async getLessonCanceledDateTimes(userId: string, isMentor: boolean, lessonId: string, client: pg.PoolClient): Promise<Array<string>> {
+  async getLessonCanceledDateTimes(userId: string, lessonId: string, client: pg.PoolClient): Promise<Array<string>> {
     const getLessonCanceledDateTimesQuery = `SELECT lesson_date_time
       FROM users_lessons_canceled
       WHERE user_id = $1 AND lesson_id = $2`;
@@ -188,7 +188,7 @@ export class UsersLessons {
       }
       let shouldAddStudent = true;
       if (lesson.dateTime && !shouldAddCanceled) {
-        const lessonCanceledDateTimes = await this.getLessonCanceledDateTimes(student.id as string, false, lesson.id as string, client);
+        const lessonCanceledDateTimes = await this.getLessonCanceledDateTimes(student.id as string, lesson.id as string, client);
         if (lessonCanceledDateTimes.includes(lesson.dateTime)) {
           shouldAddStudent = false;
         }
@@ -326,7 +326,7 @@ export class UsersLessons {
 
   async getPreviousValidLessonDateTime(lesson: Lesson, userId: string, isMentor: boolean,lessonDateTime: moment.Moment, client: pg.PoolClient): Promise<moment.Moment> {
     let updatedLessonDateTime = lessonDateTime.clone();
-    const lessonCanceledDateTimes = await this.getLessonCanceledDateTimes(userId, isMentor, lesson.id as string, client);
+    const lessonCanceledDateTimes = await this.getLessonCanceledDateTimes(userId, lesson.id as string, client);
     lessonCanceledDateTimes.slice().reverse().forEach(function (dateTime) {
       if (moment.utc(dateTime).isSame(moment.utc(updatedLessonDateTime))) {
         updatedLessonDateTime = updatedLessonDateTime.subtract(7, 'd');
@@ -402,12 +402,16 @@ export class UsersLessons {
       students = await this.getLessonStudents(lesson, true, client);
     }    
     if (lesson.dateTime) {
-      const insertLessonCanceledQuery = `INSERT INTO users_lessons_canceled (user_id, lesson_id, lesson_date_time, canceled_date_time)
-        VALUES ($1, $2, $3, $4)`;
-      const lessonDateTime = moment.utc(lesson.dateTime);
-      const values = [userId, lesson.id, lessonDateTime, canceledDateTime];
-      await client.query(insertLessonCanceledQuery, values);
+      const isCanceled = await this.isLessonAlreadyCanceled(userId, lesson.id as string, lesson.dateTime, client);
+      if (!isCanceled) {
+        const insertLessonCanceledQuery = `INSERT INTO users_lessons_canceled (user_id, lesson_id, lesson_date_time, canceled_date_time)
+          VALUES ($1, $2, $3, $4)`;
+        const lessonDateTime = moment.utc(lesson.dateTime);
+        const values = [userId, lesson.id, lessonDateTime, canceledDateTime];
+        await client.query(insertLessonCanceledQuery, values);
+      }
       if (isMentor) {
+        nextLessonMentor.isRecurrent = false;
         nextLessonMentor.endRecurrenceDateTime = undefined;
         for (const student of students) {
           await this.cancelUserLessons(student.id as string, nextLessonMentor, client);
@@ -430,6 +434,19 @@ export class UsersLessons {
     }    
   }
 
+  async isLessonAlreadyCanceled(userId: string, lessonId: string, lessonDateTime: string, client: pg.PoolClient): Promise<boolean> {
+    const getLessonCanceledDateTimesQuery = `SELECT user_id, lesson_id, lesson_date_time
+      FROM users_lessons_canceled
+      WHERE user_id = $1 AND lesson_id = $2 AND lesson_date_time = $3`;
+    const values = [userId, lessonId, lessonDateTime];
+    const { rows }: pg.QueryResult = await client.query(getLessonCanceledDateTimesQuery, values);
+    let isCanceled = false;
+    if (rows[0]) {
+      isCanceled = true;
+    }
+    return isCanceled;
+  }  
+
   async cancelUserLessons(userId: string, lesson: Lesson, client: pg.PoolClient): Promise<void> {
     let endDateTime = moment.utc(lesson.dateTime);
     if (lesson.isRecurrent) {
@@ -437,11 +454,14 @@ export class UsersLessons {
     }
     let lessonDateTime = moment.utc(lesson.dateTime).clone();
     while (lesson.id != null && lessonDateTime.isSameOrBefore(endDateTime)) {
-      const insertLessonCanceledQuery = `INSERT INTO users_lessons_canceled (user_id, lesson_id, lesson_date_time, canceled_date_time)
-        VALUES ($1, $2, $3, $4)`;
-      const canceledDateTime = moment.utc().format(constants.DATE_TIME_FORMAT);
-      const values = [userId, lesson.id, lessonDateTime, canceledDateTime];
-      await client.query(insertLessonCanceledQuery, values);
+      const isCanceled = await this.isLessonAlreadyCanceled(userId, lesson.id, lessonDateTime.format(constants.DATE_TIME_FORMAT), client);
+      if (!isCanceled) {
+        const insertLessonCanceledQuery = `INSERT INTO users_lessons_canceled (user_id, lesson_id, lesson_date_time, canceled_date_time)
+          VALUES ($1, $2, $3, $4)`;
+        const canceledDateTime = moment.utc().format(constants.DATE_TIME_FORMAT);
+        const values = [userId, lesson.id, lessonDateTime, canceledDateTime];
+        await client.query(insertLessonCanceledQuery, values);
+      }
       lessonDateTime = lessonDateTime.add(7, 'd');
     }
   }
