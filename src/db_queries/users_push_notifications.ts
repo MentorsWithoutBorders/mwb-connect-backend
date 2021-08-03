@@ -130,7 +130,9 @@ export class UsersPushNotifications {
     if (isMentor) {
       this.sendPNLessonCanceledStudents(lesson, pushNotification);
     } else {
-      this.sendPNLessonCanceledMentor(lesson, pushNotification);
+      if (lessonsCanceled >= 1) {
+        this.sendPNLessonCanceledMentor(lesson, pushNotification);
+      }
     }
   }
   
