@@ -19,7 +19,8 @@ admin.initializeApp({
     projectId: serviceAccount.project_id,
     clientEmail: serviceAccount.client_email,
     privateKey: serviceAccount.private_key
-  })
+  }),
+  databaseURL: 'https://mwb-connect.firebaseio.com'
 });
 const notificationOptions = {
   priority: "high",

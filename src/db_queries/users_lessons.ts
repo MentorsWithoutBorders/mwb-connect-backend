@@ -152,19 +152,10 @@ export class UsersLessons {
   }
 
   async getLessonCanceledDateTimes(userId: string, isMentor: boolean, lessonId: string, client: pg.PoolClient): Promise<Array<string>> {
-    let getLessonCanceledDateTimesQuery = '';
-    let values = [];
-    if (isMentor) {
-      getLessonCanceledDateTimesQuery = `SELECT lesson_date_time
-        FROM users_lessons_canceled
-        WHERE user_id = $1 AND lesson_id = $2`;
-      values = [userId, lessonId];
-    } else {
-      getLessonCanceledDateTimesQuery = `SELECT lesson_date_time
-        FROM users_lessons_canceled
-        WHERE lesson_id = $1`;
-      values = [lessonId];      
-    }
+    const getLessonCanceledDateTimesQuery = `SELECT lesson_date_time
+      FROM users_lessons_canceled
+      WHERE user_id = $1 AND lesson_id = $2`;
+    const values = [userId, lessonId];
     const { rows }: pg.QueryResult = await client.query(getLessonCanceledDateTimesQuery, values);
     let lessonCanceledDateTimes: Array<string> = [];
     rows.forEach(function (row) {
@@ -416,24 +407,25 @@ export class UsersLessons {
       const lessonDateTime = moment.utc(lesson.dateTime);
       const values = [userId, lesson.id, lessonDateTime, canceledDateTime];
       await client.query(insertLessonCanceledQuery, values);
-      // if (isMentor) {
-      //   for (const student of students) {
-      //     await this.cancelUserLessons(student.id as string, nextLessonMentor, client);
-      //   }
-      // }
+      if (isMentor) {
+        nextLessonMentor.endRecurrenceDateTime = undefined;
+        for (const student of students) {
+          await this.cancelUserLessons(student.id as string, nextLessonMentor, client);
+        }
+      }
     } else {
       if (isMentor) {
         const updateMentorLessonQuery = 'UPDATE users_lessons SET is_canceled = true, canceled_date_time = $1 WHERE id = $2';
         await client.query(updateMentorLessonQuery, [canceledDateTime, lesson.id]);
-        // await this.cancelUserLessons(userId, nextLessonMentor, client);
-        // for (const student of students) {
-        //   await this.cancelUserLessons(student.id as string, nextLessonMentor, client);
-        // }        
+        await this.cancelUserLessons(userId, nextLessonMentor, client);
+        for (const student of students) {
+          await this.cancelUserLessons(student.id as string, nextLessonMentor, client);
+        }        
       } else {
         const nextLessonStudent = await this.getNextLessonFromDB(userId, false, client);
         const updateStudentLessonQuery = 'UPDATE users_lessons_students SET is_canceled = true, canceled_date_time = $1 WHERE lesson_id = $2 AND student_id = $3';
         await client.query(updateStudentLessonQuery, [canceledDateTime, lesson.id, userId]);
-        // await this.cancelUserLessons(userId, nextLessonStudent, client);
+        await this.cancelUserLessons(userId, nextLessonStudent, client);
       }
     }    
   }
