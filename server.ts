@@ -4,6 +4,7 @@ import dotenv from 'dotenv';
 import { Request, Response, NextFunction } from 'express';
 import { Auth } from './src/db_queries/auth';
 import { Users } from './src/db_queries/users';
+import { UsersResetPassword } from './src/db_queries/users_reset_password';
 import { UsersGoals } from './src/db_queries/users_goals';
 import { UsersSteps } from './src/db_queries/users_steps';
 import { UsersQuizzes } from './src/db_queries/users_quizzes';
@@ -27,6 +28,7 @@ const port = process.env.PORT;
 const app: express.Express = express();
 const auth: Auth = new Auth();
 const users: Users = new Users();
+const usersResetPassword: UsersResetPassword = new UsersResetPassword();
 const usersPushNotifications: UsersPushNotifications = new UsersPushNotifications();
 const usersGoals: UsersGoals = new UsersGoals();
 const usersSteps: UsersSteps = new UsersSteps();
@@ -76,6 +78,9 @@ app.delete('/api/v1/user', users.deleteUser);
 
 // Users FCM tokesn
 app.post('/api/v1/fcm_tokens', usersPushNotifications.addFCMToken);
+
+// Users reset password
+app.post('/api/v1/send_reset_password/:email', usersResetPassword.addUserResetPassword);
 
 // Users goals
 app.get('/api/v1/goals', usersGoals.getGoals);
@@ -130,6 +135,7 @@ app.put('/api/v1/notifications_settings', usersNotificationsSettings.updateNotif
 
 // Users support requests
 app.post('/api/v1/support_requests', usersSupportRequests.addSupportRequest);
+
 
 // Users background processes
 app.post('/api/v1/send_lesson_request', usersBackgroundProcesses.sendLessonRequest);
