@@ -81,6 +81,7 @@ app.post('/api/v1/fcm_tokens', usersPushNotifications.addFCMToken);
 
 // Users reset password
 app.post('/api/v1/send_reset_password/:email', usersResetPassword.addUserResetPassword);
+app.post('/api/v1/reset_password', usersResetPassword.resetPassword);
 
 // Users goals
 app.get('/api/v1/goals', usersGoals.getGoals);

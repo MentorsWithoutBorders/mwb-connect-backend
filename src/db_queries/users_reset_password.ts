@@ -4,9 +4,11 @@ import autoBind from 'auto-bind';
 import pg from 'pg';
 import moment from 'moment'
 import { Conn } from '../db/conn';
+import { Helpers } from '../utils/helpers';
 import ResetPassword from '../models/reset_password.model';
 
 const conn: Conn = new Conn();
+const helpers: Helpers = new Helpers();
 const pool = conn.pool;
 
 export class UsersResetPassword {
@@ -14,20 +16,27 @@ export class UsersResetPassword {
     autoBind(this);
   }
 
-  async getUserResetPassword(request: Request, response: Response): Promise<void> {
-    const userId: string = request.user.id as string;
+  async resetPassword(request: Request, response: Response): Promise<void> {
+    const { id, newPassword }: ResetPassword = request.body
+    const client: pg.PoolClient = await pool.connect();
     try {
-      const getResetPasswordQuery = `SELECT is_resuming FROM users_reset_password
-        WHERE user_id = $1 
-        ORDER BY pause_datetime DESC 
-        LIMIT 1`;
-      const { rows }: pg.QueryResult = await pool.query(getResetPasswordQuery, [userId]);
-      const resetPassword: ResetPassword = {
-        
+      const getEmailQuery = `SELECT email FROM users_reset_password
+        WHERE id = $1`;
+      const { rows }: pg.QueryResult = await client.query(getEmailQuery, [id]);
+      if (rows[0]) {
+        const updatePasswordQuery = 'UPDATE users SET password = $1 WHERE email = $2';
+        const hashPassword: string = helpers.hashPassword(newPassword as string); 
+        await client.query(updatePasswordQuery, [hashPassword, rows[0].email]);
+        const deleteResetPasswordQuery = 'DELETE FROM users_reset_password WHERE id = $1';
+        await client.query(deleteResetPasswordQuery, [id]);        
       }
-      response.status(200).send(resetPassword);
+      response.status(200).send('Password was reset');
+      await client.query('COMMIT');
     } catch (error) {
-      response.status(400).send(error);
+      response.status(500).send(error);
+      await client.query('ROLLBACK');
+    } finally {
+      client.release();
     }
   }   
 
@@ -61,7 +70,8 @@ export class UsersResetPassword {
 
   sendEmail(email: string): void {
     const transporter = nodemailer.createTransport({
-      service: 'SendinBlue', 
+      host: 'smtp-relay.sendinblue.com',
+      port: 587,
       auth: {
         user: 'edmondpr@gmail.com',
         pass: 'EBadHLRxnjWOqfQv'
