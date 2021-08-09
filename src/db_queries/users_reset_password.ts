@@ -27,10 +27,10 @@ export class UsersResetPassword {
         const updatePasswordQuery = 'UPDATE users SET password = $1 WHERE email = $2';
         const hashPassword: string = helpers.hashPassword(newPassword as string); 
         await client.query(updatePasswordQuery, [hashPassword, rows[0].email]);
-        const deleteResetPasswordQuery = 'DELETE FROM users_reset_password WHERE id = $1';
-        await client.query(deleteResetPasswordQuery, [id]);        
+        // const deleteResetPasswordQuery = 'DELETE FROM users_reset_password WHERE id = $1';
+        // await client.query(deleteResetPasswordQuery, [id]);        
       }
-      response.status(200).send('Password was reset');
+      response.status(200).send({});
       await client.query('COMMIT');
     } catch (error) {
       response.status(500).send(error);

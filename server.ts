@@ -1,6 +1,7 @@
 import express from 'express';
 import cron from 'node-cron';
 import dotenv from 'dotenv';
+import cors from 'cors';
 import { Request, Response, NextFunction } from 'express';
 import { Auth } from './src/db_queries/auth';
 import { Users } from './src/db_queries/users';
@@ -49,13 +50,14 @@ const updates: Updates = new Updates();
 
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
+app.use(cors());
 
 app.get('/', (request: express.Request, response: express.Response): void => {
   response.json({ info: 'Node.js, Express, and Postgres API' })
 })
 
 const verifyAccessTokenFilter = function(request: Request, response: Response, next: NextFunction): void {
-  if (['/signup', '/login', '/access_token', '/tutorials', '/quizzes_settings'].some(route => request.originalUrl.includes(route))) {
+  if (['/signup', '/login', '/access_token', '/reset_password', '/tutorials', '/quizzes_settings'].some(route => request.originalUrl.includes(route))) {
     next();
   } else {
     auth.verifyAccessToken(request, response, next);
