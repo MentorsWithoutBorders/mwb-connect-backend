@@ -71,7 +71,7 @@ export class UsersResetPassword {
   sendEmail(email: string): void {
     const transporter = nodemailer.createTransport({
       host: 'smtp-relay.sendinblue.com',
-      port: 587,
+      port: 465,
       auth: {
         user: 'edmondpr@gmail.com',
         pass: 'EBadHLRxnjWOqfQv'
