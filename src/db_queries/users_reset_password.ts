@@ -87,8 +87,8 @@ export class UsersResetPassword {
       subject: 'Password reset request',
       html: `Please use the link below in order to reset your password:<br><br>${link}<br><br>`
     })
-      .then(() => console.log(`Reset link successfully sent for user: ${email}`))
-      .catch(() => console.log(`Reset link wasn't sent for user: ${email}`))    
+      .then(() => console.log(`Reset password link successfully sent for user: ${email}`))
+      .catch(() => console.log(`Reset password link wasn't sent for user: ${email}`))    
   }
 }
 

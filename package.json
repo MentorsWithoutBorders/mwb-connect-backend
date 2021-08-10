@@ -28,7 +28,6 @@
     "moment-timezone": "^0.5.33",
     "node-cron": "3.0.0",
     "nodemailer": "^2.7.2",
-    "nodemailer-sendinblue-transport": "^1.2.3",
     "pg": "^8.6.0",
     "uuid": "^8.3.2"
   },
