@@ -3,6 +3,7 @@ import nodemailer from 'nodemailer';
 import autoBind from 'auto-bind';
 import pg from 'pg';
 import moment from 'moment'
+import dotenv from 'dotenv';
 import { Conn } from '../db/conn';
 import { Helpers } from '../utils/helpers';
 import ResetPassword from '../models/reset_password.model';
@@ -10,6 +11,7 @@ import ResetPassword from '../models/reset_password.model';
 const conn: Conn = new Conn();
 const helpers: Helpers = new Helpers();
 const pool = conn.pool;
+dotenv.config();
 
 export class UsersResetPassword {
   constructor() {
@@ -27,8 +29,8 @@ export class UsersResetPassword {
         const updatePasswordQuery = 'UPDATE users SET password = $1 WHERE email = $2';
         const hashPassword: string = helpers.hashPassword(newPassword as string); 
         await client.query(updatePasswordQuery, [hashPassword, rows[0].email]);
-        // const deleteResetPasswordQuery = 'DELETE FROM users_reset_password WHERE id = $1';
-        // await client.query(deleteResetPasswordQuery, [id]);        
+        const deleteResetPasswordQuery = 'DELETE FROM users_reset_password WHERE id = $1';
+        await client.query(deleteResetPasswordQuery, [id]);        
       }
       response.status(200).send({});
       await client.query('COMMIT');
@@ -46,17 +48,17 @@ export class UsersResetPassword {
     try {
       await client.query('BEGIN');
       const findUserQuery = `SELECT id FROM users WHERE email = $1`;
-      const { rows }: pg.QueryResult = await client.query(findUserQuery, [email]);
+      let { rows }: pg.QueryResult = await client.query(findUserQuery, [email]);
       if (rows[0]) {
         const deleteResetPasswordQuery = `DELETE FROM users_reset_password 
           WHERE email = $1`;
         await client.query(deleteResetPasswordQuery, [email]);      
         const insertResetPasswordQuery = `INSERT INTO users_reset_password (email, date_time)
-          VALUES ($1, $2)`;
+          VALUES ($1, $2) RETURNING id`;
         const dateTime = moment.utc();
         const values = [email, dateTime];        
-        await client.query(insertResetPasswordQuery, values);
-        this.sendEmail(email);
+        ({ rows } = await client.query(insertResetPasswordQuery, values));
+        this.sendEmail(email, rows[0].id);
       }
       response.status(200).send('Reset password data inserted');
       await client.query('COMMIT');
@@ -68,24 +70,25 @@ export class UsersResetPassword {
     }
   }
 
-  sendEmail(email: string): void {
+  sendEmail(email: string, id: string): void {
     const transporter = nodemailer.createTransport({
-      host: 'smtp-relay.sendinblue.com',
-      port: 465,
+      host: process.env.SMTP_SERVER as string,
+      port: parseInt(process.env.SMTP_PORT as string),
       auth: {
-        user: 'edmondpr@gmail.com',
-        pass: 'EBadHLRxnjWOqfQv'
+        user: process.env.SMTP_USERNAME,
+        pass: process.env.SMTP_PASSWORD
       }
     });
     
+    const link = `https://www.mentorswithoutborders.net/reset-password.php?uuid=${id}`;
     transporter.sendMail({
       to: email,
-      from: 'edmond@mwbtraining.net',
-      subject: 'Signup verification',
-      html: 'Verification email'
+      from: process.env.SMTP_SENDER,
+      subject: 'Password reset request',
+      html: `Please use the link below in order to reset your password:<br><br>${link}<br><br>`
     })
-      .then((res) => console.log(res))
-      .catch((err) => console.log(err))    
+      .then(() => console.log(`Password reset successful for user: ${email}`))
+      .catch(() => console.log(`Password reset failes for user: ${email}`))    
   }
 }
 
