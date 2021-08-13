@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import autoBind from 'auto-bind';
 import pg from 'pg';
 import { Conn } from '../db/conn';
-import Update from '../models/update.model';
+import AppVersion from '../models/app_version.model';
 
 const conn: Conn = new Conn();
 const pool = conn.pool;
@@ -16,7 +16,7 @@ export class Updates {
     try {
       const getUpdatesQuery = 'SELECT build, major, minor, revision FROM updates';
       const { rows }: pg.QueryResult = await pool.query(getUpdatesQuery);
-      const updates: Update = {
+      const updates: AppVersion = {
         major: rows[0].major,
         minor: rows[0].minor,
         revision: rows[0].revision,

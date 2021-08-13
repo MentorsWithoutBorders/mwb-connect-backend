@@ -16,6 +16,7 @@ import { UsersSkills } from './src/db_queries/users_skills';
 import { UsersNotificationsSettings } from './src/db_queries/users_notifications_settings';
 import { UsersSupportRequests } from './src/db_queries/users_support_requests';
 import { UsersPushNotifications } from './src/db_queries/users_push_notifications';
+import { UsersAppVersions } from './src/db_queries/users_app_versions';
 import { UsersBackgroundProcesses } from './src/db_queries/users_background_processes';
 import { Fields } from './src/db_queries/fields';
 import { Subfields } from './src/db_queries/subfields';
@@ -40,6 +41,7 @@ const usersCertificatesPauses: UsersCertificatesPauses = new UsersCertificatesPa
 const usersSkills: UsersSkills = new UsersSkills();
 const usersNotificationsSettings: UsersNotificationsSettings = new UsersNotificationsSettings();
 const usersSupportRequests: UsersSupportRequests = new UsersSupportRequests();
+const usersAppVersions: UsersAppVersions = new UsersAppVersions();
 const usersBackgroundProcesses: UsersBackgroundProcesses = new UsersBackgroundProcesses();
 const fields: Fields = new Fields();
 const subfields: Subfields = new Subfields();
@@ -139,11 +141,6 @@ app.put('/api/v1/notifications_settings', usersNotificationsSettings.updateNotif
 // Users support requests
 app.post('/api/v1/support_requests', usersSupportRequests.addSupportRequest);
 
-
-// Users background processes
-app.post('/api/v1/send_lesson_request', usersBackgroundProcesses.sendLessonRequest);
-app.post('/api/v1/send_after_lesson', usersBackgroundProcesses.sendAfterLesson);
-
 // Fields
 app.get('/api/v1/fields', fields.getFields);
 
@@ -161,6 +158,14 @@ app.get('/api/v1/quizzes_settings', quizzesSettings.getQuizzesSettings);
 
 // Updates
 app.get('/api/v1/updates', updates.getUpdates);
+
+// Users app versions
+app.post('/api/v1/app_versions', usersAppVersions.addAppVersion);
+
+
+// Users background processes
+app.post('/api/v1/send_lesson_request', usersBackgroundProcesses.sendLessonRequest);
+app.post('/api/v1/send_after_lesson', usersBackgroundProcesses.sendAfterLesson);
 
 cron.schedule('* * * * *', function() {
   usersBackgroundProcesses.sendLessonRequestFromDB();
