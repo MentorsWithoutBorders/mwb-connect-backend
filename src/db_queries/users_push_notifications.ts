@@ -83,7 +83,8 @@ export class UsersPushNotifications {
       const subfield = lessonRequestOptions[0].subfield?.name?.toLowerCase();
       const pushNotification: PushNotification = {
         title: 'New lesson request',
-        body: `${student.name} from ${student.organization?.name} is requesting a ${subfield} lesson with you`
+        body: `${student.name} from ${student.organization?.name} is requesting a ${subfield} lesson with you`,
+        type: PushNotificationType.LessonRequest
       }
       this.sendPushNotification(mentorId as string, pushNotification);
     }
