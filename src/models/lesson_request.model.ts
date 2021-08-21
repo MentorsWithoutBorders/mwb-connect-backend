@@ -11,5 +11,7 @@ export default interface LessonRequest {
   isCanceled?: boolean
   isRejected?: boolean
   isExpired?: boolean
+  wasCanceledShown?: boolean
+  wasExpiredShown?: boolean
   score?: number;
 }

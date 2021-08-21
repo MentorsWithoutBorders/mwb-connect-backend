@@ -50,7 +50,7 @@ export class UsersLessonRequests {
       const isMentor = await this.getIsMentor(userId, client);
       let getLessonRequestQuery = '';
       if (isMentor) {
-        getLessonRequestQuery = `SELECT ulr.id, ulr.student_id, ulr.subfield_id, ulr.sent_date_time, ulr.lesson_date_time, s.name AS subfield_name, ulr.is_canceled, ulr.is_rejected, ulr.is_expired
+        getLessonRequestQuery = `SELECT ulr.id, ulr.student_id, ulr.subfield_id, ulr.sent_date_time, ulr.lesson_date_time, s.name AS subfield_name, ulr.is_canceled, ulr.is_rejected, ulr.is_expired, ulr.was_canceled_shown, ulr.was_expired_shown
           FROM users_lesson_requests ulr
           LEFT OUTER JOIN subfields s
           ON ulr.subfield_id = s.id
@@ -81,7 +81,9 @@ export class UsersLessonRequests {
           sentDateTime: moment.utc(rows[0].sent_date_time).format(constants.DATE_TIME_FORMAT),
           lessonDateTime: lessonDateTime as string,
           isCanceled: rows[0].is_canceled,
-          isExpired: rows[0].is_expired
+          isExpired: rows[0].is_expired,
+          wasCanceledShown: rows[0].was_canceled_shown,
+          wasExpiredShown: rows[0].was_expired_shown,
         }
         if (isMentor) {
           const user: User = await users.getUserFromDB(rows[0].student_id, client);
@@ -222,5 +224,18 @@ export class UsersLessonRequests {
       response.status(400).send(error);
     }
   }
+
+  async updateLessonRequest(request: Request, response: Response): Promise<void> {
+    const mentorId: string = request.user.id as string;
+    const lessonRequestId: string = request.params.id;
+    const { wasCanceledShown, wasExpiredShown }: LessonRequest = request.body
+    try {
+      const updateLessonRequestQuery = 'UPDATE users_lesson_requests SET was_canceled_shown = $1, was_expired_shown = $2 WHERE mentor_id = $3 AND id = $4';
+      await pool.query(updateLessonRequestQuery, [wasCanceledShown, wasExpiredShown, mentorId, lessonRequestId]);
+      response.status(200).send(`Lesson request modified with ID: ${lessonRequestId}`);
+    } catch (error) {
+      response.status(400).send(error);
+    }
+  }  
 }
 

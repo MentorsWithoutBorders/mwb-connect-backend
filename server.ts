@@ -74,6 +74,10 @@ app.post('/api/v1/login', auth.login);
 app.post('/api/v1/logout', auth.logout);
 app.get('/api/v1/users/:id/access_token', auth.getAccessToken);
 
+// Users reset password
+app.post('/api/v1/send_reset_password/:email', usersResetPassword.addUserResetPassword);
+app.post('/api/v1/reset_password', usersResetPassword.resetPassword);
+
 // Users
 app.get('/api/v1/users', users.getUsers);
 app.get('/api/v1/user', users.getUser);
@@ -82,10 +86,6 @@ app.delete('/api/v1/user', users.deleteUser);
 
 // Users FCM tokesn
 app.post('/api/v1/fcm_tokens', usersPushNotifications.addFCMToken);
-
-// Users reset password
-app.post('/api/v1/send_reset_password/:email', usersResetPassword.addUserResetPassword);
-app.post('/api/v1/reset_password', usersResetPassword.resetPassword);
 
 // Users goals
 app.get('/api/v1/goals', usersGoals.getGoals);
@@ -112,6 +112,7 @@ app.get('/api/v1/lesson_request', usersLessonRequests.getLessonRequest);
 app.post('/api/v1/lesson_requests/:id/accept_lesson_request', usersLessonRequests.acceptLessonRequest);
 app.put('/api/v1/lesson_requests/:id/reject_lesson_request', usersLessonRequests.rejectLessonRequest);
 app.put('/api/v1/lesson_requests/:id/cancel_lesson_request', usersLessonRequests.cancelLessonRequest);
+app.put('/api/v1/lesson_requests/:id/update_lesson_request', usersLessonRequests.updateLessonRequest);
 
 // Users lessons
 app.get('/api/v1/next_lesson', usersLessons.getNextLesson);
