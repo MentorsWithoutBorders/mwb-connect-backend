@@ -170,6 +170,7 @@ app.post('/api/v1/send_after_lesson', usersBackgroundProcesses.sendAfterLesson);
 
 cron.schedule('* * * * *', function() {
   usersBackgroundProcesses.sendLessonRequestFromDB();
+  usersBackgroundProcesses.sendAfterLessonFromDB();
 });
 
 app.listen(port, () => {
