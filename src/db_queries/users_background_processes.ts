@@ -190,8 +190,8 @@ export class UsersBackgroundProcesses {
     if (lessonDateTime.isBefore(moment.utc(availableMentor.availableFrom))) {
       lessonDateTime = moment.utc(availableMentor.availableFrom);
     }
-    if (lessonDateTime.isBefore(moment.utc())) {
-      lessonDateTime = moment.utc();
+    if (lessonDateTime.isBefore(moment.utc().add(1, 'd'))) {
+      lessonDateTime = moment.utc().add(1, 'd');
     }   
     
     if (Object.keys(studentPreviousLesson).length > 0 && 
@@ -206,7 +206,8 @@ export class UsersBackgroundProcesses {
     if (lessonTimeArray != null) {
       lessonDateTime.set({
         hours: parseInt(lessonTimeArray[0]),
-        minutes: parseInt(lessonTimeArray[1])
+        minutes: parseInt(lessonTimeArray[1]),
+        seconds: 0
       });
     }
     return lessonDateTime;
