@@ -199,7 +199,7 @@ export class UsersQuizzes {
         VALUES ($1, $2, $3, $4, $5) RETURNING *`;
       const dateTime = moment.utc();
       const values = [userId, number, isCorrect, isClosed, dateTime];
-      await pool.query(insertQuizQuery, values);
+      await client.query(insertQuizQuery, values);
       const quizNumber = await this.getQuizNumberFromDB(userId, client);
       response.status(200).json(quizNumber);
       await client.query('COMMIT');

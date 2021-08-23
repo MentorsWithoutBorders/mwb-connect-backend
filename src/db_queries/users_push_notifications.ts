@@ -19,7 +19,8 @@ admin.initializeApp({
     projectId: serviceAccount.project_id,
     clientEmail: serviceAccount.client_email,
     privateKey: serviceAccount.private_key
-  })
+  }),
+  // databaseURL: 'https://mwb-connect.firebaseio.com'
 });
 const notificationOptions = {
   priority: "high",
@@ -182,5 +183,56 @@ export class UsersPushNotifications {
       }
     }
   }
+
+  sendPNFirstTrainingReminder(userId: string, showStepReminder: boolean, showQuizReminder: boolean, remainingQuizzes: number): void {
+    let body = '';
+    const quizzes = this.getRemainingQuizzesText(remainingQuizzes);
+    if (showStepReminder && !showQuizReminder) {
+      body = 'Kindly remember to add a new step to your plan';
+    } else if (showStepReminder && showQuizReminder) {
+      body = `Kindly remember to add a new step and solve the ${quizzes}`;
+    } else if (!showStepReminder && showQuizReminder) {
+      body = `Kindly remember to solve the ${quizzes}`;
+    }
+    const pushNotification: PushNotification = {
+      title: 'Training reminder',
+      body: body,
+      type: PushNotificationType.Normal
+    }
+    this.sendPushNotification(userId, pushNotification);
+  }
+  
+  getRemainingQuizzesText(remainingQuizzes: number): string {
+    let quizzes = '';
+    switch(remainingQuizzes) {
+      case 1:
+        quizzes = 'remaining quiz';
+        break;
+      case 3:
+        quizzes = 'training quizzes';
+        break;
+      default:
+        quizzes = `remaining ${remainingQuizzes} quizzes`;
+    }
+    return quizzes;    
+  }
+
+  sendPNSecondTrainingReminder(userId: string, showStepReminder: boolean, showQuizReminder: boolean, remainingQuizzes: number): void {
+    let body = '';
+    const quizzes = this.getRemainingQuizzesText(remainingQuizzes);
+    if (showStepReminder && !showQuizReminder) {
+      body = 'Last day for adding a new step to your plan';
+    } else if (showStepReminder && showQuizReminder) {
+      body = `Last day for adding a new step and solving the ${quizzes}`;
+    } else if (!showStepReminder && showQuizReminder) {
+      body = `Last day for solving the ${quizzes}`;
+    }
+    const pushNotification: PushNotification = {
+      title: 'Training reminder',
+      body: body,
+      type: PushNotificationType.Normal
+    }
+    this.sendPushNotification(userId, pushNotification);
+  }  
 }
 

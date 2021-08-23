@@ -6,6 +6,8 @@ import { Conn } from '../db/conn';
 import { constants } from '../utils/constants';
 import { Users } from './users';
 import { UsersLessons } from './users_lessons';
+import { UsersSteps } from './users_steps';
+import { UsersQuizzes } from './users_quizzes';
 import { UsersPushNotifications } from './users_push_notifications';
 import User from '../models/user.model';
 import Subfield from '../models/subfield.model';
@@ -18,6 +20,8 @@ const conn: Conn = new Conn();
 const pool = conn.pool;
 const users: Users = new Users();
 const usersLessons: UsersLessons = new UsersLessons();
+const usersSteps: UsersSteps = new UsersSteps();
+const usersQuizzes: UsersQuizzes = new UsersQuizzes();
 const usersPushNotifications: UsersPushNotifications = new UsersPushNotifications();
 
 export class UsersBackgroundProcesses {
@@ -146,7 +150,6 @@ export class UsersBackgroundProcesses {
         AND (ulr.row_number_lesson_requests = 1 AND (ulr.is_canceled IS true OR EXTRACT(EPOCH FROM (now() - ulr.sent_date_time))/3600 > 72)
             OR ulr.id IS NULL)                 
         ${queryWhereAvailabilities}`;
-    console.log(getAvailableMentorsQuery);
     const { rows } = await client.query(getAvailableMentorsQuery, [student.field?.id]);
     const availableMentorsMap: Map<string, string> = new Map();
     for (const rowMentor of rows) {
@@ -367,5 +370,63 @@ export class UsersBackgroundProcesses {
       console.log(error);
     }
   }
+
+  async sendTrainingReminders(request: Request, response: Response): Promise<void> {
+    try {
+      await this.sendTrainingRemindersFromDB(true);
+      await this.sendTrainingRemindersFromDB(false);
+      response.status(200).send('Training reminders sent');
+    } catch (error) {
+      response.status(400).send(error);
+    }    
+  }
+  
+  async sendTrainingRemindersFromDB(isFirst: boolean): Promise<void> {
+    const days = isFirst ? 4 : 6;
+    const getUsersForTrainingReminderQuery = `SELECT u.id, u.name, u.registered_on FROM users AS u
+      JOIN users_notifications_settings AS uns
+      ON u.id = uns.user_id
+      JOIN users_timezones AS ut
+      ON u.id = ut.user_id
+      WHERE (now()::date - u.registered_on::date) % 7 = $1
+        AND date_trunc('day', now() AT TIME ZONE ut.name) + uns.time = date_trunc('minute', now() AT TIME ZONE ut.name);`;
+    const { rows }: pg.QueryResult = await pool.query(getUsersForTrainingReminderQuery, [days]);
+    for (const row of rows) {
+      const client: pg.PoolClient = await pool.connect();
+      try {
+        await client.query('BEGIN');
+        const user: User = {
+          id: row.id,
+          name: row.name,
+          registeredOn: row.registered_on
+        }          
+        const lastStepAdded = await usersSteps.getLastStepAddedFromDB(user.id as string, client);
+        let nextDeadLine = moment.utc(user.registeredOn).startOf('day');
+        while (nextDeadLine.isBefore(moment.utc())) {
+          nextDeadLine = moment.utc(nextDeadLine).add(7, 'd');
+        }
+        const lastStepAddedDateTime = moment.utc(lastStepAdded.dateTime).startOf('day');
+        let showStepReminder = false;
+        if (Object.keys(lastStepAdded).length == 0 || moment.duration(nextDeadLine.diff(lastStepAddedDateTime)).asDays() > 7) {
+          showStepReminder = true;
+        }
+        const quizNumber = await usersQuizzes.getQuizNumberFromDB(user.id as string, client);
+        const remainingQuizzes = 3 - (quizNumber - 1) % 3;
+        const showQuizReminder = await usersQuizzes.getQuizNumberFromDB(user.id as string, client) > 0 ? true : false;
+        if (isFirst) {
+          console.log(`is first ${showStepReminder} ${showQuizReminder} ${remainingQuizzes}`);
+          usersPushNotifications.sendPNFirstTrainingReminder(user.id as string, showStepReminder, showQuizReminder, remainingQuizzes);
+        } else {
+          console.log(`is second ${showStepReminder} ${showQuizReminder} ${remainingQuizzes}`);
+          usersPushNotifications.sendPNSecondTrainingReminder(user.id as string, showStepReminder, showQuizReminder, remainingQuizzes);
+        }
+        await client.query('COMMIT');
+      } catch (error) {
+        await client.query('ROLLBACK');
+      } finally {
+        client.release();
+      }        
+    }
+  }  
 }
 

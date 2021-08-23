@@ -167,6 +167,7 @@ app.post('/api/v1/app_versions', usersAppVersions.addAppVersion);
 // Users background processes
 app.post('/api/v1/send_lesson_request', usersBackgroundProcesses.sendLessonRequest);
 app.post('/api/v1/send_after_lesson', usersBackgroundProcesses.sendAfterLesson);
+app.post('/api/v1/send_training_reminders', usersBackgroundProcesses.sendTrainingReminders);
 
 cron.schedule('* * * * *', function() {
   usersBackgroundProcesses.sendLessonRequestFromDB();
