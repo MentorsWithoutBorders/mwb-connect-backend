@@ -172,6 +172,8 @@ app.post('/api/v1/send_training_reminders', usersBackgroundProcesses.sendTrainin
 cron.schedule('* * * * *', function() {
   usersBackgroundProcesses.sendLessonRequestFromDB();
   usersBackgroundProcesses.sendAfterLessonFromDB();
+  usersBackgroundProcesses.sendTrainingRemindersFromDB(true);
+  usersBackgroundProcesses.sendTrainingRemindersFromDB(false);
 });
 
 app.listen(port, () => {

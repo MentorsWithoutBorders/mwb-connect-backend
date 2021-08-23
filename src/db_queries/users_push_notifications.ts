@@ -199,7 +199,9 @@ export class UsersPushNotifications {
       body: body,
       type: PushNotificationType.Normal
     }
-    this.sendPushNotification(userId, pushNotification);
+    if (showStepReminder || showQuizReminder) {    
+      this.sendPushNotification(userId, pushNotification);
+    }
   }
   
   getRemainingQuizzesText(remainingQuizzes: number): string {
@@ -232,7 +234,9 @@ export class UsersPushNotifications {
       body: body,
       type: PushNotificationType.Normal
     }
-    this.sendPushNotification(userId, pushNotification);
+    if (showStepReminder || showQuizReminder) { 
+      this.sendPushNotification(userId, pushNotification);
+    }
   }  
 }
 

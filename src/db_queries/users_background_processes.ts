@@ -414,10 +414,8 @@ export class UsersBackgroundProcesses {
         const remainingQuizzes = 3 - (quizNumber - 1) % 3;
         const showQuizReminder = await usersQuizzes.getQuizNumberFromDB(user.id as string, client) > 0 ? true : false;
         if (isFirst) {
-          console.log(`is first ${showStepReminder} ${showQuizReminder} ${remainingQuizzes}`);
           usersPushNotifications.sendPNFirstTrainingReminder(user.id as string, showStepReminder, showQuizReminder, remainingQuizzes);
         } else {
-          console.log(`is second ${showStepReminder} ${showQuizReminder} ${remainingQuizzes}`);
           usersPushNotifications.sendPNSecondTrainingReminder(user.id as string, showStepReminder, showQuizReminder, remainingQuizzes);
         }
         await client.query('COMMIT');
