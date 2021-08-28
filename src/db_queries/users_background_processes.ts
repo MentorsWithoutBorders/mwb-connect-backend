@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import autoBind from 'auto-bind';
 import moment from 'moment';
+import 'moment-timezone';
 import pg from 'pg';
 import { Conn } from '../db/conn';
 import { constants } from '../utils/constants';
@@ -8,6 +9,7 @@ import { Users } from './users';
 import { UsersLessons } from './users_lessons';
 import { UsersSteps } from './users_steps';
 import { UsersQuizzes } from './users_quizzes';
+import { UsersTimeZones } from './users_timezones';
 import { UsersPushNotifications } from './users_push_notifications';
 import User from '../models/user.model';
 import Subfield from '../models/subfield.model';
@@ -22,6 +24,7 @@ const users: Users = new Users();
 const usersLessons: UsersLessons = new UsersLessons();
 const usersSteps: UsersSteps = new UsersSteps();
 const usersQuizzes: UsersQuizzes = new UsersQuizzes();
+const usersTimeZones: UsersTimeZones = new UsersTimeZones();
 const usersPushNotifications: UsersPushNotifications = new UsersPushNotifications();
 
 export class UsersBackgroundProcesses {
@@ -382,13 +385,13 @@ export class UsersBackgroundProcesses {
   }
   
   async sendTrainingRemindersFromDB(isFirst: boolean): Promise<void> {
-    const days = isFirst ? 4 : 6;
+    const days = isFirst ? 5 : 0;
     const getUsersForTrainingReminderQuery = `SELECT u.id, u.name, u.registered_on FROM users AS u
       JOIN users_notifications_settings AS uns
       ON u.id = uns.user_id
       JOIN users_timezones AS ut
       ON u.id = ut.user_id
-      WHERE (now()::date - u.registered_on::date) % 7 = $1
+      WHERE (date_trunc('day', now() AT TIME ZONE ut.name)::date - date_trunc('day', u.registered_on AT TIME ZONE ut.name)::date) % 7 = $1
         AND date_trunc('day', now() AT TIME ZONE ut.name) + uns.time = date_trunc('minute', now() AT TIME ZONE ut.name);`;
     const { rows }: pg.QueryResult = await pool.query(getUsersForTrainingReminderQuery, [days]);
     for (const row of rows) {
@@ -399,15 +402,16 @@ export class UsersBackgroundProcesses {
           id: row.id,
           name: row.name,
           registeredOn: row.registered_on
-        }          
+        } 
+        const userTimeZone = await usersTimeZones.getUserTimeZone(user.id as string, client);         
         const lastStepAdded = await usersSteps.getLastStepAddedFromDB(user.id as string, client);
-        let nextDeadLine = moment.utc(user.registeredOn).startOf('day');
-        while (nextDeadLine.isBefore(moment.utc())) {
-          nextDeadLine = moment.utc(nextDeadLine).add(7, 'd');
+        let nextDeadLine = moment.utc(user.registeredOn).tz(userTimeZone.name).startOf('day');
+        while (nextDeadLine.isBefore(moment.utc().tz(userTimeZone.name).startOf('day'))) {
+          nextDeadLine = nextDeadLine.add(7, 'd');
         }
-        const lastStepAddedDateTime = moment.utc(lastStepAdded.dateTime).startOf('day');
+        const lastStepAddedDateTime = moment.utc(lastStepAdded.dateTime).tz(userTimeZone.name).startOf('day');
         let showStepReminder = false;
-        if (Object.keys(lastStepAdded).length == 0 || moment.duration(nextDeadLine.diff(lastStepAddedDateTime)).asDays() > 7) {
+        if (Object.keys(lastStepAdded).length == 0 || moment.duration(nextDeadLine.diff(lastStepAddedDateTime)).asDays() >= 7) {
           showStepReminder = true;
         }
         const quizNumber = await usersQuizzes.getQuizNumberFromDB(user.id as string, client);

@@ -87,7 +87,7 @@ export class UsersQuizzes {
   }
 
   getWeekEndDate(registeredOn: moment.Moment, weekNumber: number): moment.Moment {
-    return moment.utc(registeredOn).endOf('day').add((weekNumber + 1) * 7, 'days');
+    return moment.utc(registeredOn).endOf('day').add((weekNumber + 1) * 7 + 1, 'days');
   }  
 
   getQuizStartNumber(weekNumber: number, weeklyCount: number): number {

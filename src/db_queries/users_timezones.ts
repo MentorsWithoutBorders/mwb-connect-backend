@@ -13,7 +13,7 @@ export class UsersTimeZones {
     return {
       abbreviation: rows[0].abbreviation,
       name: rows[0].name,
-      offset: rows[0].offset
+      offset: rows[0].utc_offset
     }
   }
 
