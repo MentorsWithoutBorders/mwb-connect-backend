@@ -1,19 +1,15 @@
 import autoBind from 'auto-bind';
 import pg from 'pg';
-import { Conn } from '../db/conn';
 import TimeZone from '../models/timezone.model';
-
-const conn: Conn = new Conn();
-const pool = conn.pool;
 
 export class UsersTimeZones {
   constructor() {
     autoBind(this);
   }
 
-  async getUserTimeZone(userId: string): Promise<TimeZone> {
-    const getTimeZoneQuery = 'SELECT abbreviation, name, offset FROM users_timezones WHERE user_id = $1';
-    const { rows }: pg.QueryResult = await pool.query(getTimeZoneQuery, [userId]);
+  async getUserTimeZone(userId: string, client: pg.PoolClient): Promise<TimeZone> {
+    const getTimeZoneQuery = `SELECT abbreviation, name, utc_offset FROM users_timezones WHERE user_id = $1`;
+    const { rows }: pg.QueryResult = await client.query(getTimeZoneQuery, [userId]);
     return {
       abbreviation: rows[0].abbreviation,
       name: rows[0].name,

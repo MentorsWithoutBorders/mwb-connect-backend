@@ -1,8 +1,10 @@
 import { Request, Response } from 'express';
 import autoBind from 'auto-bind';
 import moment from 'moment';
+import 'moment-timezone';
 import { Conn } from '../db/conn';
 import { Users } from './users';
+import { UsersTimeZones } from './users_timezones';
 import { QuizzesSettings } from './quizzes_settings';
 import { constants } from '../utils/constants';
 import Quiz from '../models/quiz.model';
@@ -11,6 +13,7 @@ import pg from 'pg';
 const conn: Conn = new Conn();
 const pool = conn.pool;
 const users: Users = new Users();
+const usersTimeZones: UsersTimeZones = new UsersTimeZones();
 const quizzesSettings: QuizzesSettings = new QuizzesSettings();
 
 export class UsersQuizzes {
@@ -38,9 +41,10 @@ export class UsersQuizzes {
   async getQuizNumberFromDB(userId: string, client: pg.PoolClient): Promise<number> {
     const quizSettings = await quizzesSettings.getQuizzesSettingsFromDB();
     const user = await users.getUserFromDB(userId, client);
-    const registeredOn = moment.utc(user.registeredOn).startOf('day');
-    const today = moment.utc().startOf('day');
-    const weekNumber = today.diff(registeredOn, 'weeks');
+    const userTimeZone = await usersTimeZones.getUserTimeZone(userId, client);
+    const registeredOn = moment.utc(user.registeredOn).tz(userTimeZone.name).startOf('day');
+    const today = moment.utc().tz(userTimeZone.name).startOf('day');
+    const weekNumber = today.subtract(1, 'd').diff(registeredOn, 'weeks');
     const weekStartDate = this.getWeekStartDate(registeredOn, weekNumber);
     const weekEndDate = this.getWeekEndDate(registeredOn, weekNumber);      
     let quizzes = await this.getQuizzes(userId, client);
