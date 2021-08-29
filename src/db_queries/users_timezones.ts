@@ -10,11 +10,19 @@ export class UsersTimeZones {
   async getUserTimeZone(userId: string, client: pg.PoolClient): Promise<TimeZone> {
     const getTimeZoneQuery = `SELECT abbreviation, name, utc_offset FROM users_timezones WHERE user_id = $1`;
     const { rows }: pg.QueryResult = await client.query(getTimeZoneQuery, [userId]);
-    return {
-      abbreviation: rows[0].abbreviation,
-      name: rows[0].name,
-      offset: rows[0].utc_offset
+    let timeZone: TimeZone = {
+      name: 'UTC',
+      abbreviation: 'UTC',
+      offset: '00:00:00'
     }
+    if (rows[0]) {
+      timeZone = {
+        abbreviation: rows[0].abbreviation,
+        name: rows[0].name,
+        offset: rows[0].utc_offset
+      }
+    }
+    return timeZone;
   }
 
   async addTimeZone(userId: string, timeZone: TimeZone, client: pg.PoolClient): Promise<void> {
