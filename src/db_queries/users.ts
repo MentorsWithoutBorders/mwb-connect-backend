@@ -153,8 +153,8 @@ export class Users {
       }
       if (!row.connected_to) {
         const time: AvailabilityTime = {
-          from: moment(row.utc_time_from, 'HH:mm').format('ha'),
-          to: moment(timeTo, 'HH:mm').format('ha')
+          from: moment(row.utc_time_from, 'HH:mm').format('h:mma'),
+          to: moment(timeTo, 'HH:mm').format('h:mma')
         }
         const availability: Availability = {
           dayOfWeek: row.utc_day_of_week,
