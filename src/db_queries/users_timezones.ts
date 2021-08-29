@@ -1,6 +1,11 @@
+import { Request, Response } from 'express';
 import autoBind from 'auto-bind';
 import pg from 'pg';
+import { Conn } from '../db/conn';
 import TimeZone from '../models/timezone.model';
+
+const conn: Conn = new Conn();
+const pool = conn.pool;
 
 export class UsersTimeZones {
   constructor() {
@@ -23,12 +28,24 @@ export class UsersTimeZones {
       }
     }
     return timeZone;
-  }
+  }  
 
   async addTimeZone(userId: string, timeZone: TimeZone, client: pg.PoolClient): Promise<void> {
     const insertTimeZoneQuery = `INSERT INTO users_timezones (user_id, abbreviation, name, utc_offset) VALUES ($1, $2, $3, $4)`;
     const values = [userId, timeZone.abbreviation, timeZone.name, timeZone.offset];        
     await client.query(insertTimeZoneQuery, values);
   }
+
+  async updateTimeZone(request: Request, response: Response): Promise<void> {
+    const userId: string = request.user.id as string;
+    const { name, abbreviation, offset }: TimeZone = request.body
+    try {
+      const updateTimeZoneQuery = 'UPDATE users_timezones SET name = $1, abbreviation = $2, utc_offset = $3 WHERE user_id = $4';
+      await pool.query(updateTimeZoneQuery, [name, abbreviation, offset, userId]);
+      response.status(200).send(`User timezone modified with ID: ${userId}`);
+    } catch (error) {
+      response.status(400).send(error);
+    }
+  }  
 }
 

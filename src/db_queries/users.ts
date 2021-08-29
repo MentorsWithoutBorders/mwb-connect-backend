@@ -295,7 +295,7 @@ export class Users {
         break;
       case 'year':
         minIntervalInDays *= 365;
-        break;        
+        break;
     }
     const values = [minIntervalInDays, lessonsAvailability.minIntervalUnit, lessonsAvailability.maxStudents, userId];
     await client.query(updateLessonsAvailabilityQuery, values);

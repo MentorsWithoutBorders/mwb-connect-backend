@@ -6,6 +6,7 @@ import { Request, Response, NextFunction } from 'express';
 import { Auth } from './src/db_queries/auth';
 import { Users } from './src/db_queries/users';
 import { UsersResetPassword } from './src/db_queries/users_reset_password';
+import { UsersTimeZones } from './src/db_queries/users_timezones';
 import { UsersGoals } from './src/db_queries/users_goals';
 import { UsersSteps } from './src/db_queries/users_steps';
 import { UsersQuizzes } from './src/db_queries/users_quizzes';
@@ -30,6 +31,7 @@ const port = process.env.PORT;
 const app: express.Express = express();
 const auth: Auth = new Auth();
 const users: Users = new Users();
+const usersTimeZones: UsersTimeZones = new UsersTimeZones();
 const usersResetPassword: UsersResetPassword = new UsersResetPassword();
 const usersPushNotifications: UsersPushNotifications = new UsersPushNotifications();
 const usersGoals: UsersGoals = new UsersGoals();
@@ -84,8 +86,11 @@ app.get('/api/v1/user', users.getUser);
 app.put('/api/v1/user', users.updateUser);
 app.delete('/api/v1/user', users.deleteUser);
 
-// Users FCM tokesn
+// Users FCM tokens
 app.post('/api/v1/fcm_tokens', usersPushNotifications.addFCMToken);
+
+// Users timezones
+app.put('/api/v1/timezones', usersTimeZones.updateTimeZone);
 
 // Users goals
 app.get('/api/v1/goals', usersGoals.getGoals);
