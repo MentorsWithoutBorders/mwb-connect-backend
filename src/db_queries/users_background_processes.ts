@@ -114,8 +114,8 @@ export class UsersBackgroundProcesses {
     if (studentAvailabilities != null && studentAvailabilities.length > 0) {
       queryWhereAvailabilities = 'AND (';
       for (const availability of studentAvailabilities) {
-        const timeFrom = moment(availability.time.from, 'ha').format('HH:mm');
-        const timeTo = moment(availability.time.to, 'ha').format('HH:mm');
+        const timeFrom = moment(availability.time.from, 'h:ma').format('HH:mm');
+        const timeTo = moment(availability.time.to, 'h:ma').format('HH:mm');
         queryWhereAvailabilities += `ua.utc_day_of_week = '${availability.dayOfWeek}'
           AND ('${timeFrom}'::TIME >= ua.utc_time_from AND '${timeFrom}'::TIME < ua.utc_time_to OR '${timeTo}'::TIME > ua.utc_time_from AND '${timeTo}'::TIME <= ua.utc_time_to 
               OR '${timeFrom}'::TIME < ua.utc_time_from AND '${timeTo}'::TIME > ua.utc_time_to) OR `;
@@ -224,7 +224,7 @@ export class UsersBackgroundProcesses {
     if (studentAvailabilities != null && studentAvailabilities.length > 0) {
       for (const availability of studentAvailabilities) {
         if (availability.dayOfWeek == availableMentor.dayOfWeek) {
-          const studentTimeFrom = moment(availability.time.from, 'ha');
+          const studentTimeFrom = moment(availability.time.from, 'h:ma');
           const mentorTimeFrom = moment(availableMentor.timeFrom, 'HH:mm');
           if (studentTimeFrom.isBefore(mentorTimeFrom)) {
             lessonTime = moment(mentorTimeFrom, 'HH:mm').format('HH:mm');

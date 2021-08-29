@@ -258,12 +258,12 @@ export class Users {
     for (const availability of availabilities) {
       const insertAvailabilityQuery = `INSERT INTO users_availabilities (user_id, utc_day_of_week, utc_time_from, utc_time_to)
         VALUES ($1, $2, $3, $4) RETURNING id`;
-      const timeFrom = moment(availability.time.from, 'ha').format('HH:mm');
-      let timeTo = moment(availability.time.to, 'ha').format('HH:mm');
+      const timeFrom = moment(availability.time.from, 'h:ma').format('HH:mm');
+      let timeTo = moment(availability.time.to, 'h:ma').format('HH:mm');
       let dayOfWeekConnected = null;
       let timeFromConnected = null;
       let timeToConnected = null;
-      if (moment(availability.time.to, 'ha').isBefore(moment(availability.time.from, 'ha'))) {
+      if (moment(availability.time.to, 'h:ma').isBefore(moment(availability.time.from, 'h:ma'))) {
         timeFromConnected = '00:00';
         timeToConnected = timeTo;
         dayOfWeekConnected = helpers.getNextDayOfWeek(availability.dayOfWeek);
