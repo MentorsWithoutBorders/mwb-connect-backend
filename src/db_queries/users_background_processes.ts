@@ -194,9 +194,9 @@ export class UsersBackgroundProcesses {
       lessonDateTime = moment.utc(availableMentor.availableFrom);
     }
     
-    if (!availableMentor.isAvailable && lessonDateTime.isBefore(moment.utc(availableMentor.availableFrom))) {
-      lessonDateTime = moment.utc(availableMentor.availableFrom);
-    }
+    // if (!availableMentor.isAvailable && lessonDateTime.isBefore(moment.utc(availableMentor.availableFrom))) {
+    //   lessonDateTime = moment.utc(availableMentor.availableFrom);
+    // }
     if (lessonDateTime.isBefore(moment.utc().add(1, 'd'))) {
       lessonDateTime = moment.utc().add(1, 'd');
     }   
