@@ -183,20 +183,16 @@ export class UsersBackgroundProcesses {
 
   async getLessonDateTime(student: User, availableMentor: AvailableMentor, studentAvailabilities: Array<Availability>, client: pg.PoolClient): Promise<moment.Moment> {
     const studentPreviousLesson: Lesson = await usersLessons.getPreviousLessonFromDB(student.id as string, client);
-    let lessonDateTime;
-    if (availableMentor.isCanceled) {
-      lessonDateTime = moment.utc();
-    } else if (availableMentor.endRecurrenceDateTime) {
+    let lessonDateTime = moment.utc();
+    if (availableMentor.endRecurrenceDateTime) {
       lessonDateTime = moment.utc(availableMentor.endRecurrenceDateTime).add(availableMentor.minInterval, 'd');
     } else if (availableMentor.dateTime) {
       lessonDateTime = moment.utc(availableMentor.dateTime).add(availableMentor.minInterval, 'd');
-    } else {
-      lessonDateTime = moment.utc(availableMentor.availableFrom);
     }
     
-    // if (!availableMentor.isAvailable && lessonDateTime.isBefore(moment.utc(availableMentor.availableFrom))) {
-    //   lessonDateTime = moment.utc(availableMentor.availableFrom);
-    // }
+    if (!availableMentor.isAvailable && lessonDateTime.isBefore(moment.utc(availableMentor.availableFrom))) {
+      lessonDateTime = moment.utc(availableMentor.availableFrom);
+    }
     if (lessonDateTime.isBefore(moment.utc().add(1, 'd'))) {
       lessonDateTime = moment.utc().add(1, 'd');
     }   
