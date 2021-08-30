@@ -391,7 +391,9 @@ export class UsersBackgroundProcesses {
       ON u.id = uns.user_id
       JOIN users_timezones AS ut
       ON u.id = ut.user_id
-      WHERE (date_trunc('day', now() AT TIME ZONE ut.name)::date - date_trunc('day', u.registered_on AT TIME ZONE ut.name)::date) % 7 = $1
+      WHERE uns.enabled = true
+        AND (date_trunc('day', now() AT TIME ZONE ut.name)::date - date_trunc('day', u.registered_on AT TIME ZONE ut.name)::date) % 7 = $1
+        AND date_trunc('day', now() AT TIME ZONE ut.name)::date <> date_trunc('day', u.registered_on AT TIME ZONE ut.name)::date
         AND date_trunc('day', now() AT TIME ZONE ut.name) + uns.time = date_trunc('minute', now() AT TIME ZONE ut.name);`;
     const { rows }: pg.QueryResult = await pool.query(getUsersForTrainingReminderQuery, [days]);
     for (const row of rows) {
@@ -402,18 +404,8 @@ export class UsersBackgroundProcesses {
           id: row.id,
           name: row.name,
           registeredOn: row.registered_on
-        } 
-        const userTimeZone = await usersTimeZones.getUserTimeZone(user.id as string, client);         
-        const lastStepAdded = await usersSteps.getLastStepAddedFromDB(user.id as string, client);
-        let nextDeadLine = moment.utc(user.registeredOn).tz(userTimeZone.name).startOf('day');
-        while (nextDeadLine.isBefore(moment.utc().tz(userTimeZone.name).startOf('day'))) {
-          nextDeadLine = nextDeadLine.add(7, 'd');
         }
-        const lastStepAddedDateTime = moment.utc(lastStepAdded.dateTime).tz(userTimeZone.name).startOf('day');
-        let showStepReminder = false;
-        if (Object.keys(lastStepAdded).length == 0 || moment.duration(nextDeadLine.diff(lastStepAddedDateTime)).asDays() >= 7) {
-          showStepReminder = true;
-        }
+        const showStepReminder = await this.getShowStepReminder(user, client);
         const quizNumber = await usersQuizzes.getQuizNumberFromDB(user.id as string, client);
         const remainingQuizzes = 3 - (quizNumber - 1) % 3;
         const showQuizReminder = await usersQuizzes.getQuizNumberFromDB(user.id as string, client) > 0 ? true : false;
@@ -429,6 +421,22 @@ export class UsersBackgroundProcesses {
         client.release();
       }        
     }
-  }  
+  } 
+  
+  async getShowStepReminder(user: User, client: pg.PoolClient): Promise<boolean> {
+    const userTimeZone = await usersTimeZones.getUserTimeZone(user.id as string, client);         
+    const lastStepAdded = await usersSteps.getLastStepAddedFromDB(user.id as string, client);
+    let nextDeadLine = moment.utc(user.registeredOn).tz(userTimeZone.name).startOf('day');
+    while (nextDeadLine.isBefore(moment.utc().tz(userTimeZone.name).startOf('day'))) {
+      nextDeadLine = nextDeadLine.add(7, 'd');
+    }
+    const lastStepAddedDateTime = moment.utc(lastStepAdded.dateTime).tz(userTimeZone.name).startOf('day');    
+    let showStepReminder = false;
+    const limit = moment.duration(moment.utc().tz(userTimeZone.name).startOf('day').diff(moment.utc(user.registeredOn).tz(userTimeZone.name).startOf('day'))).asDays() > 7 ? 7 : 8;
+    if (Object.keys(lastStepAdded).length == 0 || moment.duration(nextDeadLine.diff(lastStepAddedDateTime)).asDays() >= limit) {
+      showStepReminder = true;
+    }
+    return showStepReminder;
+  }
 }
 
