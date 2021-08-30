@@ -194,9 +194,9 @@ export class UsersBackgroundProcesses {
       lessonDateTime = moment.utc(availableMentor.availableFrom);
     }
     
-    if (!availableMentor.isAvailable && lessonDateTime.isBefore(moment.utc(availableMentor.availableFrom))) {
-      lessonDateTime = moment.utc(availableMentor.availableFrom);
-    }
+    // if (!availableMentor.isAvailable && lessonDateTime.isBefore(moment.utc(availableMentor.availableFrom))) {
+    //   lessonDateTime = moment.utc(availableMentor.availableFrom);
+    // }
     if (lessonDateTime.isBefore(moment.utc().add(1, 'd'))) {
       lessonDateTime = moment.utc().add(1, 'd');
     }   
@@ -204,7 +204,7 @@ export class UsersBackgroundProcesses {
     if (Object.keys(studentPreviousLesson).length > 0 && 
           lessonDateTime.isBefore(moment.utc(studentPreviousLesson.dateTime).add(7, 'd'))) {
       lessonDateTime = moment.utc(studentPreviousLesson.dateTime).add(7, 'd');
-    }          
+    }
     while (constants.DAYS_OF_WEEK[moment.utc(lessonDateTime).isoWeekday() - 1] != availableMentor.dayOfWeek) {
       lessonDateTime = moment.utc(lessonDateTime).add(1, 'd');
     }
