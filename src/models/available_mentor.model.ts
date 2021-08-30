@@ -1,5 +1,6 @@
 export default interface AvailableMentor {
   id: string;
+  isAvailable: boolean;
   availableFrom: string;
   minInterval: number;
   dayOfWeek: string;

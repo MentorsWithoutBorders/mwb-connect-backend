@@ -122,7 +122,7 @@ export class UsersBackgroundProcesses {
       }
       queryWhereAvailabilities = queryWhereAvailabilities.slice(0, -4) + ')';
     }
-    const getAvailableMentorsQuery = `SELECT DISTINCT u.id, u.available_from, ula.min_interval_in_days, ua.utc_day_of_week, ua.utc_time_from, ua.utc_time_to, ul.date_time, ul.is_recurrent, ul.end_recurrence_date_time, ul.is_canceled
+    const getAvailableMentorsQuery = `SELECT DISTINCT u.id, u.is_available, u.available_from, ula.min_interval_in_days, ua.utc_day_of_week, ua.utc_time_from, ua.utc_time_to, ul.date_time, ul.is_recurrent, ul.end_recurrence_date_time, ul.is_canceled
       FROM users u
       FULL OUTER JOIN users_availabilities ua
       ON u.id = ua.user_id
@@ -158,6 +158,7 @@ export class UsersBackgroundProcesses {
     for (const rowMentor of rows) {
       const availableMentor: AvailableMentor = {
         id: rowMentor.id,
+        isAvailable: rowMentor.is_available,
         availableFrom: rowMentor.available_from,
         minInterval: rowMentor.min_interval_in_days,
         dayOfWeek: rowMentor.utc_day_of_week,
@@ -193,7 +194,7 @@ export class UsersBackgroundProcesses {
       lessonDateTime = moment.utc(availableMentor.availableFrom);
     }
     
-    if (lessonDateTime.isBefore(moment.utc(availableMentor.availableFrom))) {
+    if (!availableMentor.isAvailable && lessonDateTime.isBefore(moment.utc(availableMentor.availableFrom))) {
       lessonDateTime = moment.utc(availableMentor.availableFrom);
     }
     if (lessonDateTime.isBefore(moment.utc().add(1, 'd'))) {
