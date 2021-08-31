@@ -236,6 +236,8 @@ export class Auth {
     try {
       await client.query('BEGIN');
       await this.revokeRefreshToken(userId || '', client);
+      const deleteFCMTokenQuery = 'DELETE FROM users_fcm_tokens WHERE user_id = $1';
+      await client.query(deleteFCMTokenQuery, [userId]);      
       response.status(200).json()
       await client.query('COMMIT');
     } catch (error) {
