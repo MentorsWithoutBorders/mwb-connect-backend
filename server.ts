@@ -25,6 +25,7 @@ import { Skills } from './src/db_queries/skills';
 import { Tutorials } from './src/db_queries/tutorials';
 import { QuizzesSettings } from './src/db_queries/quizzes_settings';
 import { Updates } from './src/db_queries/updates';
+import { Logger } from './src/db_queries/logger';
 
 dotenv.config();
 const port = process.env.PORT;
@@ -45,6 +46,7 @@ const usersNotificationsSettings: UsersNotificationsSettings = new UsersNotifica
 const usersSupportRequests: UsersSupportRequests = new UsersSupportRequests();
 const usersAppVersions: UsersAppVersions = new UsersAppVersions();
 const usersBackgroundProcesses: UsersBackgroundProcesses = new UsersBackgroundProcesses();
+const logger: Logger = new Logger();
 const fields: Fields = new Fields();
 const subfields: Subfields = new Subfields();
 const skills: Skills = new Skills();
@@ -61,7 +63,7 @@ app.get('/', (request: express.Request, response: express.Response): void => {
 })
 
 const verifyAccessTokenFilter = function(request: Request, response: Response, next: NextFunction): void {
-  if (['/signup', '/login', '/access_token', '/send_reset_password', '/reset_password', '/tutorials', '/quizzes_settings'].some(route => request.originalUrl.includes(route))) {
+  if (['/signup', '/login', '/access_token', '/send_reset_password', '/reset_password', '/tutorials', '/quizzes_settings', '/logger'].some(route => request.originalUrl.includes(route))) {
     next();
   } else {
     auth.verifyAccessToken(request, response, next);
@@ -167,6 +169,9 @@ app.get('/api/v1/updates', updates.getUpdates);
 
 // Users app versions
 app.post('/api/v1/app_versions', usersAppVersions.addAppVersion);
+
+// Logger
+app.post('/api/v1/logger', logger.addLogEntry);
 
 
 // Users background processes
