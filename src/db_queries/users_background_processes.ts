@@ -111,6 +111,7 @@ export class UsersBackgroundProcesses {
     const queryWhereSubfield = studentSubfieldId != null ? `AND us.subfield_id = '${studentSubfieldId}'` : '';
     const studentAvailabilities = student.availabilities != null ? student.availabilities : null; 
     let queryWhereAvailabilities = '';
+    let availableMentorsMap: Map<string, string> = new Map();
     if (studentAvailabilities != null && studentAvailabilities.length > 0) {
       queryWhereAvailabilities = 'AND (';
       for (const availability of studentAvailabilities) {
@@ -121,64 +122,69 @@ export class UsersBackgroundProcesses {
               OR '${timeFrom}'::TIME < ua.utc_time_from AND '${timeTo}'::TIME > ua.utc_time_to) OR `;
       }
       queryWhereAvailabilities = queryWhereAvailabilities.slice(0, -4) + ')';
-    }
-    const getAvailableMentorsQuery = `SELECT DISTINCT u.id, u.is_available, u.available_from, ula.min_interval_in_days, ua.utc_day_of_week, ua.utc_time_from, ua.utc_time_to, ul.date_time, ul.is_recurrent, ul.end_recurrence_date_time, ul.is_canceled
-      FROM users u
-      FULL OUTER JOIN users_availabilities ua
-      ON u.id = ua.user_id
-      FULL OUTER JOIN users_lessons_availabilities ula
-      ON u.id = ula.user_id        
-      FULL OUTER JOIN (
-        SELECT *,
-          row_number() over (PARTITION BY mentor_id ORDER BY date_time DESC) AS row_number_lessons
-          FROM users_lessons 
-      ) ul 
-      ON u.id = ul.mentor_id
-      FULL OUTER JOIN (
-        SELECT *,
-          row_number() over (PARTITION BY mentor_id ORDER BY sent_date_time DESC) AS row_number_lesson_requests
-          FROM users_lesson_requests 
-      ) ulr      
-      ON u.id = ulr.mentor_id          
-      FULL OUTER JOIN users_subfields us
-      ON u.id = us.user_id
-      WHERE u.is_mentor = true
-        AND u.field_id = $1
-        AND us.subfield_id IS NOT NULL
-        ${queryWhereSubfield}
-        AND (ul.row_number_lessons = 1 AND (ul.is_recurrent IS DISTINCT FROM true AND ul.date_time < now() 
-            OR ul.is_recurrent IS true AND ul.end_recurrence_date_time < now() 
-            OR ul.is_canceled IS true AND EXTRACT(EPOCH FROM (now() - ul.canceled_date_time))/3600 > 168) 
-            OR ul.id IS NULL)
-        AND (ulr.row_number_lesson_requests = 1 AND (ulr.is_canceled IS true OR EXTRACT(EPOCH FROM (now() - ulr.sent_date_time))/3600 > 72)
-            OR ulr.id IS NULL)                 
-        ${queryWhereAvailabilities}`;
-    const { rows } = await client.query(getAvailableMentorsQuery, [student.field?.id]);
-    const availableMentorsMap: Map<string, string> = new Map();
-    for (const rowMentor of rows) {
-      const availableMentor: AvailableMentor = {
-        id: rowMentor.id,
-        isAvailable: rowMentor.is_available,
-        availableFrom: rowMentor.available_from,
-        minInterval: rowMentor.min_interval_in_days,
-        dayOfWeek: rowMentor.utc_day_of_week,
-        timeFrom: rowMentor.utc_time_from,
-        timeTo: rowMentor.utc_time_to,
-        dateTime: rowMentor.date_time,
-        isRecurrent: rowMentor.is_recurrent,
-        endRecurrenceDateTime: rowMentor.end_recurrence_date_time,
-        isCanceled: rowMentor.is_canceled
-      }
-      const lessonDateTime = await this.getLessonDateTime(student, availableMentor, studentAvailabilities as Array<Availability>, client);
-      if (availableMentorsMap.has(availableMentor.id)) {
-        if (moment.utc(availableMentorsMap.get(availableMentor.id)).isAfter(lessonDateTime)) {
-          availableMentorsMap.set(availableMentor.id, lessonDateTime.format(constants.DATE_TIME_FORMAT));
+      const getAvailableMentorsQuery = `SELECT DISTINCT u.id, u.is_available, u.available_from, ula.min_interval_in_days, ua.utc_day_of_week, ua.utc_time_from, ua.utc_time_to, ul.date_time, ul.is_recurrent, ul.end_recurrence_date_time, ul.is_canceled
+        FROM users u
+        FULL OUTER JOIN users_availabilities ua
+        ON u.id = ua.user_id
+        FULL OUTER JOIN users_lessons_availabilities ula
+        ON u.id = ula.user_id        
+        FULL OUTER JOIN (
+          SELECT *,
+            row_number() over (PARTITION BY mentor_id ORDER BY date_time DESC) AS row_number_lessons
+            FROM users_lessons 
+        ) ul 
+        ON u.id = ul.mentor_id
+        FULL OUTER JOIN (
+          SELECT *,
+            row_number() over (PARTITION BY mentor_id ORDER BY sent_date_time DESC) AS row_number_lesson_requests
+            FROM users_lesson_requests 
+        ) ulr      
+        ON u.id = ulr.mentor_id          
+        FULL OUTER JOIN users_subfields us
+        ON u.id = us.user_id
+        WHERE u.is_mentor = true
+          AND u.field_id = $1
+          AND us.subfield_id IS NOT NULL
+          ${queryWhereSubfield}
+          AND ua.utc_day_of_week IS NOT NULL
+          AND (ul.row_number_lessons = 1 AND (ul.is_recurrent IS DISTINCT FROM true AND ul.date_time < now() 
+              OR ul.is_recurrent IS true AND ul.end_recurrence_date_time < now() 
+              OR ul.is_canceled IS true AND EXTRACT(EPOCH FROM (now() - ul.canceled_date_time))/3600 > 168) 
+              OR ul.id IS NULL)
+          AND (ulr.row_number_lesson_requests = 1 AND (ulr.is_canceled IS true OR EXTRACT(EPOCH FROM (now() - ulr.sent_date_time))/3600 > 72)
+              OR ulr.id IS NULL)                 
+          ${queryWhereAvailabilities}`;
+      const { rows } = await client.query(getAvailableMentorsQuery, [student.field?.id]);
+      for (const rowMentor of rows) {
+        const availableMentor: AvailableMentor = {
+          id: rowMentor.id,
+          isAvailable: rowMentor.is_available,
+          availableFrom: rowMentor.available_from,
+          minInterval: rowMentor.min_interval_in_days,
+          dayOfWeek: rowMentor.utc_day_of_week,
+          timeFrom: rowMentor.utc_time_from,
+          timeTo: rowMentor.utc_time_to,
+          dateTime: rowMentor.date_time,
+          isRecurrent: rowMentor.is_recurrent,
+          endRecurrenceDateTime: rowMentor.end_recurrence_date_time,
+          isCanceled: rowMentor.is_canceled
         }
-      } else {
-        availableMentorsMap.set(availableMentor.id, lessonDateTime.format(constants.DATE_TIME_FORMAT));
+        availableMentorsMap = await this.setAvailableMentorsMap(availableMentor, availableMentorsMap, student, studentAvailabilities, client);
       }
     }
     return availableMentorsMap;    
+  }
+
+  async setAvailableMentorsMap(availableMentor: AvailableMentor, availableMentorsMap: Map<string, string>, student: User, studentAvailabilities: Array<Availability>, client: pg.PoolClient): Promise<Map<string, string>> {
+    const lessonDateTime = await this.getLessonDateTime(student, availableMentor, studentAvailabilities, client);
+    if (availableMentorsMap.has(availableMentor.id)) {
+      if (moment.utc(availableMentorsMap.get(availableMentor.id)).isAfter(lessonDateTime)) {
+        availableMentorsMap.set(availableMentor.id, lessonDateTime.format(constants.DATE_TIME_FORMAT));
+      }
+    } else {
+      availableMentorsMap.set(availableMentor.id, lessonDateTime.format(constants.DATE_TIME_FORMAT));
+    }
+    return availableMentorsMap;
   }
 
   async getLessonDateTime(student: User, availableMentor: AvailableMentor, studentAvailabilities: Array<Availability>, client: pg.PoolClient): Promise<moment.Moment> {
