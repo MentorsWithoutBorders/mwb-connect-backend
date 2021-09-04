@@ -180,7 +180,7 @@ app.post('/api/v1/send_after_lesson', usersBackgroundProcesses.sendAfterLesson);
 app.post('/api/v1/send_training_reminders', usersBackgroundProcesses.sendTrainingReminders);
 
 cron.schedule('* * * * *', function() {
-  usersBackgroundProcesses.sendLessonRequestFromDB();
+  // usersBackgroundProcesses.sendLessonRequestFromDB();
   usersBackgroundProcesses.sendAfterLessonFromDB();
   usersBackgroundProcesses.sendTrainingRemindersFromDB(true);
   usersBackgroundProcesses.sendTrainingRemindersFromDB(false);
