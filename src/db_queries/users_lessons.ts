@@ -38,7 +38,20 @@ export class UsersLessons {
     try {
       await client.query('BEGIN');
       const isMentor = await this.getIsMentor(userId, client);
-      const lesson = await this.getNextLessonFromDB(userId, isMentor, client);
+      let shouldStop = false;
+      let lesson: Lesson = {};
+      if (!isMentor) {
+        shouldStop = await this.getShouldStop(userId, client);
+        if (shouldStop) {
+          lesson = {
+            shouldStop: true
+          }
+        } else {
+          lesson = await this.getNextLessonFromDB(userId, isMentor, client);
+        }
+      } else {
+        lesson = await this.getNextLessonFromDB(userId, isMentor, client);
+      }
       response.status(200).json(lesson);
       await client.query('COMMIT');
     } catch (error) {
@@ -48,6 +61,18 @@ export class UsersLessons {
       client.release();
     }
   }
+
+  async getIsMentor(userId: string, client: pg.PoolClient): Promise<boolean> {
+    const getUserQuery = 'SELECT is_mentor FROM users WHERE id = $1';
+    const { rows }: pg.QueryResult = await client.query(getUserQuery, [userId]);
+    return rows[0].is_mentor;
+  }
+  
+  async getShouldStop(userId: string, client: pg.PoolClient): Promise<boolean> {
+    const getShouldStopQuery = 'SELECT id FROM users_lessons_stopped WHERE student_id = $1';
+    const { rows }: pg.QueryResult = await client.query(getShouldStopQuery, [userId]);
+    return rows[0] ? true : false;
+  }   
 
   async getNextLessonFromDB(userId: string, isMentor: boolean, client: pg.PoolClient): Promise<Lesson> {
     let getNextLessonQuery = '';
@@ -232,12 +257,6 @@ export class UsersLessons {
       }
     }
     return lesson;
-  }
-
-  async getIsMentor(userId: string, client: pg.PoolClient): Promise<boolean> {
-    const getUserQuery = 'SELECT is_mentor FROM users WHERE id = $1';
-    const { rows }: pg.QueryResult = await client.query(getUserQuery, [userId]);
-    return rows[0].is_mentor;
   }
   
   async getPreviousLesson(request: Request, response: Response): Promise<void> {

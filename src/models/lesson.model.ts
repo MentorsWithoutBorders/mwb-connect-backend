@@ -13,4 +13,5 @@ export default interface Lesson {
   endRecurrenceDateTime?: string;
   isRecurrenceDateSelected?: boolean;
   isCanceled?: boolean;
+  shouldStop?: boolean;
 }
