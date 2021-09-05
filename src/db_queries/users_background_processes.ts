@@ -435,9 +435,14 @@ export class UsersBackgroundProcesses {
     }
     const lastStepAddedDateTime = moment.utc(lastStepAdded.dateTime).tz(userTimeZone.name).startOf('day');    
     let showStepReminder = false;
-    const limit = moment.duration(moment.utc().tz(userTimeZone.name).startOf('day').diff(moment.utc(user.registeredOn).tz(userTimeZone.name).startOf('day'))).asDays() > 7 ? 7 : 8;
+    const daysSinceRegistration = moment.duration(moment.utc().tz(userTimeZone.name).startOf('day').diff(moment.utc(user.registeredOn).tz(userTimeZone.name).startOf('day'))).asDays();
+    const limit = daysSinceRegistration > 7 ? 7 : 8;
     if (Object.keys(lastStepAdded).length == 0 || moment.duration(nextDeadLine.diff(lastStepAddedDateTime)).asDays() >= limit) {
       showStepReminder = true;
+    }
+    if (user.isMentor && daysSinceRegistration > constants.MENTOR_WEEKS_TRAINING * 7 ||
+        !user.isMentor && daysSinceRegistration > constants.STUDENT_WEEKS_TRAINING * 7) {
+      showStepReminder = false;
     }
     return showStepReminder;
   }
