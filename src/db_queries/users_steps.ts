@@ -114,6 +114,7 @@ export class UsersSteps {
     const timeSinceRegistration = moment.utc().tz(userTimeZone.name).startOf('day').diff(moment.utc(user.registeredOn).tz(userTimeZone.name).startOf('day'));
     if (user.isMentor && moment.duration(timeSinceRegistration).asWeeks() > constants.MENTOR_WEEKS_TRAINING ||
         !user.isMentor && moment.duration(timeSinceRegistration).asMonths() > constants.STUDENT_MONTHS_TRAINING + 0.05) {
+      step.id = constants.TRAINING_COMPLETED_ID;
       step.dateTime = moment.utc().format(constants.DATE_TIME_FORMAT);
     }    
     return step;  
