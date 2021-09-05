@@ -427,7 +427,7 @@ export class UsersBackgroundProcesses {
   } 
   
   async getShowStepReminder(user: User, client: pg.PoolClient): Promise<boolean> {
-    const userTimeZone = await usersTimeZones.getUserTimeZone(user.id as string, client);         
+    const userTimeZone = await usersTimeZones.getUserTimeZone(user.id as string, client);
     const lastStepAdded = await usersSteps.getLastStepAddedFromDB(user.id as string, client);
     let nextDeadLine = moment.utc(user.registeredOn).tz(userTimeZone.name).startOf('day');
     while (nextDeadLine.isBefore(moment.utc().tz(userTimeZone.name).startOf('day'))) {
@@ -439,10 +439,6 @@ export class UsersBackgroundProcesses {
     const limit = daysSinceRegistration > 7 ? 7 : 8;
     if (Object.keys(lastStepAdded).length == 0 || moment.duration(nextDeadLine.diff(lastStepAddedDateTime)).asDays() >= limit) {
       showStepReminder = true;
-    }
-    if (user.isMentor && daysSinceRegistration > constants.MENTOR_WEEKS_TRAINING * 7 ||
-        !user.isMentor && daysSinceRegistration > constants.STUDENT_WEEKS_TRAINING * 7) {
-      showStepReminder = false;
     }
     return showStepReminder;
   }

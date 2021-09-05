@@ -4,10 +4,14 @@ import moment from 'moment';
 import pg from 'pg';
 import { Conn } from '../db/conn';
 import { constants } from '../utils/constants';
+import { Users } from './users';
+import { UsersTimeZones } from './users_timezones';
 import Step from '../models/step.model';
 
 const conn: Conn = new Conn();
 const pool = conn.pool;
+const users: Users = new Users();
+const usersTimeZones: UsersTimeZones = new UsersTimeZones();
 
 export class UsersSteps {
   constructor() {
@@ -105,6 +109,13 @@ export class UsersSteps {
         dateTime: moment.utc(rows[0].date_time).format(constants.DATE_TIME_FORMAT)
       } 
     }
+    const user = await users.getUserFromDB(userId, client);
+    const userTimeZone = await usersTimeZones.getUserTimeZone(userId, client);
+    const timeSinceRegistration = moment.utc().tz(userTimeZone.name).startOf('day').diff(moment.utc(user.registeredOn).tz(userTimeZone.name).startOf('day'));
+    if (user.isMentor && moment.duration(timeSinceRegistration).asWeeks() > constants.MENTOR_WEEKS_TRAINING ||
+        !user.isMentor && moment.duration(timeSinceRegistration).asMonths() > constants.STUDENT_MONTHS_TRAINING + 0.05) {
+      step.dateTime = moment.utc().format(constants.DATE_TIME_FORMAT);
+    }    
     return step;  
   }
 
