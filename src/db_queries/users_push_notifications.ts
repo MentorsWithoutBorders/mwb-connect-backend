@@ -32,28 +32,6 @@ export class UsersPushNotifications {
     autoBind(this);
   }
 
-  async getUserFCMToken(userId: string): Promise<string> {
-    const getFCMTokenQuery = 'SELECT fcm_token FROM users_fcm_tokens WHERE user_id = $1';
-    const { rows }: pg.QueryResult = await pool.query(getFCMTokenQuery, [userId]);
-    return rows[0]?.fcm_token;
-  }
-
-  async addFCMToken(request: Request, response: Response): Promise<void> {
-    const userId: string = request.user.id as string;
-    const { token }: FCMToken = request.body
-    try {
-      const insertFCMTokenQuery = `INSERT INTO users_fcm_tokens (user_id, fcm_token) 
-        VALUES ($1, $2)
-        ON CONFLICT (user_id) DO 
-          UPDATE SET fcm_token = EXCLUDED.fcm_token`;
-      const values = [userId, token];        
-      await pool.query(insertFCMTokenQuery, values);
-      response.status(200).send('FCM token has been added');
-    } catch (error) {
-      response.status(400).send(error);
-    }
-  }
-
   async sendPushNotification(userId: string, pushNotification: PushNotification): Promise<void> {
     const registrationToken = await this.getUserFCMToken(userId);
     if (registrationToken) {
@@ -74,6 +52,28 @@ export class UsersPushNotifications {
       .catch(error => {
         console.log(error);
       });
+    }
+  }  
+
+  async getUserFCMToken(userId: string): Promise<string> {
+    const getFCMTokenQuery = 'SELECT fcm_token FROM users_fcm_tokens WHERE user_id = $1';
+    const { rows }: pg.QueryResult = await pool.query(getFCMTokenQuery, [userId]);
+    return rows[0]?.fcm_token;
+  }
+
+  async addFCMToken(request: Request, response: Response): Promise<void> {
+    const userId: string = request.user.id as string;
+    const { token }: FCMToken = request.body
+    try {
+      const insertFCMTokenQuery = `INSERT INTO users_fcm_tokens (user_id, fcm_token) 
+        VALUES ($1, $2)
+        ON CONFLICT (user_id) DO 
+          UPDATE SET fcm_token = EXCLUDED.fcm_token`;
+      const values = [userId, token];        
+      await pool.query(insertFCMTokenQuery, values);
+      response.status(200).send('FCM token has been added');
+    } catch (error) {
+      response.status(400).send(error);
     }
   }
 
@@ -162,6 +162,19 @@ export class UsersPushNotifications {
       }
     }
   }
+
+  sendPNLessonReminder(nextLesson: Lesson): void {
+    const pushNotification: PushNotification = {
+      title: 'Next lesson in 30 mins',
+      body: 'Kindly remember to attend the session',
+    }
+    const students = nextLesson.students;
+    if (students != null && students.length > 0) {
+      for (const student of students) {
+        this.sendPushNotification(student.id as string, pushNotification);
+      }
+    }
+  }  
   
   sendPNAfterLesson(lesson: Lesson): void {
     const pushNotificationMentor: PushNotification = {

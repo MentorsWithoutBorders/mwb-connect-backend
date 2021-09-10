@@ -11,6 +11,7 @@ import { UsersSteps } from './users_steps';
 import { UsersQuizzes } from './users_quizzes';
 import { UsersTimeZones } from './users_timezones';
 import { UsersPushNotifications } from './users_push_notifications';
+import { UsersSendEmails } from './users_send_emails';
 import User from '../models/user.model';
 import Subfield from '../models/subfield.model';
 import LessonRequest from '../models/lesson_request.model';
@@ -26,22 +27,23 @@ const usersSteps: UsersSteps = new UsersSteps();
 const usersQuizzes: UsersQuizzes = new UsersQuizzes();
 const usersTimeZones: UsersTimeZones = new UsersTimeZones();
 const usersPushNotifications: UsersPushNotifications = new UsersPushNotifications();
+const usersSendEmails: UsersSendEmails = new UsersSendEmails();
 
 export class UsersBackgroundProcesses {
   constructor() {
     autoBind(this);
   }
 
-  async sendLessonRequest(request: Request, response: Response): Promise<void> {
+  async sendLessonRequests(request: Request, response: Response): Promise<void> {
     try {
-      await this.sendLessonRequestFromDB();
+      await this.sendLessonRequestsFromDB();
       response.status(200).send('Lesson request sent');
     } catch (error) {
       response.status(400).send(error);
     }    
   }
 
-  async sendLessonRequestFromDB(): Promise<void> {
+  async sendLessonRequestsFromDB(): Promise<void> {
     const getLessonRequestsQuery = `SELECT id, student_id, mentor_id, subfield_id, lesson_date_time, sent_date_time, is_rejected, is_canceled, is_expired, is_obsolete
       FROM users_lesson_requests
       WHERE (is_canceled IS DISTINCT FROM true
@@ -328,6 +330,56 @@ export class UsersBackgroundProcesses {
     await client.query(updateLessonRequests, [lessonRequest.student?.id]); 
   }
 
+
+  async sendLessonReminders(request: Request, response: Response): Promise<void> {
+    try {
+      await this.sendLessonRemindersFromDB();
+      response.status(200).send('Lesson reminders sent');
+    } catch (error) {
+      response.status(400).send(error);
+    }    
+  }
+  
+  async sendLessonRemindersFromDB(): Promise<void> {
+    try {
+      const getLessonsQuery = `SELECT * FROM
+        (SELECT id, mentor_id, is_canceled, EXTRACT(EPOCH FROM (date_trunc('minute', now()) + interval '30 minutes' - date_time)) / 3600 / 24 / 7 AS diff_date_time
+            FROM users_lessons) ul
+        WHERE ul.is_canceled IS DISTINCT FROM true
+            AND ul.diff_date_time = FLOOR(ul.diff_date_time)`;
+      const { rows }: pg.QueryResult = await pool.query(getLessonsQuery);
+      for (const row of rows) {
+        const mentor: User = {
+          id: row.mentor_id
+        }
+        const client: pg.PoolClient = await pool.connect();
+        try {
+          await client.query('BEGIN');
+          const nextLesson = await usersLessons.getNextLessonFromDB(mentor.id as string, true, client);
+          let difference = moment.duration(moment.utc(nextLesson.dateTime).diff(moment.utc().add(30, 'm')));
+          if (moment.utc(nextLesson.dateTime).isBefore(moment.utc().add(30, 'm'))) {
+            difference = moment.duration(moment.utc().add(30, 'm').diff(moment.utc(nextLesson.dateTime)));
+          }
+          if (difference.asSeconds() < 60) {
+            nextLesson.mentor = mentor;
+            const students = nextLesson.students;
+            if (students != null && students.length > 0) {
+              usersSendEmails.sendEmailLessonReminder(nextLesson);
+              usersPushNotifications.sendPNLessonReminder(nextLesson);
+            }
+          }
+          await client.query('COMMIT');
+        } catch (error) {
+          await client.query('ROLLBACK');
+        } finally {
+          client.release();
+        }        
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  }  
+
   async sendAfterLesson(request: Request, response: Response): Promise<void> {
     try {
       await this.sendAfterLessonFromDB();
@@ -411,7 +463,7 @@ export class UsersBackgroundProcesses {
         const showStepReminder = await this.getShowStepReminder(user, client);
         const quizNumber = await usersQuizzes.getQuizNumberFromDB(user.id as string, client);
         const remainingQuizzes = 3 - (quizNumber - 1) % 3;
-        const showQuizReminder = await usersQuizzes.getQuizNumberFromDB(user.id as string, client) > 0 ? true : false;
+        const showQuizReminder = quizNumber > 0 ? true : false;
         if (isFirst) {
           usersPushNotifications.sendPNFirstTrainingReminder(user.id as string, showStepReminder, showQuizReminder, remainingQuizzes);
         } else {

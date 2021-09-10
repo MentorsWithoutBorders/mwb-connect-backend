@@ -9,6 +9,7 @@ export default interface User {
   name?: string;
   email?: string;
   password?: string;
+  phoneNumber?: string;
   organization?: Organization;
   timeZone?: TimeZone;
   field?: Field;

@@ -1,14 +1,15 @@
 import { Request, Response } from 'express';
-import nodemailer from 'nodemailer';
 import autoBind from 'auto-bind';
 import pg from 'pg';
 import moment from 'moment'
 import dotenv from 'dotenv';
 import { Conn } from '../db/conn';
+import { UsersSendEmails } from './users_send_emails';
 import { Helpers } from '../utils/helpers';
 import ResetPassword from '../models/reset_password.model';
 
 const conn: Conn = new Conn();
+const usersSendEmails: UsersSendEmails = new UsersSendEmails();
 const helpers: Helpers = new Helpers();
 const pool = conn.pool;
 dotenv.config();
@@ -58,7 +59,7 @@ export class UsersResetPassword {
         const dateTime = moment.utc();
         const values = [email, dateTime];        
         ({ rows } = await client.query(insertResetPasswordQuery, values));
-        this.sendEmail(email, rows[0].id);
+        usersSendEmails.sendEmailResetPassword(email, rows[0].id);
       }
       response.status(200).send('Reset password data inserted');
       await client.query('COMMIT');
@@ -68,27 +69,6 @@ export class UsersResetPassword {
     } finally {
       client.release();
     }
-  }
-
-  sendEmail(email: string, id: string): void {
-    const transporter = nodemailer.createTransport({
-      host: process.env.SMTP_SERVER as string,
-      port: parseInt(process.env.SMTP_PORT as string),
-      auth: {
-        user: process.env.SMTP_USERNAME,
-        pass: process.env.SMTP_PASSWORD
-      }
-    });
-    
-    const link = `https://www.mentorswithoutborders.net/reset-password.php?uuid=${id}`;
-    transporter.sendMail({
-      to: email,
-      from: process.env.SMTP_SENDER,
-      subject: 'Password reset request',
-      html: `Please use the link below in order to reset your password:<br><br>${link}<br><br>`
-    })
-      .then(() => console.log(`Reset password link successfully sent for user: ${email}`))
-      .catch(() => console.log(`Reset password link wasn't sent for user: ${email}`))    
   }
 }
 
