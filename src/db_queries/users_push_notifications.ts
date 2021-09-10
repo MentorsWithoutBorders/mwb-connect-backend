@@ -156,7 +156,7 @@ export class UsersPushNotifications {
       title: 'Lesson recurrence updated',
       body: 'The mentor has updated the lesson recurrence'
     }    
-    if (students != null) {
+    if (students != null && students.length > 0) {
       for (const student of students) {
         this.sendPushNotification(student.id as string, pushNotification);
       }

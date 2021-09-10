@@ -6,6 +6,7 @@ import { Conn } from '../db/conn';
 import { Users } from './users';
 import { constants } from '../utils/constants';
 import Lesson from '../models/lesson.model';
+import User from '../models/user.model';
 
 const conn: Conn = new Conn();
 const users: Users = new Users();
@@ -42,28 +43,16 @@ export class UsersSendEmails {
     try {
       await client.query('BEGIN');
       await client.query(constants.READ_ONLY_TRANSACTION);
-      const students = nextLesson.students;
-      if (students != null && students.length > 0) {
+      const nextLessonStudents = nextLesson.students;
+      if (nextLessonStudents != null && nextLessonStudents.length > 0) {
         const mentor = await users.getUserFromDB(nextLesson.mentor?.id as string, client);
-        const mentorFirstName = mentor?.name?.substring(0, mentor?.name?.indexOf(' '));
-        const studentOrStudents = students.length > 1 ? 'students' : 'student';
-        const isOrAre = students.length > 1 ? 'are' : 'is';
-        const himHerOrThem = students.length > 1 ? 'them' : 'him/her';
-        const subject = 'Next lesson in 30 mins';
-        let body = `Hi ${mentorFirstName},<br><br>This is a gentle reminder to conduct the next lesson in 30 mins from now.<br>`;
-        body += `If the ${studentOrStudents} ${isOrAre}n't able to join the session, you can message ${himHerOrThem} using the following contact details (<b>WhatsApp</b> usually works best):`;
-        body += `<ul>`;
-        for (const nextLessonStudent of students) {
+        const students: Array<User> = [];
+        for (const nextLessonStudent of nextLessonStudents) {
           const student = await users.getUserFromDB(nextLessonStudent.id as string, client);
-          body += `<li><b>${student.name}</b></li>`;
-          body += `<ul>`;
-          body += `<li>Email: ${student.email}</li>`;
-          body += `<li>WhatsApp number: ${student.phoneNumber}</li>`;
-          body += `</ul>`;
-        }
-        body += `</ul><br>`;
-        body += `Regards,<br>MWB Support Team`;
-        this.sendEmail(mentor?.email as string, subject, body);
+          students.push(student);
+          this.sendEmailReminderStudent(student, mentor);
+        }     
+        await this.sendEmailReminderMentor(mentor, students);
       }
       await client.query('COMMIT');
     } catch (error) {
@@ -72,6 +61,36 @@ export class UsersSendEmails {
       client.release();
     }
   }
+
+  async sendEmailReminderMentor(mentor: User, students: Array<User>): Promise<void> {
+    const mentorFirstName = mentor?.name?.substring(0, mentor?.name?.indexOf(' '));
+    const studentOrStudents = students.length > 1 ? 'students' : 'student';
+    const isOrAre = students.length > 1 ? 'are' : 'is';
+    const himHerOrThem = students.length > 1 ? 'them' : 'him/her';
+    const subject = 'Next lesson in 30 mins';
+    let body = `Hi ${mentorFirstName},<br><br>This is a gentle reminder to conduct the next lesson in 30 mins from now.<br>`;
+    body += `If the ${studentOrStudents} ${isOrAre}n't able to join the session, you can message ${himHerOrThem} using the following contact details (<b>WhatsApp</b> usually works best):`;
+    body += `<ul>`;
+    for (const student of students) {
+      body += `<li><b>${student.name}</b></li>`;
+      body += `<ul>`;
+      body += `<li>Email: ${student.email}</li>`;
+      body += `<li>WhatsApp number: ${student.phoneNumber}</li>`;
+      body += `</ul><br>`;
+    }
+    body += `</ul>`;
+    body += `Regards,<br>MWB Support Team`;
+    this.sendEmail(mentor?.email as string, subject, body);    
+  }
+
+  async sendEmailReminderStudent(student: User, mentor: User): Promise<void> {
+    const studentFirstName = student?.name?.substring(0, student?.name?.indexOf(' '));
+    const subject = 'Next lesson in 30 mins';
+    let body = `Hi ${studentFirstName},<br><br>This is a gentle reminder to participate in the next lesson in 30 mins from now.<br>`;
+    body += `If you aren't able to join the session, please notify your mentor, ${mentor.name}, at: ${mentor.email}<br><br>`;
+    body += `Regards,<br>MWB Support Team`;
+    this.sendEmail(student?.email as string, subject, body);    
+  }  
 
   sendEmailResetPassword(email: string, id: string): void {
     const subject = 'Password reset request';
