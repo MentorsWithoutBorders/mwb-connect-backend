@@ -9,6 +9,7 @@ import { QuizzesSettings } from './quizzes_settings';
 import { constants } from '../utils/constants';
 import Quiz from '../models/quiz.model';
 import pg from 'pg';
+import TimeZone from '../models/timezone.model';
 
 const conn: Conn = new Conn();
 const pool = conn.pool;
@@ -58,7 +59,7 @@ export class UsersQuizzes {
     } else {
       if (weekNumber <= constants.STUDENT_MAX_QUIZZES_SETS + constants.STUDENT_MAX_QUIZZES_SETS / 2 + 1) {
         const weeklyCount = quizSettings.studentWeeklyCount;
-        const quizzesSetNumber = this.getQuizzesSetNumber(quizzes, registeredOn, weeklyCount);
+        const quizzesSetNumber = this.getQuizzesSetNumber(quizzes, registeredOn, userTimeZone, weeklyCount);
         const quizStartNumber = this.getQuizStartNumber(quizzesSetNumber, weeklyCount);
         const quizEndNumber = this.getQuizEndNumber(quizzesSetNumber, weeklyCount);
         quizzes = this.getQuizzesBetweenDates(quizzes, weekStartDate, weekEndDate); 
@@ -87,7 +88,7 @@ export class UsersQuizzes {
   }
 
   getWeekEndDate(registeredOn: moment.Moment, weekNumber: number): moment.Moment {
-    return moment.utc(registeredOn).endOf('day').add((weekNumber + 1) * 7 + 1, 'days');
+    return moment.utc(registeredOn).add((weekNumber + 1) * 7 + 1, 'days');
   }  
 
   getQuizStartNumber(weekNumber: number, weeklyCount: number): number {
@@ -159,10 +160,10 @@ export class UsersQuizzes {
     return solvedQuizzes;
   }
 
-  getQuizzesSetNumber(quizzes: Array<Quiz>, registeredOn: moment.Moment, weeklyCount: number): number {
+  getQuizzesSetNumber(quizzes: Array<Quiz>, registeredOn: moment.Moment, userTimeZone: TimeZone, weeklyCount: number): number {
     let quizzesSetNumber = 0;
-    const today = moment.utc().startOf('day');
-    const weekNumber = today.diff(registeredOn, 'weeks');
+    const today = moment.utc().tz(userTimeZone.name).startOf('day');
+    const weekNumber = today.subtract(1, 'd').diff(registeredOn, 'weeks');
     let quizzesSetsStart = 0;
     let quizzesSetsEnd = constants.STUDENT_MAX_QUIZZES_SETS;
     if (weekNumber < quizzesSetsEnd + 1) {
@@ -180,7 +181,7 @@ export class UsersQuizzes {
       let areQuizzesSolved = false;
       for (let j = quizzesSetsStart; j < quizzesSetsEnd; j++) {
         const weekStartDate = this.getWeekStartDate(registeredOn, j);
-        const weekEndDate = this.getWeekEndDate(registeredOn, j);        
+        const weekEndDate = this.getWeekEndDate(registeredOn, j);
         const quizzesBetweenDates = this.getQuizzesBetweenDates(quizzes, weekStartDate, weekEndDate);
         if (this.getWeekQuizzesSolved(quizzesBetweenDates, quizStartNumber, quizEndNumber) == weeklyCount) {
           areQuizzesSolved = true;
