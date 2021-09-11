@@ -76,7 +76,7 @@ export class UsersQuizzes {
     const quizzesStartDate = moment.utc(registeredOn).add(constants.STUDENT_MAX_QUIZZES_SETS * 7, 'days');
     let startNumber = 0;
     for (const quiz of quizzes) {
-      if (moment.utc(quiz.dateTime).isAfter(moment.utc(quizzesStartDate)) && quiz.isCorrect && quiz.number > startNumber) {
+      if (moment.utc(quiz.dateTime).isAfter(moment.utc(quizzesStartDate)) && quiz.isCorrect && quiz.number >= startNumber) {
         startNumber = quiz.number + 1;
       }
     }
