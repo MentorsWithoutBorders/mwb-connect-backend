@@ -109,7 +109,7 @@ export class UsersBackgroundProcesses {
     const studentSubfieldId = studentSubfields != null && studentSubfields.length > 0 ? studentSubfields[0].id : null;    
     const queryWhereSubfield = studentSubfieldId != null ? `AND ul.subfield_id = '${studentSubfieldId}'` : '';
     const studentAvailabilities = student.availabilities != null ? student.availabilities : null; 
-    const availableLessons: Array<Lesson> = [];
+    let availableLessons: Array<Lesson> = [];
     let queryWhereAvailabilities = '';
     if (studentAvailabilities != null && studentAvailabilities.length > 0) {
       queryWhereAvailabilities = 'AND ';
@@ -134,28 +134,33 @@ export class UsersBackgroundProcesses {
       const { rows }: pg.QueryResult = await client.query(getLessonsQuery, [studentFieldId]);
       for (const rowLesson of rows) {
         const lessonStudentsNumber = await this.getLessonStudentsNumber(rowLesson.id, client);
-        if (lessonStudentsNumber < rowLesson.max_students) {
-          const mentor: User = {
-            id: rowLesson.mentor_id
-          }
-          const subfield: Subfield = {
-            id: rowLesson.subfield_id
-          }          
-          const availableLesson: Lesson = {
-            id: rowLesson.id,
-            mentor: mentor,
-            subfield: subfield,
-            dateTime: rowLesson.date_time,
-            isRecurrent: rowLesson.is_recurrent,
-            endRecurrenceDateTime: rowLesson.end_recurrence_date_time
-          }
-          const lessonDateTime = await usersLessons.getNextLessonDateTime(availableLesson, mentor.id as string, true, client);
-          if (lessonDateTime) {
-            availableLesson.dateTime = lessonDateTime;
-          }
-          availableLessons.push(availableLesson);
+        const mentor: User = {
+          id: rowLesson.mentor_id
         }
+        const subfield: Subfield = {
+          id: rowLesson.subfield_id
+        }          
+        const availableLesson: Lesson = {
+          id: rowLesson.id,
+          mentor: mentor,
+          subfield: subfield,
+          dateTime: rowLesson.date_time,
+          isRecurrent: rowLesson.is_recurrent,
+          endRecurrenceDateTime: rowLesson.end_recurrence_date_time
+        }
+        const lessonDateTime = await usersLessons.getNextLessonDateTime(availableLesson, mentor.id as string, true, client); 
+        if (lessonDateTime) {
+          availableLesson.dateTime = lessonDateTime;
+        }
+        availableLessons = this.addAvailableLesson(lessonStudentsNumber, rowLesson.max_students, availableLesson, availableLessons);
       }
+    }
+    return availableLessons;
+  }
+
+  addAvailableLesson(lessonStudentsNumber: number, maxStudents: number, availableLesson: Lesson, availableLessons: Array<Lesson>): Array<Lesson> {
+    if (lessonStudentsNumber < maxStudents) {
+      availableLessons.push(availableLesson);
     }
     return availableLessons;
   }
@@ -172,7 +177,12 @@ export class UsersBackgroundProcesses {
     for (const availableLesson of availableLessons) {         
       const skillsScore = await this.getSkillsScore(studentSkills, availableLesson.mentor?.id as string, availableLesson.subfield as Subfield, client);
       const lessonDateScore = this.getLessonDateScore(availableLesson.dateTime as string);
-      availableLesson.score = skillsScore + lessonDateScore;
+      let lessonRecurrenceScore = 0;
+      if (availableLesson.isRecurrent) {
+        const endRecurrenceDateTime = moment.utc(availableLesson.endRecurrenceDateTime).format(constants.DATE_TIME_FORMAT)
+        lessonRecurrenceScore = this.getLessonRecurrenceScore(availableLesson.dateTime as string, endRecurrenceDateTime);
+      }
+      availableLesson.score = skillsScore + lessonDateScore + lessonRecurrenceScore;
       availableLessonOptions.push(availableLesson);
     }
     return availableLessonOptions.sort(function(a,b) {return (b.score as number) - (a.score as number)});
@@ -193,11 +203,16 @@ export class UsersBackgroundProcesses {
         skillsScore += i;
       }
     }
+    skillsScore *= 2;
     return skillsScore;
   }
 
   getLessonDateScore(lessonDateTime: string): number {
     return Math.round(7 - moment.duration(moment.utc(lessonDateTime).diff(moment.utc())).asDays());    
+  }
+
+  getLessonRecurrenceScore(lessonDateTime: string, endRecurrenceDateTime: string): number {
+    return Math.round(moment.duration(moment.utc(endRecurrenceDateTime).diff(moment.utc(lessonDateTime))).asWeeks());    
   }  
 
   getStudentSkills(studentSubfields: Array<Subfield>): Array<string> {

@@ -383,9 +383,9 @@ export class UsersLessons {
       if (isMentor) {
         lesson.students = await this.getLessonStudents(lesson, false, client);
       }
+      usersPushNotifications.sendPNLessonCanceled(lesson, isCancelAll, lessonsCanceled);
       await client.query('COMMIT');
       response.status(200).send(`Lesson modified with ID: ${lessonId}`);
-      usersPushNotifications.sendPNLessonCanceled(lesson, isCancelAll, lessonsCanceled);
     } catch (error) {
       response.status(400).send(error);
       await client.query('ROLLBACK');
@@ -521,11 +521,11 @@ export class UsersLessons {
         id: lessonId
       }      
       const students = await this.getLessonStudents(lesson, false, client);
-      response.status(200).send(`Lesson modified with ID: ${lessonId}`);
-      await client.query('COMMIT');
       if (nextLesson.isRecurrent != isRecurrent || nextLesson.endRecurrenceDateTime != endRecurrenceDateTime) {
         usersPushNotifications.sendPNLessonRecurrenceUpdated(students);
       }
+      response.status(200).send(`Lesson modified with ID: ${lessonId}`);
+      await client.query('COMMIT');
     } catch (error) {
       response.status(400).send(error);
       await client.query('ROLLBACK');
