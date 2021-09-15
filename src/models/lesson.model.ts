@@ -14,4 +14,5 @@ export default interface Lesson {
   isRecurrenceDateSelected?: boolean;
   isCanceled?: boolean;
   shouldStop?: boolean;
+  score?: number;
 }

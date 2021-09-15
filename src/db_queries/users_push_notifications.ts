@@ -91,12 +91,12 @@ export class UsersPushNotifications {
   }
   
   sendPNLessonRequestAccepted(lesson: Lesson): void {
-    const recurring = lesson.isRecurrent ? 'recurring' : '';
+    const recurring = lesson.isRecurrent ? 'recurring ' : '';
     const mentor = lesson.mentor?.name;
     const subfield = lesson.subfield?.name?.toLowerCase();
     const pushNotification: PushNotification = {
       title: 'Lesson request accepted',
-      body: `${mentor} has scheduled a ${recurring} ${subfield} lesson with you`
+      body: `${mentor} has scheduled a ${recurring}${subfield} lesson with you`
     }
     const students = lesson.students;
     const student = students != null ? students[0] : {};

@@ -179,10 +179,13 @@ export class UsersLessonRequests {
   }
 
   async addStudent(lessonId: string, studentId: string, client: pg.PoolClient): Promise<void> {
-    const insertStudentQuery = `INSERT INTO users_lessons_students (lesson_id, student_id)
-      VALUES ($1, $2)`;
-    const values = [lessonId, studentId];
-    await client.query(insertStudentQuery, values);          
+    const nextLesson = await usersLessons.getNextLessonFromDB(studentId, false, client);
+    if (Object.keys(nextLesson).length == 0) {
+      const insertStudentQuery = `INSERT INTO users_lessons_students (lesson_id, student_id)
+        VALUES ($1, $2)`;
+      const values = [lessonId, studentId];
+      await client.query(insertStudentQuery, values);
+    }
   }  
 
   async addStudentSubfield(studentId: string, subfieldId: string, client: pg.PoolClient): Promise<void> {

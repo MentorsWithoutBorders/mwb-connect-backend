@@ -7,6 +7,7 @@ import { Conn } from '../db/conn';
 import { constants } from '../utils/constants';
 import { Users } from './users';
 import { UsersLessons } from './users_lessons';
+import { UsersLessonRequests } from './users_lesson_requests';
 import { UsersSteps } from './users_steps';
 import { UsersQuizzes } from './users_quizzes';
 import { UsersTimeZones } from './users_timezones';
@@ -16,13 +17,14 @@ import User from '../models/user.model';
 import Subfield from '../models/subfield.model';
 import LessonRequest from '../models/lesson_request.model';
 import Lesson from '../models/lesson.model';
-import AvailableMentor from '../models/available_mentor.model';
 import Availability from '../models/availability.model';
+import AvailableMentor from '../models/available_mentor.model';
 
 const conn: Conn = new Conn();
 const pool = conn.pool;
 const users: Users = new Users();
 const usersLessons: UsersLessons = new UsersLessons();
+const usersLessonRequests: UsersLessonRequests = new UsersLessonRequests();
 const usersSteps: UsersSteps = new UsersSteps();
 const usersQuizzes: UsersQuizzes = new UsersQuizzes();
 const usersTimeZones: UsersTimeZones = new UsersTimeZones();
@@ -78,15 +80,21 @@ export class UsersBackgroundProcesses {
           isRejected: rowRequest.is_rejected,
           isExpired: rowRequest.is_expired
         }        
-        const student: User = await users.getUserFromDB(lessonRequest.student?.id as string, client);
+        const student = await users.getUserFromDB(lessonRequest.student?.id as string, client);
         const studentSubfields = student.field?.subfields;
         const studentSubfield = studentSubfields != null && studentSubfields.length > 0 ? studentSubfields[0] : null;
         const studentSkills = this.getStudentSkills(studentSubfields as Array<Subfield>);
-        const availableMentorsMap = await this.getAvailableMentors(student, client);
-        const lessonRequestOptions = await this.getLessonRequestOptions(availableMentorsMap, studentSubfield as Subfield, studentSkills, client);
-        await this.addNewLessonRequest(lessonRequest, lessonRequestOptions, client);
+        const availableLessons = await this.getAvailableLessonsFromDB(student, client);
+        const availableLessonOptions = await this.getAvailableLessonOptions(availableLessons, studentSkills, client);
+        if (availableLessonOptions.length > 0) {
+          await this.addStudentToAvailableLesson(student.id as string, availableLessonOptions, client);
+        } else {
+          const availableMentorsMap = await this.getAvailableMentors(student, client);
+          const lessonRequestOptions = await this.getLessonRequestOptions(availableMentorsMap, studentSubfield as Subfield, studentSkills, client);
+          await this.addNewLessonRequest(lessonRequest, lessonRequestOptions, client);
+          usersPushNotifications.sendPNLessonRequest(student, lessonRequestOptions);
+        }
         await client.query('COMMIT');
-        usersPushNotifications.sendPNLessonRequest(student, lessonRequestOptions);
       } catch (error) {
         await client.query('ROLLBACK');
       } finally {
@@ -94,6 +102,103 @@ export class UsersBackgroundProcesses {
       }  
     }
   }
+
+  async getAvailableLessonsFromDB(student: User, client: pg.PoolClient): Promise<Array<Lesson>> {
+    const studentFieldId = student.field?.id;
+    const studentSubfields = student.field?.subfields;
+    const studentSubfieldId = studentSubfields != null && studentSubfields.length > 0 ? studentSubfields[0].id : null;    
+    const queryWhereSubfield = studentSubfieldId != null ? `AND ul.subfield_id = '${studentSubfieldId}'` : '';
+    const studentAvailabilities = student.availabilities != null ? student.availabilities : null; 
+    const availableLessons: Array<Lesson> = [];
+    let queryWhereAvailabilities = '';
+    if (studentAvailabilities != null && studentAvailabilities.length > 0) {
+      queryWhereAvailabilities = 'AND ';
+      for (const availability of studentAvailabilities) {
+        const timeFrom = moment(availability.time.from, 'h:ma').format('HH:mm');
+        const timeTo = moment(availability.time.to, 'h:ma').format('HH:mm');
+        queryWhereAvailabilities += `TRIM(TO_CHAR(ul.date_time, 'Day')) = '${availability.dayOfWeek}'
+          AND '${timeFrom}'::TIME <= ul.date_time::TIME AND '${timeTo}'::TIME >= ul.date_time::TIME OR `;
+      }
+      queryWhereAvailabilities = queryWhereAvailabilities.slice(0, -4);
+      const getLessonsQuery = `SELECT ul.id, ul.mentor_id, ula.max_students, fs.field_id, ul.subfield_id, ul.date_time, ul.is_recurrent, ul.end_recurrence_date_time FROM users_lessons ul
+        JOIN fields_subfields fs
+          ON fs.subfield_id = ul.subfield_id
+        JOIN users_lessons_availabilities ula
+          ON ul.mentor_id = ula.user_id          
+        WHERE ul.is_canceled IS DISTINCT FROM true
+          AND fs.field_id = $1
+          ${queryWhereSubfield}
+          AND (ul.is_recurrent IS DISTINCT FROM true AND ul.date_time > now() 
+              OR ul.is_recurrent IS true AND ul.end_recurrence_date_time > now())
+          ${queryWhereAvailabilities}`;
+      const { rows }: pg.QueryResult = await client.query(getLessonsQuery, [studentFieldId]);
+      for (const rowLesson of rows) {
+        const lessonStudentsNumber = await this.getLessonStudentsNumber(rowLesson.id, client);
+        if (lessonStudentsNumber < rowLesson.max_students) {
+          const mentor: User = {
+            id: rowLesson.mentor_id
+          }
+          const subfield: Subfield = {
+            id: rowLesson.subfield_id
+          }          
+          const availableLesson: Lesson = {
+            id: rowLesson.id,
+            mentor: mentor,
+            subfield: subfield,
+            dateTime: rowLesson.date_time,
+            isRecurrent: rowLesson.is_recurrent,
+            endRecurrenceDateTime: rowLesson.end_recurrence_date_time
+          }
+          const lessonDateTime = await usersLessons.getNextLessonDateTime(availableLesson, mentor.id as string, true, client);
+          if (lessonDateTime) {
+            availableLesson.dateTime = lessonDateTime;
+          }
+          availableLessons.push(availableLesson);
+        }
+      }
+    }
+    return availableLessons;
+  }
+  
+  async getLessonStudentsNumber(lessonId: string, client: pg.PoolClient): Promise<number> {
+    const getLessonStudentsQuery = `SELECT id, is_canceled FROM users_lessons_students
+        WHERE is_canceled IS DISTINCT FROM true AND lesson_id = $1`;
+    const { rows }: pg.QueryResult = await client.query(getLessonStudentsQuery, [lessonId]);
+    return rows.length;
+  }
+
+  async getAvailableLessonOptions(availableLessons: Array<Lesson>, studentSkills: Array<string>, client: pg.PoolClient): Promise<Array<LessonRequest>> {
+    const availableLessonOptions: Array<Lesson> = [];
+    for (const availableLesson of availableLessons) {         
+      const skillsScore = await this.getSkillsScore(studentSkills, availableLesson.mentor?.id as string, availableLesson.subfield as Subfield, client);
+      const lessonDateScore = this.getLessonDateScore(availableLesson.dateTime as string);
+      availableLesson.score = skillsScore + lessonDateScore;
+      availableLessonOptions.push(availableLesson);
+    }
+    return availableLessonOptions.sort(function(a,b) {return (b.score as number) - (a.score as number)});
+  }
+
+  async getSkillsScore(studentSkills: Array<string>, mentorId: string, mentorSubfield: Subfield, client: pg.PoolClient): Promise<number> {
+    let skillsScore = 0;
+    if (studentSkills != null && studentSkills.length > 0) {
+      const getMentorSkillsQuery = `SELECT DISTINCT us.skill_id, ss.skill_index
+        FROM users_skills us
+        JOIN subfields_skills ss
+        ON us.skill_id = ss.skill_id
+        WHERE us.user_id = $1 AND ss.subfield_id = $2
+        ORDER BY ss.skill_index`;
+      const { rows } = await client.query(getMentorSkillsQuery, [mentorId, mentorSubfield.id]);
+      const commonSkills = rows.filter(rowMentorSkill => studentSkills.includes(rowMentorSkill.skill_id));
+      for (let i = 1; i <= commonSkills.length; i++) {
+        skillsScore += i;
+      }
+    }
+    return skillsScore;
+  }
+
+  getLessonDateScore(lessonDateTime: string): number {
+    return Math.round(7 - moment.duration(moment.utc(lessonDateTime).diff(moment.utc())).asDays());    
+  }  
 
   getStudentSkills(studentSubfields: Array<Subfield>): Array<string> {
     const studentSkills: Array<string> = [];
@@ -106,6 +211,11 @@ export class UsersBackgroundProcesses {
     }
     return studentSkills;    
   }
+
+  async addStudentToAvailableLesson(studentId: string, availableLessonOptions: Array<Lesson>, client: pg.PoolClient): Promise<void> {
+    const lessonId = availableLessonOptions[0].id as string;
+    await usersLessonRequests.addStudent(lessonId, studentId, client);
+  }  
   
   async getAvailableMentors(student: User, client: pg.PoolClient): Promise<Map<string, string>> {
     const studentSubfields = student.field?.subfields;
@@ -127,23 +237,23 @@ export class UsersBackgroundProcesses {
       const getAvailableMentorsQuery = `SELECT DISTINCT u.id, u.is_available, u.available_from, ula.min_interval_in_days, ua.utc_day_of_week, ua.utc_time_from, ua.utc_time_to, ul.date_time, ul.is_recurrent, ul.end_recurrence_date_time, ul.is_canceled
         FROM users u
         FULL OUTER JOIN users_availabilities ua
-        ON u.id = ua.user_id
+          ON u.id = ua.user_id
         FULL OUTER JOIN users_lessons_availabilities ula
-        ON u.id = ula.user_id        
+          ON u.id = ula.user_id        
         FULL OUTER JOIN (
           SELECT *,
             row_number() over (PARTITION BY mentor_id ORDER BY date_time DESC) AS row_number_lessons
             FROM users_lessons 
         ) ul 
-        ON u.id = ul.mentor_id
+          ON u.id = ul.mentor_id
         FULL OUTER JOIN (
           SELECT *,
             row_number() over (PARTITION BY mentor_id ORDER BY sent_date_time DESC) AS row_number_lesson_requests
             FROM users_lesson_requests 
         ) ulr      
-        ON u.id = ulr.mentor_id          
+          ON u.id = ulr.mentor_id          
         FULL OUTER JOIN users_subfields us
-        ON u.id = us.user_id
+          ON u.id = us.user_id
         WHERE u.is_mentor = true
           AND u.field_id = $1
           AND us.subfield_id IS NOT NULL
@@ -253,22 +363,9 @@ export class UsersBackgroundProcesses {
           mentorSubfield = mentorSubfields[0];
         }
       }          
-      let skillsScore = 0;
-      if (studentSkills.length > 0) {
-        const getMentorSkillsQuery = `SELECT DISTINCT us.skill_id, ss.skill_index
-          FROM users_skills us
-          JOIN subfields_skills ss
-          ON us.skill_id = ss.skill_id
-          WHERE us.user_id = $1 AND ss.subfield_id = $2
-          ORDER BY ss.skill_index`;
-        const { rows } = await client.query(getMentorSkillsQuery, [mentorId, mentorSubfield?.id]);
-        const commonSkills = rows.filter(rowMentorSkill => studentSkills.includes(rowMentorSkill.skill_id));
-        for (let i = 1; i <= commonSkills.length; i++) {
-          skillsScore += i;
-        }
-      }
-      const lessonDateScore = Math.round(7 - moment.duration(moment.utc(lessonDateTime).diff(moment.utc())).asDays());
-      const lessonRequestScore = lessonDateScore + skillsScore;
+      const skillsScore = await this.getSkillsScore(studentSkills, mentorId, mentorSubfield as Subfield, client);
+      const lessonDateScore = this.getLessonDateScore(lessonDateTime);
+      const lessonRequestScore = skillsScore + lessonDateScore;
       const mentor: User = {
         id: mentorId
       }
@@ -330,7 +427,6 @@ export class UsersBackgroundProcesses {
     await client.query(updateLessonRequests, [lessonRequest.student?.id]); 
   }
 
-
   async sendLessonReminders(request: Request, response: Response): Promise<void> {
     try {
       await this.sendLessonRemindersFromDB();
@@ -341,42 +437,38 @@ export class UsersBackgroundProcesses {
   }
   
   async sendLessonRemindersFromDB(): Promise<void> {
-    try {
-      const getLessonsQuery = `SELECT * FROM
-        (SELECT id, mentor_id, is_canceled, EXTRACT(EPOCH FROM (date_trunc('minute', now()) + interval '30 minutes' - date_time)) / 3600 / 24 / 7 AS diff_date_time
-            FROM users_lessons) ul
-        WHERE ul.is_canceled IS DISTINCT FROM true
-            AND ul.diff_date_time = FLOOR(ul.diff_date_time)`;
-      const { rows }: pg.QueryResult = await pool.query(getLessonsQuery);
-      for (const row of rows) {
-        const mentor: User = {
-          id: row.mentor_id
-        }
-        const client: pg.PoolClient = await pool.connect();
-        try {
-          await client.query('BEGIN');
-          const nextLesson = await usersLessons.getNextLessonFromDB(mentor.id as string, true, client);
-          let difference = moment.duration(moment.utc(nextLesson.dateTime).diff(moment.utc().add(30, 'm')));
-          if (moment.utc(nextLesson.dateTime).isBefore(moment.utc().add(30, 'm'))) {
-            difference = moment.duration(moment.utc().add(30, 'm').diff(moment.utc(nextLesson.dateTime)));
-          }
-          if (difference.asSeconds() < 60) {
-            nextLesson.mentor = mentor;
-            const students = nextLesson.students;
-            if (students != null && students.length > 0) {
-              usersSendEmails.sendEmailLessonReminder(nextLesson);
-              usersPushNotifications.sendPNLessonReminder(nextLesson);
-            }
-          }
-          await client.query('COMMIT');
-        } catch (error) {
-          await client.query('ROLLBACK');
-        } finally {
-          client.release();
-        }        
+    const getLessonsQuery = `SELECT * FROM
+      (SELECT id, mentor_id, is_canceled, EXTRACT(EPOCH FROM (date_trunc('minute', now()) + interval '30 minutes' - date_time)) / 3600 / 24 / 7 AS diff_date_time
+          FROM users_lessons) ul
+      WHERE ul.is_canceled IS DISTINCT FROM true
+          AND ul.diff_date_time = FLOOR(ul.diff_date_time)`;
+    const { rows }: pg.QueryResult = await pool.query(getLessonsQuery);
+    for (const row of rows) {
+      const mentor: User = {
+        id: row.mentor_id
       }
-    } catch (error) {
-      console.log(error);
+      const client: pg.PoolClient = await pool.connect();
+      try {
+        await client.query('BEGIN');
+        const nextLesson = await usersLessons.getNextLessonFromDB(mentor.id as string, true, client);
+        let difference = moment.duration(moment.utc(nextLesson.dateTime).diff(moment.utc().add(30, 'm')));
+        if (moment.utc(nextLesson.dateTime).isBefore(moment.utc().add(30, 'm'))) {
+          difference = moment.duration(moment.utc().add(30, 'm').diff(moment.utc(nextLesson.dateTime)));
+        }
+        if (difference.asSeconds() < 60) {
+          nextLesson.mentor = mentor;
+          const students = nextLesson.students;
+          if (students != null && students.length > 0) {
+            usersSendEmails.sendEmailLessonReminder(nextLesson);
+            usersPushNotifications.sendPNLessonReminder(nextLesson);
+          }
+        }
+        await client.query('COMMIT');
+      } catch (error) {
+        await client.query('ROLLBACK');
+      } finally {
+        client.release();
+      }        
     }
   }  
 

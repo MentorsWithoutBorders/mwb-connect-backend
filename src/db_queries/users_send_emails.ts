@@ -50,9 +50,9 @@ export class UsersSendEmails {
         for (const nextLessonStudent of nextLessonStudents) {
           const student = await users.getUserFromDB(nextLessonStudent.id as string, client);
           students.push(student);
-          this.sendEmailReminderStudent(student, mentor);
+          this.sendEmailReminderStudent(student, mentor, nextLesson.meetingUrl as string);
         }     
-        await this.sendEmailReminderMentor(mentor, students);
+        await this.sendEmailReminderMentor(mentor, students, nextLesson.meetingUrl as string);
       }
       await client.query('COMMIT');
     } catch (error) {
@@ -62,13 +62,14 @@ export class UsersSendEmails {
     }
   }
 
-  async sendEmailReminderMentor(mentor: User, students: Array<User>): Promise<void> {
+  async sendEmailReminderMentor(mentor: User, students: Array<User>, meetingUrl: string): Promise<void> {
     const mentorFirstName = mentor?.name?.substring(0, mentor?.name?.indexOf(' '));
     const studentOrStudents = students.length > 1 ? 'students' : 'student';
     const isOrAre = students.length > 1 ? 'are' : 'is';
     const himHerOrThem = students.length > 1 ? 'them' : 'him/her';
     const subject = 'Next lesson in 30 mins';
-    let body = `Hi ${mentorFirstName},<br><br>This is a gentle reminder to conduct the next lesson in 30 mins from now.<br>`;
+    let body = `Hi ${mentorFirstName},<br><br>This is a gentle reminder to conduct the next lesson in 30 mins from now.<br><br>`;
+    body += `The meeting link is: <a href="${meetingUrl}" target="_blank">${meetingUrl}</a><br><br>`;
     body += `If the ${studentOrStudents} ${isOrAre}n't able to join the session, you can message ${himHerOrThem} using the following contact details (<b>WhatsApp</b> usually works best):`;
     body += `<ul>`;
     for (const student of students) {
@@ -83,10 +84,11 @@ export class UsersSendEmails {
     this.sendEmail(mentor?.email as string, subject, body);    
   }
 
-  async sendEmailReminderStudent(student: User, mentor: User): Promise<void> {
+  async sendEmailReminderStudent(student: User, mentor: User, meetingUrl: string): Promise<void> {
     const studentFirstName = student?.name?.substring(0, student?.name?.indexOf(' '));
     const subject = 'Next lesson in 30 mins';
-    let body = `Hi ${studentFirstName},<br><br>This is a gentle reminder to participate in the next lesson in 30 mins from now.<br>`;
+    let body = `Hi ${studentFirstName},<br><br>This is a gentle reminder to participate in the next lesson in 30 mins from now.<br><br>`;
+    body += `The meeting link is: <a href="${meetingUrl}" target="_blank">${meetingUrl}</a><br><br>`;
     body += `If you aren't able to join the session, please notify your mentor, ${mentor.name}, at: ${mentor.email}<br><br>`;
     body += `Regards,<br>MWB Support Team`;
     this.sendEmail(student?.email as string, subject, body);    
