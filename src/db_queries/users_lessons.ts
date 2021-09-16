@@ -205,11 +205,12 @@ export class UsersLessons {
     const { rows }: pg.QueryResult = await client.query(getLessonStudentsQuery, [lesson.id]);
     const students: Array<User> = [];
     for (const studentRow of rows) {
-      const user: User = await users.getUserFromDB(studentRow.student_id, client);
+      const user = await users.getUserFromDB(studentRow.student_id, client);
       const student: User = {
         id: user.id as string,
         name: user.name as string,
-        organization: user.organization as Organization
+        organization: user.organization as Organization,
+        registeredOn: user.registeredOn
       }
       let shouldAddStudent = true;
       if (lesson.dateTime && !shouldAddCanceled) {

@@ -85,15 +85,15 @@ export class UsersBackgroundProcesses {
         const studentSubfield = studentSubfields != null && studentSubfields.length > 0 ? studentSubfields[0] : null;
         const studentSkills = this.getStudentSkills(studentSubfields as Array<Subfield>);
         const availableLessons = await this.getAvailableLessonsFromDB(student, client);
-        const availableLessonOptions = await this.getAvailableLessonOptions(availableLessons, studentSkills, client);
-        if (availableLessonOptions.length > 0) {
-          await this.addStudentToAvailableLesson(student.id as string, availableLessonOptions, client);
-        } else {
+        const availableLessonOptions = await this.getAvailableLessonOptions(availableLessons, student.registeredOn as string, studentSkills, client);
+        // if (availableLessonOptions.length > 0) {
+        //   await this.addStudentToAvailableLesson(student.id as string, availableLessonOptions, client);
+        // } else {
           const availableMentorsMap = await this.getAvailableMentors(student, client);
           const lessonRequestOptions = await this.getLessonRequestOptions(availableMentorsMap, studentSubfield as Subfield, studentSkills, client);
           await this.addNewLessonRequest(lessonRequest, lessonRequestOptions, client);
           usersPushNotifications.sendPNLessonRequest(student, lessonRequestOptions);
-        }
+        // }
         await client.query('COMMIT');
       } catch (error) {
         await client.query('ROLLBACK');
@@ -172,20 +172,38 @@ export class UsersBackgroundProcesses {
     return rows.length;
   }
 
-  async getAvailableLessonOptions(availableLessons: Array<Lesson>, studentSkills: Array<string>, client: pg.PoolClient): Promise<Array<LessonRequest>> {
+  async getAvailableLessonOptions(availableLessons: Array<Lesson>, studentRegisteredOn: string, studentSkills: Array<string>, client: pg.PoolClient): Promise<Array<LessonRequest>> {
     const availableLessonOptions: Array<Lesson> = [];
-    for (const availableLesson of availableLessons) {         
-      const skillsScore = await this.getSkillsScore(studentSkills, availableLesson.mentor?.id as string, availableLesson.subfield as Subfield, client);
-      const lessonDateScore = this.getLessonDateScore(availableLesson.dateTime as string);
-      let lessonRecurrenceScore = 0;
-      if (availableLesson.isRecurrent) {
-        const endRecurrenceDateTime = moment.utc(availableLesson.endRecurrenceDateTime).format(constants.DATE_TIME_FORMAT)
-        lessonRecurrenceScore = this.getLessonRecurrenceScore(availableLesson.dateTime as string, endRecurrenceDateTime);
+    for (const availableLesson of availableLessons) {   
+      const isLessonCompatible = await this.checkLessonCompatibility(availableLesson, studentRegisteredOn, client);
+      if (isLessonCompatible) {
+        const skillsScore = await this.getSkillsScore(studentSkills, availableLesson.mentor?.id as string, availableLesson.subfield as Subfield, client);
+        const lessonDateScore = this.getLessonDateScore(availableLesson.dateTime as string);
+        let lessonRecurrenceScore = 0;
+        if (availableLesson.isRecurrent) {
+          const endRecurrenceDateTime = moment.utc(availableLesson.endRecurrenceDateTime).format(constants.DATE_TIME_FORMAT)
+          lessonRecurrenceScore = this.getLessonRecurrenceScore(availableLesson.dateTime as string, endRecurrenceDateTime);
+        }
+        availableLesson.score = skillsScore + lessonDateScore + lessonRecurrenceScore;
+        availableLessonOptions.push(availableLesson);
       }
-      availableLesson.score = skillsScore + lessonDateScore + lessonRecurrenceScore;
-      availableLessonOptions.push(availableLesson);
     }
     return availableLessonOptions.sort(function(a,b) {return (b.score as number) - (a.score as number)});
+  }
+
+  async checkLessonCompatibility(availableLesson: Lesson, studentRegisteredOn: string, client: pg.PoolClient): Promise<boolean> {
+    const lessonStudents = await usersLessons.getLessonStudents(availableLesson, true, client);
+    let registeredDateTimeLow = lessonStudents.length > 0 ? moment.utc(lessonStudents[0].registeredOn) : moment.utc(studentRegisteredOn);
+    let registeredDateTimeHigh = lessonStudents.length > 0 ? moment.utc(lessonStudents[0].registeredOn) : moment.utc(studentRegisteredOn);
+    for (const lessonStudent of lessonStudents) {
+      if (moment.utc(lessonStudent.registeredOn).isBefore(registeredDateTimeLow)) {
+        registeredDateTimeLow = moment.utc(lessonStudent.registeredOn);
+      }      
+      if (moment.utc(lessonStudent.registeredOn).isAfter(registeredDateTimeHigh)) {
+        registeredDateTimeHigh = moment.utc(lessonStudent.registeredOn);
+      }
+    }
+    return Math.round(Math.abs(moment.duration(moment.utc(studentRegisteredOn).diff(moment.utc(registeredDateTimeHigh))).asWeeks())) <= 3;
   }
 
   async getSkillsScore(studentSkills: Array<string>, mentorId: string, mentorSubfield: Subfield, client: pg.PoolClient): Promise<number> {
