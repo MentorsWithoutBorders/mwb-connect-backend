@@ -86,14 +86,15 @@ export class UsersBackgroundProcesses {
         const studentSkills = this.getStudentSkills(studentSubfields as Array<Subfield>);
         const availableLessons = await this.getAvailableLessonsFromDB(student, client);
         const availableLessonOptions = await this.getAvailableLessonOptions(availableLessons, student.registeredOn as string, studentSkills, client);
-        // if (availableLessonOptions.length > 0) {
-        //   await this.addStudentToAvailableLesson(student.id as string, availableLessonOptions, client);
-        // } else {
+        if (availableLessonOptions.length > 0) {
+          await this.addStudentToAvailableLesson(student, availableLessonOptions, client);
+          await usersLessonRequests.deleteLessonRequest(lessonRequest.id as string, client);
+        } else {
           const availableMentorsMap = await this.getAvailableMentors(student, client);
           const lessonRequestOptions = await this.getLessonRequestOptions(availableMentorsMap, studentSubfield as Subfield, studentSkills, client);
           await this.addNewLessonRequest(lessonRequest, lessonRequestOptions, client);
           usersPushNotifications.sendPNLessonRequest(student, lessonRequestOptions);
-        // }
+        }
         await client.query('COMMIT');
       } catch (error) {
         await client.query('ROLLBACK');
@@ -203,7 +204,9 @@ export class UsersBackgroundProcesses {
         registeredDateTimeHigh = moment.utc(lessonStudent.registeredOn);
       }
     }
-    return Math.round(Math.abs(moment.duration(moment.utc(studentRegisteredOn).diff(moment.utc(registeredDateTimeHigh))).asWeeks())) <= 3;
+    const differenceFromHigh = Math.round(moment.duration(moment.utc(registeredDateTimeHigh).diff(moment.utc(studentRegisteredOn))).asWeeks());
+    const differenceFromLow = Math.round(moment.duration(moment.utc(studentRegisteredOn).diff(moment.utc(registeredDateTimeLow))).asWeeks());    
+    return differenceFromHigh <= 3 && differenceFromLow <= 3;
   }
 
   async getSkillsScore(studentSkills: Array<string>, mentorId: string, mentorSubfield: Subfield, client: pg.PoolClient): Promise<number> {
@@ -245,9 +248,22 @@ export class UsersBackgroundProcesses {
     return studentSkills;    
   }
 
-  async addStudentToAvailableLesson(studentId: string, availableLessonOptions: Array<Lesson>, client: pg.PoolClient): Promise<void> {
-    const lessonId = availableLessonOptions[0].id as string;
-    await usersLessonRequests.addStudent(lessonId, studentId, client);
+  async addStudentToAvailableLesson(student: User, availableLessonOptions: Array<Lesson>, client: pg.PoolClient): Promise<void> {
+    const availableLesson = availableLessonOptions[0];
+    const lessonId = availableLesson.id as string;
+    await usersLessonRequests.addStudent(lessonId, student.id as string, client);
+    const mentor = await users.getUserFromDB(availableLesson.mentor?.id as string, client);
+    availableLesson.mentor = mentor;
+    const mentorSubfields = mentor.field?.subfields;
+    if (mentorSubfields != null && mentorSubfields.length > 0) {
+      for (const mentorSubfield of mentorSubfields) {
+        if (availableLesson.subfield?.id == mentorSubfield.id) {
+          availableLesson.subfield = mentorSubfield;
+          break;
+        }
+      }
+    }
+    usersPushNotifications.sendPNStudentAddedToLesson(student, availableLesson);
   }  
   
   async getAvailableMentors(student: User, client: pg.PoolClient): Promise<Map<string, string>> {

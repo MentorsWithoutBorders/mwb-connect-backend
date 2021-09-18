@@ -144,7 +144,7 @@ export class UsersLessonRequests {
         }
         lesson = await this.addLesson(lesson, client);
         await this.addStudentSubfield(student.id as string, subfield.id as string, client);
-        await this.deleteLessonRequest(mentorId, lessonRequestId, client);
+        await this.deleteLessonRequest(lessonRequestId, client);
       }
       response.status(200).send(lesson);
       await client.query('COMMIT');
@@ -199,9 +199,9 @@ export class UsersLessonRequests {
     }
   }
 
-  async deleteLessonRequest(mentorId: string, lessonId: string, client: pg.PoolClient): Promise<void> {
-    const deleteLessonRequestQuery = 'DELETE FROM users_lesson_requests WHERE mentor_id = $1 AND id = $2';
-    await client.query(deleteLessonRequestQuery, [mentorId, lessonId]);
+  async deleteLessonRequest(lessonRequestId: string, client: pg.PoolClient): Promise<void> {
+    const deleteLessonRequestQuery = 'DELETE FROM users_lesson_requests WHERE id = $1';
+    await client.query(deleteLessonRequestQuery, [lessonRequestId]);
   }
   
   async rejectLessonRequest(request: Request, response: Response): Promise<void> {

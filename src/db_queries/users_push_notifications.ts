@@ -77,13 +77,30 @@ export class UsersPushNotifications {
     }
   }
 
+  sendPNStudentAddedToLesson(student: User, lesson: Lesson): void {
+    const mentorName = lesson.mentor?.name;
+    const subfieldName = lesson.subfield?.name?.toLowerCase();   
+    const recurring = lesson.isRecurrent ? 'recurring ' : '';
+    const lessonRecurrence = lesson.isRecurrent ? 'lesson recurrence' : 'next lesson';
+    const pushNotificationStudent: PushNotification = {
+      title: 'Lesson scheduled',
+      body: `You have been added to a ${recurring}${subfieldName} lesson with ${mentorName}`
+    }
+    const pushNotificationMentor: PushNotification = {
+      title: 'Student added to lesson',
+      body: `${student.name} from ${student.organization?.name} has been added to the ${lessonRecurrence}`
+    }    
+    this.sendPushNotification(student.id as string, pushNotificationStudent);
+    this.sendPushNotification(lesson.mentor?.id as string, pushNotificationMentor);
+  }    
+
   sendPNLessonRequest(student: User, lessonRequestOptions: Array<LessonRequest>): void {
     if (lessonRequestOptions.length > 0) {
       const mentorId = lessonRequestOptions[0].mentor?.id;
-      const subfield = lessonRequestOptions[0].subfield?.name?.toLowerCase();
+      const subfieldName = lessonRequestOptions[0].subfield?.name?.toLowerCase();
       const pushNotification: PushNotification = {
         title: 'New lesson request',
-        body: `${student.name} from ${student.organization?.name} is requesting a ${subfield} lesson with you`,
+        body: `${student.name} from ${student.organization?.name} is requesting a ${subfieldName} lesson with you`,
         type: PushNotificationType.LessonRequest
       }
       this.sendPushNotification(mentorId as string, pushNotification);
@@ -92,11 +109,11 @@ export class UsersPushNotifications {
   
   sendPNLessonRequestAccepted(lesson: Lesson): void {
     const recurring = lesson.isRecurrent ? 'recurring ' : '';
-    const mentor = lesson.mentor?.name;
-    const subfield = lesson.subfield?.name?.toLowerCase();
+    const mentorName = lesson.mentor?.name;
+    const subfieldName = lesson.subfield?.name?.toLowerCase();
     const pushNotification: PushNotification = {
       title: 'Lesson request accepted',
-      body: `${mentor} has scheduled a ${recurring}${subfield} lesson with you`
+      body: `${mentorName} has scheduled a ${recurring}${subfieldName} lesson with you`
     }
     const students = lesson.students;
     const student = students != null ? students[0] : {};
