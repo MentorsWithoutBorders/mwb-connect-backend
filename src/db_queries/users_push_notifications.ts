@@ -120,7 +120,7 @@ export class UsersPushNotifications {
     this.sendPushNotification(student.id as string, pushNotification);
   }
   
-  sendPNLessonCanceled(lesson: Lesson, isCancelAll: boolean, lessonsCanceled: number): void {
+  sendPNLessonCanceled(lesson: Lesson, student: User, isCancelAll: boolean, lessonsCanceled: number): void {
     let title = '';
     let body = '';
     const isMentor = lesson.mentor == null ? true : false;
@@ -133,12 +133,16 @@ export class UsersPushNotifications {
         body = `We're sorry but the mentor has canceled the lesson recurrence`;
       }
     } else {
-      if (lessonsCanceled == 1) {
+      if (lessonsCanceled == 0) {
+        const studentName = student.name;
+        title = 'Next lesson status';
+        body = `${studentName} won't participate in the next lesson`;
+      } else if (lessonsCanceled == 1) {
         title = 'Next lesson canceled';
-        body = `The next lesson has been canceled for lack of participants`;
+        body = `The next lesson has been canceled by the only participant`;
       } else {
         title = 'Next lessons canceled';
-        body = `The next ${lessonsCanceled} lessons have been canceled for lack of participants`;
+        body = `The next ${lessonsCanceled} lessons have been canceled by the only participant`;
       }
     }
     const pushNotification: PushNotification = {
@@ -148,9 +152,7 @@ export class UsersPushNotifications {
     if (isMentor) {
       this.sendPNLessonCanceledStudents(lesson, pushNotification);
     } else {
-      if (lessonsCanceled >= 1) {
-        this.sendPNLessonCanceledMentor(lesson, pushNotification);
-      }
+      this.sendPNLessonCanceledMentor(lesson, pushNotification);
     }
   }
   

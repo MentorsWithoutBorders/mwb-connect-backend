@@ -365,7 +365,7 @@ export class UsersLessons {
       lesson.id = lessonId;
       await this.cancelLessonFromDB(userId, lesson, client);
       let isCancelAll = false;
-      let lessonsCanceled = 1;
+      let lessonsCanceled = 0;
       const isMentor = lesson.mentor == null ? true : false;
       if (isMentor) {
         if (lesson.dateTime) {
@@ -381,10 +381,13 @@ export class UsersLessons {
         lessonsCanceled = await this.cancelNextLessonNoStudents(lesson, client);
       }
       // For the push notification
+      let student: User = {};
       if (isMentor) {
         lesson.students = await this.getLessonStudents(lesson, false, client);
+      } else {
+        student = await users.getUserFromDB(userId, client);
       }
-      usersPushNotifications.sendPNLessonCanceled(lesson, isCancelAll, lessonsCanceled);
+      usersPushNotifications.sendPNLessonCanceled(lesson, student, isCancelAll, lessonsCanceled);
       await client.query('COMMIT');
       response.status(200).send(`Lesson modified with ID: ${lessonId}`);
     } catch (error) {
@@ -456,7 +459,8 @@ export class UsersLessons {
       }        
     } else {
       const nextLessonStudent = await this.getNextLessonFromDB(userId, false, client);
-      const updateStudentLessonQuery = 'UPDATE users_lessons_students SET is_canceled = true, canceled_date_time = $1 WHERE lesson_id = $2 AND student_id = $3';
+      const updateStudentLessonQuery = `UPDATE users_lessons_students SET is_canceled = true, canceled_date_time = $1 
+        WHERE lesson_id = $2 AND student_id = $3`;
       await client.query(updateStudentLessonQuery, [canceledDateTime, lesson.id, userId]);
       await this.cancelUserLessons(userId, nextLessonStudent, client);
     }    
