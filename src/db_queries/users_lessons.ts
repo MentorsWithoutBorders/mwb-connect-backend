@@ -379,6 +379,9 @@ export class UsersLessons {
         }
       } else {
         lessonsCanceled = await this.cancelNextLessonNoStudents(lesson, client);
+        if (!lesson.dateTime) {
+          isCancelAll = true;
+        }        
       }
       // For the push notification
       let student: User = {};

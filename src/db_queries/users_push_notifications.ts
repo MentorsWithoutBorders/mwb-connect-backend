@@ -135,8 +135,9 @@ export class UsersPushNotifications {
     } else {
       if (lessonsCanceled == 0) {
         const studentName = student.name;
+        const lessonRecurrence = isCancelAll ? 'lesson recurrence' : 'next lesson';
         title = 'Next lesson status';
-        body = `${studentName} won't participate in the next lesson`;
+        body = `${studentName} won't participate in the ${lessonRecurrence}`;
       } else if (lessonsCanceled == 1) {
         title = 'Next lesson canceled';
         body = `The next lesson has been canceled by the only participant`;
