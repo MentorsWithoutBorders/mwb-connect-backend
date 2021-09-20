@@ -113,12 +113,12 @@ export class UsersBackgroundProcesses {
     let availableLessons: Array<Lesson> = [];
     let queryWhereAvailabilities = '';
     if (studentAvailabilities != null && studentAvailabilities.length > 0) {
-      queryWhereAvailabilities = 'AND ';
+      queryWhereAvailabilities = 'AND ((';
       for (const availability of studentAvailabilities) {
         const timeFrom = moment(availability.time.from, 'h:ma').format('HH:mm');
         const timeTo = moment(availability.time.to, 'h:ma').format('HH:mm');
         queryWhereAvailabilities += `TRIM(TO_CHAR(ul.date_time, 'Day')) = '${availability.dayOfWeek}'
-          AND '${timeFrom}'::TIME <= ul.date_time::TIME AND '${timeTo}'::TIME >= ul.date_time::TIME OR `;
+          AND '${timeFrom}'::TIME <= ul.date_time::TIME AND '${timeTo}'::TIME >= ul.date_time::TIME) OR `;
       }
       queryWhereAvailabilities = queryWhereAvailabilities.slice(0, -4);
       const getLessonsQuery = `SELECT ul.id, ul.mentor_id, ula.max_students, fs.field_id, ul.subfield_id, ul.date_time, ul.is_recurrent, ul.end_recurrence_date_time FROM users_lessons ul
