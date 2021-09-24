@@ -576,10 +576,11 @@ export class UsersLessons {
         id: lessonId
       }      
       const students = await this.getLessonStudents(lesson, false, client);
+      const dateTime = moment.utc().format(constants.DATE_TIME_FORMAT);
       for (const student of students) {
-        const insertLessonNoteQuery = `INSERT INTO users_lessons_notes (student_id, lesson_id, text)
-          VALUES ($1, $2, $3)`;
-        const values = [student.id, lessonId, text];
+        const insertLessonNoteQuery = `INSERT INTO users_lessons_notes (student_id, lesson_id, text, date_time)
+          VALUES ($1, $2, $3, $4)`;
+        const values = [student.id, lessonId, text, dateTime];
         await client.query(insertLessonNoteQuery, values);
       }
       response.status(200).send('Lesson notes have been added');
@@ -601,18 +602,16 @@ export class UsersLessons {
   async getStudentLessonNotes(request: Request, response: Response): Promise<void> {
     const studentId: string = request.params.id;
     try {
-      const getLessonNotesQuery = `SELECT ul.date_time, uln.text
-        FROM users_lessons_notes uln
-        JOIN users_lessons ul
-        ON uln.lesson_id = ul.id
-        WHERE uln.student_id = $1
-        ORDER BY ul.date_time DESC`;
+      const getLessonNotesQuery = `SELECT text, date_time
+        FROM users_lessons_notes
+        WHERE student_id = $1
+        ORDER BY date_time DESC`;
       const { rows }: pg.QueryResult = await pool.query(getLessonNotesQuery, [studentId]);
       const lessonNotes: Array<LessonNote> = [];
       rows.forEach(function (row) {
         const lessonNote: LessonNote = {
-          dateTime: moment.utc(row.date_time).format(constants.DATE_TIME_FORMAT),
-          text: row.text
+          text: row.text,
+          dateTime: moment.utc(row.date_time).format(constants.DATE_TIME_FORMAT)
         };
         lessonNotes.push(lessonNote);
       });      
