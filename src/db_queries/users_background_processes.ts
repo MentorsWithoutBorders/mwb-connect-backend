@@ -85,16 +85,17 @@ export class UsersBackgroundProcesses {
         const studentSubfields = student.field?.subfields;
         const studentSubfield = studentSubfields != null && studentSubfields.length > 0 ? studentSubfields[0] : null;
         const studentSkills = this.getStudentSkills(studentSubfields as Array<Subfield>);
+        const preferredMentorId = await this.getPreferredMentorId(student?.id as string, client);
         const isAllowedLastMentor = lessonRequest.isAllowedLastMentor || false; 
         const lastMentorId = await this.getLastMentorId(student?.id as string, client);
         const availableLessons = await this.getAvailableLessonsFromDB(student, client);
-        const availableLessonOptions = await this.getAvailableLessonOptions(availableLessons, isAllowedLastMentor, lastMentorId, student.registeredOn as string, studentSkills, client);
+        const availableLessonOptions = await this.getAvailableLessonOptions(availableLessons, preferredMentorId, isAllowedLastMentor, lastMentorId, student.registeredOn as string, studentSkills, client);
         if (availableLessonOptions.length > 0) {
           await this.addStudentToAvailableLesson(student, availableLessonOptions, client);
           await usersLessonRequests.deleteLessonRequest(lessonRequest.id as string, client);
         } else {
-          const availableMentorsMap = await this.getAvailableMentors(student, client);
-          const lessonRequestOptions = await this.getLessonRequestOptions(availableMentorsMap, isAllowedLastMentor, lastMentorId, studentSubfield as Subfield, studentSkills, client);
+          const availableMentorsMap = await this.getAvailableMentors(student, preferredMentorId, isAllowedLastMentor, lastMentorId, client);
+          const lessonRequestOptions = await this.getLessonRequestOptions(availableMentorsMap, studentSubfield as Subfield, studentSkills, client);
           await this.addNewLessonRequest(lessonRequest, lessonRequestOptions, client);
           usersPushNotifications.sendPNLessonRequest(student, lessonRequestOptions);
         }
@@ -106,6 +107,17 @@ export class UsersBackgroundProcesses {
       }  
     }
   }
+
+  async getPreferredMentorId(userId: string, client: pg.PoolClient): Promise<string> {
+    const getPreferredMentorIdQuery = `SELECT mentor_id FROM users_preferred_mentors
+      WHERE student_id = $1`;
+    const { rows }: pg.QueryResult = await client.query(getPreferredMentorIdQuery, [userId]);
+    let preferredMentorId = '';
+    if (rows[0]) {
+      preferredMentorId = rows[0].mentor_id;    
+    }
+    return preferredMentorId;
+  }  
 
   async getLastMentorId(userId: string, client: pg.PoolClient): Promise<string> {
     const getLastMentorIdQuery = `SELECT mentor_id FROM users_lessons ul
@@ -191,7 +203,7 @@ export class UsersBackgroundProcesses {
     return rows.length;
   }
 
-  async getAvailableLessonOptions(availableLessons: Array<Lesson>, isAllowedLastMentor: boolean, lastMentorId: string, studentRegisteredOn: string, studentSkills: Array<string>, client: pg.PoolClient): Promise<Array<LessonRequest>> {
+  async getAvailableLessonOptions(availableLessons: Array<Lesson>, preferredMentorId: string, isAllowedLastMentor: boolean, lastMentorId: string, studentRegisteredOn: string, studentSkills: Array<string>, client: pg.PoolClient): Promise<Array<LessonRequest>> {
     let availableLessonOptions: Array<Lesson> = [];
     for (const availableLesson of availableLessons) {   
       const isLessonCompatible = await this.checkLessonCompatibility(availableLesson, studentRegisteredOn, client);
@@ -207,14 +219,27 @@ export class UsersBackgroundProcesses {
         availableLessonOptions.push(availableLesson);
       }
     }
-    // Consider only last mentor if available
-    if (isAllowedLastMentor) {
-      availableLessonOptions = availableLessonOptions.filter(function(el) { return el.mentor?.id == lastMentorId; });
+    // Consider only preferred or last mentor if available
+    if (preferredMentorId) {
+      availableLessonOptions = availableLessonOptions.filter(function(el) { return el.mentor?.id == preferredMentorId; });
+      if (availableLessonOptions.length > 0) {
+        await this.deletePreferredMentorId(preferredMentorId, client);
+      }
     } else {
-      availableLessonOptions = availableLessonOptions.filter(function(el) { return el.mentor?.id != lastMentorId; });
+      if (isAllowedLastMentor) {
+        availableLessonOptions = availableLessonOptions.filter(function(el) { return el.mentor?.id == lastMentorId; });
+      } else {
+        availableLessonOptions = availableLessonOptions.filter(function(el) { return el.mentor?.id != lastMentorId; });
+      }
     }
     return availableLessonOptions.sort(function(a,b) {return (b.score as number) - (a.score as number)});
   }
+
+  async deletePreferredMentorId(preferredMentorId: string, client: pg.PoolClient): Promise<void> {
+    const deletePreferredMentorIdQuery = `DELETE FROM users_preferred_mentors
+      WHERE mentor_id = $1`;
+    await client.query(deletePreferredMentorIdQuery, [preferredMentorId]);      
+  }  
 
   async checkLessonCompatibility(availableLesson: Lesson, studentRegisteredOn: string, client: pg.PoolClient): Promise<boolean> {
     const lessonStudents = await usersLessons.getLessonStudents(availableLesson, true, client);
@@ -290,7 +315,7 @@ export class UsersBackgroundProcesses {
     usersPushNotifications.sendPNStudentAddedToLesson(student, availableLesson);
   }  
   
-  async getAvailableMentors(student: User, client: pg.PoolClient): Promise<Map<string, string>> {
+  async getAvailableMentors(student: User, preferredMentorId: string, isAllowedLastMentor: boolean, lastMentorId: string, client: pg.PoolClient): Promise<Map<string, string>> {
     const studentSubfields = student.field?.subfields;
     const studentSubfieldId = studentSubfields != null && studentSubfields.length > 0 ? studentSubfields[0].id : null;
     const queryWhereSubfield = studentSubfieldId != null ? `AND us.subfield_id = '${studentSubfieldId}'` : '';
@@ -357,8 +382,37 @@ export class UsersBackgroundProcesses {
         availableMentorsMap = await this.setAvailableMentorsMap(availableMentor, availableMentorsMap, student, studentAvailabilities, client);
       }
     }
+    availableMentorsMap = await this.setAvailableMentorsMapUpdated(availableMentorsMap, preferredMentorId, isAllowedLastMentor, lastMentorId, client);
     return availableMentorsMap;    
   }
+
+  async setAvailableMentorsMapUpdated(availableMentorsMap: Map<string, string>, preferredMentorId: string, isAllowedLastMentor: boolean, lastMentorId: string, client: pg.PoolClient): Promise<Map<string, string>> {
+    // Consider only preferred or last mentor if available
+    if (preferredMentorId) {
+      availableMentorsMap = this.setAvailableMentorsMapSingleMentor(availableMentorsMap, preferredMentorId);
+      if (availableMentorsMap.size > 0) {
+        await this.deletePreferredMentorId(preferredMentorId, client);
+      }
+    } else {
+      if (isAllowedLastMentor) {
+        availableMentorsMap = this.setAvailableMentorsMapSingleMentor(availableMentorsMap, lastMentorId);
+      } else {
+        availableMentorsMap.delete(lastMentorId);
+      }
+    }
+    return availableMentorsMap;
+  }
+
+  setAvailableMentorsMapSingleMentor(availableMentorsMap: Map<string, string>, singleMentorId: string): Map<string, string> {
+    const newAvailableMentorsMap = new Map();
+    for (const [mentorId, lessonDateTime] of availableMentorsMap) {
+      if (mentorId == singleMentorId) {
+        newAvailableMentorsMap.set(mentorId, lessonDateTime);
+        break;
+      }
+    }
+    return newAvailableMentorsMap;
+  }  
 
   async setAvailableMentorsMap(availableMentor: AvailableMentor, availableMentorsMap: Map<string, string>, student: User, studentAvailabilities: Array<Availability>, client: pg.PoolClient): Promise<Map<string, string>> {
     const lessonDateTime = await this.getLessonDateTime(student, availableMentor, studentAvailabilities, client);
@@ -429,20 +483,8 @@ export class UsersBackgroundProcesses {
     return lessonTime;
   }
 
-  async getLessonRequestOptions(availableMentorsMap: Map<string, string>, isAllowedLastMentor: boolean, lastMentorId: string, studentSubfield: Subfield | null, studentSkills: Array<string>, client: pg.PoolClient): Promise<Array<LessonRequest>> {
+  async getLessonRequestOptions(availableMentorsMap: Map<string, string>, studentSubfield: Subfield | null, studentSkills: Array<string>, client: pg.PoolClient): Promise<Array<LessonRequest>> {
     const lessonRequestOptions: Array<LessonRequest> = [];
-    // Consider only last mentor if available
-    if (isAllowedLastMentor) {
-      for (const [mentorId, lessonDateTime] of availableMentorsMap) {
-        if (mentorId == lastMentorId) {
-          availableMentorsMap.clear();
-          availableMentorsMap.set(mentorId, lessonDateTime);
-          break;
-        }
-      }
-    } else {
-      availableMentorsMap.delete(lastMentorId);
-    }
     for (const [mentorId, lessonDateTime] of availableMentorsMap) {
       let mentorSubfield = studentSubfield;
       if (studentSubfield == null) {
