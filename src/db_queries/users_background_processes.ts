@@ -46,7 +46,7 @@ export class UsersBackgroundProcesses {
   }
 
   async sendLessonRequestsFromDB(): Promise<void> {
-    const getLessonRequestsQuery = `SELECT id, student_id, mentor_id, subfield_id, lesson_date_time, sent_date_time, is_rejected, is_canceled, is_expired, is_obsolete
+    const getLessonRequestsQuery = `SELECT id, student_id, mentor_id, subfield_id, lesson_date_time, sent_date_time, is_rejected, is_canceled, is_expired, is_obsolete, is_allowed_last_mentor
       FROM users_lesson_requests
       WHERE (is_canceled IS DISTINCT FROM true
         AND is_expired IS DISTINCT FROM true
@@ -78,20 +78,23 @@ export class UsersBackgroundProcesses {
           sentDateTime: rowRequest.sent_date_time,
           isCanceled: rowRequest.is_canceled,
           isRejected: rowRequest.is_rejected,
-          isExpired: rowRequest.is_expired
+          isExpired: rowRequest.is_expired,
+          isAllowedLastMentor: rowRequest.is_allowed_last_mentor
         }        
         const student = await users.getUserFromDB(lessonRequest.student?.id as string, client);
         const studentSubfields = student.field?.subfields;
         const studentSubfield = studentSubfields != null && studentSubfields.length > 0 ? studentSubfields[0] : null;
         const studentSkills = this.getStudentSkills(studentSubfields as Array<Subfield>);
+        const isAllowedLastMentor = lessonRequest.isAllowedLastMentor || false; 
+        const lastMentorId = await this.getLastMentorId(student?.id as string, client);
         const availableLessons = await this.getAvailableLessonsFromDB(student, client);
-        const availableLessonOptions = await this.getAvailableLessonOptions(availableLessons, student.registeredOn as string, studentSkills, client);
+        const availableLessonOptions = await this.getAvailableLessonOptions(availableLessons, isAllowedLastMentor, lastMentorId, student.registeredOn as string, studentSkills, client);
         if (availableLessonOptions.length > 0) {
           await this.addStudentToAvailableLesson(student, availableLessonOptions, client);
           await usersLessonRequests.deleteLessonRequest(lessonRequest.id as string, client);
         } else {
           const availableMentorsMap = await this.getAvailableMentors(student, client);
-          const lessonRequestOptions = await this.getLessonRequestOptions(availableMentorsMap, studentSubfield as Subfield, studentSkills, client);
+          const lessonRequestOptions = await this.getLessonRequestOptions(availableMentorsMap, isAllowedLastMentor, lastMentorId, studentSubfield as Subfield, studentSkills, client);
           await this.addNewLessonRequest(lessonRequest, lessonRequestOptions, client);
           usersPushNotifications.sendPNLessonRequest(student, lessonRequestOptions);
         }
@@ -102,6 +105,21 @@ export class UsersBackgroundProcesses {
         client.release();
       }  
     }
+  }
+
+  async getLastMentorId(userId: string, client: pg.PoolClient): Promise<string> {
+    const getLastMentorIdQuery = `SELECT mentor_id FROM users_lessons ul
+      JOIN users_lessons_students uls
+      ON ul.id = uls.lesson_id
+      WHERE uls.student_id = $1
+      ORDER BY ul.date_time DESC
+      LIMIT 1;`;
+    const { rows }: pg.QueryResult = await client.query(getLastMentorIdQuery, [userId]);
+    let lastMentorId = '';
+    if (rows[0]) {
+      lastMentorId = rows[0].mentor_id;
+    }
+    return lastMentorId;
   }
 
   async getAvailableLessonsFromDB(student: User, client: pg.PoolClient): Promise<Array<Lesson>> {
@@ -173,8 +191,8 @@ export class UsersBackgroundProcesses {
     return rows.length;
   }
 
-  async getAvailableLessonOptions(availableLessons: Array<Lesson>, studentRegisteredOn: string, studentSkills: Array<string>, client: pg.PoolClient): Promise<Array<LessonRequest>> {
-    const availableLessonOptions: Array<Lesson> = [];
+  async getAvailableLessonOptions(availableLessons: Array<Lesson>, isAllowedLastMentor: boolean, lastMentorId: string, studentRegisteredOn: string, studentSkills: Array<string>, client: pg.PoolClient): Promise<Array<LessonRequest>> {
+    let availableLessonOptions: Array<Lesson> = [];
     for (const availableLesson of availableLessons) {   
       const isLessonCompatible = await this.checkLessonCompatibility(availableLesson, studentRegisteredOn, client);
       if (isLessonCompatible) {
@@ -188,6 +206,12 @@ export class UsersBackgroundProcesses {
         availableLesson.score = skillsScore + lessonDateScore + lessonRecurrenceScore;
         availableLessonOptions.push(availableLesson);
       }
+    }
+    // Consider only last mentor if available
+    if (isAllowedLastMentor) {
+      availableLessonOptions = availableLessonOptions.filter(function(el) { return el.mentor?.id == lastMentorId; });
+    } else {
+      availableLessonOptions = availableLessonOptions.filter(function(el) { return el.mentor?.id != lastMentorId; });
     }
     return availableLessonOptions.sort(function(a,b) {return (b.score as number) - (a.score as number)});
   }
@@ -405,8 +429,20 @@ export class UsersBackgroundProcesses {
     return lessonTime;
   }
 
-  async getLessonRequestOptions(availableMentorsMap: Map<string, string>, studentSubfield: Subfield | null, studentSkills: Array<string>, client: pg.PoolClient): Promise<Array<LessonRequest>> {
+  async getLessonRequestOptions(availableMentorsMap: Map<string, string>, isAllowedLastMentor: boolean, lastMentorId: string, studentSubfield: Subfield | null, studentSkills: Array<string>, client: pg.PoolClient): Promise<Array<LessonRequest>> {
     const lessonRequestOptions: Array<LessonRequest> = [];
+    // Consider only last mentor if available
+    if (isAllowedLastMentor) {
+      for (const [mentorId, lessonDateTime] of availableMentorsMap) {
+        if (mentorId == lastMentorId) {
+          availableMentorsMap.clear();
+          availableMentorsMap.set(mentorId, lessonDateTime);
+          break;
+        }
+      }
+    } else {
+      availableMentorsMap.delete(lastMentorId);
+    }
     for (const [mentorId, lessonDateTime] of availableMentorsMap) {
       let mentorSubfield = studentSubfield;
       if (studentSubfield == null) {

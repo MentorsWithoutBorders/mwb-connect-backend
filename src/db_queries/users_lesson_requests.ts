@@ -27,8 +27,8 @@ export class UsersLessonRequests {
   async addLessonRequest(request: Request, response: Response): Promise<void> {
     const studentId: string = request.user.id as string;
     try {
-      const insertLessonRequestQuery = `INSERT INTO users_lesson_requests (student_id, sent_date_time)
-        VALUES ($1, $2) RETURNING *`;
+      const insertLessonRequestQuery = `INSERT INTO users_lesson_requests (student_id, sent_date_time, is_allowed_last_mentor)
+        VALUES ($1, $2, false) RETURNING *`;
       const sentDateTime = moment.utc();
       const values = [studentId, sentDateTime];
       const { rows }: pg.QueryResult = await pool.query(insertLessonRequestQuery, values);
