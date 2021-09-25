@@ -20,16 +20,16 @@ import Lesson from '../models/lesson.model';
 import Availability from '../models/availability.model';
 import AvailableMentor from '../models/available_mentor.model';
 
-const conn: Conn = new Conn();
+const conn = new Conn();
 const pool = conn.pool;
-const users: Users = new Users();
-const usersLessons: UsersLessons = new UsersLessons();
-const usersLessonRequests: UsersLessonRequests = new UsersLessonRequests();
-const usersSteps: UsersSteps = new UsersSteps();
-const usersQuizzes: UsersQuizzes = new UsersQuizzes();
-const usersTimeZones: UsersTimeZones = new UsersTimeZones();
-const usersPushNotifications: UsersPushNotifications = new UsersPushNotifications();
-const usersSendEmails: UsersSendEmails = new UsersSendEmails();
+const users = new Users();
+const usersLessons = new UsersLessons();
+const usersLessonRequests = new UsersLessonRequests();
+const usersSteps = new UsersSteps();
+const usersQuizzes = new UsersQuizzes();
+const usersTimeZones = new UsersTimeZones();
+const usersPushNotifications = new UsersPushNotifications();
+const usersSendEmails = new UsersSendEmails();
 
 export class UsersBackgroundProcesses {
   constructor() {
@@ -589,7 +589,7 @@ export class UsersBackgroundProcesses {
           nextLesson.mentor = mentor;
           const students = nextLesson.students;
           if (students != null && students.length > 0) {
-            usersSendEmails.sendEmailLessonReminder(nextLesson);
+            usersSendEmails.sendEmailLessonReminder(nextLesson, client);
             usersPushNotifications.sendPNLessonReminder(nextLesson);
           }
         }

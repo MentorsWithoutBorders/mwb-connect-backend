@@ -20,11 +20,11 @@ import LessonsAvailability from '../models/lessons_availability';
 import TimeZone from '../models/timezone.model';
 import NotificationsSettings from '../models/notifications_settings.model';
 
-const conn: Conn = new Conn();
+const conn = new Conn();
 const pool = conn.pool;
-const helpers: Helpers = new Helpers();
-const usersGoals: UsersGoals = new UsersGoals();
-const usersTimeZones: UsersTimeZones = new UsersTimeZones();
+const helpers = new Helpers();
+const usersGoals = new UsersGoals();
+const usersTimeZones = new UsersTimeZones();
 dotenv.config();
 
 export class Auth {

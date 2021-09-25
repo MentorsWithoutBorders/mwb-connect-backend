@@ -5,7 +5,7 @@ import { constants } from '../utils/constants';
 import { Conn } from '../db/conn';
 import LogEntry from '../models/log_entry.model';
 
-const conn: Conn = new Conn();
+const conn = new Conn();
 const pool = conn.pool;
 
 export class Logger {
