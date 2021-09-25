@@ -131,6 +131,9 @@ export class UsersLessons {
     if (isMentor) {
       now = now.subtract(3, 'h');
       endRecurrence = endRecurrence.add(3, 'h');
+    } else {
+      now = now.subtract(2, 'h');
+      endRecurrence = endRecurrence.add(2, 'h');      
     }
     if (endRecurrenceDateTime.isBefore(now)) {
       return undefined;
@@ -151,7 +154,9 @@ export class UsersLessons {
     let now = moment.utc();
     if (isMentor) {
       now = now.subtract(3, 'h');
-    }    
+    } else {
+      now = now.subtract(2, 'h');      
+    }
     if (lessonDateTime.isBefore(now)) {
       return undefined;
     } else {
