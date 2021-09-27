@@ -663,7 +663,7 @@ export class UsersBackgroundProcesses {
   
   async sendTrainingRemindersFromDB(isFirst: boolean): Promise<void> {
     const days = isFirst ? 5 : 0;
-    const getUsersForTrainingReminderQuery = `SELECT u.id, u.name, u.registered_on FROM users AS u
+    const getUsersForTrainingReminderQuery = `SELECT u.id, u.name, u.email, u.is_mentor, u.registered_on FROM users AS u
       JOIN users_notifications_settings AS uns
       ON u.id = uns.user_id
       JOIN users_timezones AS ut
@@ -680,6 +680,8 @@ export class UsersBackgroundProcesses {
         const user: User = {
           id: row.id,
           name: row.name,
+          email: row.email,
+          isMentor: row.is_mentor,
           registeredOn: row.registered_on
         }
         const showStepReminder = await this.getShowStepReminder(user, client);
@@ -688,8 +690,14 @@ export class UsersBackgroundProcesses {
         const showQuizReminder = quizNumber > 0 ? true : false;
         if (isFirst) {
           usersPushNotifications.sendPNFirstTrainingReminder(user.id as string, showStepReminder, showQuizReminder, remainingQuizzes);
+          if (!user.isMentor) {
+            usersSendEmails.sendEmailFirstTrainingReminder(user, showStepReminder, showQuizReminder, remainingQuizzes);
+          }
         } else {
           usersPushNotifications.sendPNSecondTrainingReminder(user.id as string, showStepReminder, showQuizReminder, remainingQuizzes);
+          if (!user.isMentor) {
+            usersSendEmails.sendEmailSecondTrainingReminder(user, showStepReminder, showQuizReminder, remainingQuizzes);
+          }          
         }
         await client.query('COMMIT');
       } catch (error) {

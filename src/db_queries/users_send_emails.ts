@@ -39,6 +39,59 @@ export class UsersSendEmails {
       .catch(() => console.log(`Email hasn't been sent successfully: ${email}`))    
   }
 
+  sendEmailFirstTrainingReminder(student: User, showStepReminder: boolean, showQuizReminder: boolean, remainingQuizzes: number): void {
+    const studentFirstName = student?.name?.substring(0, student?.name?.indexOf(' '));
+    const subject = 'Training reminder';
+    let body = `Hi ${studentFirstName},<br><br>`;
+    const quizzes = this.getRemainingQuizzesText(remainingQuizzes);
+    if (showStepReminder && !showQuizReminder) {
+      body += 'Kindly remember to add a new step to your plan.';
+    } else if (showStepReminder && showQuizReminder) {
+      body += `Kindly remember to add a new step to your plan and solve the ${quizzes}.`;
+    } else if (!showStepReminder && showQuizReminder) {
+      body += `Kindly remember to solve the ${quizzes}.`;
+    }
+    body += '<br><br>';
+    body += `Regards,<br>MWB Support Team`;
+    if (showStepReminder || showQuizReminder) {    
+      this.sendEmail(student?.email as string, subject, body);   
+    }
+  }
+  
+  getRemainingQuizzesText(remainingQuizzes: number): string {
+    let quizzes = '';
+    switch(remainingQuizzes) {
+      case 1:
+        quizzes = 'remaining quiz';
+        break;
+      case 3:
+        quizzes = 'training quizzes';
+        break;
+      default:
+        quizzes = `remaining ${remainingQuizzes} quizzes`;
+    }
+    return quizzes;    
+  }
+
+  sendEmailSecondTrainingReminder(student: User, showStepReminder: boolean, showQuizReminder: boolean, remainingQuizzes: number): void {
+    const studentFirstName = student?.name?.substring(0, student?.name?.indexOf(' '));
+    const subject = 'Training reminder';
+    let body = `Hi ${studentFirstName},<br><br>`;
+    const quizzes = this.getRemainingQuizzesText(remainingQuizzes);
+    if (showStepReminder && !showQuizReminder) {
+      body += 'Kindly keep in mind that today is the last day for adding a new step to your plan.';
+    } else if (showStepReminder && showQuizReminder) {
+      body += `Kindly keep in mind that today is the last day for adding a new step to your plan and for solving the ${quizzes}.`;
+    } else if (!showStepReminder && showQuizReminder) {
+      body += `Kindly keep in mind that today is the last day for solving the ${quizzes}.`;
+    }
+    body += '<br><br>';
+    body += `Regards,<br>MWB Support Team`;
+    if (showStepReminder || showQuizReminder) {    
+      this.sendEmail(student?.email as string, subject, body);   
+    }
+  }  
+
   async sendEmailLessonReminder(nextLesson: Lesson, client: pg.PoolClient): Promise<void> {
     const nextLessonStudents = nextLesson.students;
     if (nextLessonStudents != null && nextLessonStudents.length > 0) {
@@ -47,13 +100,13 @@ export class UsersSendEmails {
       for (const nextLessonStudent of nextLessonStudents) {
         const student = await users.getUserFromDB(nextLessonStudent.id as string, client);
         students.push(student);
-        this.sendEmailReminderStudent(student, mentor, nextLesson, client);
+        this.sendEmailLessonReminderStudent(student, mentor, nextLesson, client);
       }     
-      await this.sendEmailReminderMentor(mentor, students, nextLesson, client);
+      await this.sendEmailLessonReminderMentor(mentor, students, nextLesson, client);
     }
   }
 
-  async sendEmailReminderMentor(mentor: User, students: Array<User>, nextLesson: Lesson, client: pg.PoolClient): Promise<void> {
+  async sendEmailLessonReminderMentor(mentor: User, students: Array<User>, nextLesson: Lesson, client: pg.PoolClient): Promise<void> {
     const mentorFirstName = mentor?.name?.substring(0, mentor?.name?.indexOf(' '));
     const studentOrStudents = students.length > 1 ? 'students' : 'student';
     const isOrAre = students.length > 1 ? 'are' : 'is';
@@ -78,7 +131,7 @@ export class UsersSendEmails {
     this.sendEmail(mentor?.email as string, subject, body);    
   }
 
-  async sendEmailReminderStudent(student: User, mentor: User, nextLesson: Lesson, client: pg.PoolClient): Promise<void> {
+  async sendEmailLessonReminderStudent(student: User, mentor: User, nextLesson: Lesson, client: pg.PoolClient): Promise<void> {
     const studentFirstName = student?.name?.substring(0, student?.name?.indexOf(' '));
     const meetingUrl = nextLesson.meetingUrl;
     const userTimeZone = await usersTimeZones.getUserTimeZone(student.id as string, client);
