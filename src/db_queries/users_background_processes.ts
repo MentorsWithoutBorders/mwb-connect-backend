@@ -122,7 +122,7 @@ export class UsersBackgroundProcesses {
   async getLastMentorId(userId: string, client: pg.PoolClient): Promise<string> {
     const getLastMentorIdQuery = `SELECT mentor_id FROM users_lessons ul
       JOIN users_lessons_students uls
-      ON ul.id = uls.lesson_id
+        ON ul.id = uls.lesson_id
       WHERE uls.student_id = $1
       ORDER BY ul.date_time DESC
       LIMIT 1;`;
@@ -264,7 +264,7 @@ export class UsersBackgroundProcesses {
       const getMentorSkillsQuery = `SELECT DISTINCT us.skill_id, ss.skill_index
         FROM users_skills us
         JOIN subfields_skills ss
-        ON us.skill_id = ss.skill_id
+          ON us.skill_id = ss.skill_id
         WHERE us.user_id = $1 AND ss.subfield_id = $2
         ORDER BY ss.skill_index`;
       const { rows } = await client.query(getMentorSkillsQuery, [mentorId, mentorSubfield.id]);
@@ -313,6 +313,7 @@ export class UsersBackgroundProcesses {
       }
     }
     usersPushNotifications.sendPNStudentAddedToLesson(student, availableLesson);
+    usersSendEmails.sendEmailStudentAddedToLesson(student, availableLesson);
   }  
   
   async getAvailableMentors(student: User, preferredMentorId: string, isAllowedLastMentor: boolean, lastMentorId: string, client: pg.PoolClient): Promise<Map<string, string>> {
@@ -665,9 +666,9 @@ export class UsersBackgroundProcesses {
     const days = isFirst ? 5 : 0;
     const getUsersForTrainingReminderQuery = `SELECT u.id, u.name, u.email, u.is_mentor, u.registered_on FROM users AS u
       JOIN users_notifications_settings AS uns
-      ON u.id = uns.user_id
+        ON u.id = uns.user_id
       JOIN users_timezones AS ut
-      ON u.id = ut.user_id
+        ON u.id = ut.user_id
       WHERE uns.enabled = true
         AND (date_trunc('day', now() AT TIME ZONE ut.name)::date - date_trunc('day', u.registered_on AT TIME ZONE ut.name)::date) % 7 = $1
         AND date_trunc('day', now() AT TIME ZONE ut.name)::date <> date_trunc('day', u.registered_on AT TIME ZONE ut.name)::date

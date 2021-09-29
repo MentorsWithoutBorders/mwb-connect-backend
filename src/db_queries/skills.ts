@@ -14,7 +14,7 @@ export class Skills {
   }
 
   async getSkills(request: Request, response: Response): Promise<void> {
-    const subfieldId: string = request.params.id;
+    const subfieldId = request.params.id;
     const client: pg.PoolClient = await pool.connect();
     try {
       await client.query('BEGIN');
@@ -34,7 +34,7 @@ export class Skills {
     const getSkillsQuery = `SELECT s.id, s.name
       FROM skills s
       JOIN subfields_skills ss
-      ON ss.skill_id = s.id
+        ON ss.skill_id = s.id
       WHERE ss.subfield_id = $1
       ORDER BY ss.skill_index`;
     const { rows }: pg.QueryResult = await client.query(getSkillsQuery, [subfieldId]);

@@ -4,7 +4,7 @@ import moment from 'moment';
 import { Conn } from '../db/conn';
 import SupportRequest from '../models/support_request.model';
 
-const conn: Conn = new Conn();
+const conn = new Conn();
 const pool = conn.pool;
 
 export class UsersSupportRequests {
@@ -13,7 +13,7 @@ export class UsersSupportRequests {
   }
 
   async addSupportRequest(request: Request, response: Response): Promise<void> {
-    const userId: string = request.user.id as string;
+    const userId = request.user.id as string;
     const { text }: SupportRequest = request.body
     try {
       const insertSupportRequestQuery = `INSERT INTO users_support_requests (user_id, text, date_time)

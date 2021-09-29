@@ -12,7 +12,7 @@ import Lesson from '../models/lesson.model';
 import { PushNotificationType } from '../utils/push_notification_type';
 
 
-const conn: Conn = new Conn();
+const conn = new Conn();
 const pool = conn.pool;
 admin.initializeApp({
   credential: admin.credential.cert({
@@ -62,7 +62,7 @@ export class UsersPushNotifications {
   }
 
   async addFCMToken(request: Request, response: Response): Promise<void> {
-    const userId: string = request.user.id as string;
+    const userId = request.user.id as string;
     const { token }: FCMToken = request.body
     try {
       const insertFCMTokenQuery = `INSERT INTO users_fcm_tokens (user_id, fcm_token) 
@@ -79,12 +79,12 @@ export class UsersPushNotifications {
 
   sendPNStudentAddedToLesson(student: User, lesson: Lesson): void {
     const mentorName = lesson.mentor?.name;
-    const subfieldName = lesson.subfield?.name?.toLowerCase();   
+    const fieldName = student.field?.name?.toLowerCase();   
     const recurring = lesson.isRecurrent ? 'recurring ' : '';
     const lessonRecurrence = lesson.isRecurrent ? 'lesson recurrence' : 'next lesson';
     const pushNotificationStudent: PushNotification = {
       title: 'Lesson scheduled',
-      body: `You have been added to a ${recurring}${subfieldName} lesson with ${mentorName}`
+      body: `You have been added to a ${recurring}${fieldName} lesson with ${mentorName}`
     }
     const pushNotificationMentor: PushNotification = {
       title: 'Student added to lesson',
@@ -110,13 +110,13 @@ export class UsersPushNotifications {
   sendPNLessonRequestAccepted(lesson: Lesson): void {
     const recurring = lesson.isRecurrent ? 'recurring ' : '';
     const mentorName = lesson.mentor?.name;
-    const subfieldName = lesson.subfield?.name?.toLowerCase();
+    const students = lesson.students;
+    const student = students != null ? students[0] : {};    
+    const fieldName = student.field?.name?.toLowerCase();
     const pushNotification: PushNotification = {
       title: 'Lesson request accepted',
-      body: `${mentorName} has scheduled a ${recurring}${subfieldName} lesson with you`
+      body: `${mentorName} has scheduled a ${recurring}${fieldName} lesson with you`
     }
-    const students = lesson.students;
-    const student = students != null ? students[0] : {};
     this.sendPushNotification(student.id as string, pushNotification);
   }
   

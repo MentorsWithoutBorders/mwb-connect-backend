@@ -8,9 +8,9 @@ import { UsersSendEmails } from './users_send_emails';
 import { Helpers } from '../utils/helpers';
 import ResetPassword from '../models/reset_password.model';
 
-const conn: Conn = new Conn();
-const usersSendEmails: UsersSendEmails = new UsersSendEmails();
-const helpers: Helpers = new Helpers();
+const conn = new Conn();
+const usersSendEmails = new UsersSendEmails();
+const helpers = new Helpers();
 const pool = conn.pool;
 dotenv.config();
 
@@ -44,7 +44,7 @@ export class UsersResetPassword {
   }   
 
   async addUserResetPassword(request: Request, response: Response): Promise<void> {
-    const email: string = request.params.email;
+    const email = request.params.email;
     const client: pg.PoolClient = await pool.connect();
     try {
       await client.query('BEGIN');

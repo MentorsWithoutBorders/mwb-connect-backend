@@ -1,5 +1,4 @@
 export default interface Email {
-  title: string;
+  subject: string;
   body: string;
-  type?: number;
 }

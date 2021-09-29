@@ -4,7 +4,7 @@ import pg from 'pg';
 import { Conn } from '../db/conn';
 import NotificationsSettings from '../models/notifications_settings.model';
 
-const conn: Conn = new Conn();
+const conn = new Conn();
 const pool = conn.pool;
 
 export class UsersNotificationsSettings {
@@ -13,7 +13,7 @@ export class UsersNotificationsSettings {
   }
 
   async getNotificationsSettings(request: Request, response: Response): Promise<void> {
-    const userId: string = request.user.id as string;
+    const userId = request.user.id as string;
     try {
       const getNotificationsSettingsQuery = 'SELECT enabled, time FROM users_notifications_settings WHERE user_id = $1';
       const { rows }: pg.QueryResult = await pool.query(getNotificationsSettingsQuery, [userId]);
@@ -29,7 +29,7 @@ export class UsersNotificationsSettings {
   }
 
   async updateNotificationsSettings(request: Request, response: Response): Promise<void> {
-    const userId: string = request.user.id as string;
+    const userId = request.user.id as string;
     const { enabled, time }: NotificationsSettings = request.body
     try {
       const updateNotificationsSettingsQuery = `UPDATE users_notifications_settings

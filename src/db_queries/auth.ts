@@ -231,7 +231,7 @@ export class Auth {
   }  
 
   async logout(request: Request, response: Response): Promise<void> {
-    const userId: string = request.user.id as string;
+    const userId = request.user.id as string;
     const client: pg.PoolClient = await pool.connect();
     try {
       await client.query('BEGIN');
@@ -253,7 +253,7 @@ export class Auth {
       response.status(401).send({'message': 'Token is not provided'});
       return ;
     }  
-    const token: string = request.headers.authorization.replace('Bearer ','');
+    const token = request.headers.authorization.replace('Bearer ','');
     if (!token) {
       response.status(401).send({'message': 'Token is not provided'});
       return ;
@@ -274,8 +274,8 @@ export class Auth {
   }
 
   async getAccessToken(request: Request, response: Response): Promise<void> {
-    const userId: string = request.params.id;
-    const refreshToken: string = request.query.refreshToken as string;
+    const userId = request.params.id;
+    const refreshToken = request.query.refreshToken as string;
     const client: pg.PoolClient = await pool.connect();
     try {
       await client.query('BEGIN');

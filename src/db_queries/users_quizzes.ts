@@ -11,11 +11,11 @@ import Quiz from '../models/quiz.model';
 import pg from 'pg';
 import TimeZone from '../models/timezone.model';
 
-const conn: Conn = new Conn();
+const conn = new Conn();
 const pool = conn.pool;
-const users: Users = new Users();
-const usersTimeZones: UsersTimeZones = new UsersTimeZones();
-const quizzesSettings: QuizzesSettings = new QuizzesSettings();
+const users = new Users();
+const usersTimeZones = new UsersTimeZones();
+const quizzesSettings = new QuizzesSettings();
 
 export class UsersQuizzes {
   constructor() {
@@ -23,7 +23,7 @@ export class UsersQuizzes {
   }
 
   async getQuizNumber(request: Request, response: Response): Promise<void> {
-    const userId: string = request.user.id as string;
+    const userId = request.user.id as string;
     const client: pg.PoolClient = await pool.connect();
     try {
       await client.query('BEGIN');
@@ -195,7 +195,7 @@ export class UsersQuizzes {
   }
 
   async addQuiz(request: Request, response: Response): Promise<void> {
-    const userId: string = request.user.id as string;
+    const userId = request.user.id as string;
     const { number, isCorrect, isClosed }: Quiz = request.body
     const client: pg.PoolClient = await pool.connect();
     try {

@@ -5,7 +5,7 @@ import moment from 'moment'
 import { Conn } from '../db/conn';
 import CertificatePause from '../models/certificate_pause.model';
 
-const conn: Conn = new Conn();
+const conn = new Conn();
 const pool = conn.pool;
 
 export class UsersCertificatesPauses {
@@ -14,7 +14,7 @@ export class UsersCertificatesPauses {
   }
 
   async getUserCertificatePause(request: Request, response: Response): Promise<void> {
-    const userId: string = request.user.id as string;
+    const userId = request.user.id as string;
     try {
       const getCertificatePauseQuery = `SELECT is_resuming FROM users_certificates_pauses 
         WHERE user_id = $1 
@@ -31,7 +31,7 @@ export class UsersCertificatesPauses {
   }   
 
   async addUserCertificatePause(request: Request, response: Response): Promise<void> {
-    const userId: string = request.user.id as string;
+    const userId = request.user.id as string;
     try {
       const insertCertificatePauseQuery = `INSERT INTO users_certificates_pauses (user_id, pause_datetime, is_resuming)
         VALUES ($1, $2, $3)`;

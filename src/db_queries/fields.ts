@@ -37,7 +37,7 @@ export class Fields {
     const getSubfieldsQuery = `SELECT s.id, s.name
       FROM subfields s
       JOIN fields_subfields fs
-      ON fs.subfield_id = s.id
+        ON fs.subfield_id = s.id
       WHERE fs.field_id = $1
       ORDER BY fs.subfield_index`;
     const { rows }: pg.QueryResult = await pool.query(getSubfieldsQuery, [fieldId]);
@@ -57,7 +57,7 @@ export class Fields {
     const getSkillsQuery = `SELECT s.id, s.name
       FROM skills s
       JOIN subfields_skills ss
-      ON ss.skill_id = s.id
+        ON ss.skill_id = s.id
       WHERE ss.subfield_id = $1
       ORDER BY ss.skill_index`;
     const { rows }: pg.QueryResult = await pool.query(getSkillsQuery, [subfieldId]);

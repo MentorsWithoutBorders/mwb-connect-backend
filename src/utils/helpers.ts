@@ -2,6 +2,7 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import dotenv from 'dotenv';
 import moment from 'moment';
+import User from '../models/user.model';
 import { constants } from '../utils/constants';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -43,4 +44,8 @@ export class Helpers {
     }
     return constants.DAYS_OF_WEEK[date.add(1, 'd').isoWeekday() - 1];
   }
+
+  getUserFirstName(user: User): string {
+    return user.name != null ? user?.name?.substring(0, user?.name?.indexOf(' ')) : '';
+  }  
 }

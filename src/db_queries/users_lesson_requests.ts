@@ -7,17 +7,20 @@ import { constants } from '../utils/constants';
 import { Users } from './users';
 import { UsersLessons } from './users_lessons';
 import { UsersPushNotifications } from './users_push_notifications';
+import { UsersSendEmails } from './users_send_emails';
 import User from '../models/user.model';
+import Field from '../models/field.model';
 import Subfield from '../models/subfield.model';
 import LessonRequest from '../models/lesson_request.model';
 import Lesson from '../models/lesson.model';
 import Organization from '../models/organization.model';
 
-const conn: Conn = new Conn();
+const conn = new Conn();
 const pool = conn.pool;
-const users: Users = new Users();
-const usersLessons: UsersLessons = new UsersLessons();
-const usersPushNotifications: UsersPushNotifications = new UsersPushNotifications();
+const users = new Users();
+const usersLessons = new UsersLessons();
+const usersPushNotifications = new UsersPushNotifications();
+const usersSendEmails = new UsersSendEmails();
 
 export class UsersLessonRequests {
   constructor() {
@@ -25,7 +28,7 @@ export class UsersLessonRequests {
   }
 
   async addLessonRequest(request: Request, response: Response): Promise<void> {
-    const studentId: string = request.user.id as string;
+    const studentId = request.user.id as string;
     try {
       const insertLessonRequestQuery = `INSERT INTO users_lesson_requests (student_id, sent_date_time, is_allowed_last_mentor)
         VALUES ($1, $2, false) RETURNING *`;
@@ -42,7 +45,7 @@ export class UsersLessonRequests {
   }
   
   async getLessonRequest(request: Request, response: Response): Promise<void> {
-    const userId: string = request.user.id as string;
+    const userId = request.user.id as string;
     const client: pg.PoolClient = await pool.connect();
     try {
       await client.query('BEGIN');
@@ -53,14 +56,14 @@ export class UsersLessonRequests {
         getLessonRequestQuery = `SELECT ulr.id, ulr.student_id, ulr.subfield_id, ulr.sent_date_time, ulr.lesson_date_time, s.name AS subfield_name, ulr.is_canceled, ulr.is_rejected, ulr.is_expired, ulr.was_canceled_shown, ulr.was_expired_shown
           FROM users_lesson_requests ulr
           LEFT OUTER JOIN subfields s
-          ON ulr.subfield_id = s.id
+            ON ulr.subfield_id = s.id
           WHERE ulr.mentor_id = $1 AND ulr.is_rejected IS DISTINCT FROM true
           ORDER BY ulr.sent_date_time DESC LIMIT 1`;
       } else {
         getLessonRequestQuery = `SELECT ulr.id, ulr.student_id, ulr.subfield_id, ulr.sent_date_time, ulr.lesson_date_time, s.name AS subfield_name, ulr.is_canceled, ulr.is_obsolete
           FROM users_lesson_requests ulr
           LEFT OUTER JOIN subfields s
-          ON ulr.subfield_id = s.id
+            ON ulr.subfield_id = s.id
           WHERE ulr.student_id = $1 AND ulr.is_canceled IS DISTINCT FROM true AND ulr.is_obsolete IS DISTINCT FROM true
           ORDER BY ulr.sent_date_time DESC LIMIT 1`;
       }
@@ -112,22 +115,32 @@ export class UsersLessonRequests {
   }  
 
   async acceptLessonRequest(request: Request, response: Response): Promise<void> {
-    const mentorId: string = request.user.id as string;
-    const lessonRequestId: string = request.params.id;
+    const mentorId = request.user.id as string;
+    const lessonRequestId = request.params.id;
     const { meetingUrl, isRecurrent, endRecurrenceDateTime, isRecurrenceDateSelected }: Lesson = request.body
     const client: pg.PoolClient = await pool.connect();
     try {
       await client.query('BEGIN');
-      const getLessonRequestQuery = `SELECT id, student_id, subfield_id, lesson_date_time 
-        FROM users_lesson_requests 
-        WHERE mentor_id = $1 AND id = $2 AND is_expired IS DISTINCT FROM true AND is_canceled IS DISTINCT FROM true`;
+      const getLessonRequestQuery = `SELECT ulr.id, ulr.student_id, u.name AS student_name, u.email, f.name AS field_name, ulr.subfield_id, ulr.lesson_date_time 
+        FROM users_lesson_requests ulr
+        JOIN users u
+          ON ulr.student_id = u.id
+        JOIN fields f
+          ON u.field_id = f.id
+        WHERE ulr.mentor_id = $1 AND ulr.id = $2 AND ulr.is_expired IS DISTINCT FROM true AND ulr.is_canceled IS DISTINCT FROM true`;
       const { rows }: pg.QueryResult = await client.query(getLessonRequestQuery, [mentorId, lessonRequestId]);
       const mentor = await users.getUserFromDB(mentorId, client);
       let lesson: Lesson = {};
       if (rows[0]) {
+        const field: Field = {
+          name: rows[0].field_name
+        }
         const student: User = {
-          id: rows[0].student_id
-        };
+          id: rows[0].student_id,
+          name: rows[0].student_name,
+          email: rows[0].email,
+          field: field
+        }
         const subfield: Subfield = {
           id: rows[0].subfield_id
         };        
@@ -143,6 +156,7 @@ export class UsersLessonRequests {
           isRecurrenceDateSelected: isRecurrenceDateSelected
         }
         lesson = await this.addLesson(lesson, client);
+        lesson.students = [student];
         await this.addStudentSubfield(student.id as string, subfield.id as string, client);
         await this.deleteLessonRequest(lessonRequestId, client);
       }
@@ -151,6 +165,7 @@ export class UsersLessonRequests {
       if (Object.keys(lesson).length > 0) {
         lesson.mentor = mentor;
         usersPushNotifications.sendPNLessonRequestAccepted(lesson);
+        usersSendEmails.sendEmailLessonRequestAccepted(lesson);
       }
     } catch (error) {
       response.status(400).send(error);
@@ -205,8 +220,8 @@ export class UsersLessonRequests {
   }
   
   async rejectLessonRequest(request: Request, response: Response): Promise<void> {
-    const mentorId: string = request.user.id as string;
-    const lessonRequestId: string = request.params.id;
+    const mentorId = request.user.id as string;
+    const lessonRequestId = request.params.id;
     try {
       const updateLessonRequestQuery = 'UPDATE users_lesson_requests SET is_rejected = true WHERE mentor_id = $1 AND id = $2';
       await pool.query(updateLessonRequestQuery, [mentorId, lessonRequestId]);
@@ -217,8 +232,8 @@ export class UsersLessonRequests {
   }
 
   async cancelLessonRequest(request: Request, response: Response): Promise<void> {
-    const studentId: string = request.user.id as string;
-    const lessonRequestId: string = request.params.id;
+    const studentId = request.user.id as string;
+    const lessonRequestId = request.params.id;
     try {
       const updateLessonRequestQuery = 'UPDATE users_lesson_requests SET is_canceled = true WHERE student_id = $1 AND id = $2';
       await pool.query(updateLessonRequestQuery, [studentId, lessonRequestId]);
@@ -229,8 +244,8 @@ export class UsersLessonRequests {
   }
 
   async updateLessonRequest(request: Request, response: Response): Promise<void> {
-    const mentorId: string = request.user.id as string;
-    const lessonRequestId: string = request.params.id;
+    const mentorId = request.user.id as string;
+    const lessonRequestId = request.params.id;
     const { wasCanceledShown, wasExpiredShown }: LessonRequest = request.body
     try {
       const updateLessonRequestQuery = 'UPDATE users_lesson_requests SET was_canceled_shown = $1, was_expired_shown = $2 WHERE mentor_id = $3 AND id = $4';

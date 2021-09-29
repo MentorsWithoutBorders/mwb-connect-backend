@@ -4,7 +4,7 @@ import pg from 'pg';
 import { Conn } from '../db/conn';
 import Tutorial from '../models/tutorial.model';
 
-const conn: Conn = new Conn();
+const conn = new Conn();
 const pool = conn.pool;
 
 export class Tutorials {

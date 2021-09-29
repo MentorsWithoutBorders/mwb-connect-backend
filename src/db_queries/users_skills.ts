@@ -7,10 +7,10 @@ import { Skills } from './skills';
 import Skill from '../models/skill.model';
 import { constants } from '../utils/constants';
 
-const conn: Conn = new Conn();
+const conn = new Conn();
 const pool = conn.pool;
-const users: Users = new Users();
-const skillsQueries: Skills = new Skills();
+const users = new Users();
+const skillsQueries = new Skills();
 
 export class UsersSkills {
   constructor() {
@@ -18,8 +18,8 @@ export class UsersSkills {
   }
 
   async getUserSkills(request: Request, response: Response): Promise<void> {
-    const userId: string = request.params.user_id;
-    const subfieldId: string = request.params.subfield_id;
+    const userId = request.params.user_id;
+    const subfieldId = request.params.subfield_id;
     const client: pg.PoolClient = await pool.connect();
     try {
       await client.query('BEGIN');
@@ -36,8 +36,8 @@ export class UsersSkills {
   }
 
   async addUserSkills(request: Request, response: Response): Promise<void> {
-    const userId: string = request.user.id as string;
-    const subfieldId: string = request.params.id;
+    const userId = request.user.id as string;
+    const subfieldId = request.params.id;
     const skills = request.body;
     const client: pg.PoolClient = await pool.connect();
     try {

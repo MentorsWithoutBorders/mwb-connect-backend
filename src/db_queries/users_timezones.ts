@@ -4,7 +4,7 @@ import pg from 'pg';
 import { Conn } from '../db/conn';
 import TimeZone from '../models/timezone.model';
 
-const conn: Conn = new Conn();
+const conn = new Conn();
 const pool = conn.pool;
 
 export class UsersTimeZones {
@@ -37,7 +37,7 @@ export class UsersTimeZones {
   }
 
   async updateTimeZone(request: Request, response: Response): Promise<void> {
-    const userId: string = request.user.id as string;
+    const userId = request.user.id as string;
     const { name, abbreviation, offset }: TimeZone = request.body
     try {
       const updateTimeZoneQuery = 'UPDATE users_timezones SET name = $1, abbreviation = $2, utc_offset = $3 WHERE user_id = $4';

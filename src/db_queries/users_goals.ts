@@ -6,7 +6,7 @@ import { Conn } from '../db/conn';
 import Goal from '../models/goal.model';
 import { constants } from '../utils/constants';
 
-const conn: Conn = new Conn();
+const conn = new Conn();
 const pool = conn.pool;
 
 export class UsersGoals {
@@ -15,7 +15,7 @@ export class UsersGoals {
   }
 
   async getGoals(request: Request, response: Response): Promise<void> {
-    const userId: string = request.user.id as string;
+    const userId = request.user.id as string;
     const client: pg.PoolClient = await pool.connect();
     try {
       await client.query('BEGIN');
@@ -49,8 +49,8 @@ export class UsersGoals {
   }
 
   async getGoalById(request: Request, response: Response): Promise<void> {
-    const userId: string = request.user.id as string;
-    const goalId: string = request.params.id;
+    const userId = request.user.id as string;
+    const goalId = request.params.id;
     try {
       const getGoalQuery = 'SELECT id, text FROM users_goals WHERE user_id = $1 AND id = $2';
       const { rows }: pg.QueryResult = await pool.query(getGoalQuery, [userId, goalId]);
@@ -65,7 +65,7 @@ export class UsersGoals {
   }
 
   async addGoal(request: Request, response: Response): Promise<void> {
-    const userId: string = request.user.id as string;
+    const userId = request.user.id as string;
     const { text }: Goal = request.body;
     const client: pg.PoolClient = await pool.connect();
     try {
@@ -99,8 +99,8 @@ export class UsersGoals {
   }
 
   async updateGoal(request: Request, response: Response): Promise<void> {
-    const userId: string = request.user.id as string;
-    const goalId: string = request.params.id;
+    const userId = request.user.id as string;
+    const goalId = request.params.id;
     const { text }: Goal = request.body
     const dateTime = moment.utc();
     try {
@@ -113,8 +113,8 @@ export class UsersGoals {
   }
 
   async deleteGoal(request: Request, response: Response): Promise<void> {
-    const userId: string = request.user.id as string;
-    const goalId: string = request.params.id;
+    const userId = request.user.id as string;
+    const goalId = request.params.id;
     const client: pg.PoolClient = await pool.connect();
     try {
       await client.query('BEGIN');

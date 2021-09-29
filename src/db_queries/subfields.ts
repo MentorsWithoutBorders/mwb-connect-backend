@@ -4,7 +4,7 @@ import pg from 'pg';
 import { Conn } from '../db/conn';
 import Subfield from '../models/subfield.model';
 
-const conn: Conn = new Conn();
+const conn = new Conn();
 const pool = conn.pool;
 
 export class Subfields {
@@ -13,12 +13,12 @@ export class Subfields {
   }
 
   async getSubfields(request: Request, response: Response): Promise<void> {
-    const fieldId: string = request.params.id;
+    const fieldId = request.params.id;
     try {
       const getSubfieldsQuery = `SELECT s.id, s.name
         FROM subfields s
         JOIN fields_subfields fs
-        ON fs.subfield_id = s.id
+          ON fs.subfield_id = s.id
         WHERE fs.field_id = $1
         ORDER BY fs.subfield_index`;
       const { rows }: pg.QueryResult = await pool.query(getSubfieldsQuery, [fieldId]);

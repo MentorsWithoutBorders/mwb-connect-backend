@@ -4,7 +4,7 @@ import pg from 'pg';
 import { Conn } from '../db/conn';
 import AppVersion from '../models/app_version.model';
 
-const conn: Conn = new Conn();
+const conn = new Conn();
 const pool = conn.pool;
 
 export class Updates {

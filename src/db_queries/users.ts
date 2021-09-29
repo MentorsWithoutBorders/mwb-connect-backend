@@ -17,10 +17,10 @@ import AvailabilityTime from '../models/availability_time.model';
 import LessonsAvailability from '../models/lessons_availability';
 import { ValidationError } from '../utils/errors';
 
-const conn: Conn = new Conn();
+const conn = new Conn();
 const pool = conn.pool;
-const auth: Auth = new Auth();
-const helpers: Helpers = new Helpers();
+const auth = new Auth();
+const helpers = new Helpers();
 
 export class Users {
   constructor() {
@@ -67,9 +67,9 @@ export class Users {
     const getUserQuery = `SELECT u.id AS user_id, u.name, u.email, u.phone_number, o.id AS organization_id, o.name AS organization_name, f.id AS field_id, f.name AS field_name, u.is_mentor, u.is_available, u.available_from, u.registered_on
       FROM users u
       JOIN fields f
-      ON u.field_id = f.id
+        ON u.field_id = f.id
       JOIN organizations o
-      ON u.organization_id = o.id
+        ON u.organization_id = o.id
       WHERE u.id = $1`;
     const { rows }: pg.QueryResult = await client.query(getUserQuery, [id]);
     if (rows.length === 0) {
@@ -103,7 +103,7 @@ export class Users {
     const getSubfieldsQuery = `SELECT s.id, s.name
       FROM subfields s
       JOIN users_subfields us
-      ON us.subfield_id = s.id
+        ON us.subfield_id = s.id
       WHERE us.user_id = $1
       ORDER BY us.subfield_index ASC`;
     const { rows }: pg.QueryResult = await client.query(getSubfieldsQuery, [userId]);
@@ -124,7 +124,7 @@ export class Users {
     const getSkillsQuery = `SELECT s.id, s.name
       FROM skills s
       JOIN users_skills us
-      ON us.skill_id = s.id
+        ON us.skill_id = s.id
       WHERE us.user_id = $1 AND us.subfield_id = $2
       ORDER BY us.skill_index ASC`;
     const { rows }: pg.QueryResult = await client.query(getSkillsQuery, [userId, subfieldId]);
@@ -191,7 +191,7 @@ export class Users {
   }    
 
   async updateUser(request: Request, response: Response): Promise<void> {
-    const id: string = request.user.id as string;
+    const id = request.user.id as string;
     const { name, email, isMentor, field, isAvailable, availableFrom, availabilities, lessonsAvailability }: User = request.body
     const values = [name, email, field?.id, isAvailable, availableFrom, id];
     const client: pg.PoolClient = await pool.connect();
@@ -303,7 +303,7 @@ export class Users {
   }  
 
   async deleteUser(request: Request, response: Response): Promise<void> {
-    const id: string = request.user.id as string;
+    const id = request.user.id as string;
     const client: pg.PoolClient = await pool.connect();
     try {
       await client.query('BEGIN');
