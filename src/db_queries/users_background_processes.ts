@@ -98,6 +98,7 @@ export class UsersBackgroundProcesses {
           const lessonRequestOptions = await this.getLessonRequestOptions(availableMentorsMap, studentSubfield as Subfield, studentSkills, client);
           await this.addNewLessonRequest(lessonRequest, lessonRequestOptions, client);
           usersPushNotifications.sendPNLessonRequest(student, lessonRequestOptions);
+          usersSendEmails.sendEmailLessonRequest(student, lessonRequestOptions);
         }
         await client.query('COMMIT');
       } catch (error) {
@@ -148,7 +149,7 @@ export class UsersBackgroundProcesses {
         const timeFrom = moment(availability.time.from, 'h:ma').format('HH:mm');
         const timeTo = moment(availability.time.to, 'h:ma').format('HH:mm');
         queryWhereAvailabilities += `TRIM(TO_CHAR(ul.date_time, 'Day')) = '${availability.dayOfWeek}'
-          AND '${timeFrom}'::TIME <= ul.date_time::TIME AND '${timeTo}'::TIME >= ul.date_time::TIME OR `;
+          AND '${timeFrom}'::TIME <= ul.date_time::TIME AND '${timeTo}'::TIME > ul.date_time::TIME OR `;
       }
       queryWhereAvailabilities = queryWhereAvailabilities.slice(0, -4) + ')';
       const getLessonsQuery = `SELECT ul.id, ul.mentor_id, ula.max_students, fs.field_id, ul.subfield_id, ul.date_time, ul.is_recurrent, ul.end_recurrence_date_time FROM users_lessons ul
@@ -487,9 +488,10 @@ export class UsersBackgroundProcesses {
   async getLessonRequestOptions(availableMentorsMap: Map<string, string>, studentSubfield: Subfield | null, studentSkills: Array<string>, client: pg.PoolClient): Promise<Array<LessonRequest>> {
     const lessonRequestOptions: Array<LessonRequest> = [];
     for (const [mentorId, lessonDateTime] of availableMentorsMap) {
+      const mentor = await users.getUserFromDB(mentorId, client);
       let mentorSubfield = studentSubfield;
       if (studentSubfield == null) {
-        const mentorSubfields = await users.getUserSubfields(mentorId, client);
+        const mentorSubfields = mentor.field?.subfields;
         if (mentorSubfields != null && mentorSubfields.length > 0) {
           mentorSubfield = mentorSubfields[0];
         }
@@ -497,9 +499,6 @@ export class UsersBackgroundProcesses {
       const skillsScore = await this.getSkillsScore(studentSkills, mentorId, mentorSubfield as Subfield, client);
       const lessonDateScore = this.getLessonDateScore(lessonDateTime);
       const lessonRequestScore = skillsScore + lessonDateScore;
-      const mentor: User = {
-        id: mentorId
-      }
       const subfield = mentorSubfield;
       const lessonRequestOption: LessonRequest = {
         mentor: mentor,
@@ -691,14 +690,10 @@ export class UsersBackgroundProcesses {
         const showQuizReminder = quizNumber > 0 ? true : false;
         if (isFirst) {
           usersPushNotifications.sendPNFirstTrainingReminder(user.id as string, showStepReminder, showQuizReminder, remainingQuizzes);
-          if (!user.isMentor) {
-            usersSendEmails.sendEmailFirstTrainingReminder(user, showStepReminder, showQuizReminder, remainingQuizzes);
-          }
+          usersSendEmails.sendEmailFirstTrainingReminder(user, showStepReminder, showQuizReminder, remainingQuizzes);
         } else {
           usersPushNotifications.sendPNSecondTrainingReminder(user.id as string, showStepReminder, showQuizReminder, remainingQuizzes);
-          if (!user.isMentor) {
-            usersSendEmails.sendEmailSecondTrainingReminder(user, showStepReminder, showQuizReminder, remainingQuizzes);
-          }          
+          usersSendEmails.sendEmailSecondTrainingReminder(user, showStepReminder, showQuizReminder, remainingQuizzes);
         }
         await client.query('COMMIT');
       } catch (error) {

@@ -11,6 +11,7 @@ import { Helpers } from '../utils/helpers';
 import Lesson from '../models/lesson.model';
 import User from '../models/user.model';
 import Email from '../models/email.model';
+import LessonRequest from '../models/lesson_request.model';
 
 const users = new Users();
 const usersTimeZones = new UsersTimeZones();
@@ -42,23 +43,106 @@ export class UsersSendEmails {
       .catch(() => console.log(`Email hasn't been sent successfully: ${recipientEmailAddress}`))    
   }
 
+  sendEmailFirstTrainingReminder(user: User, showStepReminder: boolean, showQuizReminder: boolean, remainingQuizzes: number): void {
+    const userFirstName = helpers.getUserFirstName(user);
+    let body = '';
+    const quizzes = this.getRemainingQuizzesText(remainingQuizzes);
+    if (showStepReminder && !showQuizReminder) {
+      body += 'This is a gentle reminder to add a new step to your plan.';
+    } else if (showStepReminder && showQuizReminder) {
+      body += `This is a gentle reminder to add a new step to your plan and to solve the ${quizzes}.`;
+    } else if (!showStepReminder && showQuizReminder) {
+      body += `This is a gentle reminder to solve the ${quizzes}.`;
+    }
+    body = this.setEmailBody(userFirstName, body);
+    const email: Email = {
+      subject: 'Training reminder',
+      body: body
+    }
+    if (showStepReminder || showQuizReminder) {    
+      this.sendEmail(user?.email as string, email);   
+    }
+  }
+  
+  getRemainingQuizzesText(remainingQuizzes: number): string {
+    let quizzes = '';
+    switch(remainingQuizzes) {
+      case 1:
+        quizzes = 'remaining quiz';
+        break;
+      case 3:
+        quizzes = 'training quizzes';
+        break;
+      default:
+        quizzes = `remaining ${remainingQuizzes} quizzes`;
+    }
+    return quizzes;    
+  }
+
+  sendEmailSecondTrainingReminder(user: User, showStepReminder: boolean, showQuizReminder: boolean, remainingQuizzes: number): void {
+    const userFirstName = helpers.getUserFirstName(user);
+    let body = '';
+    const quizzes = this.getRemainingQuizzesText(remainingQuizzes);
+    if (showStepReminder && !showQuizReminder) {
+      body += 'This is a gentle reminder that today is the last day for adding a new step to your plan.';
+    } else if (showStepReminder && showQuizReminder) {
+      body += `This is a gentle reminder that today is the last day for adding a new step to your plan and for solving the ${quizzes}.`;
+    } else if (!showStepReminder && showQuizReminder) {
+      body += `This is a gentle reminder that today is the last day for solving the ${quizzes}.`;
+    }
+    body = this.setEmailBody(userFirstName, body);
+    const email: Email = {
+      subject: 'Training reminder',
+      body: body
+    }
+    if (showStepReminder || showQuizReminder) {    
+      this.sendEmail(user?.email as string, email);   
+    }
+  }  
+
   sendEmailStudentAddedToLesson(student: User, lesson: Lesson): void {
     const studentFirstName = helpers.getUserFirstName(student);
     const mentorName = lesson.mentor?.name;
+    const mentorFirstName = helpers.getUserFirstName(lesson.mentor as User);
     const fieldName = student.field?.name?.toLowerCase();   
     const recurring = lesson.isRecurrent ? 'recurring ' : '';
+    const lessonRecurrence = lesson.isRecurrent ? 'lesson recurrence' : 'next lesson';
     let body = `You have been added to a ${recurring}${fieldName} lesson with ${mentorName}. Please see the details in the MWB Connect app.`;
     body = this.setEmailBody(studentFirstName, body);
-    const email: Email = {
+    const emailStudent: Email = {
       subject: 'Lesson scheduled',
       body: body
     }
-    this.sendEmail(student?.email as string, email);
+    body = `${student.name} from ${student.organization?.name} has been added to the ${lessonRecurrence}.`;
+    body = this.setEmailBody(mentorFirstName, body);
+    const emailMentor: Email = {
+      subject: 'Lesson scheduled',
+      body: body
+    }    
+    this.sendEmail(student?.email as string, emailStudent);
+    this.sendEmail(lesson.mentor?.email as string, emailMentor);
   }
 
   setEmailBody(userName: string, body: string): string {
     return `Hi ${userName},<br><br>` + body + '<br><br>Regards,<br>MWB Support Team';
   }
+
+  sendEmailLessonRequest(student: User, lessonRequestOptions: Array<LessonRequest>): void {
+    if (lessonRequestOptions.length > 0) {
+      const mentor = lessonRequestOptions[0].mentor;
+      const subfield = lessonRequestOptions[0].subfield;
+      const mentorFirstName = helpers.getUserFirstName(mentor as User);
+      const mentorEmailAddress = mentor?.email;
+      const subfieldName = subfield?.name?.toLowerCase();
+      let body = `${student.name} from ${student.organization?.name} is requesting a ${subfieldName} lesson with you. Kindly see the details in the MWB Connect app.`;
+      body = this.setEmailBody(mentorFirstName, body);
+      const email: Email = {
+        subject: 'New lesson request',
+        body: body
+      }
+      this.sendEmail(mentorEmailAddress as string, email);
+    }
+  }  
   
   sendEmailLessonRequestAccepted(lesson: Lesson): void {
     const recurring = lesson.isRecurrent ? 'recurring ' : '';
@@ -146,63 +230,6 @@ export class UsersSendEmails {
         }          
         this.sendEmail(student.email as string, email);
       }
-    }
-  }  
-
-  sendEmailFirstTrainingReminder(student: User, showStepReminder: boolean, showQuizReminder: boolean, remainingQuizzes: number): void {
-    const studentFirstName = helpers.getUserFirstName(student);
-    let body = '';
-    const quizzes = this.getRemainingQuizzesText(remainingQuizzes);
-    if (showStepReminder && !showQuizReminder) {
-      body += 'Kindly remember to add a new step to your plan.';
-    } else if (showStepReminder && showQuizReminder) {
-      body += `Kindly remember to add a new step to your plan and solve the ${quizzes}.`;
-    } else if (!showStepReminder && showQuizReminder) {
-      body += `Kindly remember to solve the ${quizzes}.`;
-    }
-    body = this.setEmailBody(studentFirstName, body);
-    const email: Email = {
-      subject: 'Training reminder',
-      body: body
-    }
-    if (showStepReminder || showQuizReminder) {    
-      this.sendEmail(student?.email as string, email);   
-    }
-  }
-  
-  getRemainingQuizzesText(remainingQuizzes: number): string {
-    let quizzes = '';
-    switch(remainingQuizzes) {
-      case 1:
-        quizzes = 'remaining quiz';
-        break;
-      case 3:
-        quizzes = 'training quizzes';
-        break;
-      default:
-        quizzes = `remaining ${remainingQuizzes} quizzes`;
-    }
-    return quizzes;    
-  }
-
-  sendEmailSecondTrainingReminder(student: User, showStepReminder: boolean, showQuizReminder: boolean, remainingQuizzes: number): void {
-    const studentFirstName = helpers.getUserFirstName(student);
-    let body = '';
-    const quizzes = this.getRemainingQuizzesText(remainingQuizzes);
-    if (showStepReminder && !showQuizReminder) {
-      body += 'Kindly keep in mind that today is the last day for adding a new step to your plan.';
-    } else if (showStepReminder && showQuizReminder) {
-      body += `Kindly keep in mind that today is the last day for adding a new step to your plan and for solving the ${quizzes}.`;
-    } else if (!showStepReminder && showQuizReminder) {
-      body += `Kindly keep in mind that today is the last day for solving the ${quizzes}.`;
-    }
-    body = this.setEmailBody(studentFirstName, body);
-    const email: Email = {
-      subject: 'Training reminder',
-      body: body
-    }
-    if (showStepReminder || showQuizReminder) {    
-      this.sendEmail(student?.email as string, email);   
     }
   }  
 
