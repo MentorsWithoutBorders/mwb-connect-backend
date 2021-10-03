@@ -46,13 +46,19 @@ export class UsersBackgroundProcesses {
   }
 
   async sendLessonRequestsFromDB(): Promise<void> {
+    // const getLessonRequestsQuery = `SELECT id, student_id, mentor_id, subfield_id, lesson_date_time, sent_date_time, is_rejected, is_canceled, is_expired, is_obsolete, is_allowed_last_mentor
+    //   FROM users_lesson_requests
+    //   WHERE (is_canceled IS DISTINCT FROM true
+    //     AND is_expired IS DISTINCT FROM true
+    //     AND (lesson_date_time IS NULL
+    //       OR lesson_date_time IS DISTINCT FROM NULL AND EXTRACT(EPOCH FROM (now() - sent_date_time))/3600 > 1)
+    //     OR is_rejected = true)
+    //     AND is_obsolete IS DISTINCT FROM true
+    //   ORDER BY sent_date_time`;
     const getLessonRequestsQuery = `SELECT id, student_id, mentor_id, subfield_id, lesson_date_time, sent_date_time, is_rejected, is_canceled, is_expired, is_obsolete, is_allowed_last_mentor
       FROM users_lesson_requests
-      WHERE (is_canceled IS DISTINCT FROM true
-        AND is_expired IS DISTINCT FROM true
-        AND (lesson_date_time IS NULL
-          OR lesson_date_time IS DISTINCT FROM NULL AND EXTRACT(EPOCH FROM (now() - sent_date_time))/3600 > 1)
-        OR is_rejected = true)
+      WHERE is_canceled IS DISTINCT FROM true
+        AND lesson_date_time IS NULL
         AND is_obsolete IS DISTINCT FROM true
       ORDER BY sent_date_time`;
     const { rows }: pg.QueryResult = await pool.query(getLessonRequestsQuery);
@@ -543,9 +549,10 @@ export class UsersBackgroundProcesses {
         ];
         await client.query(insertLessonRequestQuery, values);
       } else if (lessonRequest.lessonDateTime == null) {
+        const sentDateTime = moment.utc().format(constants.DATE_TIME_FORMAT);
         const updateLessonRequest = `UPDATE users_lesson_requests 
-          SET mentor_id = $1, subfield_id = $2, lesson_date_time = $3 WHERE id = $4`;
-        await client.query(updateLessonRequest, [mentorId, subfieldId, lessonDateTime, lessonRequest.id]);
+          SET mentor_id = $1, subfield_id = $2, lesson_date_time = $3, sent_date_time = $4 WHERE id = $5`;
+        await client.query(updateLessonRequest, [mentorId, subfieldId, lessonDateTime, sentDateTime, lessonRequest.id]);
       }
       await this.flagLessonRequestsObsolete(lessonRequest, client);
     }
