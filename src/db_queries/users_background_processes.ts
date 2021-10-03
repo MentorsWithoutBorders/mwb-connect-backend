@@ -262,7 +262,7 @@ export class UsersBackgroundProcesses {
     }
     const differenceFromHigh = Math.round(moment.duration(moment.utc(registeredDateTimeHigh).diff(moment.utc(studentRegisteredOn))).asWeeks());
     const differenceFromLow = Math.round(moment.duration(moment.utc(studentRegisteredOn).diff(moment.utc(registeredDateTimeLow))).asWeeks());    
-    return differenceFromHigh <= 3 && differenceFromLow <= 3;
+    return differenceFromHigh <= 4 && differenceFromLow <= 4;
   }
 
   async getSkillsScore(studentSkills: Array<string>, mentorId: string, mentorSubfield: Subfield, client: pg.PoolClient): Promise<number> {
