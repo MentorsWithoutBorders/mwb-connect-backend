@@ -107,19 +107,30 @@ export class UsersSendEmails {
     const fieldName = student.field?.name?.toLowerCase();   
     const recurring = lesson.isRecurrent ? 'recurring ' : '';
     const lessonRecurrence = lesson.isRecurrent ? 'lesson recurrence' : 'next lesson';
+    // Send email to student
     let body = `You have been added to a ${recurring}${fieldName} lesson with ${mentorName}. Please see the details in the MWB Connect app.`;
     body = this.setEmailBody(studentFirstName, body);
     const emailStudent: Email = {
       subject: 'Lesson scheduled',
       body: body
     }
-    body = `${student.name} from ${student.organization?.name} has been added to the ${lessonRecurrence}.`;
-    body = this.setEmailBody(mentorFirstName, body);
+    this.sendEmail(student?.email as string, emailStudent);
+    // Send email to mentor
+    body = `Hi ${mentorFirstName},<br><br>`;
+    body += `${student.name} from ${student.organization?.name} has been added to the ${lessonRecurrence}.<br><br>`;
+    body += `The student's contact details are as follows:`;
+    body += `<ul>`;
+    body += `<li><b>${student.name}</b></li>`;
+    body += `<ul>`;
+    body += `<li>Email: ${student.email}</li>`;
+    body += `<li>WhatsApp number: ${student.phoneNumber}</li>`;
+    body += `</ul><br>`;
+    body += `</ul>`;
+    body += `Regards,<br>MWB Support Team`; 
     const emailMentor: Email = {
-      subject: 'Lesson scheduled',
+      subject: `Student added to ${lessonRecurrence}`,
       body: body
     }    
-    this.sendEmail(student?.email as string, emailStudent);
     this.sendEmail(lesson.mentor?.email as string, emailMentor);
   }
 
@@ -159,6 +170,37 @@ export class UsersSendEmails {
     }
     this.sendEmail(student?.email as string, email);
   }
+
+  async sendEmailLessonScheduled(mentor: User, lesson: Lesson, client: pg.PoolClient): Promise<void> {
+    const mentorFirstName = helpers.getUserFirstName(mentor);
+    let student: User = {};
+    if (lesson.students != null && lesson.students.length > 0) {
+      student = lesson.students[0];
+    }
+    const recurring = lesson.isRecurrent ? 'recurring ' : '';
+    const onOrStartingFrom = lesson.isRecurrent ? 'starting from ' : 'on ';
+    const subfieldName = lesson.subfield != null ? lesson.subfield?.name?.toLowerCase() : '';
+    const meetingUrl = lesson.meetingUrl;
+    const userTimeZone = await usersTimeZones.getUserTimeZone(mentor.id as string, client);
+    const lessonDate = moment.utc(lesson.dateTime).tz(userTimeZone.name).format(constants.DATE_FORMAT_LESSON);
+    const lessonTime = moment.utc(lesson.dateTime).tz(userTimeZone.name).format(constants.TIME_FORMAT) + ' ' + userTimeZone.abbreviation;
+    let body = `Hi ${mentorFirstName},<br><br>Thank you for scheduling a ${recurring} ${subfieldName} lesson ${onOrStartingFrom} ${lessonDate} at ${lessonTime}.<br><br>`;
+    body += `The meeting link is: <a href="${meetingUrl}" target="_blank">${meetingUrl}</a><br><br>`;
+    body += `The student's contact details are as follows:`;
+    body += `<ul>`;
+    body += `<li><b>${student.name}</b></li>`;
+    body += `<ul>`;
+    body += `<li>Email: ${student.email}</li>`;
+    body += `<li>WhatsApp number: ${student.phoneNumber}</li>`;
+    body += `</ul><br>`;
+    body += `</ul>`;
+    body += `Regards,<br>MWB Support Team`;
+    const email: Email = {
+      subject: 'Lesson scheduled',
+      body: body
+    }
+    this.sendEmail(mentor?.email as string, email);   
+  }  
   
   sendEmailLessonCanceled(lesson: Lesson, student: User, isCancelAll: boolean, lessonsCanceled: number): void {
     let subject = '';
@@ -254,8 +296,8 @@ export class UsersSendEmails {
     const himHerOrThem = students.length > 1 ? 'them' : 'him/her';
     const meetingUrl = nextLesson.meetingUrl;
     const userTimeZone = await usersTimeZones.getUserTimeZone(mentor.id as string, client);
-    const lessonDateTime = moment.utc(nextLesson.dateTime).tz(userTimeZone.name).format(constants.TIME_FORMAT) + ' ' + userTimeZone.abbreviation;
-    let body = `Hi ${mentorFirstName},<br><br>This is a gentle reminder to conduct the next lesson at ${lessonDateTime}.<br><br>`;
+    const lessonTime = moment.utc(nextLesson.dateTime).tz(userTimeZone.name).format(constants.TIME_FORMAT) + ' ' + userTimeZone.abbreviation;
+    let body = `Hi ${mentorFirstName},<br><br>This is a gentle reminder to conduct the next lesson at ${lessonTime}.<br><br>`;
     body += `The meeting link is: <a href="${meetingUrl}" target="_blank">${meetingUrl}</a><br><br>`;
     body += `If the ${studentOrStudents} ${isOrAre}n't able to join the session, you can message ${himHerOrThem} using the following contact details (<b>WhatsApp</b> usually works best):`;
     body += `<ul>`;
@@ -279,8 +321,8 @@ export class UsersSendEmails {
     const studentFirstName = helpers.getUserFirstName(student);
     const meetingUrl = nextLesson.meetingUrl;
     const userTimeZone = await usersTimeZones.getUserTimeZone(student.id as string, client);
-    const lessonDateTime = moment.utc(nextLesson.dateTime).tz(userTimeZone.name).format(constants.TIME_FORMAT) + ' ' + userTimeZone.abbreviation;
-    let body = `This is a gentle reminder to participate in the next lesson at ${lessonDateTime}.<br><br>`;
+    const lessonTime = moment.utc(nextLesson.dateTime).tz(userTimeZone.name).format(constants.TIME_FORMAT) + ' ' + userTimeZone.abbreviation;
+    let body = `This is a gentle reminder to participate in the next lesson at ${lessonTime}.<br><br>`;
     body += `The meeting link is: <a href="${meetingUrl}" target="_blank">${meetingUrl}</a><br><br>`;
     body += `If you aren't able to join the session, please notify your mentor, ${mentor.name}, at: ${mentor.email}`;
     body = this.setEmailBody(studentFirstName, body);

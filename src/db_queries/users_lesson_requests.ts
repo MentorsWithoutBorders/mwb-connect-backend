@@ -9,7 +9,6 @@ import { UsersLessons } from './users_lessons';
 import { UsersPushNotifications } from './users_push_notifications';
 import { UsersSendEmails } from './users_send_emails';
 import User from '../models/user.model';
-import Field from '../models/field.model';
 import Subfield from '../models/subfield.model';
 import LessonRequest from '../models/lesson_request.model';
 import Lesson from '../models/lesson.model';
@@ -121,28 +120,21 @@ export class UsersLessonRequests {
     const client: pg.PoolClient = await pool.connect();
     try {
       await client.query('BEGIN');
-      const getLessonRequestQuery = `SELECT ulr.id, ulr.student_id, u.name AS student_name, u.email, f.name AS field_name, ulr.subfield_id, ulr.lesson_date_time 
+      const getLessonRequestQuery = `SELECT ulr.id, ulr.student_id, ulr.subfield_id, s.name AS subfield_name, ulr.lesson_date_time 
         FROM users_lesson_requests ulr
         JOIN users u
           ON ulr.student_id = u.id
-        JOIN fields f
-          ON u.field_id = f.id
+        JOIN subfields s
+          ON ulr.subfield_id = s.id
         WHERE ulr.mentor_id = $1 AND ulr.id = $2 AND ulr.is_expired IS DISTINCT FROM true AND ulr.is_canceled IS DISTINCT FROM true`;
       const { rows }: pg.QueryResult = await client.query(getLessonRequestQuery, [mentorId, lessonRequestId]);
       const mentor = await users.getUserFromDB(mentorId, client);
       let lesson: Lesson = {};
       if (rows[0]) {
-        const field: Field = {
-          name: rows[0].field_name
-        }
-        const student: User = {
-          id: rows[0].student_id,
-          name: rows[0].student_name,
-          email: rows[0].email,
-          field: field
-        }
+        const student = await users.getUserFromDB(rows[0].student_id, client);
         const subfield: Subfield = {
-          id: rows[0].subfield_id
+          id: rows[0].subfield_id,
+          name: rows[0].subfield_name
         };        
         lesson = {
           id: rows[0].id,
@@ -166,6 +158,7 @@ export class UsersLessonRequests {
         lesson.mentor = mentor;
         usersPushNotifications.sendPNLessonRequestAccepted(lesson);
         usersSendEmails.sendEmailLessonRequestAccepted(lesson);
+        usersSendEmails.sendEmailLessonScheduled(mentor, lesson, client);
       }
     } catch (error) {
       response.status(400).send(error);
