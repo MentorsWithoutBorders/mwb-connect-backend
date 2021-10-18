@@ -6,7 +6,7 @@ export const constants = {
   DAYS_OF_WEEK: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
   READ_ONLY_TRANSACTION: 'SET TRANSACTION READ ONLY',
   WEEKS_PER_MONTH: 4,
-  STUDENT_MAX_QUIZZES_SETS: 8,
+  STUDENT_MAX_QUIZZES_SETS: 4,
   MENTOR_MAX_QUIZZES_SETS: 4,
   STUDENT_MONTHS_TRAINING: 3,
   MENTOR_WEEKS_TRAINING: 4,

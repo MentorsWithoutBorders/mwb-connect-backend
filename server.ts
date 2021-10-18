@@ -110,6 +110,7 @@ app.delete('/api/v1/steps/:id', usersSteps.deleteStep);
 app.get('/api/v1/last_step_added', usersSteps.getLastStepAdded);
 
 // Users quizzes
+app.get('/api/v1/quizzes', usersQuizzes.getQuizzes);
 app.get('/api/v1/quiz_number', usersQuizzes.getQuizNumber);
 app.post('/api/v1/quizzes', usersQuizzes.addQuiz);
 
