@@ -12,6 +12,21 @@ export class UsersAppVersions {
     autoBind(this);
   }
 
+  async getAppVersion(userId: string, client: pg.PoolClient): Promise<AppVersion> {
+    const getAppVersionQuery = 'SELECT major, minor, revision, build FROM users_app_versions WHERE user_id = $1';
+    const { rows }: pg.QueryResult = await client.query(getAppVersionQuery, [userId]);
+    let appVersion: AppVersion = {};
+    if (rows[0]) {
+      appVersion = {
+        major: rows[0].major,
+        minor: rows[0].minor,
+        revision: rows[0].revision,
+        build: rows[0].build
+      }
+    }
+    return appVersion;
+  }
+
   async addAppVersion(request: Request, response: Response): Promise<void> {
     const userId = request.user.id as string;
     const { major, minor, revision, build }: AppVersion = request.body

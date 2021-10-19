@@ -11,12 +11,14 @@ import { UsersLessonRequests } from './users_lesson_requests';
 import { UsersSteps } from './users_steps';
 import { UsersQuizzes } from './users_quizzes';
 import { UsersTimeZones } from './users_timezones';
+import { UsersAppVersions } from './users_app_versions';
 import { UsersPushNotifications } from './users_push_notifications';
 import { UsersSendEmails } from './users_send_emails';
 import User from '../models/user.model';
 import Subfield from '../models/subfield.model';
 import LessonRequest from '../models/lesson_request.model';
 import Lesson from '../models/lesson.model';
+import Quiz from '../models/quiz.model';
 import Availability from '../models/availability.model';
 import AvailableMentor from '../models/available_mentor.model';
 
@@ -27,6 +29,7 @@ const usersLessons = new UsersLessons();
 const usersLessonRequests = new UsersLessonRequests();
 const usersSteps = new UsersSteps();
 const usersQuizzes = new UsersQuizzes();
+const usersAppVersions = new UsersAppVersions();
 const usersTimeZones = new UsersTimeZones();
 const usersPushNotifications = new UsersPushNotifications();
 const usersSendEmails = new UsersSendEmails();
@@ -692,9 +695,18 @@ export class UsersBackgroundProcesses {
           registeredOn: row.registered_on
         }
         const showStepReminder = await this.getShowStepReminder(user, client);
-        const quizNumber = await usersQuizzes.getQuizNumberFromDB(user.id as string, client);
-        const remainingQuizzes = 3 - (quizNumber - 1) % 3;
-        const showQuizReminder = quizNumber > 0 ? true : false;
+        let showQuizReminder = false;
+        let remainingQuizzes = 0;
+        const hasOldAppVersion = await this.hasOldAppVersion(user.id as string, client);
+        if (user.isMentor && hasOldAppVersion) {
+          const quizNumber = await usersQuizzes.getQuizNumberFromDB(user.id as string, client);
+          remainingQuizzes = 3 - (quizNumber - 1) % 3;
+          showQuizReminder = quizNumber > 0 ? true : false;
+        } else {
+          const quizzes = await usersQuizzes.getQuizzesFromDB(user.id as string, client);
+          remainingQuizzes = this.getRemainingQuizzes(quizzes);
+          showQuizReminder = remainingQuizzes > 0 ? true : false;
+        }
         if (isFirst) {
           usersPushNotifications.sendPNFirstTrainingReminder(user.id as string, showStepReminder, showQuizReminder, remainingQuizzes);
           usersSendEmails.sendEmailFirstTrainingReminder(user, showStepReminder, showQuizReminder, remainingQuizzes);
@@ -709,7 +721,24 @@ export class UsersBackgroundProcesses {
         client.release();
       }        
     }
-  } 
+  }
+  
+  async hasOldAppVersion(userId: string, client: pg.PoolClient): Promise<boolean> {
+    const appVersion = await usersAppVersions.getAppVersion(userId, client);
+    return appVersion.major == 1 && appVersion.minor == 0 && 
+      (appVersion.revision == 1 && appVersion.build == 3 ||
+       appVersion.revision == 4 && (appVersion.build == 15 || appVersion.build == 23));
+  }
+
+  getRemainingQuizzes(quizzes: Array<Quiz>): number {
+    let remainingQuizzes = 0;
+    for (const quiz of quizzes) {
+      if (!quiz.isCorrect) {
+        remainingQuizzes++;
+      }
+    }
+    return remainingQuizzes;
+  }
   
   async getShowStepReminder(user: User, client: pg.PoolClient): Promise<boolean> {
     const userTimeZone = await usersTimeZones.getUserTimeZone(user.id as string, client);

@@ -1,6 +1,6 @@
-export default interface Update {
-  major: number;
-  minor: number;
-  revision: number;
-  build: number;
+export default interface AppVersion {
+  major?: number;
+  minor?: number;
+  revision?: number;
+  build?: number;
 }
