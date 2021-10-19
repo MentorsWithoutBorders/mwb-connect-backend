@@ -83,7 +83,7 @@ export class UsersQuizzes {
         const quizStartNumber = this.getQuizStartNumber(quizzesSetNumber, weeklyCount);
         quizzes = this.getAssignedQuizzesStudent(quizzesBetweenDates, quizStartNumber, weeklyCount, false);
       } else {
-        const quizzesStartDate = moment.utc(registeredOn).add(constants.STUDENT_MAX_QUIZZES_SETS * 2 * 7, 'days');
+        const quizzesStartDate = moment.utc(registeredOn).add((constants.STUDENT_MAX_QUIZZES_SETS * 2 + 1) * 7, 'days');
         const quizStartNumber = this.getQuizzesRemainingStartNumber(quizzes, quizzesStartDate);
         quizzes = this.getAssignedQuizzesStudent(quizzesBetweenDates, quizStartNumber, weeklyCount, true);
       }
@@ -99,10 +99,11 @@ export class UsersQuizzes {
       }
     }
     const quizEndNumber = isAllRemainingQuizzes ? weeklyCount * constants.WEEKS_PER_MONTH : quizStartNumber + weeklyCount - 1;
-    const correctQuizzes = quizzes.filter(quiz => quiz.isCorrect = true);
-    const correctQuizzesBetweenDates = quizzesBetweenDates.filter(quiz => quiz.isCorrect = true);
-    correctQuizzes.sort(function (a, b) {
-      return a.number - b.number;
+    const correctQuizzes = quizzes.filter(quiz => {
+      return quiz.isCorrect === true
+    });
+    const correctQuizzesBetweenDates = quizzesBetweenDates.filter(quiz => {
+      return quiz.isCorrect === true
     });
     for (let i = quizStartNumber; i <= quizEndNumber; i++) {
       if (!correctQuizzes.some(q => q.number === i) || correctQuizzesBetweenDates.some(q => q.number === i)) {
@@ -126,7 +127,9 @@ export class UsersQuizzes {
       }
     }
     const quizEndNumber = isAllRemainingQuizzes ? weeklyCount * constants.WEEKS_PER_MONTH : quizStartNumber + weeklyCount - 1;
-    const correctQuizzesBetweenDates = quizzesBetweenDates.filter(quiz => quiz.isCorrect = true);  
+    const correctQuizzesBetweenDates = quizzesBetweenDates.filter(quiz => {
+      return quiz.isCorrect === true
+    });  
     for (let i = quizStartNumber; i <= quizEndNumber; i++) {
       const quiz: Quiz = {
         number: i
@@ -140,36 +143,30 @@ export class UsersQuizzes {
   }
 
   async getQuizNumberFromDB(userId: string, client: pg.PoolClient): Promise<number> {
-    const quizSettings = await quizzesSettings.getQuizzesSettingsFromDB();
-    const user = await users.getUserFromDB(userId, client);
-    const userTimeZone = await usersTimeZones.getUserTimeZone(userId, client);
-    const registeredOn = moment.utc(user.registeredOn).tz(userTimeZone.name).startOf('day');
-    const today = moment.utc().tz(userTimeZone.name).startOf('day');
-    const weekNumber = today.subtract(1, 'd').diff(registeredOn, 'weeks');
-    const weekStartDate = this.getWeekStartDate(registeredOn, weekNumber);
-    const weekEndDate = this.getWeekEndDate(registeredOn, weekNumber);      
-    let quizzes = await this.getAllQuizzes(userId, client);
     let quizNumber = 0;
-    if (user.isMentor) {
+    const user = await users.getUserFromDB(userId, client);
+    if (!user.isMentor) {
+      const quizzes = await this.getQuizzesFromDB(userId, client);
+      for (const quiz of quizzes) {
+        if (!quiz.isCorrect) {
+          quizNumber = quiz.number;
+          break;
+        }
+      }
+    } else {
+      const quizSettings = await quizzesSettings.getQuizzesSettingsFromDB();
+      const userTimeZone = await usersTimeZones.getUserTimeZone(userId, client);
+      const registeredOn = moment.utc(user.registeredOn).tz(userTimeZone.name).startOf('day');
+      const today = moment.utc().tz(userTimeZone.name).startOf('day');
+      const weekNumber = today.subtract(1, 'd').diff(registeredOn, 'weeks');
+      const weekStartDate = this.getWeekStartDate(registeredOn, weekNumber);
+      const weekEndDate = this.getWeekEndDate(registeredOn, weekNumber);      
+      let quizzes = await this.getAllQuizzes(userId, client);
       const weeklyCount = quizSettings.mentorWeeklyCount;
       const quizStartNumber = this.getQuizStartNumber(weekNumber, weeklyCount);
       const quizEndNumber = this.getQuizEndNumber(weekNumber, weeklyCount);
       quizzes = this.getQuizzesBetweenDates(quizzes, weekStartDate, weekEndDate, userTimeZone); 
       quizNumber = this.calculateQuizNumber(quizzes, weeklyCount, quizStartNumber, quizEndNumber);
-    } else {
-      if (weekNumber <= constants.STUDENT_MAX_QUIZZES_SETS * 2 + constants.STUDENT_MAX_QUIZZES_SETS) {
-        const weeklyCount = quizSettings.studentWeeklyCount;
-        const quizzesSetNumber = this.getQuizzesSetNumber(quizzes, registeredOn, userTimeZone, weeklyCount);
-        const quizStartNumber = this.getQuizStartNumber(quizzesSetNumber, weeklyCount);
-        const quizEndNumber = this.getQuizEndNumber(quizzesSetNumber, weeklyCount);
-        quizzes = this.getQuizzesBetweenDates(quizzes, weekStartDate, weekEndDate, userTimeZone); 
-        quizNumber = this.calculateQuizNumber(quizzes, weeklyCount, quizStartNumber, quizEndNumber);
-      } else {
-        const quizzesStartDate = moment.utc(registeredOn).add(constants.STUDENT_MAX_QUIZZES_SETS * 2 * 7, 'days');
-        const quizStartNumber = this.getQuizzesRemainingStartNumber(quizzes, quizzesStartDate);
-        const quizEndNumber = quizSettings.studentWeeklyCount * constants.WEEKS_PER_MONTH;
-        quizNumber = this.calculateQuizNumber(quizzes, quizSettings.studentWeeklyCount, quizStartNumber, quizEndNumber);
-      }
     }
     return quizNumber;    
   }
@@ -242,7 +239,7 @@ export class UsersQuizzes {
         } else {
           quizNumber = quizzes[0].number + 1;
           if (quizNumber > quizEndNumber) {
-            quizNumber = quizStartNumber;
+            quizNumber = 0;
           }
         }
       }
