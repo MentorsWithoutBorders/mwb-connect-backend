@@ -557,10 +557,10 @@ export class UsersLessons {
         id: lessonId
       }
       const students = await this.getLessonStudents(lesson, false, client);
-      const skills = listIds;
-      // if (!skills) {
-      //   skills = [];
-      // }
+      let skills = listIds;
+      if (!skills) {
+        skills = [];
+      }
       for (const student of students) {
         const subfieldId = await this.getLessonSubfieldId(lessonId, client);
         await usersSkills.addUserSkillsToDB(student.id as string, subfieldId, skills, client);
