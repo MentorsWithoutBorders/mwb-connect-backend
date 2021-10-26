@@ -19,6 +19,7 @@ import LessonNote from '../models/lesson_note.model';
 import GuideTutorial from '../models/guide_tutorial.model';
 import Skill from '../models/skill.model';
 import GuideRecommendation from '../models/guide_recommendation.model';
+import Ids from '../models/ids.model';
 
 const conn = new Conn();
 const pool = conn.pool;
@@ -548,7 +549,7 @@ export class UsersLessons {
   
   async addStudentsSkills(request: Request, response: Response): Promise<void> {
     const lessonId = request.params.id;
-    const skills = request.body;
+    const { idsList }: Ids = request.body;
     const client: pg.PoolClient = await pool.connect();
     try {
       await client.query('BEGIN');
@@ -556,6 +557,7 @@ export class UsersLessons {
         id: lessonId
       }
       const students = await this.getLessonStudents(lesson, false, client);
+      const skills = idsList;
       for (const student of students) {
         const subfieldId = await this.getLessonSubfieldId(lessonId, client);
         await usersSkills.addUserSkillsToDB(student.id as string, subfieldId, skills, client);

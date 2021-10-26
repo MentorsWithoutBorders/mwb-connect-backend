@@ -1,11 +1,12 @@
 import { Request, Response } from 'express';
 import autoBind from 'auto-bind';
 import pg from 'pg';
+import { constants } from '../utils/constants';
 import { Conn } from '../db/conn';
 import { Users } from './users';
 import { Skills } from './skills';
 import Skill from '../models/skill.model';
-import { constants } from '../utils/constants';
+import Ids from '../models/ids.model';
 
 const conn = new Conn();
 const pool = conn.pool;
@@ -38,10 +39,11 @@ export class UsersSkills {
   async addUserSkills(request: Request, response: Response): Promise<void> {
     const userId = request.user.id as string;
     const subfieldId = request.params.id;
-    const skills = request.body;
+    const { idsList }: Ids = request.body;
     const client: pg.PoolClient = await pool.connect();
     try {
       await client.query('BEGIN');
+      const skills = idsList;
       await this.addUserSkillsToDB(userId, subfieldId, skills, client);
       response.status(200).send('User skills have been added');
       await client.query('COMMIT');
