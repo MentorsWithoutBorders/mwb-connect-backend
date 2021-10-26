@@ -549,7 +549,7 @@ export class UsersLessons {
   
   async addStudentsSkills(request: Request, response: Response): Promise<void> {
     const lessonId = request.params.id;
-    const { idsList }: Ids = request.body;
+    const { listIds }: Ids = request.body;
     const client: pg.PoolClient = await pool.connect();
     try {
       await client.query('BEGIN');
@@ -557,7 +557,7 @@ export class UsersLessons {
         id: lessonId
       }
       const students = await this.getLessonStudents(lesson, false, client);
-      const skills = idsList;
+      const skills = listIds;
       for (const student of students) {
         const subfieldId = await this.getLessonSubfieldId(lessonId, client);
         await usersSkills.addUserSkillsToDB(student.id as string, subfieldId, skills, client);

@@ -1,3 +1,3 @@
 export default interface Ids {
-  idsList: Array<string>;
+  listIds: Array<string>;
 }

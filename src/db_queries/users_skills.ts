@@ -39,11 +39,11 @@ export class UsersSkills {
   async addUserSkills(request: Request, response: Response): Promise<void> {
     const userId = request.user.id as string;
     const subfieldId = request.params.id;
-    const { idsList }: Ids = request.body;
+    const { listIds }: Ids = request.body;
     const client: pg.PoolClient = await pool.connect();
     try {
       await client.query('BEGIN');
-      const skills = idsList;
+      const skills = listIds;
       await this.addUserSkillsToDB(userId, subfieldId, skills, client);
       response.status(200).send('User skills have been added');
       await client.query('COMMIT');
