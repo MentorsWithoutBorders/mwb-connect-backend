@@ -39,11 +39,11 @@ export class UsersSkills {
   async addUserSkills(request: Request, response: Response): Promise<void> {
     const userId = request.user.id as string;
     const subfieldId = request.params.id;
-    let skills = request.body;
+    const { listIds }: Ids = request.body;
     const client: pg.PoolClient = await pool.connect();
     try {
       await client.query('BEGIN');
-      // const skills = listIds;
+      let skills = listIds;
       if (!skills) {
         skills = [];
       }
