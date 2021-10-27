@@ -43,7 +43,7 @@ export class UsersAppVersions {
       response.status(200).send(`App version has been updated for user: ${userId}`);
       await client.query('COMMIT');
     } catch (error) {
-      response.status(500).send(error);
+      response.status(400).send(error);
       await client.query('ROLLBACK');
     } finally {
       client.release();

@@ -36,7 +36,7 @@ export class UsersResetPassword {
       response.status(200).send({});
       await client.query('COMMIT');
     } catch (error) {
-      response.status(500).send(error);
+      response.status(400).send(error);
       await client.query('ROLLBACK');
     } finally {
       client.release();
@@ -64,7 +64,7 @@ export class UsersResetPassword {
       response.status(200).send('Reset password data inserted');
       await client.query('COMMIT');
     } catch (error) {
-      response.status(500).send(error);
+      response.status(400).send(error);
       await client.query('ROLLBACK');
     } finally {
       client.release();

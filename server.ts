@@ -18,6 +18,7 @@ import { UsersNotificationsSettings } from './src/db_queries/users_notifications
 import { UsersSupportRequests } from './src/db_queries/users_support_requests';
 import { UsersPushNotifications } from './src/db_queries/users_push_notifications';
 import { UsersAppVersions } from './src/db_queries/users_app_versions';
+import { UsersAppFlags } from './src/db_queries/users_app_flags';
 import { UsersBackgroundProcesses } from './src/db_queries/users_background_processes';
 import { Fields } from './src/db_queries/fields';
 import { Subfields } from './src/db_queries/subfields';
@@ -45,6 +46,7 @@ const usersSkills: UsersSkills = new UsersSkills();
 const usersNotificationsSettings: UsersNotificationsSettings = new UsersNotificationsSettings();
 const usersSupportRequests: UsersSupportRequests = new UsersSupportRequests();
 const usersAppVersions: UsersAppVersions = new UsersAppVersions();
+const usersAppFlags: UsersAppFlags = new UsersAppFlags();
 const usersBackgroundProcesses: UsersBackgroundProcesses = new UsersBackgroundProcesses();
 const logger: Logger = new Logger();
 const fields: Fields = new Fields();
@@ -149,6 +151,9 @@ app.put('/api/v1/notifications_settings', usersNotificationsSettings.updateNotif
 
 // Users support requests
 app.post('/api/v1/support_requests', usersSupportRequests.addSupportRequest);
+
+// Users app flags
+app.get('/api/v1/app_flags', usersAppFlags.getAppFlags);
 
 // Fields
 app.get('/api/v1/fields', fields.getFields);

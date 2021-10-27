@@ -8,6 +8,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { Conn } from '../db/conn';
 import { constants } from '../utils/constants';
 import { Helpers } from '../utils/helpers';
+import { UsersAppFlags } from './users_app_flags';
 import { UsersGoals } from './users_goals';
 import { UsersTimeZones } from './users_timezones';
 import Token from '../models/token.model';
@@ -23,6 +24,7 @@ import NotificationsSettings from '../models/notifications_settings.model';
 const conn = new Conn();
 const pool = conn.pool;
 const helpers = new Helpers();
+const usersAppFlags = new UsersAppFlags();
 const usersGoals = new UsersGoals();
 const usersTimeZones = new UsersTimeZones();
 dotenv.config();
@@ -77,6 +79,7 @@ export class Auth {
       ({ rows } = await client.query(createUserQuery, values));
       const userId: string = rows[0].id;
       await this.setDefaultUserProfile(userId, approvedUser.isMentor as boolean, client);
+      await usersAppFlags.addAppFlagsFromDB(userId, true, true, client);
       await usersTimeZones.addTimeZone(userId, timeZone as TimeZone, client);
       if (!approvedUser.isMentor) {
         await usersGoals.addGoalToDB(userId, approvedUser.goal as string, client);

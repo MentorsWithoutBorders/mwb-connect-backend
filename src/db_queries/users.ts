@@ -33,7 +33,7 @@ export class Users {
       const { rows }: pg.QueryResult = await pool.query(getUsersQuery);
       response.status(200).json(rows);
     } catch (error) {
-      response.status(500).send(error);
+      response.status(400).send(error);
     }
   }
 
@@ -210,7 +210,7 @@ export class Users {
       response.status(200).send(id);
       await client.query('COMMIT');
     } catch (error) {
-      response.status(500).send(error);
+      response.status(400).send(error);
       await client.query('ROLLBACK');
     } finally {
       client.release();
@@ -309,6 +309,8 @@ export class Users {
       await client.query('BEGIN');
       const deleteTimeZoneQuery = 'DELETE FROM users_timezones WHERE user_id = $1';
       await client.query(deleteTimeZoneQuery, [id]);
+      const deleteAppFlagsQuery = 'DELETE FROM users_app_flags WHERE user_id = $1';
+      await client.query(deleteAppFlagsQuery, [id]);      
       const deleteSupportRequestQuery = 'DELETE FROM users_support_requests WHERE user_id = $1';
       await client.query(deleteSupportRequestQuery, [id]);
       const deleteSubfieldQuery = 'DELETE FROM users_subfields WHERE user_id = $1';

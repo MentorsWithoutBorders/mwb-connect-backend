@@ -100,7 +100,7 @@ export class UsersLessonRequests {
       response.status(200).json(lessonRequest);
       await client.query('COMMIT');
     } catch (error) {
-      response.status(500).send(error);
+      response.status(400).send(error);
       await client.query('ROLLBACK');
     } finally {
       client.release();
