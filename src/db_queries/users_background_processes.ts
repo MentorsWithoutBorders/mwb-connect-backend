@@ -49,7 +49,7 @@ export class UsersBackgroundProcesses {
   }
 
   async sendLessonRequestsFromDB(): Promise<void> {
-    // const getLessonRequestsQuery = `SELECT id, student_id, mentor_id, subfield_id, lesson_date_time, sent_date_time, is_rejected, is_canceled, is_expired, is_obsolete, is_allowed_last_mentor
+    // -const getLessonRequestsQuery = `SELECT id, student_id, mentor_id, subfield_id, lesson_date_time, sent_date_time, is_rejected, is_canceled, is_expired, is_obsolete, is_allowed_last_mentor
     //   FROM users_lesson_requests
     //   WHERE (is_canceled IS DISTINCT FROM true
     //     AND is_expired IS DISTINCT FROM true
@@ -707,19 +707,23 @@ export class UsersBackgroundProcesses {
           remainingQuizzes = this.getRemainingQuizzes(quizzes);
           showQuizReminder = remainingQuizzes > 0 ? true : false;
         }
-        if (isFirst) {
-          usersPushNotifications.sendPNFirstTrainingReminder(user.id as string, showStepReminder, showQuizReminder, remainingQuizzes);
-          usersSendEmails.sendEmailFirstTrainingReminder(user, showStepReminder, showQuizReminder, remainingQuizzes);
-        } else {
-          usersPushNotifications.sendPNSecondTrainingReminder(user.id as string, showStepReminder, showQuizReminder, remainingQuizzes);
-          usersSendEmails.sendEmailSecondTrainingReminder(user, showStepReminder, showQuizReminder, remainingQuizzes);
-        }
+        this.sendFirstAndSecondTrainingReminders(isFirst, user, showStepReminder, showQuizReminder, remainingQuizzes);
         await client.query('COMMIT');
       } catch (error) {
         await client.query('ROLLBACK');
       } finally {
         client.release();
       }        
+    }
+  }
+
+  sendFirstAndSecondTrainingReminders(isFirst: boolean, user: User, showStepReminder: boolean, showQuizReminder: boolean, remainingQuizzes: number): void {
+    if (isFirst) {
+      usersPushNotifications.sendPNFirstTrainingReminder(user.id as string, showStepReminder, showQuizReminder, remainingQuizzes);
+      usersSendEmails.sendEmailFirstTrainingReminder(user, showStepReminder, showQuizReminder, remainingQuizzes);
+    } else {
+      usersPushNotifications.sendPNSecondTrainingReminder(user.id as string, showStepReminder, showQuizReminder, remainingQuizzes);
+      usersSendEmails.sendEmailSecondTrainingReminder(user, showStepReminder, showQuizReminder, remainingQuizzes);
     }
   }
   
