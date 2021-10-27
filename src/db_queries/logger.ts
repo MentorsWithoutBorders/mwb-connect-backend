@@ -14,11 +14,12 @@ export class Logger {
   }
 
   async addLogEntry(request: Request, response: Response): Promise<void> {
+    const userId = request.user?.id;
     const { text }: LogEntry = request.body
     try {
-      const insertLogEntryQuery = 'INSERT INTO logger (log_entry, date_time) VALUES ($1, $2)';
+      const insertLogEntryQuery = 'INSERT INTO logger (user_id, log_entry, date_time) VALUES ($1, $2, $3)';
       const dateTime = moment.utc().format(constants.DATE_TIME_FORMAT);
-      await pool.query(insertLogEntryQuery, [text, dateTime]);
+      await pool.query(insertLogEntryQuery, [userId, text, dateTime]);
       response.status(200).send(`Log entry added`);
     } catch (error) {
       response.status(400).send(error);

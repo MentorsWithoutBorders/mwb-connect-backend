@@ -65,7 +65,13 @@ app.get('/', (request: express.Request, response: express.Response): void => {
 })
 
 const verifyAccessTokenFilter = function(request: Request, response: Response, next: NextFunction): void {
-  if (['/signup', '/login', '/access_token', '/send_reset_password', '/reset_password', '/tutorials', '/quizzes_settings', '/logger'].some(route => request.originalUrl.includes(route))) {
+  if (request.originalUrl.includes('/logger')) {
+    if (request.headers.authorization) {
+      auth.verifyAccessToken(request, response, next);      
+    } else {
+      next();
+    }
+  } else if (['/signup', '/login', '/access_token', '/send_reset_password', '/reset_password', '/tutorials', '/quizzes_settings'].some(route => request.originalUrl.includes(route))) {
     next();
   } else {
     auth.verifyAccessToken(request, response, next);
