@@ -99,8 +99,8 @@ export class Auth {
     let approvedUser: ApprovedUser = {
       email: email
     };
-    const getApprovedUserQuery = 'SELECT field_id, organization_id, name, is_mentor, goal FROM approved_users WHERE email = $1';
-    const { rows }: pg.QueryResult = await client.query(getApprovedUserQuery, [email]);
+    const getApprovedUserQuery = 'SELECT field_id, organization_id, name, is_mentor, goal FROM approved_users WHERE LOWER(email) = $1';
+    const { rows }: pg.QueryResult = await client.query(getApprovedUserQuery, [email.toLowerCase()]);
     if (!rows[0]) {
       approvedUser.email = '';
     } else {
