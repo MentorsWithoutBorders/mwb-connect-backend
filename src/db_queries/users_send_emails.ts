@@ -125,7 +125,9 @@ export class UsersSendEmails {
     body += `<li><b>${student.name}</b></li>`;
     body += `<ul>`;
     body += `<li>Email: ${student.email}</li>`;
-    body += `<li>WhatsApp number: ${student.phoneNumber}</li>`;
+    if (student.phoneNumber) {
+      body += `<li>WhatsApp number: ${student.phoneNumber}</li>`;
+    }
     body += `</ul><br>`;
     body += `</ul>`;
     body += `Regards,<br>MWB Support Team`; 
@@ -193,7 +195,9 @@ export class UsersSendEmails {
     body += `<li><b>${student.name}</b></li>`;
     body += `<ul>`;
     body += `<li>Email: ${student.email}</li>`;
-    body += `<li>WhatsApp number: ${student.phoneNumber}</li>`;
+    if (student.phoneNumber) {
+      body += `<li>WhatsApp number: ${student.phoneNumber}</li>`;
+    }
     body += `</ul><br>`;
     body += `</ul>`;
     body += `Regards,<br>MWB Support Team`;
@@ -307,7 +311,9 @@ export class UsersSendEmails {
       body += `<li><b>${student.name}</b></li>`;
       body += `<ul>`;
       body += `<li>Email: ${student.email}</li>`;
-      body += `<li>WhatsApp number: ${student.phoneNumber}</li>`;
+      if (student.phoneNumber) {
+        body += `<li>WhatsApp number: ${student.phoneNumber}</li>`;
+      }
       body += `</ul><br>`;
     }
     body += `</ul>`;
