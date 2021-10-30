@@ -185,7 +185,7 @@ export class UsersSendEmails {
     const meetingUrl = lesson.meetingUrl;
     const userTimeZone = await usersTimeZones.getUserTimeZone(mentor.id as string, client);
     const lessonDate = moment.utc(lesson.dateTime).tz(userTimeZone.name).format(constants.DATE_FORMAT_LESSON);
-    const lessonTime = moment.utc(lesson.dateTime).tz(userTimeZone.name).format(constants.TIME_FORMAT) + ' ' + userTimeZone.abbreviation;
+    const lessonTime = moment.utc(lesson.dateTime).tz(userTimeZone.name).format(constants.TIME_FORMAT_LESSON) + ' ' + userTimeZone.abbreviation;
     let body = `Hi ${mentorFirstName},<br><br>Thank you for scheduling a ${recurring} ${subfieldName} lesson ${onOrStartingFrom} ${lessonDate} at ${lessonTime}.<br><br>`;
     body += `The meeting link is: <a href="${meetingUrl}" target="_blank">${meetingUrl}</a><br><br>`;
     body += `The student's contact details are as follows:`;
@@ -298,7 +298,7 @@ export class UsersSendEmails {
     const himHerOrThem = students.length > 1 ? 'them' : 'him/her';
     const meetingUrl = nextLesson.meetingUrl;
     const userTimeZone = await usersTimeZones.getUserTimeZone(mentor.id as string, client);
-    const lessonTime = moment.utc(nextLesson.dateTime).tz(userTimeZone.name).format(constants.TIME_FORMAT) + ' ' + userTimeZone.abbreviation;
+    const lessonTime = moment.utc(nextLesson.dateTime).tz(userTimeZone.name).format(constants.TIME_FORMAT_LESSON) + ' ' + userTimeZone.abbreviation;
     let body = `Hi ${mentorFirstName},<br><br>This is a gentle reminder to conduct the next lesson at ${lessonTime}.<br><br>`;
     body += `The meeting link is: <a href="${meetingUrl}" target="_blank">${meetingUrl}</a><br><br>`;
     body += `If the ${studentOrStudents} ${isOrAre}n't able to join the session, you can message ${himHerOrThem} using the following contact details (<b>WhatsApp</b> usually works best):`;
@@ -323,7 +323,7 @@ export class UsersSendEmails {
     const studentFirstName = helpers.getUserFirstName(student);
     const meetingUrl = nextLesson.meetingUrl;
     const userTimeZone = await usersTimeZones.getUserTimeZone(student.id as string, client);
-    const lessonTime = moment.utc(nextLesson.dateTime).tz(userTimeZone.name).format(constants.TIME_FORMAT) + ' ' + userTimeZone.abbreviation;
+    const lessonTime = moment.utc(nextLesson.dateTime).tz(userTimeZone.name).format(constants.TIME_FORMAT_LESSON) + ' ' + userTimeZone.abbreviation;
     let body = `This is a gentle reminder to participate in the next lesson at ${lessonTime}.<br><br>`;
     body += `The meeting link is: <a href="${meetingUrl}" target="_blank">${meetingUrl}</a><br><br>`;
     body += `If you aren't able to join the session, please notify your mentor, ${mentor.name}, at: ${mentor.email}`;
