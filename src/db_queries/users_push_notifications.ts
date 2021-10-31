@@ -242,14 +242,20 @@ export class UsersPushNotifications {
   }
 
   sendPNLessonReminder(nextLesson: Lesson): void {
-    const pushNotification: PushNotification = {
+    const pushNotificationMentor: PushNotification = {
+      title: 'Next lesson in 30 mins',
+      body: 'Kindly remember to conduct the session',
+    }
+    const pushNotificationStudent: PushNotification = {
       title: 'Next lesson in 30 mins',
       body: 'Kindly remember to attend the session',
     }
+    const mentor = nextLesson.mentor;
+    this.sendPushNotification(mentor?.id as string, pushNotificationMentor);
     const students = nextLesson.students;
     if (students != null && students.length > 0) {
       for (const student of students) {
-        this.sendPushNotification(student.id as string, pushNotification);
+        this.sendPushNotification(student.id as string, pushNotificationStudent);
       }
     }
   }  
