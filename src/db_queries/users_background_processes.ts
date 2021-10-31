@@ -311,6 +311,7 @@ export class UsersBackgroundProcesses {
     const availableLesson = availableLessonOptions[0];
     const lessonId = availableLesson.id as string;
     await usersLessonRequests.addStudent(lessonId, student.id as string, client);
+    await usersLessonRequests.addStudentSubfield(student.id as string, availableLesson.subfield?.id as string, client);    
     const mentor = await users.getUserFromDB(availableLesson.mentor?.id as string, client);
     availableLesson.mentor = mentor;
     const mentorSubfields = mentor.field?.subfields;
