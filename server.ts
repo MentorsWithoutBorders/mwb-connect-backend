@@ -194,10 +194,10 @@ app.post('/api/v1/send_training_reminders', usersBackgroundProcesses.sendTrainin
 
 cron.schedule('* * * * *', function() {
   // usersBackgroundProcesses.sendLessonRequestsFromDB();
-  usersBackgroundProcesses.sendLessonRemindersFromDB();
-  usersBackgroundProcesses.sendAfterLessonFromDB();
-  usersBackgroundProcesses.sendTrainingRemindersFromDB(true);
-  usersBackgroundProcesses.sendTrainingRemindersFromDB(false);
+  // usersBackgroundProcesses.sendLessonRemindersFromDB();
+  // usersBackgroundProcesses.sendAfterLessonFromDB();
+  // usersBackgroundProcesses.sendTrainingRemindersFromDB(true);
+  // usersBackgroundProcesses.sendTrainingRemindersFromDB(false);
 });
 
 app.listen(port, () => {
