@@ -196,8 +196,8 @@ cron.schedule('* * * * *', function() {
   // usersBackgroundProcesses.sendLessonRequestsFromDB();
   // usersBackgroundProcesses.sendLessonRemindersFromDB();
   // usersBackgroundProcesses.sendAfterLessonFromDB();
-  // usersBackgroundProcesses.sendTrainingRemindersFromDB(true);
-  // usersBackgroundProcesses.sendTrainingRemindersFromDB(false);
+  usersBackgroundProcesses.sendTrainingRemindersFromDB(true);
+  usersBackgroundProcesses.sendTrainingRemindersFromDB(false);
   usersBackgroundProcesses.sendCPUUsage();
 });
 
