@@ -769,7 +769,7 @@ export class UsersBackgroundProcesses {
   sendCPUUsage(): void {
     os.cpuUsage(function(v) {
       const server = process.env.SERVER;
-      if (server == 'prod' && v >= 0.1) {
+      if (server == 'prod' && v >= 0.3) {
         const email: Email = {
           subject: 'High CPU alert',
           body: v.toString()
