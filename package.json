@@ -28,6 +28,7 @@
     "moment-timezone": "^0.5.33",
     "node-cron": "3.0.0",
     "nodemailer": "^2.7.2",
+    "os-utils": "0.0.14",
     "pg": "^8.6.0",
     "uuid": "^8.3.2"
   },
@@ -39,6 +40,7 @@
     "@types/node": "^15.0.3",
     "@types/node-cron": "^2.0.4",
     "@types/nodemailer": "^6.4.4",
+    "@types/os-utils": "0.0.1",
     "@typescript-eslint/eslint-plugin": "^4.25.0",
     "@typescript-eslint/parser": "^4.25.0",
     "eslint": "^7.27.0",

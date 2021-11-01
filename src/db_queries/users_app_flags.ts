@@ -12,7 +12,7 @@ export class UsersAppFlags {
     autoBind(this);
   }
 
-  async getAppFlags(request: Request, response: Response): Promise<void> {
+  async getAppFlags(request: Request, response: Response): Promise<void> {  
     const userId = request.user.id as string;
     try {
       const getAppFlagsQuery = 'SELECT is_training_enabled, is_mentoring_enabled FROM users_app_flags WHERE user_id = $1';

@@ -198,6 +198,7 @@ cron.schedule('* * * * *', function() {
   // usersBackgroundProcesses.sendAfterLessonFromDB();
   // usersBackgroundProcesses.sendTrainingRemindersFromDB(true);
   // usersBackgroundProcesses.sendTrainingRemindersFromDB(false);
+  usersBackgroundProcesses.sendCPUUsage();
 });
 
 app.listen(port, () => {

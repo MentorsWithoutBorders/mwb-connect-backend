@@ -3,6 +3,8 @@ import autoBind from 'auto-bind';
 import moment from 'moment';
 import 'moment-timezone';
 import pg from 'pg';
+import os from 'os-utils';
+import dotenv from 'dotenv';
 import { Conn } from '../db/conn';
 import { constants } from '../utils/constants';
 import { Users } from './users';
@@ -21,6 +23,7 @@ import Lesson from '../models/lesson.model';
 import Quiz from '../models/quiz.model';
 import Availability from '../models/availability.model';
 import AvailableMentor from '../models/available_mentor.model';
+import Email from '../models/email.model';
 
 const conn = new Conn();
 const pool = conn.pool;
@@ -33,6 +36,7 @@ const usersAppVersions = new UsersAppVersions();
 const usersTimeZones = new UsersTimeZones();
 const usersPushNotifications = new UsersPushNotifications();
 const usersSendEmails = new UsersSendEmails();
+dotenv.config();
 
 export class UsersBackgroundProcesses {
   constructor() {
@@ -760,6 +764,19 @@ export class UsersBackgroundProcesses {
       showStepReminder = true;
     }
     return showStepReminder;
+  }
+
+  sendCPUUsage(): void {
+    os.cpuUsage(function(v) {
+      const server = process.env.SERVER;
+      if (server == 'prod') {
+        const email: Email = {
+          subject: 'High CPU alert',
+          body: v.toString()
+        }        
+        usersSendEmails.sendEmail('edmondpr@gmail.com', email)
+      }
+    });       
   }
 }
 
