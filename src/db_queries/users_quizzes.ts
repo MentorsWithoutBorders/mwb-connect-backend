@@ -3,16 +3,18 @@ import autoBind from 'auto-bind';
 import moment from 'moment';
 import 'moment-timezone';
 import { Conn } from '../db/conn';
+import { constants } from '../utils/constants';
+import { Helpers } from '../utils/helpers';
 import { Users } from './users';
 import { UsersTimeZones } from './users_timezones';
 import { QuizzesSettings } from './quizzes_settings';
-import { constants } from '../utils/constants';
 import Quiz from '../models/quiz.model';
 import pg from 'pg';
 import TimeZone from '../models/timezone.model';
 
 const conn = new Conn();
 const pool = conn.pool;
+const helpers = new Helpers();
 const users = new Users();
 const usersTimeZones = new UsersTimeZones();
 const quizzesSettings = new QuizzesSettings();
@@ -62,9 +64,10 @@ export class UsersQuizzes {
     const userTimeZone = await usersTimeZones.getUserTimeZone(userId, client);
     const registeredOn = moment.utc(user.registeredOn).tz(userTimeZone.name).startOf('day');
     const today = moment.utc().tz(userTimeZone.name).startOf('day');
-    const weekNumber = today.subtract(1, 'd').diff(registeredOn, 'weeks');
-    const weekStartDate = this.getWeekStartDate(registeredOn, weekNumber);
-    const weekEndDate = this.getWeekEndDate(registeredOn, weekNumber);
+    const timeSinceRegistration = today.subtract(1, 'd').diff(registeredOn);
+    const weekNumber = Math.trunc(helpers.getDSTAdjustedDifferenceInDays(timeSinceRegistration) / 7);
+    const weekStartDate = this.getWeekStartDate(registeredOn, weekNumber, userTimeZone);
+    const weekEndDate = this.getWeekEndDate(registeredOn, weekNumber, userTimeZone);
     let quizzes = await this.getAllQuizzes(userId, client);
     const quizzesBetweenDates = this.getQuizzesBetweenDates(quizzes, weekStartDate, weekEndDate, userTimeZone); 
     if (user.isMentor) {
@@ -158,9 +161,10 @@ export class UsersQuizzes {
       const userTimeZone = await usersTimeZones.getUserTimeZone(userId, client);
       const registeredOn = moment.utc(user.registeredOn).tz(userTimeZone.name).startOf('day');
       const today = moment.utc().tz(userTimeZone.name).startOf('day');
-      const weekNumber = today.subtract(1, 'd').diff(registeredOn, 'weeks');
-      const weekStartDate = this.getWeekStartDate(registeredOn, weekNumber);
-      const weekEndDate = this.getWeekEndDate(registeredOn, weekNumber);      
+      const timeSinceRegistration = today.subtract(1, 'd').diff(registeredOn);
+      const weekNumber = Math.trunc(helpers.getDSTAdjustedDifferenceInDays(timeSinceRegistration) / 7);
+      const weekStartDate = this.getWeekStartDate(registeredOn, weekNumber, userTimeZone);
+      const weekEndDate = this.getWeekEndDate(registeredOn, weekNumber, userTimeZone);
       let quizzes = await this.getAllQuizzes(userId, client);
       const weeklyCount = quizSettings.mentorWeeklyCount;
       const quizStartNumber = this.getQuizStartNumber(weekNumber, weeklyCount);
@@ -181,13 +185,13 @@ export class UsersQuizzes {
     return startNumber;
   }  
 
-  getWeekStartDate(registeredOn: moment.Moment, weekNumber: number): moment.Moment {
+  getWeekStartDate(registeredOn: moment.Moment, weekNumber: number, timeZone: TimeZone): moment.Moment {
     const extraDay = weekNumber == 0 ? 0 : 1;
-    return moment.utc(registeredOn).add(weekNumber * 7 + extraDay, 'days');    
+    return moment.utc(registeredOn).tz(timeZone.name).add(weekNumber * 7 + extraDay, 'days');    
   }
 
-  getWeekEndDate(registeredOn: moment.Moment, weekNumber: number): moment.Moment {
-    return moment.utc(registeredOn).add((weekNumber + 1) * 7 + 1, 'days');
+  getWeekEndDate(registeredOn: moment.Moment, weekNumber: number, timeZone: TimeZone): moment.Moment {
+    return moment.utc(registeredOn).tz(timeZone.name).add((weekNumber + 1) * 7, 'days');
   }  
 
   getQuizStartNumber(weekNumber: number, weeklyCount: number): number {
@@ -262,7 +266,8 @@ export class UsersQuizzes {
   getQuizzesSetNumber(quizzes: Array<Quiz>, registeredOn: moment.Moment, userTimeZone: TimeZone, weeklyCount: number): number {
     let quizzesSetNumber = 0;
     const today = moment.utc().tz(userTimeZone.name).startOf('day');
-    const weekNumber = today.subtract(1, 'd').diff(registeredOn, 'weeks');
+    const timeSinceRegistration = today.subtract(1, 'd').diff(registeredOn);
+    const weekNumber = Math.trunc(helpers.getDSTAdjustedDifferenceInDays(timeSinceRegistration) / 7);
     let quizzesSetsStart = 0;
     let quizzesSetsEnd = constants.STUDENT_MAX_QUIZZES_SETS * 2;
     if (weekNumber < quizzesSetsEnd + 1) {
@@ -279,8 +284,8 @@ export class UsersQuizzes {
       const quizEndNumber = this.getQuizEndNumber(i, weeklyCount); 
       let areQuizzesSolved = false;
       for (let j = quizzesSetsStart; j < quizzesSetsEnd; j++) {
-        const weekStartDate = this.getWeekStartDate(registeredOn, j);
-        const weekEndDate = this.getWeekEndDate(registeredOn, j);
+        const weekStartDate = this.getWeekStartDate(registeredOn, j, userTimeZone);
+        const weekEndDate = this.getWeekEndDate(registeredOn, j, userTimeZone);
         const quizzesBetweenDates = this.getQuizzesBetweenDates(quizzes, weekStartDate, weekEndDate, userTimeZone);
         if (this.getWeekQuizzesSolved(quizzesBetweenDates, quizStartNumber, quizEndNumber) == weeklyCount) {
           areQuizzesSolved = true;

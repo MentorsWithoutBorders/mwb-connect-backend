@@ -47,5 +47,18 @@ export class Helpers {
 
   getUserFirstName(user: User): string {
     return user.name != null ? user?.name?.substring(0, user?.name?.indexOf(' ')) : '';
-  }  
+  }
+  
+  getDSTAdjustedDifferenceInDays(differenceInMilliseconds: number): number {
+    let differenceInHours = moment.duration(differenceInMilliseconds).asHours();
+    let differenceInDays = moment.duration(differenceInMilliseconds).asDays();
+    if (differenceInHours % 24 == 1) {
+      differenceInHours -= 1;
+      differenceInDays = differenceInHours / 24;
+    } else if (differenceInHours % 24 == 23) {
+      differenceInHours += 1;
+      differenceInDays = differenceInHours / 24;
+    }
+    return differenceInDays;
+  }
 }

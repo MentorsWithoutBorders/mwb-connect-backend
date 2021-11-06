@@ -7,6 +7,7 @@ import os from 'os-utils';
 import dotenv from 'dotenv';
 import { Conn } from '../db/conn';
 import { constants } from '../utils/constants';
+import { Helpers } from '../utils/helpers';
 import { Users } from './users';
 import { UsersLessons } from './users_lessons';
 import { UsersLessonRequests } from './users_lesson_requests';
@@ -27,6 +28,7 @@ import Email from '../models/email.model';
 
 const conn = new Conn();
 const pool = conn.pool;
+const helpers = new Helpers();
 const users = new Users();
 const usersLessons = new UsersLessons();
 const usersLessonRequests = new UsersLessonRequests();
@@ -752,15 +754,15 @@ export class UsersBackgroundProcesses {
   async getShowStepReminder(user: User, client: pg.PoolClient): Promise<boolean> {
     const userTimeZone = await usersTimeZones.getUserTimeZone(user.id as string, client);
     const lastStepAdded = await usersSteps.getLastStepAddedFromDB(user.id as string, client);
-    let nextDeadLine = moment.utc(user.registeredOn).tz(userTimeZone.name).startOf('day');
-    while (nextDeadLine.isBefore(moment.utc().tz(userTimeZone.name).startOf('day'))) {
-      nextDeadLine = nextDeadLine.add(7, 'd');
+    let nextDeadline = moment.utc(user.registeredOn).tz(userTimeZone.name).startOf('day');
+    while (nextDeadline.isBefore(moment.utc().tz(userTimeZone.name).startOf('day'))) {
+      nextDeadline = nextDeadline.add(7, 'd');
     }
     const lastStepAddedDateTime = moment.utc(lastStepAdded.dateTime).tz(userTimeZone.name).startOf('day');    
     let showStepReminder = false;
-    const daysSinceRegistration = moment.duration(moment.utc().tz(userTimeZone.name).startOf('day').diff(moment.utc(user.registeredOn).tz(userTimeZone.name).startOf('day'))).asDays();
-    const limit = daysSinceRegistration > 7 ? 7 : 8;
-    if (Object.keys(lastStepAdded).length == 0 || moment.duration(nextDeadLine.diff(lastStepAddedDateTime)).asDays() >= limit) {
+    const timeSinceRegistration = moment.utc().tz(userTimeZone.name).startOf('day').diff(moment.utc(user.registeredOn).tz(userTimeZone.name).startOf('day'));
+    const limit = helpers.getDSTAdjustedDifferenceInDays(timeSinceRegistration) > 7 ? 7 : 8;
+    if (Object.keys(lastStepAdded).length == 0 || helpers.getDSTAdjustedDifferenceInDays(nextDeadline.diff(lastStepAddedDateTime)) >= limit) {
       showStepReminder = true;
     }
     return showStepReminder;

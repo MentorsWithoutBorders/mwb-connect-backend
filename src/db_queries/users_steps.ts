@@ -4,12 +4,14 @@ import moment from 'moment';
 import pg from 'pg';
 import { Conn } from '../db/conn';
 import { constants } from '../utils/constants';
+import { Helpers } from '../utils/helpers';
 import { Users } from './users';
 import { UsersTimeZones } from './users_timezones';
 import Step from '../models/step.model';
 
 const conn = new Conn();
 const pool = conn.pool;
+const helpers = new Helpers();
 const users = new Users();
 const usersTimeZones = new UsersTimeZones();
 
@@ -112,8 +114,8 @@ export class UsersSteps {
     const user = await users.getUserFromDB(userId, client);
     const userTimeZone = await usersTimeZones.getUserTimeZone(userId, client);
     const timeSinceRegistration = moment.utc().tz(userTimeZone.name).startOf('day').diff(moment.utc(user.registeredOn).tz(userTimeZone.name).startOf('day'));
-    if (user.isMentor && moment.duration(timeSinceRegistration).asWeeks() > constants.MENTOR_WEEKS_TRAINING ||
-        !user.isMentor && moment.duration(timeSinceRegistration).asMonths() > constants.STUDENT_MONTHS_TRAINING + 0.05) {
+    if (user.isMentor && helpers.getDSTAdjustedDifferenceInDays(timeSinceRegistration) > constants.MENTOR_WEEKS_TRAINING * 7 ||
+        !user.isMentor && helpers.getDSTAdjustedDifferenceInDays(timeSinceRegistration) > constants.STUDENT_WEEKS_TRAINING * 7) {
       step.id = constants.TRAINING_COMPLETED_ID;
       step.dateTime = moment.utc().format(constants.DATE_TIME_FORMAT);
     }    
