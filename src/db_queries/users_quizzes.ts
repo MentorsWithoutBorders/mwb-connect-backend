@@ -86,7 +86,7 @@ export class UsersQuizzes {
         const quizStartNumber = this.getQuizStartNumber(quizzesSetNumber, weeklyCount);
         quizzes = this.getAssignedQuizzesStudent(quizzesBetweenDates, quizStartNumber, weeklyCount, false);
       } else {
-        const quizzesStartDate = moment.utc(registeredOn).add((constants.STUDENT_MAX_QUIZZES_SETS * 2 + 1) * 7, 'days');
+        const quizzesStartDate = moment.utc(registeredOn).add((constants.STUDENT_MAX_QUIZZES_SETS * 2 + 1) * 7 + 1, 'days');
         const quizStartNumber = this.getQuizzesRemainingStartNumber(quizzes, quizzesStartDate);
         quizzes = this.getAssignedQuizzesStudent(quizzesBetweenDates, quizStartNumber, weeklyCount, true);
       }

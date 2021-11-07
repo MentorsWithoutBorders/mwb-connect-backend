@@ -346,7 +346,9 @@ export class Users {
       const deleteAvailabilitiesQuery = 'DELETE FROM users_availabilities WHERE user_id = $1';
       await client.query(deleteAvailabilitiesQuery, [id]);
       const deleteAppVersionQuery = 'DELETE FROM users_app_versions WHERE user_id = $1';
-      await client.query(deleteAppVersionQuery, [id]);        
+      await client.query(deleteAppVersionQuery, [id]);
+      const deleteLoggerQuery = 'DELETE FROM logger WHERE user_id = $1';
+      await client.query(deleteLoggerQuery, [id]);         
       const deleteUserQuery = 'DELETE FROM users WHERE id = $1';
       await client.query(deleteUserQuery, [id]);
       await auth.revokeRefreshToken(id, client);
