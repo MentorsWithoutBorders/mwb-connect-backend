@@ -273,7 +273,7 @@ export class Users {
       let values = [userId, availability.dayOfWeek, timeFrom, timeTo];
       const { rows }: pg.QueryResult = await client.query(insertAvailabilityQuery, values);
       const id = rows[0].id;
-      if (dayOfWeekConnected) {
+      if (dayOfWeekConnected && timeToConnected != '00:00') {
         const insertAvailabilityConnectedQuery = `INSERT INTO users_availabilities (user_id, utc_day_of_week, utc_time_from, utc_time_to, connected_to)
           VALUES ($1, $2, $3, $4, $5)`;
         values = [userId, dayOfWeekConnected, timeFromConnected as string, timeToConnected as string, id];

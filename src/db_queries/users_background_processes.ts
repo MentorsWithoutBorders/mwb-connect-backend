@@ -162,7 +162,8 @@ export class UsersBackgroundProcesses {
       queryWhereAvailabilities = 'AND (';
       for (const availability of studentAvailabilities) {
         const timeFrom = moment(availability.time.from, 'h:ma').format('HH:mm');
-        const timeTo = moment(availability.time.to, 'h:ma').format('HH:mm');
+        let timeTo = moment(availability.time.to, 'h:ma').format('HH:mm');
+        timeTo = helpers.getEndOfDay(timeTo);
         queryWhereAvailabilities += `TRIM(TO_CHAR(ul.date_time, 'Day')) = '${availability.dayOfWeek}'
           AND '${timeFrom}'::TIME <= ul.date_time::TIME AND '${timeTo}'::TIME > ul.date_time::TIME OR `;
       }
@@ -344,7 +345,8 @@ export class UsersBackgroundProcesses {
       queryWhereAvailabilities = 'AND (';
       for (const availability of studentAvailabilities) {
         const timeFrom = moment(availability.time.from, 'h:ma').format('HH:mm');
-        const timeTo = moment(availability.time.to, 'h:ma').format('HH:mm');
+        let timeTo = moment(availability.time.to, 'h:ma').format('HH:mm');
+        timeTo = helpers.getEndOfDay(timeTo);
         queryWhereAvailabilities += `ua.utc_day_of_week = '${availability.dayOfWeek}'
           AND ('${timeFrom}'::TIME >= ua.utc_time_from AND '${timeFrom}'::TIME < ua.utc_time_to OR '${timeTo}'::TIME > ua.utc_time_from AND '${timeTo}'::TIME <= ua.utc_time_to 
               OR '${timeFrom}'::TIME < ua.utc_time_from AND '${timeTo}'::TIME > ua.utc_time_to) OR `;

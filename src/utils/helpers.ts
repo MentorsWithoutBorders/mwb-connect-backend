@@ -61,4 +61,12 @@ export class Helpers {
     }
     return differenceInDays;
   }
+
+  getEndOfDay(time: string): string {
+    if (time == '00:00') {
+      return '24:00';
+    } else {
+      return time;
+    }
+  }
 }
