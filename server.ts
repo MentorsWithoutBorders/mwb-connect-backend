@@ -91,7 +91,7 @@ app.post('/api/v1/send_reset_password/:email', usersResetPassword.addUserResetPa
 app.post('/api/v1/reset_password', usersResetPassword.resetPassword);
 
 // Users
-app.get('/api/v1/users', users.getUsers);
+// app.get('/api/v1/users', users.getUsers);
 app.get('/api/v1/user', users.getUser);
 app.put('/api/v1/user', users.updateUser);
 app.delete('/api/v1/user', users.deleteUser);
