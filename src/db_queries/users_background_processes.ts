@@ -17,6 +17,7 @@ import { UsersTimeZones } from './users_timezones';
 import { UsersAppVersions } from './users_app_versions';
 import { UsersPushNotifications } from './users_push_notifications';
 import { UsersSendEmails } from './users_send_emails';
+import { AdminTrainingReminders } from './admin_training_reminders';
 import User from '../models/user.model';
 import Subfield from '../models/subfield.model';
 import LessonRequest from '../models/lesson_request.model';
@@ -38,6 +39,7 @@ const usersAppVersions = new UsersAppVersions();
 const usersTimeZones = new UsersTimeZones();
 const usersPushNotifications = new UsersPushNotifications();
 const usersSendEmails = new UsersSendEmails();
+const adminTrainingReminders = new AdminTrainingReminders();
 dotenv.config();
 
 export class UsersBackgroundProcesses {
@@ -733,6 +735,7 @@ export class UsersBackgroundProcesses {
     } else {
       usersPushNotifications.sendPNSecondTrainingReminder(user.id as string, showStepReminder, showQuizReminder, remainingQuizzes);
       usersSendEmails.sendEmailSecondTrainingReminder(user, showStepReminder, showQuizReminder, remainingQuizzes);
+      adminTrainingReminders.addTrainingReminder(user, !showStepReminder, remainingQuizzes);
     }
   }
   
