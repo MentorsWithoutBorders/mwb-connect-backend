@@ -20,6 +20,7 @@ import { UsersPushNotifications } from './src/db_queries/users_push_notification
 import { UsersAppVersions } from './src/db_queries/users_app_versions';
 import { UsersAppFlags } from './src/db_queries/users_app_flags';
 import { UsersBackgroundProcesses } from './src/db_queries/users_background_processes';
+import { AdminTrainingReminders } from './src/db_queries/admin_training_reminders';
 import { Fields } from './src/db_queries/fields';
 import { Subfields } from './src/db_queries/subfields';
 import { Skills } from './src/db_queries/skills';
@@ -48,6 +49,7 @@ const usersSupportRequests: UsersSupportRequests = new UsersSupportRequests();
 const usersAppVersions: UsersAppVersions = new UsersAppVersions();
 const usersAppFlags: UsersAppFlags = new UsersAppFlags();
 const usersBackgroundProcesses: UsersBackgroundProcesses = new UsersBackgroundProcesses();
+const adminTrainingReminders: AdminTrainingReminders = new AdminTrainingReminders();
 const logger: Logger = new Logger();
 const fields: Fields = new Fields();
 const subfields: Subfields = new Subfields();
@@ -200,6 +202,11 @@ cron.schedule('* * * * *', function() {
   usersBackgroundProcesses.sendTrainingRemindersFromDB(false);
   usersBackgroundProcesses.sendCPUUsage();
 });
+
+
+// Admin training reminders
+app.get('/api/v1/admin_training_reminders', adminTrainingReminders.getTrainingReminders);
+
 
 app.listen(port, () => {
   console.log(`App running on port ${port}.`);

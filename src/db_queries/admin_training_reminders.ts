@@ -3,11 +3,16 @@ import autoBind from 'auto-bind';
 import pg from 'pg';
 import moment from 'moment';
 import { Conn } from '../db/conn';
+import { constants } from '../utils/constants';
+import { Helpers } from '../utils/helpers';
+import { UsersQuizzes } from './users_quizzes';
 import User from '../models/user.model';
 import TrainingReminder from '../models/training_reminder.model';
 
 const conn = new Conn();
 const pool = conn.pool;
+const helpers = new Helpers();
+const usersQuizzes = new UsersQuizzes();
 
 export class AdminTrainingReminders {
   constructor() {
@@ -16,18 +21,64 @@ export class AdminTrainingReminders {
 
   async getTrainingReminders(request: Request, response: Response): Promise<void> {
     const userId = request.user.id as string;
+    const client: pg.PoolClient = await pool.connect();    
     try {
-      const getTrainingRemindersQuery = 'SELECT enabled, time FROM admin_training_reminders WHERE user_id = $1';
-      const { rows }: pg.QueryResult = await pool.query(getTrainingRemindersQuery, [userId]);
-      const time = rows[0].time.substring(0, rows[0].time.lastIndexOf(':'));
-      // const trainingReminder: TrainingReminder = {
-      //   enabled: rows[0].enabled,
-      //   time: time
-      // }
-      // response.status(200).json(trainingReminder);
+      await client.query('BEGIN');      
+      const getTrainingRemindersQuery = `SELECT atr.user_id, u.name, u.email, atr.is_step_added, atr.remaining_quizzes, atr.last_reminder_date_time, atrt.text, ac.conversation FROM admin_training_reminders atr
+        JOIN users u
+          ON atr.user_id = u.id
+        JOIN admin_training_reminders_texts atrt
+          ON atr.reminder_to_send = atrt.serial_number
+        JOIN admin_assigned_users aau
+          ON atr.user_id = aau.assigned_user_id
+        FULL OUTER JOIN admin_conversations ac
+          ON atr.user_id = ac.user_id
+        WHERE aau.trainer_id = $1
+          AND date_trunc('day', now())::date - date_trunc('day', atr.last_reminder_date_time)::date >= 2`;
+      const { rows }: pg.QueryResult = await client.query(getTrainingRemindersQuery, [userId]);
+      const trainingReminders: Array<TrainingReminder> = [];
+      for (const row of rows) {
+        const user: User = {
+          id: row.user_id,
+          name: row.name,
+          email: row.email
+        };
+        const lastReminderDateTime = moment.utc(row.last_reminder_date_time).format(constants.DATE_FORMAT)
+        const isStepAdded = await this.getIsStepAdded(user.id as string, lastReminderDateTime);
+        const previousRemainingQuizzes = row.remaining_quizzes;
+        const quizzes = await usersQuizzes.getQuizzesFromDB(user.id as string, client);
+        const remainingQuizzes = helpers.getRemainingQuizzes(quizzes);
+        const shouldShowRemainingQuizzes = previousRemainingQuizzes > 0 && remainingQuizzes > 0;
+        if (!isStepAdded || shouldShowRemainingQuizzes) {
+          const trainingReminder = {
+            user: user,
+            isStepAdded: isStepAdded,
+            remainingQuizzes: 0
+          }
+          if (shouldShowRemainingQuizzes) {
+            trainingReminder.remainingQuizzes = remainingQuizzes;
+          }
+          trainingReminders.push(trainingReminder);
+        }
+      }
+      response.status(200).json(trainingReminders);
+      await client.query('COMMIT');      
     } catch (error) {
       response.status(400).send(error);
+      await client.query('ROLLBACK');      
     } 
+  }
+
+  async getIsStepAdded(userId: string, dateTime: string): Promise<boolean> {
+    let isStepAdded = false;
+    const getIsStepAddedQuery = `SELECT id FROM users_steps 
+      WHERE user_id = $1
+        AND date_time >= $2::date`;
+    const { rows }: pg.QueryResult = await pool.query(getIsStepAddedQuery, [userId, dateTime]);
+    if (rows.length > 0) {
+      isStepAdded = true;
+    }
+    return isStepAdded;
   }
 
   async addTrainingReminder(user: User, isStepAdded: boolean, remainingQuizzes: number): Promise<void> {

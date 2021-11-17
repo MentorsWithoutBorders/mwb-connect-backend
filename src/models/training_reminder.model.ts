@@ -1,5 +1,7 @@
+import User from "./user.model";
+
 export default interface TrainingReminder {
-  userId?: string;
+  user?: User;
   isStepAdded?: boolean;
   remainingQuizzes?: number;
   lastReminderDateTime?: string;

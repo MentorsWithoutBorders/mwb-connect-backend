@@ -22,7 +22,6 @@ import User from '../models/user.model';
 import Subfield from '../models/subfield.model';
 import LessonRequest from '../models/lesson_request.model';
 import Lesson from '../models/lesson.model';
-import Quiz from '../models/quiz.model';
 import Availability from '../models/availability.model';
 import AvailableMentor from '../models/available_mentor.model';
 import Email from '../models/email.model';
@@ -715,7 +714,7 @@ export class UsersBackgroundProcesses {
           showQuizReminder = quizNumber > 0 ? true : false;
         } else {
           const quizzes = await usersQuizzes.getQuizzesFromDB(user.id as string, client);
-          remainingQuizzes = this.getRemainingQuizzes(quizzes);
+          remainingQuizzes = helpers.getRemainingQuizzes(quizzes);
           showQuizReminder = remainingQuizzes > 0 ? true : false;
         }
         this.sendFirstAndSecondTrainingReminders(isFirst, user, showStepReminder, showQuizReminder, remainingQuizzes);
@@ -744,16 +743,6 @@ export class UsersBackgroundProcesses {
     return appVersion.major == 1 && appVersion.minor == 0 && 
       (appVersion.revision == 1 && appVersion.build == 3 ||
        appVersion.revision == 4 && (appVersion.build == 15 || appVersion.build == 23));
-  }
-
-  getRemainingQuizzes(quizzes: Array<Quiz>): number {
-    let remainingQuizzes = 0;
-    for (const quiz of quizzes) {
-      if (!quiz.isCorrect) {
-        remainingQuizzes++;
-      }
-    }
-    return remainingQuizzes;
   }
   
   async getShowStepReminder(user: User, client: pg.PoolClient): Promise<boolean> {

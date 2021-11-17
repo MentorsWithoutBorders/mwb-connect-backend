@@ -3,6 +3,7 @@ import jwt from 'jsonwebtoken';
 import dotenv from 'dotenv';
 import moment from 'moment';
 import User from '../models/user.model';
+import Quiz from '../models/quiz.model';
 import { constants } from '../utils/constants';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -69,4 +70,14 @@ export class Helpers {
       return time;
     }
   }
+
+  getRemainingQuizzes(quizzes: Array<Quiz>): number {
+    let remainingQuizzes = 0;
+    for (const quiz of quizzes) {
+      if (!quiz.isCorrect) {
+        remainingQuizzes++;
+      }
+    }
+    return remainingQuizzes;
+  }  
 }
