@@ -165,7 +165,6 @@ export class UsersSteps {
       response.status(200).send(`Step modified with ID: ${stepId}`);
       await client.query('COMMIT');
     } catch (error) {
-      console.log(error);
       response.status(400).send(error);
       await client.query('ROLLBACK');
     } finally {

@@ -54,7 +54,6 @@ export class UsersSkills {
       console.log(error)
       response.status(400).send(error);
       await client.query('ROLLBACK');
-      console.log("rolled back");
     } finally {
       client.release();
     }  
