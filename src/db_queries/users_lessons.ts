@@ -37,7 +37,7 @@ export class UsersLessons {
  
   async getNextLesson(request: Request, response: Response): Promise<void> {
     const userId = request.user.id as string;
-    const client: pg.PoolClient = await pool.connect();
+    const client = await pool.connect();
     try {
       await client.query('BEGIN');
       const isMentor = await this.getIsMentor(userId, client);
@@ -250,7 +250,7 @@ export class UsersLessons {
         lesson.isRecurrenceDateSelected = lessonRow.is_recurrence_date_selected;
         lesson.students = await this.getLessonStudents(lesson, false,client);
       } else {
-        const user: User = await users.getUserFromDB(lessonRow.mentor_id, client);
+        const user = await users.getUserFromDB(lessonRow.mentor_id, client);
         const mentor: User = {
           id: user.id as string,
           name: user.name as string,
@@ -264,7 +264,7 @@ export class UsersLessons {
   
   async getPreviousLesson(request: Request, response: Response): Promise<void> {
     const userId = request.user.id as string;
-    const client: pg.PoolClient = await pool.connect();
+    const client = await pool.connect();
     try {
       await client.query('BEGIN');
       await client.query(constants.READ_ONLY_TRANSACTION);
@@ -361,7 +361,7 @@ export class UsersLessons {
     const userId = request.user.id as string;
     const lessonId = request.params.id;
     const lesson: Lesson = request.body
-    const client: pg.PoolClient = await pool.connect();
+    const client = await pool.connect();
     try {
       await client.query('BEGIN');
       lesson.id = lessonId;
@@ -522,7 +522,7 @@ export class UsersLessons {
     const mentorId = request.user.id as string;
     const lessonId = request.params.id;
     const { isRecurrent, endRecurrenceDateTime, isRecurrenceDateSelected }: Lesson = request.body
-    const client: pg.PoolClient = await pool.connect();
+    const client = await pool.connect();
     try {
       await client.query('BEGIN');
       const nextLesson = await this.getNextLessonFromDB(mentorId, true, client);
@@ -550,7 +550,7 @@ export class UsersLessons {
   async addStudentsSkills(request: Request, response: Response): Promise<void> {
     const lessonId = request.params.id;
     const { listIds }: Ids = request.body;
-    const client: pg.PoolClient = await pool.connect();
+    const client = await pool.connect();
     try {
       await client.query('BEGIN');
       const lesson: Lesson = {
@@ -578,7 +578,7 @@ export class UsersLessons {
   async addStudentsLessonNotes(request: Request, response: Response): Promise<void> {
     const lessonId = request.params.id;
     const { text }: LessonNote = request.body
-    const client: pg.PoolClient = await pool.connect();
+    const client = await pool.connect();
     try {
       await client.query('BEGIN');
       const lesson: Lesson = {
@@ -633,7 +633,7 @@ export class UsersLessons {
   async getLessonGuideRecommendations(request: Request, response: Response): Promise<void> {
     const userId = request.user.id as string;
     const lessonId = request.params.id;
-    const client: pg.PoolClient = await pool.connect();
+    const client = await pool.connect();
     try {
       await client.query('BEGIN');
       await client.query(constants.READ_ONLY_TRANSACTION);
@@ -711,7 +711,7 @@ export class UsersLessons {
   async getLessonGuideTutorials(request: Request, response: Response): Promise<void> {
     const userId = request.user.id as string;
     const lessonId = request.params.id;
-    const client: pg.PoolClient = await pool.connect();
+    const client = await pool.connect();
     try {
       await client.query('BEGIN');
       await client.query(constants.READ_ONLY_TRANSACTION);

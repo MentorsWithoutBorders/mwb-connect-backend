@@ -21,7 +21,7 @@ export class UsersResetPassword {
 
   async resetPassword(request: Request, response: Response): Promise<void> {
     const { id, newPassword }: ResetPassword = request.body
-    const client: pg.PoolClient = await pool.connect();
+    const client = await pool.connect();
     try {
       const getEmailQuery = `SELECT email FROM users_reset_password
         WHERE id = $1`;
@@ -45,7 +45,7 @@ export class UsersResetPassword {
 
   async addUserResetPassword(request: Request, response: Response): Promise<void> {
     const email = request.params.email;
-    const client: pg.PoolClient = await pool.connect();
+    const client = await pool.connect();
     try {
       await client.query('BEGIN');
       const findUserQuery = `SELECT id FROM users WHERE email = $1`;

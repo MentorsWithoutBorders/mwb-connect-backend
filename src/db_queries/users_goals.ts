@@ -16,7 +16,7 @@ export class UsersGoals {
 
   async getGoals(request: Request, response: Response): Promise<void> {
     const userId = request.user.id as string;
-    const client: pg.PoolClient = await pool.connect();
+    const client = await pool.connect();
     try {
       await client.query('BEGIN');
       await client.query(constants.READ_ONLY_TRANSACTION);
@@ -67,7 +67,7 @@ export class UsersGoals {
   async addGoal(request: Request, response: Response): Promise<void> {
     const userId = request.user.id as string;
     const { text }: Goal = request.body;
-    const client: pg.PoolClient = await pool.connect();
+    const client = await pool.connect();
     try {
       await client.query('BEGIN');
       const goal: Goal = await this.addGoalToDB(userId, text, client);
@@ -115,7 +115,7 @@ export class UsersGoals {
   async deleteGoal(request: Request, response: Response): Promise<void> {
     const userId = request.user.id as string;
     const goalId = request.params.id;
-    const client: pg.PoolClient = await pool.connect();
+    const client = await pool.connect();
     try {
       await client.query('BEGIN');
       const deleteGoalQuery = 'DELETE FROM users_goals WHERE user_id = $1 AND id = $2';

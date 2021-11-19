@@ -45,7 +45,7 @@ export class UsersLessonRequests {
   
   async getLessonRequest(request: Request, response: Response): Promise<void> {
     const userId = request.user.id as string;
-    const client: pg.PoolClient = await pool.connect();
+    const client = await pool.connect();
     try {
       await client.query('BEGIN');
       await client.query(constants.READ_ONLY_TRANSACTION);
@@ -88,7 +88,7 @@ export class UsersLessonRequests {
           wasExpiredShown: rows[0].was_expired_shown,
         }
         if (isMentor) {
-          const user: User = await users.getUserFromDB(rows[0].student_id, client);
+          const user = await users.getUserFromDB(rows[0].student_id, client);
           const student: User = {
             id: user.id as string,
             name: user.name as string,
@@ -117,7 +117,7 @@ export class UsersLessonRequests {
     const mentorId = request.user.id as string;
     const lessonRequestId = request.params.id;
     const { meetingUrl, isRecurrent, endRecurrenceDateTime, isRecurrenceDateSelected }: Lesson = request.body
-    const client: pg.PoolClient = await pool.connect();
+    const client = await pool.connect();
     try {
       await client.query('BEGIN');
       const getLessonRequestQuery = `SELECT ulr.id, ulr.student_id, ulr.subfield_id, s.name AS subfield_name, ulr.lesson_date_time 

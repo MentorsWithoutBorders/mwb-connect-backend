@@ -44,7 +44,7 @@ export class Auth {
       response.status(400).send({'message': 'Please enter a valid email address'});
       return ;
     }
-    const client: pg.PoolClient = await pool.connect();
+    const client = await pool.connect();
     try {
       const getUsersQuery = 'SELECT email FROM users WHERE email = $1';
       await client.query('BEGIN');
@@ -160,7 +160,7 @@ export class Auth {
       response.status(400).send({'message': 'Please enter a valid email address'});
       return ;
     }
-    const client: pg.PoolClient = await pool.connect();
+    const client = await pool.connect();
     try {
       await client.query('BEGIN');
       const loginQuery = 'SELECT password, id FROM users WHERE email = $1';
@@ -235,7 +235,7 @@ export class Auth {
 
   async logout(request: Request, response: Response): Promise<void> {
     const userId = request.user.id as string;
-    const client: pg.PoolClient = await pool.connect();
+    const client = await pool.connect();
     try {
       await client.query('BEGIN');
       await this.revokeRefreshToken(userId || '', client);
@@ -279,7 +279,7 @@ export class Auth {
   async getAccessToken(request: Request, response: Response): Promise<void> {
     const userId = request.params.id;
     const refreshToken = request.query.refreshToken as string;
-    const client: pg.PoolClient = await pool.connect();
+    const client = await pool.connect();
     try {
       await client.query('BEGIN');
       const getRefreshTokenQuery = 'SELECT user_id FROM users_refresh_tokens WHERE user_id = $1 AND refresh_token = $2';

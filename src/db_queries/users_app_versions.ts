@@ -30,7 +30,7 @@ export class UsersAppVersions {
   async addAppVersion(request: Request, response: Response): Promise<void> {
     const userId = request.user.id as string;
     const { major, minor, revision, build }: AppVersion = request.body
-    const client: pg.PoolClient = await pool.connect();
+    const client = await pool.connect();
     try {
       await client.query('BEGIN');
       const deleteAppVersionQuery = `DELETE FROM users_app_versions 

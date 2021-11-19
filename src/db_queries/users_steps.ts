@@ -46,7 +46,7 @@ export class UsersSteps {
   async getStepById(request: Request, response: Response): Promise<void> {
     const userId = request.user.id as string;
     const stepId = request.params.id;
-    const client: pg.PoolClient = await pool.connect();
+    const client = await pool.connect();
     try {
       await client.query('BEGIN');
       await client.query(constants.READ_ONLY_TRANSACTION);
@@ -80,7 +80,7 @@ export class UsersSteps {
 
   async getLastStepAdded(request: Request, response: Response): Promise<void> {
     const userId = request.user.id as string;
-    const client: pg.PoolClient = await pool.connect();
+    const client = await pool.connect();
     try {
       await client.query('BEGIN');
       await client.query(constants.READ_ONLY_TRANSACTION);
@@ -149,7 +149,7 @@ export class UsersSteps {
     const userId = request.user.id as string;
     const stepId = request.params.id;
     const { text, index, level, parentId }: Step = request.body
-    const client: pg.PoolClient = await pool.connect();
+    const client = await pool.connect();
     try {
       await client.query('BEGIN');
       const dateTime = moment.utc().format(constants.DATE_TIME_FORMAT);
@@ -180,7 +180,7 @@ export class UsersSteps {
   async deleteStep(request: Request, response: Response): Promise<void> {
     const userId = request.user.id as string;
     const stepId = request.params.id;
-    const client: pg.PoolClient = await pool.connect();
+    const client = await pool.connect();
     try {
       await client.query('BEGIN');
       const stepToDelete = await this.getStepByIdFromDB(userId, stepId, client);

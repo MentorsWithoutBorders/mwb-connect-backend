@@ -73,7 +73,7 @@ export class UsersBackgroundProcesses {
       ORDER BY sent_date_time`;
     const { rows }: pg.QueryResult = await pool.query(getLessonRequestsQuery);
     for (const rowRequest of rows) {
-      const client: pg.PoolClient = await pool.connect();
+      const client = await pool.connect();
       try {
         await client.query('BEGIN');
         const studentRequest: User = {
@@ -597,7 +597,7 @@ export class UsersBackgroundProcesses {
       const mentor: User = {
         id: row.mentor_id
       }
-      const client: pg.PoolClient = await pool.connect();
+      const client = await pool.connect();
       try {
         await client.query('BEGIN');
         const nextLesson = await usersLessons.getNextLessonFromDB(mentor.id as string, true, client);
@@ -644,7 +644,7 @@ export class UsersBackgroundProcesses {
         const mentor: User = {
           id: row.mentor_id
         }
-        const client: pg.PoolClient = await pool.connect();
+        const client = await pool.connect();
         try {
           await client.query('BEGIN');
           const previousLesson = await usersLessons.getPreviousLessonFromDB(mentor.id as string, client);
@@ -694,7 +694,7 @@ export class UsersBackgroundProcesses {
         AND date_trunc('day', now() AT TIME ZONE ut.name) + uns.time = date_trunc('minute', now() AT TIME ZONE ut.name);`;
     const { rows }: pg.QueryResult = await pool.query(getUsersForTrainingReminderQuery, [days]);
     for (const row of rows) {
-      const client: pg.PoolClient = await pool.connect();
+      const client = await pool.connect();
       try {
         await client.query('BEGIN');
         const user: User = {

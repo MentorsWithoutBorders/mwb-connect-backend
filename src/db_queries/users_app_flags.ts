@@ -33,7 +33,7 @@ export class UsersAppFlags {
   async addAppFlags(request: Request, response: Response): Promise<void> {
     const userId = request.user.id as string;
     const { isTrainingEnabled, isMentoringEnabled }: AppFlags = request.body
-    const client: pg.PoolClient = await pool.connect();
+    const client = await pool.connect();
     try {
       await client.query('BEGIN');
       await this.addAppFlagsFromDB(userId, isTrainingEnabled as boolean, isMentoringEnabled as boolean, client);

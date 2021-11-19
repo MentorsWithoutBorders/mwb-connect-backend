@@ -26,7 +26,7 @@ export class UsersQuizzes {
 
   async getQuizzes(request: Request, response: Response): Promise<void> {
     const userId = request.user.id as string;
-    const client: pg.PoolClient = await pool.connect();
+    const client = await pool.connect();
     try {
       await client.query('BEGIN');
       await client.query(constants.READ_ONLY_TRANSACTION);
@@ -43,7 +43,7 @@ export class UsersQuizzes {
 
   async getQuizNumber(request: Request, response: Response): Promise<void> {
     const userId = request.user.id as string;
-    const client: pg.PoolClient = await pool.connect();
+    const client = await pool.connect();
     try {
       await client.query('BEGIN');
       await client.query(constants.READ_ONLY_TRANSACTION);
@@ -305,7 +305,7 @@ export class UsersQuizzes {
   async addQuiz(request: Request, response: Response): Promise<void> {
     const userId = request.user.id as string;
     const { number, isCorrect, isClosed }: Quiz = request.body
-    const client: pg.PoolClient = await pool.connect();
+    const client = await pool.connect();
     try {
       await client.query('BEGIN');      
       const insertQuizQuery = `INSERT INTO users_quizzes (user_id, number, is_correct, is_closed, date_time)

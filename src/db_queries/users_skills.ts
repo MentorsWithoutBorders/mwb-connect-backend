@@ -21,7 +21,7 @@ export class UsersSkills {
   async getUserSkills(request: Request, response: Response): Promise<void> {
     const userId = request.params.user_id;
     const subfieldId = request.params.subfield_id;
-    const client: pg.PoolClient = await pool.connect();
+    const client = await pool.connect();
     try {
       await client.query('BEGIN');
       await client.query(constants.READ_ONLY_TRANSACTION);
@@ -40,7 +40,7 @@ export class UsersSkills {
     const userId = request.user.id as string;
     const subfieldId = request.params.id;
     const { listIds }: Ids = request.body;
-    const client: pg.PoolClient = await pool.connect();
+    const client = await pool.connect();
     try {
       await client.query('BEGIN');
       let skills = listIds;

@@ -38,11 +38,11 @@ export class Users {
   }
 
   async getUser(request: Request, response: Response): Promise<void> {
-    const client: pg.PoolClient = await pool.connect();
+    const client = await pool.connect();
     try {
       await client.query('BEGIN');
       await client.query(constants.READ_ONLY_TRANSACTION);
-      const user: User = await this.getUserFromDB(request.user.id as string, client);
+      const user = await this.getUserFromDB(request.user.id as string, client);
       if (user.isMentor) {
         user.lessonsAvailability = await this.getUserLessonsAvailability(request.user.id as string, client)        
       }
@@ -194,7 +194,7 @@ export class Users {
     const id = request.user.id as string;
     const { name, email, isMentor, field, isAvailable, availableFrom, availabilities, lessonsAvailability }: User = request.body
     const values = [name, email, field?.id, isAvailable, availableFrom, id];
-    const client: pg.PoolClient = await pool.connect();
+    const client = await pool.connect();
     try {
       await client.query('BEGIN');
       const updateUserQuery = 'UPDATE users SET name = $1, email = $2, field_id = $3, is_available = $4, available_from = $5 WHERE id = $6';
@@ -304,7 +304,7 @@ export class Users {
 
   async deleteUser(request: Request, response: Response): Promise<void> {
     const id = request.user.id as string;
-    const client: pg.PoolClient = await pool.connect();
+    const client = await pool.connect();
     try {
       await client.query('BEGIN');
       const deleteTimeZoneQuery = 'DELETE FROM users_timezones WHERE user_id = $1';
