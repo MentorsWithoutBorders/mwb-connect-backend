@@ -239,7 +239,7 @@ export class UsersLessonRequests {
   async updateLessonRequest(request: Request, response: Response): Promise<void> {
     const mentorId = request.user.id as string;
     const lessonRequestId = request.params.id;
-    const { wasCanceledShown, wasExpiredShown }: LessonRequest = request.body
+    const { wasCanceledShown, wasExpiredShown }: LessonRequest = request.body;
     try {
       const updateLessonRequestQuery = 'UPDATE users_lesson_requests SET was_canceled_shown = $1, was_expired_shown = $2 WHERE mentor_id = $3 AND id = $4';
       await pool.query(updateLessonRequestQuery, [wasCanceledShown, wasExpiredShown, mentorId, lessonRequestId]);
