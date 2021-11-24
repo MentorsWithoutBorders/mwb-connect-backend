@@ -259,9 +259,12 @@ export class AdminTrainingReminders {
   
   async updateLastContacted(request: Request, response: Response): Promise<void> {
     const id = request.params.id;
-    const { lastContactedDateTime }: TrainingReminder = request.body;
+    let { lastContactedDateTime }: TrainingReminder = request.body;
     const client = await pool.connect();    
     try {
+      if (!lastContactedDateTime) {
+        lastContactedDateTime = undefined;
+      }
       const updateLastContactedDateTimeQuery = `UPDATE admin_training_reminders
         SET last_contacted_date_time = $1 WHERE id = $2`;
       const values = [lastContactedDateTime, id];
