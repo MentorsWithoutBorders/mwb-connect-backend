@@ -207,6 +207,7 @@ cron.schedule('* * * * *', function() {
 // Admin training reminders
 app.get('/api/v1/admin_training_reminders', adminTrainingReminders.getTrainingReminders);
 app.post('/api/v1/admin_conversations', adminTrainingReminders.addConversation);
+app.put('/api/v1/admin_training_reminders/:id/last_contacted', adminTrainingReminders.updateLastContacted);
 
 
 app.listen(port, () => {

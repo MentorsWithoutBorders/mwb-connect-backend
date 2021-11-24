@@ -1,11 +1,13 @@
 import User from "./user.model";
 
 export default interface TrainingReminder {
+  id?: string;
   user?: User;
   isStepAdded?: boolean;
   remainingQuizzes?: number;
-  firstReminderDateTime?: string;
-  lastReminderDateTime?: string;
+  firstReminderDate?: string;
+  lastReminderDate?: string;
   reminderToSend?: string;
   conversations?: string;
+  lastContactedDateTime?: string;
 }

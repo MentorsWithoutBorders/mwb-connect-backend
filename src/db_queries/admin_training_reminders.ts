@@ -33,7 +33,7 @@ export class AdminTrainingReminders {
     const client = await pool.connect();    
     try {
       await client.query('BEGIN');
-      const getTrainingRemindersQuery = `SELECT atr.user_id, u.name, u.email, u.phone_number, atr.is_step_added, atr.remaining_quizzes, atr.last_reminder_date_time, atrt.text, ac.conversations, ac.last_conversation_date_time FROM admin_training_reminders atr
+      const getTrainingRemindersQuery = `SELECT atr.id, atr.user_id, u.name, u.email, u.phone_number, atr.is_step_added, atr.remaining_quizzes, atr.last_reminder_date_time, atr.last_contacted_date_time, atrt.text, ac.conversations, ac.last_conversation_date_time FROM admin_training_reminders atr
         JOIN users u
           ON atr.user_id = u.id
         JOIN admin_training_reminders_texts atrt
@@ -67,12 +67,15 @@ export class AdminTrainingReminders {
         if (shouldShowTrainingReminder && (!isStepAdded || shouldShowRemainingQuizzes)) {
           const firstReminderAtTimeZone = moment.utc(lastReminderDateTime).tz(userTimeZone.name).subtract(2, 'd').format(constants.SHORT_DATE_FORMAT);
           const lastReminderAtTimeZone = moment.utc(lastReminderDateTime).tz(userTimeZone.name).format(constants.SHORT_DATE_FORMAT);
+          const lastContactedDateTime = this.getLastContactedDateTime(row.last_contacted_date_time);
           const trainingReminder: TrainingReminder = {
+            id: row.id,
             user: user,
-            firstReminderDateTime: firstReminderAtTimeZone,
-            lastReminderDateTime: lastReminderAtTimeZone,
+            firstReminderDate: firstReminderAtTimeZone,
+            lastReminderDate: lastReminderAtTimeZone,
             isStepAdded: isStepAdded,
-            conversations: row.conversations ?? ''
+            conversations: row.conversations ?? '',
+            lastContactedDateTime: lastContactedDateTime
           }
           if (shouldShowRemainingQuizzes) {
             trainingReminder.remainingQuizzes = remainingQuizzes;
@@ -91,6 +94,14 @@ export class AdminTrainingReminders {
       await client.query('ROLLBACK');      
     } finally {
       client.release();
+    }
+  }
+
+  getLastContactedDateTime(lastContactedDateTime: string): string {
+    if (lastContactedDateTime) {
+      return moment.utc(lastContactedDateTime).format(constants.DATE_TIME_FORMAT);
+    } else {
+      return '';
     }
   }
 
@@ -116,7 +127,7 @@ export class AdminTrainingReminders {
     return stepQuizzesText;
   }  
 
-  getReminderToSend(reminderText: string, trainer: User, user: User, firstReminderDateTime: string, lastReminderDateTime: string, stepQuizzesText: string, lastConversationDateTime: string): string {
+  getReminderToSend(reminderText: string, trainer: User, user: User, firstReminderDate: string, lastReminderDateTime: string, stepQuizzesText: string, lastConversationDateTime: string): string {
     if (moment.utc(lastConversationDateTime).format(constants.DATE_FORMAT) == moment.utc().format(constants.DATE_FORMAT)) {
       return '';
     }
@@ -127,7 +138,7 @@ export class AdminTrainingReminders {
       reminderText = reminderText.replace('{student_name}', userFirstName as string);
     }
     reminderText = reminderText.replace('{trainer_name}', trainer.name as string);
-    reminderText = reminderText.replace('{first_reminder_date}', firstReminderDateTime);
+    reminderText = reminderText.replace('{first_reminder_date}', firstReminderDate);
     reminderText = reminderText.replace('{last_reminder_date}', lastReminderDateTime);
     const stepQuizzesNotDone = stepQuizzesText.replace('{add}', 'added').replace('{solve}', 'solved') + ' for the current week of training';
     reminderText = reminderText.replace('{step_quizzes_not_done}', stepQuizzesNotDone);
@@ -223,7 +234,7 @@ export class AdminTrainingReminders {
         const values = [userId, conversations, now];
         await client.query(insertTrainingReminderQuery, values)      
       }
-      this.updateTrainingReminder(userId, lastConversationDateTime);
+      this.updateReminderToSend(userId, lastConversationDateTime);
       response.status(200).json(`Conversation has been added for user: ${userId}`);
       await client.query('COMMIT');      
     } catch (error) {
@@ -234,7 +245,7 @@ export class AdminTrainingReminders {
     }      
   }
   
-  async updateTrainingReminder(userId: string, lastConversationDateTime: string): Promise<void> {
+  async updateReminderToSend(userId: string, lastConversationDateTime: string): Promise<void> {
     const getTrainingRemindersQuery = 'SELECT reminder_to_send FROM admin_training_reminders WHERE user_id = $1';
     const { rows }: pg.QueryResult = await pool.query(getTrainingRemindersQuery, [userId]);
     if (rows[0] && (!lastConversationDateTime || moment.utc().format(constants.DATE_FORMAT) != moment.utc(lastConversationDateTime).format(constants.DATE_FORMAT))) {
@@ -244,6 +255,25 @@ export class AdminTrainingReminders {
       const values = [reminderToSend, userId];
       await pool.query(updateTrainingRemindersQuery, values);
     }
-  }  
-}
+  }
+  
+  async updateLastContacted(request: Request, response: Response): Promise<void> {
+    const id = request.params.id;
+    const { lastContactedDateTime }: TrainingReminder = request.body;
+    const client = await pool.connect();    
+    try {
+      const updateLastContactedDateTimeQuery = `UPDATE admin_training_reminders
+        SET last_contacted_date_time = $1 WHERE id = $2`;
+      const values = [lastContactedDateTime, id];
+      await client.query(updateLastContactedDateTimeQuery, values);
+      response.status(200).json(`Last contacted date/time has been updated for training reminder: ${id}`);
+      await client.query('COMMIT');      
+    } catch (error) {
+      response.status(400).send(error);
+      await client.query('ROLLBACK');      
+    } finally {
+      client.release();
+    }      
+  }
 
+}
