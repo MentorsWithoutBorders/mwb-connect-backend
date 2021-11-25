@@ -33,7 +33,7 @@ export class AdminTrainingReminders {
     const client = await pool.connect();    
     try {
       await client.query('BEGIN');
-      const getTrainingRemindersQuery = `SELECT atr.id, atr.user_id, u.name, u.email, u.phone_number, atr.is_step_added, atr.remaining_quizzes, atr.last_reminder_date_time, atr.last_contacted_date_time, atrt.text, ac.conversations, ac.last_conversation_date_time FROM admin_training_reminders atr
+      const getTrainingRemindersQuery = `SELECT atr.id, atr.user_id, u.name, u.email, u.phone_number, u.registered_on, atr.is_step_added, atr.remaining_quizzes, atr.last_reminder_date_time, atr.last_contacted_date_time, atrt.text, ac.conversations, ac.last_conversation_date_time FROM admin_training_reminders atr
         JOIN users u
           ON atr.user_id = u.id
         JOIN admin_training_reminders_texts atrt
@@ -58,6 +58,7 @@ export class AdminTrainingReminders {
         const lastReminderDateTime = moment.utc(row.last_reminder_date_time).format(constants.DATE_TIME_FORMAT);
         const lastConversationDateTime = row.last_conversation_date_time ? moment.utc(row.last_conversation_date_time).format(constants.DATE_TIME_FORMAT) : '';
         const userTimeZone = await usersTimeZones.getUserTimeZone(user.id as string, client);
+        const certificateDate = moment.utc(row.registered_on).tz(userTimeZone.name).add(3, 'months').format(constants.SHORT_DATE_FORMAT);
         const shouldShowTrainingReminder = this.getShouldShowTrainingReminder(userTimeZone, lastReminderDateTime, lastConversationDateTime);
         const isStepAdded = await this.getIsStepAdded(user.id as string, row.is_step_added, lastReminderDateTime);
         const previousRemainingQuizzes = row.remaining_quizzes;
@@ -71,6 +72,7 @@ export class AdminTrainingReminders {
           const trainingReminder: TrainingReminder = {
             id: row.id,
             user: user,
+            certificateDate: certificateDate,
             firstReminderDate: firstReminderAtTimeZone,
             lastReminderDate: lastReminderAtTimeZone,
             isStepAdded: isStepAdded,
@@ -83,7 +85,7 @@ export class AdminTrainingReminders {
           }
           const reminderText = row.text;
           const stepQuizzesText = this.getStepQuizzesText(user.isMentor as boolean, isStepAdded, remainingQuizzes, quizSettings);
-          const reminderToSend = this.getReminderToSend(reminderText, trainer, user, firstReminderAtTimeZone, lastReminderAtTimeZone, stepQuizzesText, lastConversationDateTime);
+          const reminderToSend = this.getReminderToSend(trainingReminder, reminderText, trainer, user, stepQuizzesText);
           trainingReminder.reminderToSend = reminderToSend;
           trainingReminders.push(trainingReminder);
         }
@@ -128,8 +130,8 @@ export class AdminTrainingReminders {
     return stepQuizzesText;
   }  
 
-  getReminderToSend(reminderText: string, trainer: User, user: User, firstReminderDate: string, lastReminderDateTime: string, stepQuizzesText: string, lastConversationDateTime: string): string {
-    if (lastConversationDateTime != '' && moment.utc(lastConversationDateTime).format(constants.DATE_FORMAT) == moment.utc().format(constants.DATE_FORMAT)) {
+  getReminderToSend(trainingReminder: TrainingReminder, reminderText: string, trainer: User, user: User, stepQuizzesText: string): string {
+    if (trainingReminder.lastConversationDateTime != '' && moment.utc(trainingReminder.lastConversationDateTime).format(constants.DATE_FORMAT) == moment.utc().format(constants.DATE_FORMAT)) {
       return '';
     }
     const userFirstName = user.name?.split(' ')[0];
@@ -139,8 +141,9 @@ export class AdminTrainingReminders {
       reminderText = reminderText.replace('{student_name}', userFirstName as string);
     }
     reminderText = reminderText.replace('{trainer_name}', trainer.name as string);
-    reminderText = reminderText.replace('{first_reminder_date}', firstReminderDate);
-    reminderText = reminderText.replace('{last_reminder_date}', lastReminderDateTime);
+    reminderText = reminderText.replace('{certificate_date}', trainingReminder.certificateDate as string);
+    reminderText = reminderText.replace('{first_reminder_date}', trainingReminder.firstReminderDate as string);
+    reminderText = reminderText.replace('{last_reminder_date}', trainingReminder.lastReminderDate as string);
     const stepQuizzesNotDone = stepQuizzesText.replace('{add}', 'added').replace('{solve}', 'solved') + ' for the current week of training';
     reminderText = reminderText.replace('{step_quizzes_not_done}', stepQuizzesNotDone);
     const stepQuizzesToDo = stepQuizzesText.replace('{add}', 'add').replace('{solve}', 'solve');
