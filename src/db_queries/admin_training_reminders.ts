@@ -136,20 +136,20 @@ export class AdminTrainingReminders {
     }
     const userFirstName = user.name?.split(' ')[0];
     if (user.isMentor) {
-      reminderText = reminderText.replace('{mentor_name}', userFirstName as string);
+      reminderText = reminderText.split('{mentor_name}').join(userFirstName as string);
     } else {
-      reminderText = reminderText.replace('{student_name}', userFirstName as string);
+      reminderText = reminderText.split('{student_name}').join(userFirstName as string);
     }
-    reminderText = reminderText.replace('{trainer_name}', trainer.name as string);
-    reminderText = reminderText.replace('{certificate_date}', trainingReminder.certificateDate as string);
-    reminderText = reminderText.replace('{first_reminder_date}', trainingReminder.firstReminderDate as string);
-    reminderText = reminderText.replace('{last_reminder_date}', trainingReminder.lastReminderDate as string);
-    const stepQuizzesNotDone = stepQuizzesText.replace('{add}', 'added').replace('{solve}', 'solved') + ' for the current week of training';
-    reminderText = reminderText.replace('{step_quizzes_not_done}', stepQuizzesNotDone);
-    const stepQuizzesToDo = stepQuizzesText.replace('{add}', 'add').replace('{solve}', 'solve');
-    reminderText = reminderText.replace('{step_quizzes_to_do}', stepQuizzesToDo);
-    const stepQuizzesDoing = stepQuizzesText.replace('{add}', 'adding').replace('{solve}', 'solving');
-    reminderText = reminderText.replace('{step_quizzes_doing}', stepQuizzesDoing);
+    reminderText = reminderText.split('{trainer_name}').join(trainer.name as string);
+    reminderText = reminderText.split('{certificate_date}').join(trainingReminder.certificateDate as string);
+    reminderText = reminderText.split('{first_reminder_date}').join(trainingReminder.firstReminderDate as string);
+    reminderText = reminderText.split('{last_reminder_date}').join(trainingReminder.lastReminderDate as string);
+    const stepQuizzesNotDone = stepQuizzesText.split('{add}').join('added').split('{solve}').join('solved') + ' for the current week of training';
+    reminderText = reminderText.split('{step_quizzes_not_done}').join(stepQuizzesNotDone);
+    const stepQuizzesToDo = stepQuizzesText.split('{add}').join('add').split('{solve}').join('solve');
+    reminderText = reminderText.split('{step_quizzes_to_do}').join(stepQuizzesToDo);
+    const stepQuizzesDoing = stepQuizzesText.split('{add}').join('adding').split('{solve}').join('solving');
+    reminderText = reminderText.split('{step_quizzes_doing}').join(stepQuizzesDoing);
     return reminderText;
   }
 

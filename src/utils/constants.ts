@@ -1,7 +1,7 @@
 export const constants = {
   DATE_FORMAT: 'yyyy-MM-DD',
   DATE_TIME_FORMAT: 'yyyy-MM-DD HH:mm:ssZ',
-  SHORT_DATE_FORMAT: 'MMM DD',
+  SHORT_DATE_FORMAT: 'MMM D',
   TIME_FORMAT_LESSON: 'h:mm A',
   DATE_FORMAT_LESSON: 'dddd, MMM DD',
   DAYS_OF_WEEK: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
