@@ -75,7 +75,8 @@ export class AdminTrainingReminders {
             lastReminderDate: lastReminderAtTimeZone,
             isStepAdded: isStepAdded,
             conversations: row.conversations ?? '',
-            lastContactedDateTime: lastContactedDateTime
+            lastContactedDateTime: lastContactedDateTime,
+            lastConversationDateTime: lastConversationDateTime
           }
           if (shouldShowRemainingQuizzes) {
             trainingReminder.remainingQuizzes = remainingQuizzes;
@@ -128,7 +129,7 @@ export class AdminTrainingReminders {
   }  
 
   getReminderToSend(reminderText: string, trainer: User, user: User, firstReminderDate: string, lastReminderDateTime: string, stepQuizzesText: string, lastConversationDateTime: string): string {
-    if (moment.utc(lastConversationDateTime).format(constants.DATE_FORMAT) == moment.utc().format(constants.DATE_FORMAT)) {
+    if (lastConversationDateTime != '' && moment.utc(lastConversationDateTime).format(constants.DATE_FORMAT) == moment.utc().format(constants.DATE_FORMAT)) {
       return '';
     }
     const userFirstName = user.name?.split(' ')[0];

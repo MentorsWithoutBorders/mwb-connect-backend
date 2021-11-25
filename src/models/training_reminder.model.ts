@@ -10,4 +10,5 @@ export default interface TrainingReminder {
   reminderToSend?: string;
   conversations?: string;
   lastContactedDateTime?: string;
+  lastConversationDateTime?: string;
 }
