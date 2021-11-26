@@ -3,8 +3,8 @@ import Subfield from "./subfield.model";
 
 export default interface Lesson {
   id?: string;
-  students?: Array<User>;
   mentor?: User;
+  students?: Array<User>;
   subfield?: Subfield;
   dateTime?: string;
   meetingUrl?: string;

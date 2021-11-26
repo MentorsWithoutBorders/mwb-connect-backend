@@ -20,7 +20,6 @@ import { UsersPushNotifications } from './src/db_queries/users_push_notification
 import { UsersAppVersions } from './src/db_queries/users_app_versions';
 import { UsersAppFlags } from './src/db_queries/users_app_flags';
 import { UsersBackgroundProcesses } from './src/db_queries/users_background_processes';
-import { AdminTrainingReminders } from './src/db_queries/admin_training_reminders';
 import { Fields } from './src/db_queries/fields';
 import { Subfields } from './src/db_queries/subfields';
 import { Skills } from './src/db_queries/skills';
@@ -28,6 +27,8 @@ import { Tutorials } from './src/db_queries/tutorials';
 import { QuizzesSettings } from './src/db_queries/quizzes_settings';
 import { Updates } from './src/db_queries/updates';
 import { Logger } from './src/db_queries/logger';
+import { AdminTrainingReminders } from './src/db_queries/admin_training_reminders';
+import { AdminLessons } from './src/db_queries/admin_lessons';
 
 dotenv.config();
 const port = process.env.PORT;
@@ -49,7 +50,6 @@ const usersSupportRequests: UsersSupportRequests = new UsersSupportRequests();
 const usersAppVersions: UsersAppVersions = new UsersAppVersions();
 const usersAppFlags: UsersAppFlags = new UsersAppFlags();
 const usersBackgroundProcesses: UsersBackgroundProcesses = new UsersBackgroundProcesses();
-const adminTrainingReminders: AdminTrainingReminders = new AdminTrainingReminders();
 const logger: Logger = new Logger();
 const fields: Fields = new Fields();
 const subfields: Subfields = new Subfields();
@@ -57,6 +57,8 @@ const skills: Skills = new Skills();
 const tutorials: Tutorials = new Tutorials();
 const quizzesSettings: QuizzesSettings = new QuizzesSettings();
 const updates: Updates = new Updates();
+const adminTrainingReminders: AdminTrainingReminders = new AdminTrainingReminders();
+const adminLessons: AdminLessons = new AdminLessons();
 
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
@@ -208,6 +210,9 @@ cron.schedule('* * * * *', function() {
 app.get('/api/v1/admin_training_reminders', adminTrainingReminders.getTrainingReminders);
 app.post('/api/v1/admin_conversations', adminTrainingReminders.addConversation);
 app.put('/api/v1/admin_training_reminders/:id/last_contacted', adminTrainingReminders.updateLastContacted);
+
+// Admin lessons
+app.get('/api/v1/admin_lessons', adminLessons.getLessons);
 
 
 app.listen(port, () => {
