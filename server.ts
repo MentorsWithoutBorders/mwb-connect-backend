@@ -207,12 +207,12 @@ cron.schedule('* * * * *', function() {
 
 
 // Admin training reminders
-app.get('/api/v1/admin_training_reminders', adminTrainingReminders.getTrainingReminders);
-app.post('/api/v1/admin_conversations', adminTrainingReminders.addConversation);
-app.put('/api/v1/admin_training_reminders/:id/last_contacted', adminTrainingReminders.updateLastContacted);
+app.get('/api/v1/admin/training_reminders', adminTrainingReminders.getTrainingReminders);
+app.post('/api/v1/admin/conversations', adminTrainingReminders.addConversation);
+app.put('/api/v1/admin/training_reminders/:id/last_contacted', adminTrainingReminders.updateLastContacted);
 
 // Admin lessons
-app.get('/api/v1/admin_lessons', adminLessons.getLessons);
+app.get('/api/v1/admin/lessons', adminLessons.getLessons);
 
 
 app.listen(port, () => {
