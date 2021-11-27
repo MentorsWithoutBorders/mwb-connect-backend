@@ -29,6 +29,7 @@ import { Updates } from './src/db_queries/updates';
 import { Logger } from './src/db_queries/logger';
 import { AdminTrainingReminders } from './src/db_queries/admin_training_reminders';
 import { AdminLessons } from './src/db_queries/admin_lessons';
+import { AdminAvailableMentors } from './src/db_queries/admin_available_mentors';
 
 dotenv.config();
 const port = process.env.PORT;
@@ -59,6 +60,7 @@ const quizzesSettings: QuizzesSettings = new QuizzesSettings();
 const updates: Updates = new Updates();
 const adminTrainingReminders: AdminTrainingReminders = new AdminTrainingReminders();
 const adminLessons: AdminLessons = new AdminLessons();
+const adminAvailableMentors: AdminAvailableMentors = new AdminAvailableMentors();
 
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
@@ -213,6 +215,9 @@ app.put('/api/v1/admin/training_reminders/:id/last_contacted', adminTrainingRemi
 
 // Admin lessons
 app.get('/api/v1/admin/lessons', adminLessons.getLessons);
+
+// Admin available mentors
+app.get('/api/v1/admin/available_mentors', adminAvailableMentors.getAvailableMentors);
 
 
 app.listen(port, () => {

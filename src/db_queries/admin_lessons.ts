@@ -5,16 +5,12 @@ import moment from 'moment';
 import 'moment-timezone';
 import { Conn } from '../db/conn';
 import { constants } from '../utils/constants';
-import { Helpers } from '../utils/helpers';
-import { Users } from './users';
 import User from '../models/user.model';
 import Lesson from '../models/lesson.model';
 import Subfield from '../models/subfield.model';
 
 const conn = new Conn();
 const pool = conn.pool;
-const helpers = new Helpers();
-const users = new Users();
 
 export class AdminLessons {
   constructor() {
@@ -22,7 +18,6 @@ export class AdminLessons {
   }
 
   async getLessons(request: Request, response: Response): Promise<void> {
-    const trainerId = request.user.id as string;
     const client = await pool.connect();    
     try {
       await client.query('BEGIN');
