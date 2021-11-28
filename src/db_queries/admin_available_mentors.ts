@@ -51,7 +51,8 @@ export class AdminAvailableMentors {
           const mentor: User = {
             id: row.mentor_id,
             name: row.mentor_name,
-            field: field
+            field: field,
+            availableFrom: moment.utc(row.available_from).format(constants.DATE_TIME_FORMAT)
           }
           const subfield: Subfield = {
             name: row.subfield_name
@@ -70,11 +71,13 @@ export class AdminAvailableMentors {
           mentorLessons.push(lesson);
         }
         if (this.getShouldAddLessons(mentorLessons)) {
-          lessons = lessons.concat(this.getSortedLessons(mentorLessons));
+          lessons = lessons.concat(this.getSortedLessons(mentorLessons, false));
         }
-        const mentorsWihoutLessons = await this.getMentorsWithoutLessons(client);
-        lessons = lessons.concat(mentorsWihoutLessons);
       }
+      lessons = this.getSortedLessons(lessons, true);
+      const mentorsWihoutLessons = await this.getMentorsWithoutLessons(client);
+      lessons = mentorsWihoutLessons.concat(lessons);
+      lessons = lessons.sort((a, b) => moment.utc(a.mentor?.availableFrom).diff(moment.utc(b.mentor?.availableFrom)));
       response.status(200).json(lessons);
       await client.query('COMMIT');      
     } catch (error) {
@@ -87,7 +90,7 @@ export class AdminAvailableMentors {
 
   getShouldAddLessons(lessons: Array<Lesson>): boolean {
     let shouldAddLessons = true;
-    const sortedLessons = this.getSortedLessons(lessons);
+    const sortedLessons = this.getSortedLessons(lessons, false);
     const lastLessonDateTime = !sortedLessons[0].isRecurrent ? moment.utc(sortedLessons[0].dateTime) : moment.utc(sortedLessons[0].endRecurrenceDateTime);
     const isLastLessonCanceled = sortedLessons[0].isCanceled;
     if (lastLessonDateTime.isAfter(moment.utc()) && !isLastLessonCanceled) {
@@ -96,7 +99,7 @@ export class AdminAvailableMentors {
     return shouldAddLessons;
   }
 
-  getSortedLessons(lessons: Array<Lesson>): Array<Lesson> {
+  getSortedLessons(lessons: Array<Lesson>, isAscending: boolean): Array<Lesson> {
     let lessonDates = new Map();
     for (let i = 0; i < lessons.length; i++) {
       if (!lessons[i].isRecurrent) {
@@ -105,7 +108,11 @@ export class AdminAvailableMentors {
         lessonDates.set(i, moment.utc(lessons[i].endRecurrenceDateTime));
       }
     }
-    lessonDates = new Map([...lessonDates.entries()].sort((a, b) => b[1].diff(a[1])));
+    if (isAscending) {
+      lessonDates = new Map([...lessonDates.entries()].sort((a, b) => a[1].diff(b[1])));
+    } else {
+      lessonDates = new Map([...lessonDates.entries()].sort((a, b) => b[1].diff(a[1])));
+    }
     const keys = Array.from(lessonDates.keys());
     const sortedLessons = [];
     for (const key of keys) {
@@ -132,7 +139,8 @@ export class AdminAvailableMentors {
       const mentor: User = {
         id: row.mentor_id,
         name: row.mentor_name,
-        field: field
+        field: field,
+        availableFrom: moment.utc(row.available_from).format(constants.DATE_TIME_FORMAT)
       }
       const lesson: Lesson = {
         mentor: mentor
