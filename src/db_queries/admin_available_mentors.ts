@@ -61,7 +61,7 @@ export class AdminAvailableMentors {
             mentor: mentor,
             subfield: subfield,
             dateTime: moment.utc(row.date_time).format(constants.DATE_TIME_FORMAT),
-            isRecurrent: row.is_recurrent,
+            isRecurrent: row.is_recurrent ?? false,
             isCanceled: row.is_canceled ?? false
           };
           if (lesson.isRecurrent) {
@@ -72,6 +72,8 @@ export class AdminAvailableMentors {
         if (this.getShouldAddLessons(mentorLessons)) {
           lessons = lessons.concat(this.getSortedLessons(mentorLessons));
         }
+        const mentorsWihoutLessons = await this.getMentorsWithoutLessons(client);
+        lessons = lessons.concat(mentorsWihoutLessons);
       }
       response.status(200).json(lessons);
       await client.query('COMMIT');      
@@ -110,5 +112,33 @@ export class AdminAvailableMentors {
       sortedLessons.push(lessons[key]);
     }
     return sortedLessons; 
+  }
+
+  async getMentorsWithoutLessons(client: pg.PoolClient): Promise<Array<Lesson>> {
+    const getMentorsQuery = `SELECT u.id AS mentor_id, u.name AS mentor_name, u.available_from, u.field_id, f.name AS field_name FROM users u
+      JOIN fields f
+          ON u.field_id = f.id
+      WHERE u.is_mentor IS true
+        AND u.id NOT IN (
+        SELECT DISTINCT mentor_id FROM users_lessons
+      );`;
+    const { rows }: pg.QueryResult = await client.query(getMentorsQuery);
+    const lessons: Array<Lesson> = [];
+    for (const row of rows) {
+      const field: Field = {
+        id: row.field_id,
+        name: row.field_name
+      }
+      const mentor: User = {
+        id: row.mentor_id,
+        name: row.mentor_name,
+        field: field
+      }
+      const lesson: Lesson = {
+        mentor: mentor
+      };
+      lessons.push(lesson);
+    }
+    return lessons;    
   }
 }

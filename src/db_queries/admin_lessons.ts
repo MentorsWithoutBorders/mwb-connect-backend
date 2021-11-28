@@ -63,10 +63,12 @@ export class AdminLessons {
             subfield: subfield,
             dateTime: moment.utc(row.date_time).format(constants.DATE_TIME_FORMAT),
             meetingUrl: row.meeting_url,
-            isRecurrent: row.is_recurrent,
-            endRecurrenceDateTime: moment.utc(row.end_recurrence_date_time).format(constants.DATE_TIME_FORMAT),
+            isRecurrent: row.is_recurrent ?? false,
             isCanceled: row.is_canceled ?? false
           };
+          if (lesson.isRecurrent) {
+            lesson.endRecurrenceDateTime = moment.utc(row.end_recurrence_date_time).format(constants.DATE_TIME_FORMAT);            
+          }
         }
         lessons.push(lesson);     
       }
