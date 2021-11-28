@@ -42,7 +42,7 @@ export class AdminAvailableMentors {
       let lessons: Array<Lesson> = [];
       for (const i in group) {
         const lessonItems = group[i];
-        const mentorLessons = [];
+        let mentorLessons = [];
         for (const row of lessonItems) {
           const field: Field = {
             id: row.field_id,
@@ -70,8 +70,9 @@ export class AdminAvailableMentors {
           }
           mentorLessons.push(lesson);
         }
-        if (this.getShouldAddLessons(mentorLessons)) {
-          lessons = lessons.concat(this.getSortedLessons(mentorLessons, false));
+        mentorLessons = this.getSortedLessons(mentorLessons, false);
+        if (this.getShouldAddLesson(mentorLessons)) {
+          lessons.push(mentorLessons[0]);
         }
       }
       lessons = this.getSortedLessons(lessons, true);
@@ -88,9 +89,8 @@ export class AdminAvailableMentors {
     }
   }
 
-  getShouldAddLessons(lessons: Array<Lesson>): boolean {
+  getShouldAddLesson(sortedLessons: Array<Lesson>): boolean {
     let shouldAddLessons = true;
-    const sortedLessons = this.getSortedLessons(lessons, false);
     const lastLessonDateTime = !sortedLessons[0].isRecurrent ? moment.utc(sortedLessons[0].dateTime) : moment.utc(sortedLessons[0].endRecurrenceDateTime);
     const isLastLessonCanceled = sortedLessons[0].isCanceled;
     if (lastLessonDateTime.isAfter(moment.utc()) && !isLastLessonCanceled) {
