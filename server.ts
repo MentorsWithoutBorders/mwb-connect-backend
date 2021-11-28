@@ -218,7 +218,7 @@ app.get('/api/v1/admin/lessons', adminLessons.getLessons);
 
 // Admin available mentors
 app.get('/api/v1/admin/available_mentors', adminAvailableMentors.getAvailableMentors);
-app.put('/api/v1/admin/available_mentors/:id/last_contacted', adminAvailableMentors.updateLastContacted);
+app.put('/api/v1/admin/available_mentors/:id/should_contact', adminAvailableMentors.updateShouldContact);
 
 
 app.listen(port, () => {

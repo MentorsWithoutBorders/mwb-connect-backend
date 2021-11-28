@@ -167,16 +167,25 @@ export class AdminAvailableMentors {
     }
     return lessons;    
   }
-
-  async updateLastContacted(request: Request, response: Response): Promise<void> {
+  
+  async updateShouldContact(request: Request, response: Response): Promise<void> {
     const mentorId = request.params.id;
     const { shouldContact, lastContactedDateTime }: User = request.body;
     const client = await pool.connect();    
     try {
-      const updateLastContactedQuery = `UPDATE admin_available_users
-        SET should_contact = $1, last_contacted_date_time = $2 WHERE user_id = $3`;
-      const values = [shouldContact, lastContactedDateTime, mentorId];
-      await client.query(updateLastContactedQuery, values);
+      const getShouldContactQuery = 'SELECT id FROM admin_available_users WHERE user_id = $1';
+      const { rows }: pg.QueryResult = await pool.query(getShouldContactQuery, [mentorId]);
+      if (rows[0]) {
+        const updateShouldContactQuery = `UPDATE admin_available_users
+          SET should_contact = $1, last_contacted_date_time = $2 WHERE user_id = $3`;
+        const values = [shouldContact, lastContactedDateTime, mentorId];
+        await client.query(updateShouldContactQuery, values);
+      } else {
+        const insertShouldContactQuery = `INSERT INTO admin_available_users (user_id, should_contact, last_contacted_date_time)
+          VALUES ($1, $2, $3)`;
+        const values = [mentorId, shouldContact, lastContactedDateTime];
+        await client.query(insertShouldContactQuery, values);    
+      }
       response.status(200).json(`Last contacted date/time has been updated for user: ${mentorId}`);
       await client.query('COMMIT');      
     } catch (error) {
@@ -184,6 +193,6 @@ export class AdminAvailableMentors {
       await client.query('ROLLBACK');      
     } finally {
       client.release();
-    }      
+    }
   }  
 }
