@@ -19,4 +19,6 @@ export default interface User {
   availabilities?: Array<Availability>;
   lessonsAvailability?: LessonsAvailability;
   registeredOn?: string;
+  shouldContact?: boolean;
+  lastContactedDateTime?: string;
 }

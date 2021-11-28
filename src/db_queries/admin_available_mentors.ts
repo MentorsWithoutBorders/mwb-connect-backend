@@ -22,15 +22,18 @@ export class AdminAvailableMentors {
     const client = await pool.connect();    
     try {
       await client.query('BEGIN');
-      const getLessonsQuery = `SELECT l.mentor_id, l.mentor_name, l.available_from, l.lesson_id, l.field_id, f.name AS field_name, l.subfield_name, l.date_time, l.is_recurrent, l.end_recurrence_date_time, l.is_canceled, l.canceled_date_time FROM
-        (SELECT u.id AS mentor_id, u.name AS mentor_name, u.available_from, ul.id AS lesson_id, fs.field_id, s.name AS subfield_name, ul.date_time, ul.is_recurrent, ul.end_recurrence_date_time, ul.is_canceled, ul.canceled_date_time FROM users_lessons ul
+      const getLessonsQuery = `SELECT l.mentor_id, l.mentor_name, l.available_from, l.lesson_id, l.field_id, f.name AS field_name, l.subfield_name, l.date_time, l.is_recurrent, l.end_recurrence_date_time, l.is_canceled, l.canceled_date_time, l.should_contact, l.last_contacted_date_time, l.is_inactive FROM
+        (SELECT u.id AS mentor_id, u.name AS mentor_name, u.available_from, ul.id AS lesson_id, fs.field_id, s.name AS subfield_name, ul.date_time, ul.is_recurrent, ul.end_recurrence_date_time, ul.is_canceled, ul.canceled_date_time, aau.should_contact, aau.last_contacted_date_time, aau.is_inactive FROM users_lessons ul
           JOIN users u
             ON ul.mentor_id = u.id
           JOIN fields_subfields fs
-            ON ul.subfield_id = fs.subfield_id     
+            ON ul.subfield_id = fs.subfield_id 
           JOIN subfields s
             ON ul.subfield_id = s.id
-        WHERE u.available_from <= now()) l
+          LEFT OUTER JOIN admin_available_users aau
+            ON u.id = aau.user_id            
+        WHERE u.available_from <= now()
+          AND aau.is_inactive IS DISTINCT FROM true) l
         JOIN fields f
           ON l.field_id = f.id`;
       const { rows }: pg.QueryResult = await client.query(getLessonsQuery);
@@ -52,7 +55,9 @@ export class AdminAvailableMentors {
             id: row.mentor_id,
             name: row.mentor_name,
             field: field,
-            availableFrom: moment.utc(row.available_from).format(constants.DATE_TIME_FORMAT)
+            availableFrom: moment.utc(row.available_from).format(constants.DATE_TIME_FORMAT),
+            shouldContact: row.should_contact ?? true,
+            lastContactedDateTime: this.getLastContactedDateTime(row.last_contacted_date_time)
           }
           const subfield: Subfield = {
             name: row.subfield_name
@@ -89,6 +94,14 @@ export class AdminAvailableMentors {
     }
   }
 
+  getLastContactedDateTime(lastContactedDateTime?: string): string | undefined {
+    if (lastContactedDateTime) {
+      return moment.utc(lastContactedDateTime).format(constants.DATE_TIME_FORMAT);
+    } else {
+      return undefined;
+    }
+  }
+
   getShouldAddLesson(sortedLessons: Array<Lesson>): boolean {
     let shouldAddLessons = true;
     const lastLessonDateTime = !sortedLessons[0].isRecurrent ? moment.utc(sortedLessons[0].dateTime) : moment.utc(sortedLessons[0].endRecurrenceDateTime);
@@ -122,13 +135,16 @@ export class AdminAvailableMentors {
   }
 
   async getMentorsWithoutLessons(client: pg.PoolClient): Promise<Array<Lesson>> {
-    const getMentorsQuery = `SELECT u.id AS mentor_id, u.name AS mentor_name, u.available_from, u.field_id, f.name AS field_name FROM users u
-      JOIN fields f
-          ON u.field_id = f.id
+    const getMentorsQuery = `SELECT u.id AS mentor_id, u.name AS mentor_name, u.available_from, u.field_id, f.name AS field_name, aau.should_contact, aau.last_contacted_date_time, aau.is_inactive FROM users u
+        JOIN fields f
+        ON u.field_id = f.id
+      LEFT OUTER JOIN admin_available_users aau
+        ON u.id = aau.user_id
       WHERE u.is_mentor IS true
         AND u.id NOT IN (
-        SELECT DISTINCT mentor_id FROM users_lessons
-      );`;
+          SELECT DISTINCT mentor_id FROM users_lessons
+        )
+        AND aau.is_inactive IS DISTINCT FROM true`;
     const { rows }: pg.QueryResult = await client.query(getMentorsQuery);
     const lessons: Array<Lesson> = [];
     for (const row of rows) {
@@ -140,8 +156,10 @@ export class AdminAvailableMentors {
         id: row.mentor_id,
         name: row.mentor_name,
         field: field,
-        availableFrom: moment.utc(row.available_from).format(constants.DATE_TIME_FORMAT)
-      }
+        availableFrom: moment.utc(row.available_from).format(constants.DATE_TIME_FORMAT),
+        shouldContact: row.should_contact ?? true,
+        lastContactedDateTime: this.getLastContactedDateTime(row.last_contacted_date_time)
+      }     
       const lesson: Lesson = {
         mentor: mentor
       };
@@ -149,4 +167,23 @@ export class AdminAvailableMentors {
     }
     return lessons;    
   }
+
+  async updateLastContacted(request: Request, response: Response): Promise<void> {
+    const mentorId = request.params.id;
+    const { shouldContact, lastContactedDateTime }: User = request.body;
+    const client = await pool.connect();    
+    try {
+      const updateLastContactedQuery = `UPDATE admin_available_users
+        SET should_contact = $1, last_contacted_date_time = $2 WHERE user_id = $3`;
+      const values = [shouldContact, lastContactedDateTime, mentorId];
+      await client.query(updateLastContactedQuery, values);
+      response.status(200).json(`Last contacted date/time has been updated for user: ${mentorId}`);
+      await client.query('COMMIT');      
+    } catch (error) {
+      response.status(400).send(error);
+      await client.query('ROLLBACK');      
+    } finally {
+      client.release();
+    }      
+  }  
 }
