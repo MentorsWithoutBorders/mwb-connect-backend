@@ -21,4 +21,5 @@ export default interface User {
   registeredOn?: string;
   shouldContact?: boolean;
   lastContactedDateTime?: string;
+  isAdmin?: boolean;
 }

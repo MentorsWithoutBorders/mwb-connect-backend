@@ -64,12 +64,14 @@ export class Users {
     if (!uuidValidate(id)) {
       throw new ValidationError('Invalid user id');
     }
-    const getUserQuery = `SELECT u.id AS user_id, u.name, u.email, u.phone_number, o.id AS organization_id, o.name AS organization_name, f.id AS field_id, f.name AS field_name, u.is_mentor, u.is_available, u.available_from, u.registered_on
+    const getUserQuery = `SELECT u.id AS user_id, u.name, u.email, u.phone_number, o.id AS organization_id, o.name AS organization_name, f.id AS field_id, f.name AS field_name, u.is_mentor, u.is_available, u.available_from, u.registered_on, ap.is_admin
       FROM users u
       JOIN fields f
         ON u.field_id = f.id
       JOIN organizations o
         ON u.organization_id = o.id
+      LEFT OUTER JOIN admin_permissions ap
+        ON u.id = ap.user_id
       WHERE u.id = $1`;
     const { rows }: pg.QueryResult = await client.query(getUserQuery, [id]);
     if (rows.length === 0) {
@@ -95,7 +97,8 @@ export class Users {
       isAvailable: rows[0].is_available,
       availableFrom: moment.utc(rows[0].available_from).format(constants.DATE_TIME_FORMAT),
       availabilities: await this.getUserAvailabilities(id, client),
-      registeredOn: moment.utc(rows[0].registered_on).format(constants.DATE_TIME_FORMAT)
+      registeredOn: moment.utc(rows[0].registered_on).format(constants.DATE_TIME_FORMAT),
+      isAdmin: rows[0].is_admin
     }
   }
 
