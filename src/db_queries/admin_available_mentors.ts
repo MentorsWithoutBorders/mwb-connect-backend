@@ -32,10 +32,10 @@ export class AdminAvailableMentors {
             ON ul.subfield_id = s.id
           LEFT OUTER JOIN admin_available_users aau
             ON u.id = aau.user_id            
-        WHERE u.available_from <= now()
-          AND aau.is_inactive IS DISTINCT FROM true) l
+          WHERE u.available_from <= now()) l
         JOIN fields f
-          ON l.field_id = f.id`;
+          ON l.field_id = f.id
+        WHERE l.is_inactive IS DISTINCT FROM true`;
       const { rows }: pg.QueryResult = await client.query(getLessonsQuery);
       const group = rows.reduce((r, a) => {
         r[a.mentor_id] = [...r[a.mentor_id] || [], a];
@@ -136,7 +136,7 @@ export class AdminAvailableMentors {
 
   async getMentorsWithoutLessons(client: pg.PoolClient): Promise<Array<Lesson>> {
     const getMentorsQuery = `SELECT u.id AS mentor_id, u.name AS mentor_name, u.available_from, u.field_id, f.name AS field_name, aau.should_contact, aau.last_contacted_date_time, aau.is_inactive FROM users u
-        JOIN fields f
+      JOIN fields f
         ON u.field_id = f.id
       LEFT OUTER JOIN admin_available_users aau
         ON u.id = aau.user_id
