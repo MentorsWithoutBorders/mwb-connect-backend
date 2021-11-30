@@ -33,20 +33,24 @@ export class AdminTrainingReminders {
     const client = await pool.connect();    
     try {
       await client.query('BEGIN');
-      const getTrainingRemindersQuery = `SELECT atr.id, atr.user_id, u.name, u.email, u.phone_number, u.registered_on, atr.is_step_added, atr.remaining_quizzes, atr.last_reminder_date_time, atr.last_contacted_date_time, atrt.text, ac.conversations, ac.last_conversation_date_time FROM admin_training_reminders atr
+      const trainer = await users.getUserFromDB(trainerId, client);
+      let getTrainingRemindersQuery = `SELECT atr.id, atr.user_id, u.name, u.email, u.phone_number, u.registered_on, atr.is_step_added, atr.remaining_quizzes, atr.last_reminder_date_time, atr.last_contacted_date_time, atrt.text, ac.conversations, ac.last_conversation_date_time FROM admin_training_reminders atr
         JOIN users u
           ON atr.user_id = u.id
-        JOIN admin_training_reminders_texts atrt
+        FULL OUTER JOIN admin_training_reminders_texts atrt
           ON atr.reminder_to_send = atrt.serial_number
-        JOIN admin_assigned_users aau
+        FULL OUTER JOIN admin_assigned_users aau
           ON atr.user_id = aau.assigned_user_id
         FULL OUTER JOIN admin_conversations ac
           ON atr.user_id = ac.user_id
-        WHERE aau.trainer_id = $1
-          AND date_trunc('day', now())::date - date_trunc('day', atr.last_reminder_date_time)::date >= 2`;
-      const { rows }: pg.QueryResult = await client.query(getTrainingRemindersQuery, [trainerId]);
+        WHERE date_trunc('day', now())::date - date_trunc('day', atr.last_reminder_date_time)::date >= 2`;
+      let values: Array<string> = [];
+      if (!trainer.isAdmin) {
+        getTrainingRemindersQuery += ' AND aau.trainer_id = $1';
+        values = [trainerId];
+      }
+      const { rows }: pg.QueryResult = await client.query(getTrainingRemindersQuery, values);
       const trainingReminders: Array<TrainingReminder> = [];
-      const trainer = await users.getUserFromDB(trainerId, client);
       const quizSettings = await quizzesSettings.getQuizzesSettingsFromDB();
       for (const row of rows) {
         const user: User = {
@@ -131,7 +135,7 @@ export class AdminTrainingReminders {
   }  
 
   getReminderToSend(trainingReminder: TrainingReminder, reminderText: string, trainer: User, user: User, stepQuizzesText: string): string {
-    if (trainingReminder.lastConversationDateTime != '' && moment.utc(trainingReminder.lastConversationDateTime).format(constants.DATE_FORMAT) == moment.utc().format(constants.DATE_FORMAT)) {
+    if (!reminderText || trainingReminder.lastConversationDateTime != '' && moment.utc(trainingReminder.lastConversationDateTime).format(constants.DATE_FORMAT) == moment.utc().format(constants.DATE_FORMAT)) {
       return '';
     }
     const userFirstName = user.name?.split(' ')[0];
