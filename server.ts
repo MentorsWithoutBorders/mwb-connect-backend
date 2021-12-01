@@ -30,6 +30,7 @@ import { Logger } from './src/db_queries/logger';
 import { AdminTrainingReminders } from './src/db_queries/admin_training_reminders';
 import { AdminLessons } from './src/db_queries/admin_lessons';
 import { AdminAvailableMentors } from './src/db_queries/admin_available_mentors';
+import { AdminAvailableStudents } from './src/db_queries/admin_available_students';
 
 dotenv.config();
 const port = process.env.PORT;
@@ -61,6 +62,7 @@ const updates: Updates = new Updates();
 const adminTrainingReminders: AdminTrainingReminders = new AdminTrainingReminders();
 const adminLessons: AdminLessons = new AdminLessons();
 const adminAvailableMentors: AdminAvailableMentors = new AdminAvailableMentors();
+const adminAvailableStudents: AdminAvailableStudents = new AdminAvailableStudents();
 
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
@@ -219,6 +221,10 @@ app.get('/api/v1/admin/lessons', adminLessons.getLessons);
 // Admin available mentors
 app.get('/api/v1/admin/available_mentors', adminAvailableMentors.getAvailableMentors);
 app.put('/api/v1/admin/available_mentors/:id/should_contact', adminAvailableMentors.updateShouldContact);
+
+// Admin available students
+app.get('/api/v1/admin/available_students', adminAvailableStudents.getAvailableStudents);
+app.put('/api/v1/admin/available_students/:id/should_contact', adminAvailableStudents.updateShouldContact);
 
 
 app.listen(port, () => {
