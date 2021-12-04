@@ -2,10 +2,10 @@ import { Request, Response } from 'express';
 import pg from 'pg';
 import autoBind from 'auto-bind';
 import { Conn } from '../db/conn';
+import { constants } from '../utils/constants';
 import Field from '../models/field.model';
 import Subfield from '../models/subfield.model';
 import Skill from '../models/skill.model';
-import { constants } from '../utils/constants';
 
 const conn = new Conn();
 const pool = conn.pool;
@@ -50,10 +50,10 @@ export class Fields {
   async getFieldById(request: Request, response: Response): Promise<void> {
     const fieldId = request.params.id;
     try {
-      const getFieldQuery = 'SELECT id, name, index FROM fields WHERE id = $1';
+      const getFieldQuery = 'SELECT name, index FROM fields WHERE id = $1';
       const { rows }: pg.QueryResult = await pool.query(getFieldQuery, [fieldId]);
       const field: Field = {
-        id: rows[0].id,
+        id: fieldId,
         name: rows[0].name,
         index: rows[0].index
       };
