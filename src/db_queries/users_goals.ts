@@ -20,7 +20,7 @@ export class UsersGoals {
     try {
       await client.query('BEGIN');
       await client.query(constants.READ_ONLY_TRANSACTION);
-      const goals: Array<Goal> = await this.getGoalsFromDB(userId, client);
+      const goals = await this.getGoalsFromDB(userId, client);
       response.status(200).json(goals);
       await client.query('COMMIT');
     } catch (error) {

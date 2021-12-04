@@ -171,6 +171,10 @@ app.get('/api/v1/app_flags', usersAppFlags.getAppFlags);
 
 // Fields
 app.get('/api/v1/fields', fields.getFields);
+app.get('/api/v1/fields/:id', fields.getFieldById);
+app.post('/api/v1/fields', fields.addField);
+app.put('/api/v1/fields/:id', fields.updateField);
+app.delete('/api/v1/fields/:id', fields.deleteField);
 
 // Subfields
 app.get('/api/v1/fields/:id/subfields', subfields.getSubfields);
