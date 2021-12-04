@@ -185,6 +185,10 @@ app.delete('/api/v1/subfields/:id', subfields.deleteSubfield);
 
 // Skills
 app.get('/api/v1/subfields/:id/skills', skills.getSkills);
+app.get('/api/v1/skills/:id', skills.getSkillById);
+app.post('/api/v1/subfields/:id/skills', skills.addSkill);
+app.put('/api/v1/skills/:id', skills.updateSkill);
+app.delete('/api/v1/skills/:id', skills.deleteSkill);
 
 // Tutorials
 app.get('/api/v1/tutorials', tutorials.getTutorials);
