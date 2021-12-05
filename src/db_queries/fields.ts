@@ -40,7 +40,7 @@ export class Fields {
         id: row.id,
         name: row.name,
         index: row.index,
-        subfields: await this.getSubfields(row.id)
+        subfields: await this.getSubfields(row.id, client)
       };
       fields.push(field);
     }
@@ -63,34 +63,34 @@ export class Fields {
     }
   }
 
-  async getSubfields(fieldId: string): Promise<Array<Subfield>> {
+  async getSubfields(fieldId: string, client: pg.PoolClient): Promise<Array<Subfield>> {
     const getSubfieldsQuery = `SELECT s.id, s.name
       FROM subfields s
       JOIN fields_subfields fs
         ON fs.subfield_id = s.id
       WHERE fs.field_id = $1
       ORDER BY fs.subfield_index`;
-    const { rows }: pg.QueryResult = await pool.query(getSubfieldsQuery, [fieldId]);
+    const { rows }: pg.QueryResult = await client.query(getSubfieldsQuery, [fieldId]);
     const subfields: Array<Subfield> = [];
     for (const row of rows) {
       const subfield: Subfield = {
         id: row.id,
         name: row.name,
-        skills: await this.getSkills(row.id)
+        skills: await this.getSkills(row.id, client)
       };
       subfields.push(subfield);
     }
     return subfields;
   }
   
-  async getSkills(subfieldId: string): Promise<Array<Skill>> {
+  async getSkills(subfieldId: string, client: pg.PoolClient): Promise<Array<Skill>> {
     const getSkillsQuery = `SELECT s.id, s.name
       FROM skills s
       JOIN subfields_skills ss
         ON ss.skill_id = s.id
       WHERE ss.subfield_id = $1
       ORDER BY ss.skill_index`;
-    const { rows }: pg.QueryResult = await pool.query(getSkillsQuery, [subfieldId]);
+    const { rows }: pg.QueryResult = await client.query(getSkillsQuery, [subfieldId]);
     const skills: Array<Skill> = [];
     for (const row of rows) {
       const skill: Skill = {

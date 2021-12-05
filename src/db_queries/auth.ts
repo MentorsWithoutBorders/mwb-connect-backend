@@ -283,7 +283,7 @@ export class Auth {
     try {
       await client.query('BEGIN');
       const getRefreshTokenQuery = 'SELECT user_id FROM users_refresh_tokens WHERE user_id = $1 AND refresh_token = $2';
-      const { rows }: pg.QueryResult = await pool.query(getRefreshTokenQuery, [userId, refreshToken]);
+      const { rows }: pg.QueryResult = await client.query(getRefreshTokenQuery, [userId, refreshToken]);
       if (rows[0]) {
         const tokens: Tokens = await this.setTokens(userId, client);
         response.status(200).send(tokens);

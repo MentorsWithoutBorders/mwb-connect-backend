@@ -31,6 +31,7 @@ import { AdminTrainingReminders } from './src/db_queries/admin_training_reminder
 import { AdminLessons } from './src/db_queries/admin_lessons';
 import { AdminAvailableMentors } from './src/db_queries/admin_available_mentors';
 import { AdminAvailableStudents } from './src/db_queries/admin_available_students';
+import { AdminStudentsCertificates } from './src/db_queries/admin_students_certificates';
 
 dotenv.config();
 const port = process.env.PORT;
@@ -63,6 +64,7 @@ const adminTrainingReminders: AdminTrainingReminders = new AdminTrainingReminder
 const adminLessons: AdminLessons = new AdminLessons();
 const adminAvailableMentors: AdminAvailableMentors = new AdminAvailableMentors();
 const adminAvailableStudents: AdminAvailableStudents = new AdminAvailableStudents();
+const adminStudentsCertificates: AdminStudentsCertificates = new AdminStudentsCertificates();
 
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
@@ -237,6 +239,10 @@ app.put('/api/v1/admin/available_mentors/:id/should_contact', adminAvailableMent
 // Admin available students
 app.get('/api/v1/admin/available_students', adminAvailableStudents.getAvailableStudents);
 app.put('/api/v1/admin/available_students/:id/should_contact', adminAvailableStudents.updateShouldContact);
+
+// Admin students certificates
+app.get('/api/v1/admin/students_certificates', adminStudentsCertificates.getStudentsCertificates);
+app.put('/api/v1/admin/students_certificates/:id/certificate_sent', adminStudentsCertificates.updateCertificateSent);
 
 
 app.listen(port, () => {

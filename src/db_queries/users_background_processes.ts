@@ -717,7 +717,7 @@ export class UsersBackgroundProcesses {
           remainingQuizzes = helpers.getRemainingQuizzes(quizzes);
           showQuizReminder = remainingQuizzes > 0 ? true : false;
         }
-        this.sendFirstAndSecondTrainingReminders(isFirst, user, showStepReminder, showQuizReminder, remainingQuizzes);
+        this.sendFirstAndSecondTrainingReminders(isFirst, user, showStepReminder, showQuizReminder, remainingQuizzes, client);
         await client.query('COMMIT');
       } catch (error) {
         await client.query('ROLLBACK');
@@ -727,14 +727,14 @@ export class UsersBackgroundProcesses {
     }
   }
 
-  sendFirstAndSecondTrainingReminders(isFirst: boolean, user: User, showStepReminder: boolean, showQuizReminder: boolean, remainingQuizzes: number): void {
+  sendFirstAndSecondTrainingReminders(isFirst: boolean, user: User, showStepReminder: boolean, showQuizReminder: boolean, remainingQuizzes: number, client: pg.PoolClient): void {
     if (isFirst) {
       usersPushNotifications.sendPNFirstTrainingReminder(user.id as string, showStepReminder, showQuizReminder, remainingQuizzes);
       usersSendEmails.sendEmailFirstTrainingReminder(user, showStepReminder, showQuizReminder, remainingQuizzes);
     } else {
       usersPushNotifications.sendPNSecondTrainingReminder(user.id as string, showStepReminder, showQuizReminder, remainingQuizzes);
       usersSendEmails.sendEmailSecondTrainingReminder(user, showStepReminder, showQuizReminder, remainingQuizzes);
-      adminTrainingReminders.addTrainingReminder(user, !showStepReminder, remainingQuizzes);
+      adminTrainingReminders.addTrainingReminder(user, !showStepReminder, remainingQuizzes, client);
     }
   }
   

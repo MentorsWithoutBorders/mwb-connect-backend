@@ -13,17 +13,23 @@ export class QuizzesSettings {
   }
 
   async getQuizzesSettings(request: Request, response: Response): Promise<void> {
+    const client = await pool.connect();    
     try {
-      const quizzesSettings = await this.getQuizzesSettingsFromDB();
+      await client.query('BEGIN');
+      const quizzesSettings = await this.getQuizzesSettingsFromDB(client);
       response.status(200).json(quizzesSettings);
+      await client.query('COMMIT');      
     } catch (error) {
       response.status(400).send(error);
-    } 
+      await client.query('ROLLBACK');      
+    } finally {
+      client.release();
+    }
   }
 
-  async getQuizzesSettingsFromDB(): Promise<QuizSettings> {
+  async getQuizzesSettingsFromDB(client: pg.PoolClient): Promise<QuizSettings> {
     const getQuizzesSettingsQuery = 'SELECT student_weekly_count, mentor_weekly_count FROM quizzes_settings';
-    const { rows }: pg.QueryResult = await pool.query(getQuizzesSettingsQuery);
+    const { rows }: pg.QueryResult = await client.query(getQuizzesSettingsQuery);
     return {
       studentWeeklyCount: rows[0].student_weekly_count,
       mentorWeeklyCount: rows[0].mentor_weekly_count

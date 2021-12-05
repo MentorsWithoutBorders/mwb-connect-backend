@@ -59,7 +59,7 @@ export class UsersQuizzes {
   }
 
   async getQuizzesFromDB(userId: string, client: pg.PoolClient): Promise<Array<Quiz>> {
-    const quizSettings = await quizzesSettings.getQuizzesSettingsFromDB();
+    const quizSettings = await quizzesSettings.getQuizzesSettingsFromDB(client);
     const user = await users.getUserFromDB(userId, client);
     const userTimeZone = await usersTimeZones.getUserTimeZone(userId, client);
     const registeredOn = moment.utc(user.registeredOn).tz(userTimeZone.name).startOf('day');
@@ -161,7 +161,7 @@ export class UsersQuizzes {
         }
       }
     } else {
-      const quizSettings = await quizzesSettings.getQuizzesSettingsFromDB();
+      const quizSettings = await quizzesSettings.getQuizzesSettingsFromDB(client);
       const userTimeZone = await usersTimeZones.getUserTimeZone(userId, client);
       const registeredOn = moment.utc(user.registeredOn).tz(userTimeZone.name).startOf('day');
       const today = moment.utc().tz(userTimeZone.name).startOf('day');

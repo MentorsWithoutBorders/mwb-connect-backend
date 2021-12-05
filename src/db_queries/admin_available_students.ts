@@ -22,8 +22,9 @@ export class AdminAvailableStudents {
     const client = await pool.connect();    
     try {
       await client.query('BEGIN');
-      const getLessonsQuery = `SELECT l.student_id, u.name AS student_name, u.available_from, l.lesson_id, l.field_id, f.name AS field_name, l.subfield_name, l.date_time, l.is_recurrent, l.end_recurrence_date_time, l.is_canceled_by_mentor, l.is_canceled_by_student, aau.should_contact, aau.last_contacted_date_time, aau.is_inactive FROM
-        (SELECT ul.id AS lesson_id, fs.field_id, s.name AS subfield_name, ul.date_time, ul.is_recurrent, ul.end_recurrence_date_time, ul.is_canceled AS is_canceled_by_mentor, uls.student_id, uls.is_canceled AS is_canceled_by_student FROM users_lessons ul
+      const getLessonsQuery = `SELECT l.student_id, u.name AS student_name, u.available_from, l.lesson_id, l.field_id, f.name AS field_name, l.subfield_name, l.date_time, l.is_recurrent, l.end_recurrence_date_time, l.is_canceled_by_mentor, l.is_canceled_by_student, aau.should_contact, aau.last_contacted_date_time, aau.is_inactive 
+        FROM (SELECT ul.id AS lesson_id, fs.field_id, s.name AS subfield_name, ul.date_time, ul.is_recurrent, ul.end_recurrence_date_time, ul.is_canceled AS is_canceled_by_mentor, uls.student_id, uls.is_canceled AS is_canceled_by_student 
+          FROM users_lessons ul
           JOIN users_lessons_students uls
             ON ul.id = uls.lesson_id
           JOIN fields_subfields fs
@@ -154,7 +155,8 @@ export class AdminAvailableStudents {
   }
 
   async getStudentsWithoutLessons(client: pg.PoolClient): Promise<Array<Lesson>> {
-    const geStudentsQuery = `SELECT u.id AS student_id, u.name AS student_name, u.available_from, u.field_id, f.name AS field_name, aau.should_contact, aau.last_contacted_date_time, aau.is_inactive FROM users u
+    const getStudentsQuery = `SELECT u.id AS student_id, u.name AS student_name, u.available_from, u.field_id, f.name AS field_name, aau.should_contact, aau.last_contacted_date_time, aau.is_inactive 
+      FROM users u
       JOIN fields f
         ON u.field_id = f.id
       LEFT OUTER JOIN admin_available_users aau
@@ -164,7 +166,7 @@ export class AdminAvailableStudents {
           SELECT DISTINCT student_id FROM users_lessons_students
         )
         AND aau.is_inactive IS DISTINCT FROM true`;
-    const { rows }: pg.QueryResult = await client.query(geStudentsQuery);
+    const { rows }: pg.QueryResult = await client.query(getStudentsQuery);
     const lessons: Array<Lesson> = [];
     for (const row of rows) {
       const field: Field = {
@@ -193,7 +195,7 @@ export class AdminAvailableStudents {
     const client = await pool.connect();    
     try {
       const getShouldContactQuery = 'SELECT id FROM admin_available_users WHERE user_id = $1';
-      const { rows }: pg.QueryResult = await pool.query(getShouldContactQuery, [studentId]);
+      const { rows }: pg.QueryResult = await client.query(getShouldContactQuery, [studentId]);
       if (rows[0]) {
         const updateShouldContactQuery = `UPDATE admin_available_users
           SET should_contact = $1, last_contacted_date_time = $2 WHERE user_id = $3`;

@@ -22,8 +22,9 @@ export class AdminAvailableMentors {
     const client = await pool.connect();    
     try {
       await client.query('BEGIN');
-      const getLessonsQuery = `SELECT l.mentor_id, l.mentor_name, l.available_from, l.lesson_id, l.field_id, f.name AS field_name, l.subfield_name, l.date_time, l.is_recurrent, l.end_recurrence_date_time, l.is_canceled, l.should_contact, l.last_contacted_date_time, l.is_inactive FROM
-        (SELECT u.id AS mentor_id, u.name AS mentor_name, u.available_from, ul.id AS lesson_id, fs.field_id, s.name AS subfield_name, ul.date_time, ul.is_recurrent, ul.end_recurrence_date_time, ul.is_canceled, aau.should_contact, aau.last_contacted_date_time, aau.is_inactive FROM users_lessons ul
+      const getLessonsQuery = `SELECT l.mentor_id, l.mentor_name, l.available_from, l.lesson_id, l.field_id, f.name AS field_name, l.subfield_name, l.date_time, l.is_recurrent, l.end_recurrence_date_time, l.is_canceled, l.should_contact, l.last_contacted_date_time, l.is_inactive 
+        FROM (SELECT u.id AS mentor_id, u.name AS mentor_name, u.available_from, ul.id AS lesson_id, fs.field_id, s.name AS subfield_name, ul.date_time, ul.is_recurrent, ul.end_recurrence_date_time, ul.is_canceled, aau.should_contact, aau.last_contacted_date_time, aau.is_inactive 
+          FROM users_lessons ul
           JOIN users u
             ON ul.mentor_id = u.id
           JOIN fields_subfields fs
@@ -135,7 +136,8 @@ export class AdminAvailableMentors {
   }
 
   async getMentorsWithoutLessons(client: pg.PoolClient): Promise<Array<Lesson>> {
-    const getMentorsQuery = `SELECT u.id AS mentor_id, u.name AS mentor_name, u.available_from, u.field_id, f.name AS field_name, aau.should_contact, aau.last_contacted_date_time, aau.is_inactive FROM users u
+    const getMentorsQuery = `SELECT u.id AS mentor_id, u.name AS mentor_name, u.available_from, u.field_id, f.name AS field_name, aau.should_contact, aau.last_contacted_date_time, aau.is_inactive 
+      FROM users u
       JOIN fields f
         ON u.field_id = f.id
       LEFT OUTER JOIN admin_available_users aau
@@ -174,7 +176,7 @@ export class AdminAvailableMentors {
     const client = await pool.connect();    
     try {
       const getShouldContactQuery = 'SELECT id FROM admin_available_users WHERE user_id = $1';
-      const { rows }: pg.QueryResult = await pool.query(getShouldContactQuery, [mentorId]);
+      const { rows }: pg.QueryResult = await client.query(getShouldContactQuery, [mentorId]);
       if (rows[0]) {
         const updateShouldContactQuery = `UPDATE admin_available_users
           SET should_contact = $1, last_contacted_date_time = $2 WHERE user_id = $3`;
