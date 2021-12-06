@@ -57,7 +57,8 @@ export class AdminTrainingReminders {
           id: row.user_id,
           name: row.name,
           email: row.email,
-          phoneNumber: row.phone_number ?? ''
+          phoneNumber: row.phone_number ?? '',
+          registeredOn: row.registered_on
         };
         const lastReminderDateTime = moment.utc(row.last_reminder_date_time).format(constants.DATE_TIME_FORMAT);
         const lastConversationDateTime = row.last_conversation_date_time ? moment.utc(row.last_conversation_date_time).format(constants.DATE_TIME_FORMAT) : '';
@@ -89,7 +90,8 @@ export class AdminTrainingReminders {
           }
           const reminderText = row.text;
           const stepQuizzesText = this.getStepQuizzesText(user.isMentor as boolean, isStepAdded, remainingQuizzes, quizSettings);
-          const reminderToSend = this.getReminderToSend(trainingReminder, reminderText, trainer, user, stepQuizzesText);
+          const weeklyQuizzesText = this.getWeeklyQuizzesText(user.isMentor as boolean, remainingQuizzes, quizSettings);
+          const reminderToSend = this.getReminderToSend(trainingReminder, reminderText, trainer, user, userTimeZone, weeklyQuizzesText, stepQuizzesText);
           trainingReminder.reminderToSend = reminderToSend;
           trainingReminders.push(trainingReminder);
         }
@@ -132,9 +134,23 @@ export class AdminTrainingReminders {
       }
     }
     return stepQuizzesText;
+  }
+
+  getWeeklyQuizzesText(isMentor: boolean, remainingQuizzes: number, quizSettings: QuizSettings): string {
+    let quizzesWeeklyCount = 0;
+    if (isMentor) {
+      quizzesWeeklyCount = quizSettings.mentorWeeklyCount;
+    } else {
+      quizzesWeeklyCount = quizSettings.studentWeeklyCount;
+    }    
+    if (remainingQuizzes <= quizzesWeeklyCount) {
+      return `${quizzesWeeklyCount} quizzes`;
+    } else {
+      return 'quizzes';
+    }
   }  
 
-  getReminderToSend(trainingReminder: TrainingReminder, reminderText: string, trainer: User, user: User, stepQuizzesText: string): string {
+  getReminderToSend(trainingReminder: TrainingReminder, reminderText: string, trainer: User, user: User, userTimeZone: TimeZone, weeklyQuizzesText: string, stepQuizzesText: string): string {
     if (!reminderText || trainingReminder.lastConversationDateTime != '' && moment.utc(trainingReminder.lastConversationDateTime).format(constants.DATE_FORMAT) == moment.utc().format(constants.DATE_FORMAT)) {
       return '';
     }
@@ -145,9 +161,15 @@ export class AdminTrainingReminders {
       reminderText = reminderText.split('{student_name}').join(userFirstName as string);
     }
     reminderText = reminderText.split('{trainer_name}').join(trainer.name as string);
-    reminderText = reminderText.split('{certificate_date}').join(trainingReminder.certificateDate as string);
+    const certificateDate = moment.utc(user.registeredOn).add(3, 'months');
+    if (moment.utc(certificateDate).tz(userTimeZone.name).startOf('day').isAfter(moment.utc().tz(userTimeZone.name).startOf('day'))) {
+      reminderText = reminderText.split('{certificate_date}').join(certificateDate.tz(userTimeZone.name).format(constants.SHORT_DATE_FORMAT));
+    } else {
+      reminderText = reminderText.split(' on {certificate_date}').join('');
+    }
     reminderText = reminderText.split('{first_reminder_date}').join(trainingReminder.firstReminderDate as string);
-    reminderText = reminderText.split('{last_reminder_date}').join(trainingReminder.lastReminderDate as string);
+    reminderText = reminderText.split('{last_reminder_date}').join(trainingReminder.lastReminderDate as string);  
+    reminderText = reminderText.split('{weekly_quizzes}').join(weeklyQuizzesText);
     const stepQuizzesNotDone = stepQuizzesText.split('{add}').join('added').split('{solve}').join('solved') + ' for the current week of training';
     reminderText = reminderText.split('{step_quizzes_not_done}').join(stepQuizzesNotDone);
     const stepQuizzesToDo = stepQuizzesText.split('{add}').join('add').split('{solve}').join('solve');

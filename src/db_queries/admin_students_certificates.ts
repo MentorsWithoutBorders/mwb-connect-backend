@@ -101,7 +101,7 @@ export class AdminStudentsCertificates {
   }
 
   async updateCertificateSent(request: Request, response: Response): Promise<void> {
-    const studentId = request.params.id;
+    const studentId = request.params.student_id;
     const { isCertificateSent }: StudentCertificate = request.body;
     const client = await pool.connect();    
     try {

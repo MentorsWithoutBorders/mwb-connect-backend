@@ -171,7 +171,7 @@ export class AdminAvailableMentors {
   }
   
   async updateShouldContact(request: Request, response: Response): Promise<void> {
-    const mentorId = request.params.id;
+    const mentorId = request.params.mentor_id;
     const { shouldContact, lastContactedDateTime }: User = request.body;
     const client = await pool.connect();    
     try {

@@ -27,11 +27,11 @@ import { Tutorials } from './src/db_queries/tutorials';
 import { QuizzesSettings } from './src/db_queries/quizzes_settings';
 import { Updates } from './src/db_queries/updates';
 import { Logger } from './src/db_queries/logger';
+import { AdminStudentsCertificates } from './src/db_queries/admin_students_certificates';
 import { AdminTrainingReminders } from './src/db_queries/admin_training_reminders';
 import { AdminLessons } from './src/db_queries/admin_lessons';
 import { AdminAvailableMentors } from './src/db_queries/admin_available_mentors';
 import { AdminAvailableStudents } from './src/db_queries/admin_available_students';
-import { AdminStudentsCertificates } from './src/db_queries/admin_students_certificates';
 
 dotenv.config();
 const port = process.env.PORT;
@@ -60,11 +60,11 @@ const skills: Skills = new Skills();
 const tutorials: Tutorials = new Tutorials();
 const quizzesSettings: QuizzesSettings = new QuizzesSettings();
 const updates: Updates = new Updates();
+const adminStudentsCertificates: AdminStudentsCertificates = new AdminStudentsCertificates();
 const adminTrainingReminders: AdminTrainingReminders = new AdminTrainingReminders();
 const adminLessons: AdminLessons = new AdminLessons();
 const adminAvailableMentors: AdminAvailableMentors = new AdminAvailableMentors();
 const adminAvailableStudents: AdminAvailableStudents = new AdminAvailableStudents();
-const adminStudentsCertificates: AdminStudentsCertificates = new AdminStudentsCertificates();
 
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
@@ -224,6 +224,10 @@ cron.schedule('* * * * *', function() {
 });
 
 
+// Admin students certificates
+app.get('/api/v1/admin/students_certificates', adminStudentsCertificates.getStudentsCertificates);
+app.put('/api/v1/admin/students_certificates/:student_id/certificate_sent', adminStudentsCertificates.updateCertificateSent);
+
 // Admin training reminders
 app.get('/api/v1/admin/training_reminders', adminTrainingReminders.getTrainingReminders);
 app.post('/api/v1/admin/conversations', adminTrainingReminders.addConversation);
@@ -234,15 +238,11 @@ app.get('/api/v1/admin/lessons', adminLessons.getLessons);
 
 // Admin available mentors
 app.get('/api/v1/admin/available_mentors', adminAvailableMentors.getAvailableMentors);
-app.put('/api/v1/admin/available_mentors/:id/should_contact', adminAvailableMentors.updateShouldContact);
+app.put('/api/v1/admin/available_mentors/:mentor_id/should_contact', adminAvailableMentors.updateShouldContact);
 
 // Admin available students
 app.get('/api/v1/admin/available_students', adminAvailableStudents.getAvailableStudents);
-app.put('/api/v1/admin/available_students/:id/should_contact', adminAvailableStudents.updateShouldContact);
-
-// Admin students certificates
-app.get('/api/v1/admin/students_certificates', adminStudentsCertificates.getStudentsCertificates);
-app.put('/api/v1/admin/students_certificates/:id/certificate_sent', adminStudentsCertificates.updateCertificateSent);
+app.put('/api/v1/admin/available_students/:student_id/should_contact', adminAvailableStudents.updateShouldContact);
 
 
 app.listen(port, () => {

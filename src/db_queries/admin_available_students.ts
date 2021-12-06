@@ -190,7 +190,7 @@ export class AdminAvailableStudents {
   }
   
   async updateShouldContact(request: Request, response: Response): Promise<void> {
-    const studentId = request.params.id;
+    const studentId = request.params.student_id;
     const { shouldContact, lastContactedDateTime }: User = request.body;
     const client = await pool.connect();    
     try {
