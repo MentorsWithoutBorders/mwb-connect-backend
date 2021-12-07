@@ -34,7 +34,8 @@ export class AdminTrainingReminders {
     try {
       await client.query('BEGIN');
       const trainer = await users.getUserFromDB(trainerId, client);
-      let getTrainingRemindersQuery = `SELECT atr.id, atr.user_id, u.name, u.email, u.phone_number, u.registered_on, atr.is_step_added, atr.remaining_quizzes, atr.last_reminder_date_time, atr.last_contacted_date_time, atrt.text, ac.conversations, ac.last_conversation_date_time FROM admin_training_reminders atr
+      let getTrainingRemindersQuery = `SELECT atr.id, atr.user_id, u.name, u.email, u.phone_number, u.registered_on, atr.is_step_added, atr.remaining_quizzes, atr.last_reminder_date_time, atr.last_contacted_date_time, atrt.text, ac.conversations, ac.last_conversation_date_time 
+        FROM admin_training_reminders atr
         JOIN users u
           ON atr.user_id = u.id
         FULL OUTER JOIN admin_training_reminders_texts atrt
@@ -205,6 +206,52 @@ export class AdminTrainingReminders {
     }
     return isStepAdded;
   }
+
+  async getAllTrainingReminders(request: Request, response: Response): Promise<void> {
+    const trainerId = request.user.id as string;
+    const client = await pool.connect();    
+    try {
+      await client.query('BEGIN');
+      const trainer = await users.getUserFromDB(trainerId, client);
+      let getTrainingRemindersQuery = `SELECT u.name, u.email, u.phone_number, u.registered_on, ac.conversations
+        FROM users u
+        JOIN admin_assigned_users aau
+          ON u.id = aau.assigned_user_id
+        FULL OUTER JOIN admin_conversations ac
+          ON u.id = ac.user_id`;
+      let values: Array<string> = [];
+      if (!trainer.isAdmin) {
+        getTrainingRemindersQuery += ' AND aau.trainer_id = $1';
+        values = [trainerId];
+      }
+      const { rows }: pg.QueryResult = await client.query(getTrainingRemindersQuery, values);
+      const trainingReminders: Array<TrainingReminder> = [];
+      for (const row of rows) {
+        const user: User = {
+          id: row.user_id,
+          name: row.name,
+          email: row.email,
+          phoneNumber: row.phone_number ?? '',
+          registeredOn: row.registered_on
+        };
+        const userTimeZone = await usersTimeZones.getUserTimeZone(user.id as string, client);
+        const certificateDate = moment.utc(row.registered_on).tz(userTimeZone.name).add(3, 'months').format(constants.SHORT_DATE_FORMAT);
+        const trainingReminder: TrainingReminder = {
+          user: user,
+          certificateDate: certificateDate,
+          conversations: row.conversations ?? '',
+        }
+        trainingReminders.push(trainingReminder);
+      }
+      response.status(200).json(trainingReminders);
+      await client.query('COMMIT');      
+    } catch (error) {
+      response.status(400).send(error);
+      await client.query('ROLLBACK');      
+    } finally {
+      client.release();
+    }
+  }  
 
   async addTrainingReminder(user: User, isStepAdded: boolean, remainingQuizzes: number, client: pg.PoolClient): Promise<void> {
     const getTrainingRemindersQuery = 'SELECT user_id, reminder_to_send FROM admin_training_reminders WHERE user_id = $1';
