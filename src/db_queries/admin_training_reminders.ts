@@ -213,22 +213,22 @@ export class AdminTrainingReminders {
     try {
       await client.query('BEGIN');
       const trainer = await users.getUserFromDB(trainerId, client);
-      let getTrainingRemindersQuery = `SELECT u.name, u.email, u.phone_number, u.registered_on, ac.conversations
+      let getTrainingRemindersQuery = `SELECT u.id, u.name, u.email, u.phone_number, u.registered_on, ac.conversations
         FROM users u
-        JOIN admin_assigned_users aau
+        FULL OUTER JOIN admin_assigned_users aau
           ON u.id = aau.assigned_user_id
         FULL OUTER JOIN admin_conversations ac
           ON u.id = ac.user_id`;
       let values: Array<string> = [];
       if (!trainer.isAdmin) {
-        getTrainingRemindersQuery += ' AND aau.trainer_id = $1';
+        getTrainingRemindersQuery += ' WHERE aau.trainer_id = $1';
         values = [trainerId];
       }
       const { rows }: pg.QueryResult = await client.query(getTrainingRemindersQuery, values);
       const trainingReminders: Array<TrainingReminder> = [];
       for (const row of rows) {
         const user: User = {
-          id: row.user_id,
+          id: row.id,
           name: row.name,
           email: row.email,
           phoneNumber: row.phone_number ?? '',
