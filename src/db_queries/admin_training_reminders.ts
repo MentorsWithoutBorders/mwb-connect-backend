@@ -268,17 +268,20 @@ export class AdminTrainingReminders {
     try {
       await client.query('BEGIN');
       const trainer = await users.getUserFromDB(trainerId, client);
-      let getTrainingRemindersQuery = `SELECT u.id, u.name, u.email, u.phone_number, u.registered_on, ac.conversations
-        FROM users u
+      let getTrainingRemindersQuery = `SELECT u.id, u.name, u.email, u.phone_number, u.registered_on, atr.last_contacted_date_time, ac.conversations
+        FROM admin_training_reminders atr
+        JOIN users u
+          ON atr.user_id = u.id
         FULL OUTER JOIN admin_assigned_users aau
-          ON u.id = aau.assigned_user_id
+          ON atr.user_id = aau.assigned_user_id
         FULL OUTER JOIN admin_conversations ac
-          ON u.id = ac.user_id`;
+          ON atr.user_id = ac.user_id`;
       let values: Array<string> = [];
       if (!trainer.isAdmin) {
         getTrainingRemindersQuery += ' WHERE aau.trainer_id = $1';
         values = [trainerId];
       }
+      getTrainingRemindersQuery += ' ORDER BY atr.last_contacted_date_time DESC NULLS LAST';
       const { rows }: pg.QueryResult = await client.query(getTrainingRemindersQuery, values);
       const trainingReminders: Array<TrainingReminder> = [];
       for (const row of rows) {
@@ -287,14 +290,16 @@ export class AdminTrainingReminders {
           name: row.name,
           email: row.email,
           phoneNumber: row.phone_number ?? '',
-          registeredOn: row.registered_on
+          registeredOn: moment.utc(row.registered_on).format(constants.DATE_TIME_FORMAT)
         };
         const userTimeZone = await usersTimeZones.getUserTimeZone(user.id as string, client);
         const certificateDate = moment.utc(row.registered_on).tz(userTimeZone.name).add(3, 'months').format(constants.SHORT_DATE_FORMAT);
+        const lastContactedDateTime = this.getLastContactedDateTime(row.last_contacted_date_time);
         const trainingReminder: TrainingReminder = {
           user: user,
           certificateDate: certificateDate,
-          conversations: row.conversations ?? '',
+          lastContactedDateTime: lastContactedDateTime,
+          conversations: row.conversations ?? ''
         }
         trainingReminders.push(trainingReminder);
       }
