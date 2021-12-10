@@ -123,7 +123,7 @@ export class AdminTrainingReminders {
       const weekStartDate = usersQuizzes.getWeekStartDate(registeredOn, weekNumber - 1, timeZone);
       const weekEndDate = usersQuizzes.getWeekEndDate(registeredOn, weekNumber - 1, timeZone);
       const quizzesBetweenDates = usersQuizzes.getQuizzesBetweenDates(quizzes, weekStartDate, weekEndDate, timeZone);
-      return this.getHasRemainingQuizzes(user.isMentor as boolean, quizzesBetweenDates, 1, quizSettings);
+      return this.getHasRemainingQuizzes(user.isMentor as boolean, quizzesBetweenDates, quizSettings);
     }
   }  
 
@@ -138,15 +138,16 @@ export class AdminTrainingReminders {
       return false;
     } else {
       const weekStartDate = usersQuizzes.getWeekStartDate(registeredOn, weekNumber - 2, timeZone);
-      const weekEndDate = usersQuizzes.getWeekEndDate(registeredOn, weekNumber - 1, timeZone);
+      const weekEndDate = usersQuizzes.getWeekEndDate(registeredOn, weekNumber - 2, timeZone);
       const isStepAdded = await this.getIsStepAdded(user.id as string, false, moment.utc(weekStartDate).format(constants.DATE_TIME_FORMAT), client);
       const quizzesBetweenDates = usersQuizzes.getQuizzesBetweenDates(quizzes, weekStartDate, weekEndDate, timeZone);
-      const hasRemainingQuizzes = this.getHasRemainingQuizzes(user.isMentor as boolean, quizzesBetweenDates, 2, quizSettings);
-      return !isStepAdded && hasRemainingQuizzes;
+      const hasRemainingQuizzes2WeeksBefore = this.getHasRemainingQuizzes(user.isMentor as boolean, quizzesBetweenDates, quizSettings);
+      const hasPreviousRemainingQuizzes = this.getHasPreviousRemainingQuizzes(user, quizzes, quizSettings);      
+      return !isStepAdded && hasRemainingQuizzes2WeeksBefore && hasPreviousRemainingQuizzes;
     }
   }
 
-  getHasRemainingQuizzes(isMentor: boolean, quizzes: Array<Quiz>, numberOfWeeks: number, quizSettings: QuizSettings): boolean {
+  getHasRemainingQuizzes(isMentor: boolean, quizzes: Array<Quiz>, quizSettings: QuizSettings): boolean {
     let quizzesWeeklyCount = 0;
     if (isMentor) {
       quizzesWeeklyCount = quizSettings.mentorWeeklyCount;
@@ -159,7 +160,7 @@ export class AdminTrainingReminders {
         solvedQuizzes++;
       }
     }
-    return solvedQuizzes < quizzesWeeklyCount * numberOfWeeks;
+    return solvedQuizzes < quizzesWeeklyCount;
   }  
 
   getLastContactedDateTime(lastContactedDateTime: string): string {
@@ -292,15 +293,18 @@ export class AdminTrainingReminders {
           phoneNumber: row.phone_number ?? '',
           registeredOn: moment.utc(row.registered_on).format(constants.DATE_TIME_FORMAT)
         };
-        const userTimeZone = await usersTimeZones.getUserTimeZone(user.id as string, client);
-        const certificateDate = moment.utc(row.registered_on).tz(userTimeZone.name).add(3, 'months').format(constants.SHORT_DATE_FORMAT);
+        user.timeZone = await usersTimeZones.getUserTimeZone(user.id as string, client);
+        const certificateDate = moment.utc(row.registered_on).tz(user.timeZone.name).add(3, 'months').format(constants.SHORT_DATE_FORMAT);
         const lastContactedDateTime = this.getLastContactedDateTime(row.last_contacted_date_time);
+        const allUserQuizzes = await usersQuizzes.getAllQuizzes(user.id as string, client);
+        const quizSettings = await quizzesSettings.getQuizzesSettingsFromDB(client);
         const trainingReminder: TrainingReminder = {
           user: user,
           certificateDate: certificateDate,
           lastContactedDateTime: lastContactedDateTime,
           conversations: row.conversations ?? ''
         }
+        trainingReminder.isOverdue = await this.getIsOverdue(user, allUserQuizzes, quizSettings, client);
         trainingReminders.push(trainingReminder);
       }
       response.status(200).json(trainingReminders);
