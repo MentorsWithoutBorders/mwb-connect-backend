@@ -13,6 +13,7 @@ import { QuizzesSettings } from './quizzes_settings';
 import User from '../models/user.model';
 import TrainingReminder from '../models/training_reminder.model';
 import TimeZone from '../models/timezone.model';
+import Quiz from '../models/quiz.model';
 import QuizSettings from '../models/quiz_settings.model';
 
 const conn = new Conn();
@@ -34,7 +35,7 @@ export class AdminTrainingReminders {
     try {
       await client.query('BEGIN');
       const trainer = await users.getUserFromDB(trainerId, client);
-      let getTrainingRemindersQuery = `SELECT atr.id, atr.user_id, u.name, u.email, u.phone_number, u.registered_on, atr.is_step_added, atr.remaining_quizzes, atr.last_reminder_date_time, atr.last_contacted_date_time, atrt.text, ac.conversations, ac.last_conversation_date_time 
+      let getTrainingRemindersQuery = `SELECT atr.id, atr.user_id, u.name, u.email, u.phone_number, u.registered_on, atr.is_step_added, atr.last_reminder_date_time, atr.last_contacted_date_time, atrt.text, ac.conversations, ac.last_conversation_date_time 
         FROM admin_training_reminders atr
         JOIN users u
           ON atr.user_id = u.id
@@ -59,21 +60,22 @@ export class AdminTrainingReminders {
           name: row.name,
           email: row.email,
           phoneNumber: row.phone_number ?? '',
-          registeredOn: row.registered_on
+          registeredOn: moment.utc(row.registered_on).format(constants.DATE_TIME_FORMAT)
         };
+        user.timeZone = await usersTimeZones.getUserTimeZone(user.id as string, client);
         const lastReminderDateTime = moment.utc(row.last_reminder_date_time).format(constants.DATE_TIME_FORMAT);
         const lastConversationDateTime = row.last_conversation_date_time ? moment.utc(row.last_conversation_date_time).format(constants.DATE_TIME_FORMAT) : '';
-        const userTimeZone = await usersTimeZones.getUserTimeZone(user.id as string, client);
-        const certificateDate = moment.utc(row.registered_on).tz(userTimeZone.name).add(3, 'months').format(constants.SHORT_DATE_FORMAT);
-        const shouldShowTrainingReminder = this.getShouldShowTrainingReminder(userTimeZone, lastReminderDateTime, lastConversationDateTime);
+        const certificateDate = moment.utc(row.registered_on).tz(user.timeZone.name).add(3, 'months').format(constants.SHORT_DATE_FORMAT);
+        const shouldShowTrainingReminder = this.getShouldShowTrainingReminder(user.timeZone, lastReminderDateTime, lastConversationDateTime);
         const isStepAdded = await this.getIsStepAdded(user.id as string, row.is_step_added, lastReminderDateTime, client);
-        const previousRemainingQuizzes = row.remaining_quizzes;
+        const allUserQuizzes = await usersQuizzes.getAllQuizzes(user.id as string, client);
+        const hasPreviousRemainingQuizzes = this.getHasPreviousRemainingQuizzes(user, allUserQuizzes, quizSettings);
         const quizzes = await usersQuizzes.getQuizzesFromDB(user.id as string, client);
         const remainingQuizzes = helpers.getRemainingQuizzes(quizzes);
-        const shouldShowRemainingQuizzes = previousRemainingQuizzes > 0 && remainingQuizzes > 0;
+        const shouldShowRemainingQuizzes = hasPreviousRemainingQuizzes && remainingQuizzes > 0;
         if (shouldShowTrainingReminder && (!isStepAdded || shouldShowRemainingQuizzes)) {
-          const firstReminderAtTimeZone = moment.utc(lastReminderDateTime).tz(userTimeZone.name).subtract(2, 'd').format(constants.SHORT_DATE_FORMAT);
-          const lastReminderAtTimeZone = moment.utc(lastReminderDateTime).tz(userTimeZone.name).format(constants.SHORT_DATE_FORMAT);
+          const firstReminderAtTimeZone = moment.utc(lastReminderDateTime).tz(user.timeZone.name).subtract(2, 'd').format(constants.SHORT_DATE_FORMAT);
+          const lastReminderAtTimeZone = moment.utc(lastReminderDateTime).tz(user.timeZone.name).format(constants.SHORT_DATE_FORMAT);
           const lastContactedDateTime = this.getLastContactedDateTime(row.last_contacted_date_time);
           const trainingReminder: TrainingReminder = {
             id: row.id,
@@ -89,10 +91,11 @@ export class AdminTrainingReminders {
           if (shouldShowRemainingQuizzes) {
             trainingReminder.remainingQuizzes = remainingQuizzes;
           }
+          trainingReminder.isOverdue = await this.getIsOverdue(user, allUserQuizzes, quizSettings, client);
           const reminderText = row.text;
           const stepQuizzesText = this.getStepQuizzesText(user.isMentor as boolean, isStepAdded, remainingQuizzes, quizSettings);
           const weeklyQuizzesText = this.getWeeklyQuizzesText(user.isMentor as boolean, remainingQuizzes, quizSettings);
-          const reminderToSend = this.getReminderToSend(trainingReminder, reminderText, trainer, user, userTimeZone, weeklyQuizzesText, stepQuizzesText);
+          const reminderToSend = this.getReminderToSend(trainingReminder, reminderText, trainer, user, user.timeZone, weeklyQuizzesText, stepQuizzesText);
           trainingReminder.reminderToSend = reminderToSend;
           trainingReminders.push(trainingReminder);
         }
@@ -106,6 +109,58 @@ export class AdminTrainingReminders {
       client.release();
     }
   }
+
+  getHasPreviousRemainingQuizzes(user: User, quizzes: Array<Quiz>, quizSettings: QuizSettings): boolean {
+    const timeZone = user.timeZone as TimeZone;
+    const timeZoneName = user.timeZone?.name as string;
+    const registeredOn = moment.utc(user.registeredOn).tz(timeZoneName).startOf('day');
+    const today = moment.utc().tz(timeZoneName).startOf('day');
+    const timeSinceRegistration = today.subtract(1, 'd').diff(registeredOn);
+    const weekNumber = Math.trunc(helpers.getDSTAdjustedDifferenceInDays(timeSinceRegistration) / 7);
+    if (weekNumber == 0) {
+      return false;
+    } else {
+      const weekStartDate = usersQuizzes.getWeekStartDate(registeredOn, weekNumber - 1, timeZone);
+      const weekEndDate = usersQuizzes.getWeekEndDate(registeredOn, weekNumber - 1, timeZone);
+      const quizzesBetweenDates = usersQuizzes.getQuizzesBetweenDates(quizzes, weekStartDate, weekEndDate, timeZone);
+      return this.getHasRemainingQuizzes(user.isMentor as boolean, quizzesBetweenDates, 1, quizSettings);
+    }
+  }  
+
+  async getIsOverdue(user: User, quizzes: Array<Quiz>, quizSettings: QuizSettings, client: pg.PoolClient): Promise<boolean> {
+    const timeZone = user.timeZone as TimeZone;
+    const timeZoneName = user.timeZone?.name as string;
+    const registeredOn = moment.utc(user.registeredOn).tz(timeZoneName).startOf('day');
+    const today = moment.utc().tz(timeZoneName).startOf('day');
+    const timeSinceRegistration = today.subtract(1, 'd').diff(registeredOn);
+    const weekNumber = Math.trunc(helpers.getDSTAdjustedDifferenceInDays(timeSinceRegistration) / 7);
+    if (weekNumber < 2) {
+      return false;
+    } else {
+      const weekStartDate = usersQuizzes.getWeekStartDate(registeredOn, weekNumber - 2, timeZone);
+      const weekEndDate = usersQuizzes.getWeekEndDate(registeredOn, weekNumber - 1, timeZone);
+      const isStepAdded = await this.getIsStepAdded(user.id as string, false, moment.utc(weekStartDate).format(constants.DATE_TIME_FORMAT), client);
+      const quizzesBetweenDates = usersQuizzes.getQuizzesBetweenDates(quizzes, weekStartDate, weekEndDate, timeZone);
+      const hasRemainingQuizzes = this.getHasRemainingQuizzes(user.isMentor as boolean, quizzesBetweenDates, 2, quizSettings);
+      return !isStepAdded && hasRemainingQuizzes;
+    }
+  }
+
+  getHasRemainingQuizzes(isMentor: boolean, quizzes: Array<Quiz>, numberOfWeeks: number, quizSettings: QuizSettings): boolean {
+    let quizzesWeeklyCount = 0;
+    if (isMentor) {
+      quizzesWeeklyCount = quizSettings.mentorWeeklyCount;
+    } else {
+      quizzesWeeklyCount = quizSettings.studentWeeklyCount;
+    }
+    let solvedQuizzes = 0;
+    for (const quiz of quizzes) {
+      if (quiz.isCorrect) {
+        solvedQuizzes++;
+      }
+    }
+    return solvedQuizzes < quizzesWeeklyCount * numberOfWeeks;
+  }  
 
   getLastContactedDateTime(lastContactedDateTime: string): string {
     if (lastContactedDateTime) {

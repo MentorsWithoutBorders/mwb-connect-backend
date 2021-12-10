@@ -12,4 +12,5 @@ export default interface TrainingReminder {
   conversations?: string;
   lastContactedDateTime?: string;
   lastConversationDateTime?: string;
+  isOverdue?: boolean;
 }
