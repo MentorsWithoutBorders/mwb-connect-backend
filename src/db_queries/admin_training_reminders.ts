@@ -142,8 +142,9 @@ export class AdminTrainingReminders {
       const isStepAdded = await this.getIsStepAdded(user.id as string, false, moment.utc(weekStartDate).format(constants.DATE_TIME_FORMAT), client);
       const quizzesBetweenDates = usersQuizzes.getQuizzesBetweenDates(quizzes, weekStartDate, weekEndDate, timeZone);
       const hasRemainingQuizzes2WeeksBefore = this.getHasRemainingQuizzes(user.isMentor as boolean, quizzesBetweenDates, quizSettings);
-      const hasPreviousRemainingQuizzes = this.getHasPreviousRemainingQuizzes(user, quizzes, quizSettings);      
-      return !isStepAdded || hasRemainingQuizzes2WeeksBefore && hasPreviousRemainingQuizzes;
+      const hasPreviousRemainingQuizzes = this.getHasPreviousRemainingQuizzes(user, quizzes, quizSettings);
+      const remainingQuizzes = helpers.getRemainingQuizzes(quizzes);      
+      return !isStepAdded || hasRemainingQuizzes2WeeksBefore && hasPreviousRemainingQuizzes && remainingQuizzes > 0;
     }
   }
 
