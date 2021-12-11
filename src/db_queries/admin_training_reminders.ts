@@ -143,7 +143,7 @@ export class AdminTrainingReminders {
       const quizzesBetweenDates = usersQuizzes.getQuizzesBetweenDates(quizzes, weekStartDate, weekEndDate, timeZone);
       const hasRemainingQuizzes2WeeksBefore = this.getHasRemainingQuizzes(user.isMentor as boolean, quizzesBetweenDates, quizSettings);
       const hasPreviousRemainingQuizzes = this.getHasPreviousRemainingQuizzes(user, quizzes, quizSettings);      
-      return !isStepAdded && hasRemainingQuizzes2WeeksBefore && hasPreviousRemainingQuizzes;
+      return !isStepAdded || hasRemainingQuizzes2WeeksBefore && hasPreviousRemainingQuizzes;
     }
   }
 
