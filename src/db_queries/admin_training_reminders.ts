@@ -128,6 +128,7 @@ export class AdminTrainingReminders {
   }  
 
   async getIsOverdue(user: User, quizzes: Array<Quiz>, quizSettings: QuizSettings, client: pg.PoolClient): Promise<boolean> {
+    const isMentor = user.isMentor;
     const timeZone = user.timeZone as TimeZone;
     const timeZoneName = user.timeZone?.name as string;
     const registeredOn = moment.utc(user.registeredOn).tz(timeZoneName).startOf('day');
@@ -143,9 +144,25 @@ export class AdminTrainingReminders {
       const quizzesBetweenDates = usersQuizzes.getQuizzesBetweenDates(quizzes, weekStartDate, weekEndDate, timeZone);
       const hasRemainingQuizzes2WeeksBefore = this.getHasRemainingQuizzes(user.isMentor as boolean, quizzesBetweenDates, quizSettings);
       const hasPreviousRemainingQuizzes = this.getHasPreviousRemainingQuizzes(user, quizzes, quizSettings);
-      const remainingQuizzes = helpers.getRemainingQuizzes(quizzes);      
-      return !isStepAdded || hasRemainingQuizzes2WeeksBefore && hasPreviousRemainingQuizzes && remainingQuizzes > 0;
+      const currentQuizzes = await usersQuizzes.getQuizzesFromDB(user.id as string, client);
+      const remainingQuizzes = helpers.getRemainingQuizzes(currentQuizzes);
+      const areQuizzesSolved = !(hasRemainingQuizzes2WeeksBefore && hasPreviousRemainingQuizzes && remainingQuizzes > 0);
+      let isFirstQuizzesRoundCompleted = false;
+      if (!isMentor) {
+        isFirstQuizzesRoundCompleted = this.getIsFirstQuizzesRoundCompleted(quizzes, weekNumber, quizSettings);
+      }
+      return !isStepAdded || !areQuizzesSolved && (isMentor || !isMentor && !isFirstQuizzesRoundCompleted);
     }
+  }
+
+  getIsFirstQuizzesRoundCompleted(quizzes: Array<Quiz>, weekNumber: number, quizSettings: QuizSettings): boolean {
+    let lastQuizSolved = 0;
+    for (const quiz of quizzes) {
+      if (quiz.isCorrect && quiz.number > lastQuizSolved) {
+        lastQuizSolved = quiz.number;
+      }
+    }
+    return lastQuizSolved == quizSettings.studentWeeklyCount * 4 && weekNumber > 3 && weekNumber < 11;
   }
 
   getHasRemainingQuizzes(isMentor: boolean, quizzes: Array<Quiz>, quizSettings: QuizSettings): boolean {
@@ -270,10 +287,12 @@ export class AdminTrainingReminders {
     try {
       await client.query('BEGIN');
       const trainer = await users.getUserFromDB(trainerId, client);
-      let getTrainingRemindersQuery = `SELECT u.id, u.name, u.email, u.phone_number, u.registered_on, atr.last_contacted_date_time, ac.conversations
+      let getTrainingRemindersQuery = `SELECT u.id, u.name, u.email, u.phone_number, u.registered_on, uns.enabled, atr.last_contacted_date_time, ac.conversations
         FROM admin_training_reminders atr
         JOIN users u
           ON atr.user_id = u.id
+        JOIN users_notifications_settings uns
+          ON atr.user_id = uns.user_id          
         FULL OUTER JOIN admin_assigned_users aau
           ON atr.user_id = aau.assigned_user_id
         FULL OUTER JOIN admin_conversations ac
@@ -305,7 +324,9 @@ export class AdminTrainingReminders {
           lastContactedDateTime: lastContactedDateTime,
           conversations: row.conversations ?? ''
         }
-        trainingReminder.isOverdue = await this.getIsOverdue(user, allUserQuizzes, quizSettings, client);
+        if (row.enabled) {
+          trainingReminder.isOverdue = await this.getIsOverdue(user, allUserQuizzes, quizSettings, client);
+        }
         trainingReminders.push(trainingReminder);
       }
       response.status(200).json(trainingReminders);
