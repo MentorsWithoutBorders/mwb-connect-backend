@@ -35,10 +35,12 @@ export class AdminTrainingReminders {
     try {
       await client.query('BEGIN');
       const trainer = await users.getUserFromDB(trainerId, client);
-      let getTrainingRemindersQuery = `SELECT atr.id, atr.user_id, u.name, u.email, u.phone_number, u.registered_on, atr.is_step_added, atr.last_reminder_date_time, atr.last_contacted_date_time, atrt.text, ac.conversations, ac.last_conversation_date_time 
+      let getTrainingRemindersQuery = `SELECT atr.id, atr.user_id, u.name, u.email, u.phone_number, u.registered_on, uns.enabled, atr.is_step_added, atr.last_reminder_date_time, atr.last_contacted_date_time, atrt.text, ac.conversations, ac.last_conversation_date_time 
         FROM admin_training_reminders atr
         JOIN users u
           ON atr.user_id = u.id
+        JOIN users_notifications_settings uns
+          ON atr.user_id = uns.user_id            
         FULL OUTER JOIN admin_training_reminders_texts atrt
           ON atr.reminder_to_send = atrt.serial_number
         FULL OUTER JOIN admin_assigned_users aau
@@ -91,7 +93,7 @@ export class AdminTrainingReminders {
           if (shouldShowRemainingQuizzes) {
             trainingReminder.remainingQuizzes = remainingQuizzes;
           }
-          trainingReminder.isOverdue = await this.getIsOverdue(user, allUserQuizzes, quizSettings, client);
+          trainingReminder.isOverdue = await this.getIsOverdue(user, allUserQuizzes, quizSettings, row.enabled, client);
           const reminderText = row.text;
           const stepQuizzesText = this.getStepQuizzesText(user.isMentor as boolean, isStepAdded, remainingQuizzes, quizSettings);
           const weeklyQuizzesText = this.getWeeklyQuizzesText(user.isMentor as boolean, remainingQuizzes, quizSettings);
@@ -127,7 +129,10 @@ export class AdminTrainingReminders {
     }
   }  
 
-  async getIsOverdue(user: User, quizzes: Array<Quiz>, quizSettings: QuizSettings, client: pg.PoolClient): Promise<boolean> {
+  async getIsOverdue(user: User, quizzes: Array<Quiz>, quizSettings: QuizSettings, areNotificationsEnabled: boolean, client: pg.PoolClient): Promise<boolean> {
+    if (!areNotificationsEnabled) {
+      return false;
+    }
     const isMentor = user.isMentor;
     const timeZone = user.timeZone as TimeZone;
     const timeZoneName = user.timeZone?.name as string;
@@ -324,9 +329,7 @@ export class AdminTrainingReminders {
           lastContactedDateTime: lastContactedDateTime,
           conversations: row.conversations ?? ''
         }
-        if (row.enabled) {
-          trainingReminder.isOverdue = await this.getIsOverdue(user, allUserQuizzes, quizSettings, client);
-        }
+        trainingReminder.isOverdue = await this.getIsOverdue(user, allUserQuizzes, quizSettings, row.enabled, client);
         trainingReminders.push(trainingReminder);
       }
       response.status(200).json(trainingReminders);
