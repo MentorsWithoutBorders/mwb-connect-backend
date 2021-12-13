@@ -105,19 +105,24 @@ export class AdminStudentsCertificates {
     const { isCertificateSent }: StudentCertificate = request.body;
     const client = await pool.connect();    
     try {
-      const getCertificateSentQuery= 'SELECT id FROM admin_students_certificates WHERE user_id = $1';
+      const getCertificateSentQuery = 'SELECT id FROM admin_students_certificates WHERE user_id = $1';
       const { rows }: pg.QueryResult = await client.query(getCertificateSentQuery, [studentId]);
       if (rows[0]) {
-        const updateCertificateSentQuery= `UPDATE admin_students_certificates
+        const updateCertificateSentQuery = `UPDATE admin_students_certificates
           SET is_certificate_sent = $1 WHERE user_id = $2`;
         const values = [isCertificateSent, studentId];
         await client.query(updateCertificateSentQuery, values);
       } else {
-        const insertCertificateSentQuery= `INSERT INTO admin_students_certificates (user_id, is_certificate_sent)
+        const insertCertificateSentQuery = `INSERT INTO admin_students_certificates (user_id, is_certificate_sent)
           VALUES ($1, $2)`;
         const values = [studentId, isCertificateSent];
         await client.query(insertCertificateSentQuery, values);    
       }
+      const updateNotificationsSettingsQuery = `UPDATE users_notifications_settings
+        SET enabled = false WHERE user_id = $1`; 
+      await client.query(updateNotificationsSettingsQuery, [studentId]);
+      const deleteTrainingReminderQuery = `DELETE FROM admin_training_reminders WHERE user_id = $1`;
+      await client.query(deleteTrainingReminderQuery, [studentId]);       
       response.status(200).json(`Certificate sent has been updated for user: ${studentId}`);
       await client.query('COMMIT');      
     } catch (error) {
