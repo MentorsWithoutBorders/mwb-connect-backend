@@ -2,10 +2,12 @@ import { Request, Response } from 'express';
 import autoBind from 'auto-bind';
 import pg from 'pg';
 import { Conn } from '../db/conn';
+import { UsersSendEmails } from './users_send_emails';
 import NotificationsSettings from '../models/notifications_settings.model';
 
 const conn = new Conn();
 const pool = conn.pool;
+const usersSendEmails = new UsersSendEmails();
 
 export class UsersNotificationsSettings {
   constructor() {
@@ -36,6 +38,7 @@ export class UsersNotificationsSettings {
         SET enabled = $1, time = $2 WHERE user_id = $3`;
       const values = [enabled, time, userId];
       await pool.query(updateNotificationsSettingsQuery, values);
+      usersSendEmails.sendEmailNotificationsSettingsUpdate(userId, enabled);
       response.status(200).send(`Notifications settings have been updated for user: ${userId}`);
     } catch (error) {
       response.status(400).send(error);

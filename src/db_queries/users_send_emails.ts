@@ -347,6 +347,15 @@ export class UsersSendEmails {
       body: body
     }
     this.sendEmail(emailAddress, email);  
-  }  
+  }
+  
+  sendEmailNotificationsSettingsUpdate(userId: string, enabled: boolean): void {
+    const body = `User: ${userId} has updated the notifications settings to ${enabled}.`;
+    const email: Email = {
+      subject: 'Notifications settings update',
+      body: body
+    }
+    this.sendEmail('edmond@mentorswithoutborders.net', email);  
+  }   
 }
 
