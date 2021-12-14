@@ -35,7 +35,7 @@ export class AdminTrainingReminders {
     try {
       await client.query('BEGIN');
       const trainer = await users.getUserFromDB(trainerId, client);
-      let getTrainingRemindersQuery = `SELECT atr.id, atr.user_id, u.name, u.email, u.phone_number, u.registered_on, uns.enabled, atr.is_step_added, atr.last_reminder_date_time, atr.last_contacted_date_time, atrt.text, ac.conversations, ac.last_conversation_date_time 
+      let getTrainingRemindersQuery = `SELECT atr.id, atr.user_id, u.name, u.email, u.phone_number, u.registered_on, atr.is_step_added, atr.last_reminder_date_time, atr.last_contacted_date_time, atrt.text, ac.conversations, ac.last_conversation_date_time 
         FROM admin_training_reminders atr
         JOIN users u
           ON atr.user_id = u.id
@@ -47,7 +47,8 @@ export class AdminTrainingReminders {
           ON atr.user_id = aau.assigned_user_id
         FULL OUTER JOIN admin_conversations ac
           ON atr.user_id = ac.user_id
-        WHERE date_trunc('day', now())::date - date_trunc('day', atr.last_reminder_date_time)::date >= 2`;
+        WHERE uns.enabled IS true
+          AND date_trunc('day', now())::date - date_trunc('day', atr.last_reminder_date_time)::date >= 2`;
       let values: Array<string> = [];
       if (!trainer.isAdmin) {
         getTrainingRemindersQuery += ' AND aau.trainer_id = $1';
@@ -93,7 +94,7 @@ export class AdminTrainingReminders {
           if (shouldShowRemainingQuizzes) {
             trainingReminder.remainingQuizzes = remainingQuizzes;
           }
-          trainingReminder.isOverdue = await this.getIsOverdue(user, allUserQuizzes, quizSettings, row.enabled, client);
+          trainingReminder.isOverdue = await this.getIsOverdue(user, allUserQuizzes, quizSettings, client);
           const reminderText = row.text;
           const stepQuizzesText = this.getStepQuizzesText(user.isMentor as boolean, isStepAdded, remainingQuizzes, quizSettings);
           const weeklyQuizzesText = this.getWeeklyQuizzesText(user.isMentor as boolean, remainingQuizzes, quizSettings);
@@ -129,10 +130,7 @@ export class AdminTrainingReminders {
     }
   }  
 
-  async getIsOverdue(user: User, quizzes: Array<Quiz>, quizSettings: QuizSettings, areNotificationsEnabled: boolean, client: pg.PoolClient): Promise<boolean> {
-    if (!areNotificationsEnabled) {
-      return false;
-    }
+  async getIsOverdue(user: User, quizzes: Array<Quiz>, quizSettings: QuizSettings, client: pg.PoolClient): Promise<boolean> {
     const isMentor = user.isMentor;
     const timeZone = user.timeZone as TimeZone;
     const timeZoneName = user.timeZone?.name as string;
@@ -292,7 +290,7 @@ export class AdminTrainingReminders {
     try {
       await client.query('BEGIN');
       const trainer = await users.getUserFromDB(trainerId, client);
-      let getTrainingRemindersQuery = `SELECT u.id, u.name, u.email, u.phone_number, u.registered_on, uns.enabled, atr.last_contacted_date_time, ac.conversations
+      let getTrainingRemindersQuery = `SELECT u.id, u.name, u.email, u.phone_number, u.registered_on, atr.last_contacted_date_time, ac.conversations
         FROM admin_training_reminders atr
         JOIN users u
           ON atr.user_id = u.id
@@ -301,10 +299,11 @@ export class AdminTrainingReminders {
         FULL OUTER JOIN admin_assigned_users aau
           ON atr.user_id = aau.assigned_user_id
         FULL OUTER JOIN admin_conversations ac
-          ON atr.user_id = ac.user_id`;
+          ON atr.user_id = ac.user_id
+        WHERE uns.enabled IS true`;
       let values: Array<string> = [];
       if (!trainer.isAdmin) {
-        getTrainingRemindersQuery += ' WHERE aau.trainer_id = $1';
+        getTrainingRemindersQuery += ' AND aau.trainer_id = $1';
         values = [trainerId];
       }
       getTrainingRemindersQuery += ' ORDER BY atr.last_contacted_date_time DESC NULLS LAST';
@@ -329,7 +328,7 @@ export class AdminTrainingReminders {
           lastContactedDateTime: lastContactedDateTime,
           conversations: row.conversations ?? ''
         }
-        trainingReminder.isOverdue = await this.getIsOverdue(user, allUserQuizzes, quizSettings, row.enabled, client);
+        trainingReminder.isOverdue = await this.getIsOverdue(user, allUserQuizzes, quizSettings, client);
         trainingReminders.push(trainingReminder);
       }
       response.status(200).json(trainingReminders);
