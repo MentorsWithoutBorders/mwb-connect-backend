@@ -22,4 +22,5 @@ export default interface User {
   shouldContact?: boolean;
   lastContactedDateTime?: string;
   isAdmin?: boolean;
+  workdays?: number;
 }

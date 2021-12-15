@@ -35,6 +35,7 @@ export class AdminTrainingReminders {
     try {
       await client.query('BEGIN');
       const trainer = await users.getUserFromDB(trainerId, client);
+      trainer.workdays = await this.getTrainerWorkdays(trainerId, client);
       let getTrainingRemindersQuery = `SELECT atr.id, atr.user_id, u.name, u.email, u.phone_number, u.registered_on, atr.is_step_added, atr.last_reminder_date_time, atr.last_contacted_date_time, atrt.text, ac.conversations, ac.last_conversation_date_time 
         FROM admin_training_reminders atr
         JOIN users u
@@ -69,7 +70,7 @@ export class AdminTrainingReminders {
         const lastReminderDateTime = moment.utc(row.last_reminder_date_time).format(constants.DATE_TIME_FORMAT);
         const lastConversationDateTime = row.last_conversation_date_time ? moment.utc(row.last_conversation_date_time).format(constants.DATE_TIME_FORMAT) : '';
         const certificateDate = moment.utc(row.registered_on).tz(user.timeZone.name).add(3, 'months').format(constants.SHORT_DATE_FORMAT);
-        const shouldShowTrainingReminder = this.getShouldShowTrainingReminder(user.timeZone, lastReminderDateTime, lastConversationDateTime);
+        const shouldShowTrainingReminder = this.getShouldShowTrainingReminder(lastReminderDateTime, lastConversationDateTime, user.timeZone, trainer.workdays);
         const isStepAdded = await this.getIsStepAdded(user.id as string, row.is_step_added, lastReminderDateTime, client);
         const allUserQuizzes = await usersQuizzes.getAllQuizzes(user.id as string, client);
         const hasPreviousRemainingQuizzes = this.getHasPreviousRemainingQuizzes(user, allUserQuizzes, quizSettings);
@@ -98,7 +99,7 @@ export class AdminTrainingReminders {
           const reminderText = row.text;
           const stepQuizzesText = this.getStepQuizzesText(user.isMentor as boolean, isStepAdded, remainingQuizzes, quizSettings);
           const weeklyQuizzesText = this.getWeeklyQuizzesText(user.isMentor as boolean, remainingQuizzes, quizSettings);
-          const reminderToSend = this.getReminderToSend(trainingReminder, reminderText, trainer, user, user.timeZone, weeklyQuizzesText, stepQuizzesText);
+          const reminderToSend = this.getReminderToSend(trainingReminder, lastReminderDateTime, reminderText, trainer, user, weeklyQuizzesText, stepQuizzesText);
           trainingReminder.reminderToSend = reminderToSend;
           trainingReminders.push(trainingReminder);
         }
@@ -112,6 +113,16 @@ export class AdminTrainingReminders {
       client.release();
     }
   }
+
+  async getTrainerWorkdays(trainerId: string, client: pg.PoolClient): Promise<number> {
+    const getTrainerWorkdaysQuery = `SELECT workdays FROM admin_trainers_workdays 
+      WHERE trainer_id = $1`;
+    const { rows }: pg.QueryResult = await client.query(getTrainerWorkdaysQuery, [trainerId]);
+    if (rows.length > 0) {
+      return rows[0].workdays;
+    }
+    return 7;
+  }  
 
   getHasPreviousRemainingQuizzes(user: User, quizzes: Array<Quiz>, quizSettings: QuizSettings): boolean {
     const timeZone = user.timeZone as TimeZone;
@@ -228,11 +239,12 @@ export class AdminTrainingReminders {
     }
   }  
 
-  getReminderToSend(trainingReminder: TrainingReminder, reminderText: string, trainer: User, user: User, userTimeZone: TimeZone, weeklyQuizzesText: string, stepQuizzesText: string): string {
+  getReminderToSend(trainingReminder: TrainingReminder, lastReminderDateTime: string, reminderText: string, trainer: User, user: User, weeklyQuizzesText: string, stepQuizzesText: string): string {
     if (!reminderText || trainingReminder.lastConversationDateTime != '' && moment.utc(trainingReminder.lastConversationDateTime).format(constants.DATE_FORMAT) == moment.utc().format(constants.DATE_FORMAT)) {
       return '';
     }
     const userFirstName = user.name?.split(' ')[0];
+    const timeZoneName = user.timeZone?.name as string;
     if (user.isMentor) {
       reminderText = reminderText.split('{mentor_name}').join(userFirstName as string);
     } else {
@@ -240,8 +252,8 @@ export class AdminTrainingReminders {
     }
     reminderText = reminderText.split('{trainer_name}').join(trainer.name as string);
     const certificateDate = moment.utc(user.registeredOn).add(3, 'months');
-    if (moment.utc(certificateDate).tz(userTimeZone.name).startOf('day').isAfter(moment.utc().tz(userTimeZone.name).startOf('day'))) {
-      reminderText = reminderText.split('{certificate_date}').join(certificateDate.tz(userTimeZone.name).format(constants.SHORT_DATE_FORMAT));
+    if (moment.utc(certificateDate).tz(timeZoneName).startOf('day').isAfter(moment.utc().tz(timeZoneName).startOf('day'))) {
+      reminderText = reminderText.split('{certificate_date}').join(certificateDate.tz(timeZoneName).format(constants.SHORT_DATE_FORMAT));
     } else {
       reminderText = reminderText.split(' on {certificate_date}').join('');
     }
@@ -254,10 +266,24 @@ export class AdminTrainingReminders {
     reminderText = reminderText.split('{step_quizzes_to_do}').join(stepQuizzesToDo);
     const stepQuizzesDoing = stepQuizzesText.split('{add}').join('adding').split('{solve}').join('solving');
     reminderText = reminderText.split('{step_quizzes_doing}').join(stepQuizzesDoing);
+    let lastReminderDay = 'tomorrow';
+    const lastReminderDaysToAdd = this.getLastReminderDaysToAdd(lastReminderDateTime, user.timeZone as TimeZone, trainer.workdays as number);
+    if (trainer.workdays == 5) {
+      if (lastReminderDaysToAdd == 5) {
+        lastReminderDay = 'on Sunday';
+      } else if (lastReminderDaysToAdd == 4) {
+        lastReminderDay = 'on Monday';
+      }
+    } else if (trainer.workdays == 6) {
+      if (lastReminderDaysToAdd == 5) {
+        lastReminderDay = 'on Monday';
+      }
+    }
+    reminderText = reminderText.split('{last_reminder_day}').join(lastReminderDay);
     return reminderText;
   }
 
-  getShouldShowTrainingReminder(userTimeZone: TimeZone, lastReminderDateTime: string, lastConversationDateTime: string): boolean {
+  getShouldShowTrainingReminder(lastReminderDateTime: string, lastConversationDateTime: string, userTimeZone: TimeZone, trainerWorkdays: number): boolean {
     let shouldShowTrainingReminder = false;
     const now = moment.utc().startOf('day');
     const lastReminderStartOfDay = moment.utc(lastReminderDateTime).startOf('day');
@@ -265,12 +291,30 @@ export class AdminTrainingReminders {
     if (lastConversationDateTime != '') {
       lastConversationStartOfDay = moment.utc(lastConversationDateTime).startOf('day');
     }
+    const lastReminderDaysToAdd = this.getLastReminderDaysToAdd(lastReminderDateTime, userTimeZone, trainerWorkdays);
     if (now.diff(lastReminderStartOfDay, 'days') == 2 ||
         now.diff(lastReminderStartOfDay, 'days') > 2 && (!lastConversationStartOfDay || lastConversationStartOfDay.diff(lastReminderStartOfDay, 'days') < 2 || lastConversationStartOfDay.format(constants.DATE_FORMAT) == now.format(constants.DATE_FORMAT)) ||
-        moment.utc().tz(userTimeZone.name).format(constants.DATE_FORMAT) == moment.utc(lastReminderDateTime).tz(userTimeZone.name).add(6, 'd').format(constants.DATE_FORMAT)) {
+        moment.utc().tz(userTimeZone.name).format(constants.DATE_FORMAT) == moment.utc(lastReminderDateTime).tz(userTimeZone.name).add(lastReminderDaysToAdd, 'd').format(constants.DATE_FORMAT)) {
       shouldShowTrainingReminder = true;
     }
     return shouldShowTrainingReminder;
+  }
+
+  getLastReminderDaysToAdd(lastReminderDateTime: string, userTimeZone: TimeZone, trainerWorkdays: number): number {
+    let days = 6;
+    const lastReminderDateTimeUser = moment.utc(lastReminderDateTime).tz(userTimeZone.name);
+    if (trainerWorkdays == 5) {
+      if (lastReminderDateTimeUser.isoWeekday() == 7) {
+        days = 5;
+      } else if (lastReminderDateTimeUser.isoWeekday() == 1) {
+        days = 4;
+      }
+    } else if (trainerWorkdays == 6) {
+      if (lastReminderDateTimeUser.isoWeekday() == 1) {
+        days = 5;
+      }
+    }
+    return days;
   }
 
   async getIsStepAdded(userId: string, isStepAdded: boolean, dateTime: string, client: pg.PoolClient): Promise<boolean> {
