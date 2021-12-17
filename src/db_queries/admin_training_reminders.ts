@@ -89,7 +89,7 @@ export class AdminTrainingReminders {
       const hasPreviousRemainingQuizzes = this.getHasPreviousRemainingQuizzes(user, allUserQuizzes, quizSettings);
       const quizzes = await usersQuizzes.getQuizzesFromDB(user.id as string, client);
       const remainingQuizzes = helpers.getRemainingQuizzes(quizzes);
-      const shouldShowRemainingQuizzes = hasPreviousRemainingQuizzes && remainingQuizzes > 0 || !isStepAdded && remainingQuizzes > 0;
+      const shouldShowRemainingQuizzes = this.getShouldShowRemainingQuizzes(hasPreviousRemainingQuizzes, remainingQuizzes, isStepAdded);
       if (shouldShowTrainingReminder && (!isStepAdded || shouldShowRemainingQuizzes)) {
         const firstReminderAtTimeZone = moment.utc(lastReminderDateTime).tz(user.timeZone.name).subtract(2, 'd').format(constants.SHORT_DATE_FORMAT);
         const lastReminderAtTimeZone = moment.utc(lastReminderDateTime).tz(user.timeZone.name).format(constants.SHORT_DATE_FORMAT);
@@ -145,7 +145,11 @@ export class AdminTrainingReminders {
       const quizzesBetweenDates = usersQuizzes.getQuizzesBetweenDates(quizzes, weekStartDate, weekEndDate, timeZone);
       return this.getHasRemainingQuizzes(user.isMentor as boolean, quizzesBetweenDates, quizSettings);
     }
-  }  
+  }
+  
+  getShouldShowRemainingQuizzes(hasPreviousRemainingQuizzes: boolean, remainingQuizzes: number, isStepAdded: boolean): boolean {
+    return hasPreviousRemainingQuizzes && remainingQuizzes > 0 || !isStepAdded && remainingQuizzes > 0;    
+  }
 
   async getIsOverdue(user: User, quizzes: Array<Quiz>, quizSettings: QuizSettings, client: pg.PoolClient): Promise<boolean> {
     const isMentor = user.isMentor;
