@@ -89,7 +89,7 @@ export class AdminTrainingReminders {
       const hasPreviousRemainingQuizzes = this.getHasPreviousRemainingQuizzes(user, allUserQuizzes, quizSettings);
       const quizzes = await usersQuizzes.getQuizzesFromDB(user.id as string, client);
       const remainingQuizzes = helpers.getRemainingQuizzes(quizzes);
-      const shouldShowRemainingQuizzes = hasPreviousRemainingQuizzes && remainingQuizzes > 0;
+      const shouldShowRemainingQuizzes = hasPreviousRemainingQuizzes && remainingQuizzes > 0 || !isStepAdded && remainingQuizzes > 0;
       if (shouldShowTrainingReminder && (!isStepAdded || shouldShowRemainingQuizzes)) {
         const firstReminderAtTimeZone = moment.utc(lastReminderDateTime).tz(user.timeZone.name).subtract(2, 'd').format(constants.SHORT_DATE_FORMAT);
         const lastReminderAtTimeZone = moment.utc(lastReminderDateTime).tz(user.timeZone.name).format(constants.SHORT_DATE_FORMAT);
