@@ -231,6 +231,9 @@ app.put('/api/v1/admin/students_certificates/:student_id/certificate_sent', admi
 // Admin training reminders
 app.get('/api/v1/admin/training_reminders', adminTrainingReminders.getTrainingReminders);
 app.get('/api/v1/admin/all_training_reminders', adminTrainingReminders.getAllTrainingReminders);
+app.get('/api/v1/admin/:trainer_id/training_reminders', adminTrainingReminders.getTrainingReminders);
+app.get('/api/v1/admin/:trainer_id/all_training_reminders', adminTrainingReminders.getAllTrainingReminders);
+app.get('/api/v1/admin/trainers', adminTrainingReminders.getTrainers);
 app.post('/api/v1/admin/conversations', adminTrainingReminders.addConversation);
 app.put('/api/v1/admin/training_reminders/:id/last_contacted', adminTrainingReminders.updateLastContacted);
 
