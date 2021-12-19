@@ -49,7 +49,7 @@ export class AdminTrainingReminders {
   async getTrainingRemindersFromDB(trainerId: string, client: pg.PoolClient): Promise<Array<TrainingReminder>> {
     const trainer = await users.getUserFromDB(trainerId, client);
     trainer.workdays = await this.getTrainerWorkdays(trainerId, client);
-    let getTrainingRemindersQuery = `SELECT atr.id, atr.user_id, u.name, u.email, u.phone_number, u.registered_on, atr.is_step_added, atr.last_reminder_date_time, atr.last_contacted_date_time, atrt.text, ac.conversations, ac.last_conversation_date_time 
+    let getTrainingRemindersQuery = `SELECT atr.id, atr.user_id, u.name, u.email, u.phone_number, u.is_mentor, u.registered_on, atr.is_step_added, atr.last_reminder_date_time, atr.last_contacted_date_time, atrt.text, ac.conversations, ac.last_conversation_date_time 
       FROM admin_training_reminders atr
       JOIN users u
         ON atr.user_id = u.id
@@ -77,6 +77,7 @@ export class AdminTrainingReminders {
         name: row.name,
         email: row.email,
         phoneNumber: row.phone_number ?? '',
+        isMentor: row.is_mentor,
         registeredOn: moment.utc(row.registered_on).format(constants.DATE_TIME_FORMAT)
       };
       user.timeZone = await usersTimeZones.getUserTimeZone(user.id as string, client);
@@ -357,7 +358,7 @@ export class AdminTrainingReminders {
   
   async getAllTrainingRemindersFromDB(trainerId: string, client: pg.PoolClient): Promise<Array<TrainingReminder>> {
     const trainer = await users.getUserFromDB(trainerId, client);
-    let getTrainingRemindersQuery = `SELECT u.id, u.name, u.email, u.phone_number, u.registered_on, atr.last_contacted_date_time, ac.conversations
+    let getTrainingRemindersQuery = `SELECT u.id, u.name, u.email, u.phone_number, u.is_mentor, u.registered_on, atr.last_contacted_date_time, ac.conversations
       FROM users u
       FULL OUTER JOIN admin_training_reminders atr
         ON u.id = atr.user_id
@@ -382,6 +383,7 @@ export class AdminTrainingReminders {
         name: row.name,
         email: row.email,
         phoneNumber: row.phone_number ?? '',
+        isMentor: row.is_mentor,
         registeredOn: moment.utc(row.registered_on).format(constants.DATE_TIME_FORMAT)
       };
       user.timeZone = await usersTimeZones.getUserTimeZone(user.id as string, client);
