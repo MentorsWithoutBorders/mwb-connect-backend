@@ -408,11 +408,13 @@ export class AdminTrainingReminders {
     const { rows }: pg.QueryResult = await client.query(getTrainingRemindersQuery, [user.id]);
     const lastReminderDateTime = moment.utc().format(constants.DATE_TIME_FORMAT);
     if (rows[0]) {
-      const reminderToSend = await this.getTrainingReminderSerialNumber(rows[0].reminder_to_send, false, client);
-      const updateTrainingRemindersQuery = `UPDATE admin_training_reminders
-        SET is_step_added = $1, remaining_quizzes = $2, last_reminder_date_time = $3, reminder_to_send = $4 WHERE user_id = $5`;
-      const values = [isStepAdded, remainingQuizzes, lastReminderDateTime, reminderToSend, user.id];
-      await client.query(updateTrainingRemindersQuery, values);
+      if (!user.isMentor) {
+        const reminderToSend = await this.getTrainingReminderSerialNumber(user, rows[0].reminder_to_send, false, client);
+        const updateTrainingRemindersQuery = `UPDATE admin_training_reminders
+          SET is_step_added = $1, remaining_quizzes = $2, last_reminder_date_time = $3, reminder_to_send = $4 WHERE user_id = $5`;
+        const values = [isStepAdded, remainingQuizzes, lastReminderDateTime, reminderToSend, user.id];
+        await client.query(updateTrainingRemindersQuery, values);
+      }
     } else {
       const insertTrainingReminderQuery = `INSERT INTO admin_training_reminders (user_id, is_step_added, remaining_quizzes, last_reminder_date_time, reminder_to_send)
         VALUES ($1, $2, $3, $4, $5)`;
@@ -422,11 +424,11 @@ export class AdminTrainingReminders {
     }
   }
 
-  async getTrainingReminderSerialNumber(previousSerialNumberString: string, isFromConversations: boolean, client: pg.PoolClient): Promise<string> {
+  async getTrainingReminderSerialNumber(user: User, previousSerialNumberString: string, isFromConversations: boolean, client: pg.PoolClient): Promise<string> {
     const serialNumberFirstLetter = previousSerialNumberString[0];
     const previousSerialNumber = parseInt(previousSerialNumberString.substring(1, previousSerialNumberString.length));
-    if (isFromConversations && previousSerialNumber % 2 == 0 ||
-        !isFromConversations && previousSerialNumber % 2 != 0) {
+    if (!user.isMentor && (isFromConversations && previousSerialNumber % 2 == 0 ||
+        !isFromConversations && previousSerialNumber % 2 != 0)) {
       return previousSerialNumberString;
     }
     const serialNumber = previousSerialNumber + 1;
@@ -436,7 +438,11 @@ export class AdminTrainingReminders {
     if (rows[0]) {
       return serialNumberString;
     } else {
-      return serialNumberFirstLetter + (serialNumber - 2).toString();
+      if (user.isMentor) {
+        return previousSerialNumberString;
+      } else {
+        return serialNumberFirstLetter + (serialNumber - 2).toString();
+      }
     }
   }
   
@@ -459,7 +465,7 @@ export class AdminTrainingReminders {
         const insertTrainingReminderQuery = `INSERT INTO admin_conversations (user_id, conversations, last_conversation_date_time)
           VALUES ($1, $2, $3)`;
         const values = [userId, conversations, now];
-        await client.query(insertTrainingReminderQuery, values)      
+        await client.query(insertTrainingReminderQuery, values);
       }
       this.updateTrainingReminder(userId, lastConversationDateTime, client);
       response.status(200).json(`Conversation has been added for user: ${userId}`);
@@ -473,11 +479,12 @@ export class AdminTrainingReminders {
   }
   
   async updateTrainingReminder(userId: string, lastConversationDateTime: string, client: pg.PoolClient): Promise<void> {
+    const user = await users.getUserFromDB(userId, client);
     const getTrainingRemindersQuery = 'SELECT reminder_to_send FROM admin_training_reminders WHERE user_id = $1';
     const { rows }: pg.QueryResult = await client.query(getTrainingRemindersQuery, [userId]);
     let updateTrainingReminderQuery = '';
     if (rows[0] && (!lastConversationDateTime || moment.utc().format(constants.DATE_FORMAT) != moment.utc(lastConversationDateTime).format(constants.DATE_FORMAT))) {
-      const reminderToSend = await this.getTrainingReminderSerialNumber(rows[0].reminder_to_send, true, client);
+      const reminderToSend = await this.getTrainingReminderSerialNumber(user, rows[0].reminder_to_send, true, client);
       updateTrainingReminderQuery = `UPDATE admin_training_reminders
         SET reminder_to_send = $1 WHERE user_id = $2`;
       await client.query(updateTrainingReminderQuery, [reminderToSend, userId]);
