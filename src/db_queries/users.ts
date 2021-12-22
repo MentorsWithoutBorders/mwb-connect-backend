@@ -196,18 +196,18 @@ export class Users {
   async updateUser(request: Request, response: Response): Promise<void> {
     const id = request.user.id as string;
     const { name, email, isMentor, field, isAvailable, availableFrom, availabilities, lessonsAvailability }: User = request.body
-    const values = [name, email, field?.id, isAvailable, availableFrom, id];
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
       const updateUserQuery = 'UPDATE users SET name = $1, email = $2, field_id = $3, is_available = $4, available_from = $5 WHERE id = $6';
+      const values = [name, email, field?.id, isAvailable, availableFrom, id];
       await client.query(updateUserQuery, values);
-      await this.deleteUserSubfields(id, client);
-      await this.deleteUserSkills(id, client);
-      await this.deleteUserAvailabilities(id, client);      
-      await this.insertUserSubfields(id, field?.subfields as Array<Subfield>, client);
+      await this.deleteUserAvailabilities(id, client);
       await this.insertUserAvailabilities(id, availabilities as Array<Availability>, client);
       if (isMentor) {
+        await this.deleteUserSubfields(id, client);
+        await this.deleteUserSkills(id, client);
+        await this.insertUserSubfields(id, field?.subfields as Array<Subfield>, client);
         await this.updateUserLessonsAvailability(id, lessonsAvailability as LessonsAvailability, client);
       }
       response.status(200).send(id);
