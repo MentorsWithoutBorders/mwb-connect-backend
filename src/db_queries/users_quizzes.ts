@@ -93,6 +93,10 @@ export class UsersQuizzes {
         const quizzesStartDate = moment.utc(registeredOn).add((constants.STUDENT_MAX_QUIZZES_SETS * 2 + 1) * 7 + 1, 'days');
         const quizStartNumber = this.getQuizzesRemainingStartNumber(quizzes, quizzesStartDate);
         quizzes = this.getAssignedQuizzesStudent(quizzesBetweenDates, quizStartNumber, weeklyCount, true);
+        const remainingQuizzes = helpers.getRemainingQuizzes(quizzes);
+        if (remainingQuizzes == 0) {
+          quizzes = [];
+        }
       }
     }
     return quizzes;    
