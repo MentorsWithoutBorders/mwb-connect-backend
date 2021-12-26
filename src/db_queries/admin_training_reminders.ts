@@ -132,6 +132,7 @@ export class AdminTrainingReminders {
   }  
 
   getHasPreviousRemainingQuizzes(user: User, quizzes: Array<Quiz>, quizSettings: QuizSettings): boolean {
+    const isMentor = user.isMentor;
     const timeZone = user.timeZone as TimeZone;
     const timeZoneName = user.timeZone?.name as string;
     const registeredOn = moment.utc(user.registeredOn).tz(timeZoneName).startOf('day');
@@ -144,7 +145,12 @@ export class AdminTrainingReminders {
       const weekStartDate = usersQuizzes.getWeekStartDate(registeredOn, weekNumber - 1, timeZone);
       const weekEndDate = usersQuizzes.getWeekEndDate(registeredOn, weekNumber - 1, timeZone);
       const quizzesBetweenDates = usersQuizzes.getQuizzesBetweenDates(quizzes, weekStartDate, weekEndDate, timeZone);
-      return this.getHasRemainingQuizzes(user.isMentor as boolean, quizzesBetweenDates, quizSettings);
+      let isFirstQuizzesRoundCompleted = false;
+      if (!isMentor) {
+        isFirstQuizzesRoundCompleted = this.getIsFirstQuizzesRoundCompleted(quizzes, quizSettings);
+      }
+      const hasRemainingQuizzes = this.getHasRemainingQuizzes(user.isMentor as boolean, quizzesBetweenDates, quizSettings);
+      return hasRemainingQuizzes && (isMentor || !isMentor && (weekNumber >= 11 || weekNumber < 11 && !isFirstQuizzesRoundCompleted));
     }
   }
   
@@ -153,7 +159,6 @@ export class AdminTrainingReminders {
   }
 
   async getIsOverdue(user: User, quizzes: Array<Quiz>, quizSettings: QuizSettings, client: pg.PoolClient): Promise<boolean> {
-    const isMentor = user.isMentor;
     const timeZone = user.timeZone as TimeZone;
     const timeZoneName = user.timeZone?.name as string;
     const registeredOn = moment.utc(user.registeredOn).tz(timeZoneName).startOf('day');
@@ -172,22 +177,8 @@ export class AdminTrainingReminders {
       const currentQuizzes = await usersQuizzes.getQuizzesFromDB(user.id as string, client);
       const remainingQuizzes = helpers.getRemainingQuizzes(currentQuizzes);
       const areQuizzesSolved = !(hasRemainingQuizzes2WeeksBefore && hasPreviousRemainingQuizzes && remainingQuizzes > 0);
-      let isFirstQuizzesRoundCompleted = false;
-      if (!isMentor) {
-        isFirstQuizzesRoundCompleted = this.getIsFirstQuizzesRoundCompleted(quizzes, weekNumber, quizSettings);
-      }
-      return !isStepAdded || !areQuizzesSolved && (isMentor || !isMentor && !isFirstQuizzesRoundCompleted);
+      return !isStepAdded || !areQuizzesSolved;
     }
-  }
-
-  getIsFirstQuizzesRoundCompleted(quizzes: Array<Quiz>, weekNumber: number, quizSettings: QuizSettings): boolean {
-    let lastQuizSolved = 0;
-    for (const quiz of quizzes) {
-      if (quiz.isCorrect && quiz.number > lastQuizSolved) {
-        lastQuizSolved = quiz.number;
-      }
-    }
-    return lastQuizSolved == quizSettings.studentWeeklyCount * 4 && weekNumber > 3 && weekNumber < 11;
   }
 
   getHasRemainingQuizzes(isMentor: boolean, quizzes: Array<Quiz>, quizSettings: QuizSettings): boolean {
@@ -204,6 +195,16 @@ export class AdminTrainingReminders {
       }
     }
     return solvedQuizzes < quizzesWeeklyCount;
+  }
+  
+  getIsFirstQuizzesRoundCompleted(quizzes: Array<Quiz>, quizSettings: QuizSettings): boolean {
+    let lastQuizSolved = 0;
+    for (const quiz of quizzes) {
+      if (quiz.isCorrect && quiz.number > lastQuizSolved) {
+        lastQuizSolved = quiz.number;
+      }
+    }
+    return lastQuizSolved == quizSettings.studentWeeklyCount * 4;
   }  
 
   getLastContactedDateTime(lastContactedDateTime: string): string {
