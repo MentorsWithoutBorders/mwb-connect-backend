@@ -318,6 +318,9 @@ export class UsersQuizzes {
       const values = [userId, number, isCorrect, isClosed, dateTime];
       await client.query(insertQuizQuery, values);
       const quizNumber = await this.getQuizNumberFromDB(userId, client);
+      const quizzes = await this.getQuizzesFromDB(userId, client);
+      const remainingQuizzes = helpers.getRemainingQuizzes(quizzes);
+      await this.updateTrainingReminderRemainingQuizzes(userId, remainingQuizzes, client);
       response.status(200).json(quizNumber);
       await client.query('COMMIT');
     } catch (error) {
@@ -326,6 +329,12 @@ export class UsersQuizzes {
     } finally {
       client.release();
     }
-  }  
+  }
+  
+  async updateTrainingReminderRemainingQuizzes(userId: string, remainingQuizzes: number, client: pg.PoolClient): Promise<void> {
+    const updateRemainingQuizzesQuery = `UPDATE admin_training_reminders
+      SET remaining_quizzes = $1 WHERE user_id = $2`;
+    await client.query(updateRemainingQuizzesQuery, [remainingQuizzes, userId]);
+  }    
 }
 

@@ -126,7 +126,9 @@ export class UsersSteps {
     const userId = request.user.id as string;
     const goalId = request.params.id;
     const { text, index, level, parentId }: Step = request.body;
+    const client = await pool.connect();
     try {
+      await client.query('BEGIN');
       const insertStepQuery = `INSERT INTO users_steps (user_id, goal_id, text, index, level, parent_id, date_time)
         VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`;
       const dateTime = moment.utc();
@@ -138,10 +140,15 @@ export class UsersSteps {
         index: rows[0].index,
         level: rows[0].level,
         parentId: rows[0].parent_id
-      };      
+      };
+      await this.updateTrainingReminderStepAdded(userId, client);
       response.status(200).send(step);
+      await client.query('COMMIT');
     } catch (error) {
       response.status(400).send(error);
+      await client.query('ROLLBACK');
+    } finally {
+      client.release();
     }
   }
 
@@ -210,5 +217,12 @@ export class UsersSteps {
       client.release();
     }    
   }
+
+  async updateTrainingReminderStepAdded(userId: string, client: pg.PoolClient): Promise<void> {
+    const updateStepAddedQuery = `UPDATE admin_training_reminders
+      SET is_step_added = true WHERE user_id = $1`;
+    await client.query(updateStepAddedQuery, [userId]);
+  }
+    
 }
 

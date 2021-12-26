@@ -468,7 +468,7 @@ export class AdminTrainingReminders {
         const values = [userId, conversations, now];
         await client.query(insertTrainingReminderQuery, values);
       }
-      this.updateTrainingReminder(userId, lastConversationDateTime, client);
+      this.updateReminderToSend(userId, lastConversationDateTime, client);
       response.status(200).json(`Conversation has been added for user: ${userId}`);
       await client.query('COMMIT');      
     } catch (error) {
@@ -479,7 +479,7 @@ export class AdminTrainingReminders {
     }      
   }
   
-  async updateTrainingReminder(userId: string, lastConversationDateTime: string, client: pg.PoolClient): Promise<void> {
+  async updateReminderToSend(userId: string, lastConversationDateTime: string, client: pg.PoolClient): Promise<void> {
     const user = await users.getUserFromDB(userId, client);
     const getTrainingRemindersQuery = 'SELECT reminder_to_send FROM admin_training_reminders WHERE user_id = $1';
     const { rows }: pg.QueryResult = await client.query(getTrainingRemindersQuery, [userId]);
@@ -513,7 +513,7 @@ export class AdminTrainingReminders {
     } finally {
       client.release();
     }      
-  }
+  } 
   
   async getTrainers(request: Request, response: Response): Promise<void> {
     try {
