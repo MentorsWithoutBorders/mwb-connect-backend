@@ -131,5 +131,22 @@ export class AdminStudentsCertificates {
     } finally {
       client.release();
     }
-  }  
+  }
+  
+  async getCertificateSent(request: Request, response: Response): Promise<void> {
+    const userId = request.user.id as string;
+    try {
+      const getCertificateSentQuery = 'SELECT is_certificate_sent FROM admin_students_certificates WHERE user_id = $1';
+      const { rows }: pg.QueryResult = await pool.query(getCertificateSentQuery, [userId]);
+      const studentCertificate: StudentCertificate = {
+        isCertificateSent: false
+      };
+      if (rows[0]) {
+        studentCertificate.isCertificateSent = rows[0].is_certificate_sent;
+      }
+      response.status(200).json(studentCertificate);
+    } catch (error) {
+      response.status(400).send(error);
+    }
+  } 
 }
