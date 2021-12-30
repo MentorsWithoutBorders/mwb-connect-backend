@@ -226,6 +226,7 @@ cron.schedule('* * * * *', function() {
 
 // Admin students certificates
 app.get('/api/v1/admin/students_certificates', adminStudentsCertificates.getStudentsCertificates);
+app.get('/api/v1/admin/students_certificates/certificate_sent', adminStudentsCertificates.getCertificateSent);
 app.put('/api/v1/admin/students_certificates/:student_id/certificate_sent', adminStudentsCertificates.updateCertificateSent);
 
 // Admin training reminders
