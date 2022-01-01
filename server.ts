@@ -10,6 +10,7 @@ import { UsersTimeZones } from './src/db_queries/users_timezones';
 import { UsersGoals } from './src/db_queries/users_goals';
 import { UsersSteps } from './src/db_queries/users_steps';
 import { UsersQuizzes } from './src/db_queries/users_quizzes';
+import { UsersAvailableMentors } from './src/db_queries/users_available_mentors';
 import { UsersLessonRequests } from './src/db_queries/users_lesson_requests';
 import { UsersLessons } from './src/db_queries/users_lessons';
 import { UsersCertificatesPauses } from './src/db_queries/users_certificates_pauses';
@@ -44,6 +45,7 @@ const usersPushNotifications: UsersPushNotifications = new UsersPushNotification
 const usersGoals: UsersGoals = new UsersGoals();
 const usersSteps: UsersSteps = new UsersSteps();
 const usersQuizzes: UsersQuizzes = new UsersQuizzes();
+const usersAvailableMentors: UsersAvailableMentors = new UsersAvailableMentors();
 const usersLessonRequests: UsersLessonRequests = new UsersLessonRequests();
 const usersLessons: UsersLessons = new UsersLessons();
 const usersCertificatesPauses: UsersCertificatesPauses = new UsersCertificatesPauses();
@@ -131,6 +133,9 @@ app.get('/api/v1/last_step_added', usersSteps.getLastStepAdded);
 app.get('/api/v1/quizzes', usersQuizzes.getQuizzes);
 app.get('/api/v1/quiz_number', usersQuizzes.getQuizNumber);
 app.post('/api/v1/quizzes', usersQuizzes.addQuiz);
+
+// Users available mentors
+app.get('/api/v1/available_mentors', usersAvailableMentors.getAvailableMentors);
 
 // Users lesson requests
 app.post('/api/v1/lesson_requests', usersLessonRequests.addLessonRequest);
