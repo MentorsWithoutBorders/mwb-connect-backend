@@ -18,7 +18,7 @@ export class AdminAvailableStudents {
     autoBind(this);
   }
 
-  async getAvailableStudents(request: Request, response: Response): Promise<void> {
+  async getAvailableStudentsLessons(request: Request, response: Response): Promise<void> {
     const client = await pool.connect();    
     try {
       await client.query('BEGIN');

@@ -242,11 +242,11 @@ app.put('/api/v1/admin/training_reminders/:id/last_contacted', adminTrainingRemi
 app.get('/api/v1/admin/lessons', adminLessons.getLessons);
 
 // Admin available mentors
-app.get('/api/v1/admin/available_mentors', adminAvailableMentors.getAvailableMentors);
+app.get('/api/v1/admin/available_mentors_lessons', adminAvailableMentors.getAvailableMentorsLessons);
 app.put('/api/v1/admin/available_mentors/:mentor_id/should_contact', adminAvailableMentors.updateShouldContact);
 
 // Admin available students
-app.get('/api/v1/admin/available_students', adminAvailableStudents.getAvailableStudents);
+app.get('/api/v1/admin/available_students_lessons', adminAvailableStudents.getAvailableStudentsLessons);
 app.put('/api/v1/admin/available_students/:student_id/should_contact', adminAvailableStudents.updateShouldContact);
 
 
