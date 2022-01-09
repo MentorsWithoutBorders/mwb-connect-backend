@@ -103,7 +103,6 @@ app.post('/api/v1/send_reset_password/:email', usersResetPassword.addUserResetPa
 app.post('/api/v1/reset_password', usersResetPassword.resetPassword);
 
 // Users
-// app.get('/api/v1/users', users.getUsers);
 app.get('/api/v1/user', users.getUser);
 app.put('/api/v1/user', users.updateUser);
 app.delete('/api/v1/user', users.deleteUser);
@@ -140,6 +139,7 @@ app.get('/api/v1/available_mentors', usersAvailableMentors.getAvailableMentors);
 // Users lesson requests
 app.post('/api/v1/lesson_requests', usersLessonRequests.addLessonRequest);
 app.get('/api/v1/lesson_request', usersLessonRequests.getLessonRequest);
+app.post('/api/v1/lesson_requests/send_custom_lesson_request', usersLessonRequests.sendCustomLessonRequest);
 app.post('/api/v1/lesson_requests/:id/accept_lesson_request', usersLessonRequests.acceptLessonRequest);
 app.put('/api/v1/lesson_requests/:id/reject_lesson_request', usersLessonRequests.rejectLessonRequest);
 app.put('/api/v1/lesson_requests/:id/cancel_lesson_request', usersLessonRequests.cancelLessonRequest);
