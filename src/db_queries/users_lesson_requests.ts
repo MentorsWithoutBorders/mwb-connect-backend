@@ -146,6 +146,7 @@ export class UsersLessonRequests {
         const availability = availabilities[0];
         const timeTo = moment(availability.time.from, 'h:ma').add(2, 'h').format('h:ma');
         availability.time.to = timeTo;
+        availability.isPreferred = true;
         users.insertUserAvailabilities(studentId, [availability], client);
       }
       const mentorId = id as string;
@@ -426,10 +427,10 @@ export class UsersLessonRequests {
     const studentSubfields = student.field?.subfields;
     const studentSubfieldId = studentSubfields != null && studentSubfields.length > 0 ? studentSubfields[0].id : null;    
     const queryWhereSubfield = studentSubfieldId != null ? `AND ul.subfield_id = '${studentSubfieldId}'` : '';
-    const studentAvailabilities = student.availabilities != null ? student.availabilities : null; 
+    const studentAvailabilities = this.getPreferredOrAllAvailabilities(student.availabilities);
     let availableLessons: Array<Lesson> = [];
     let queryWhereAvailabilities = '';
-    if (studentAvailabilities != null && studentAvailabilities.length > 0) {
+    if (studentAvailabilities.length > 0) {
       queryWhereAvailabilities = 'AND (';
       for (const availability of studentAvailabilities) {
         const timeFrom = moment(availability.time.from, 'h:ma').format('HH:mm');
@@ -475,6 +476,18 @@ export class UsersLessonRequests {
       }
     }
     return availableLessons;
+  }
+
+  getPreferredOrAllAvailabilities(availabilities?: Array<Availability>): Array<Availability> {
+    if (availabilities != null) {
+      for (const availability of availabilities) {
+        if (availability.isPreferred) {
+          return [availability];
+        }
+      }
+      return availabilities;
+    }
+    return [];
   }
 
   addAvailableLesson(lessonStudentsNumber: number, maxStudents: number, availableLesson: Lesson, availableLessons: Array<Lesson>): Array<Lesson> {
@@ -609,10 +622,10 @@ export class UsersLessonRequests {
     const studentSubfields = student.field?.subfields;
     const studentSubfieldId = studentSubfields != null && studentSubfields.length > 0 ? studentSubfields[0].id : null;
     const queryWhereSubfield = studentSubfieldId != null ? `AND us.subfield_id = '${studentSubfieldId}'` : '';
-    const studentAvailabilities = student.availabilities != null ? student.availabilities : null; 
+    const studentAvailabilities = this.getPreferredOrAllAvailabilities(student.availabilities);
     let queryWhereAvailabilities = '';
     let availableMentorsMap: Map<string, string> = new Map();
-    if (studentAvailabilities != null && studentAvailabilities.length > 0) {
+    if (studentAvailabilities.length > 0) {
       queryWhereAvailabilities = 'AND (';
       for (const availability of studentAvailabilities) {
         const timeFrom = moment(availability.time.from, 'h:ma').format('HH:mm');
