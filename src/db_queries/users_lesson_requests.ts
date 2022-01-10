@@ -134,6 +134,7 @@ export class UsersLessonRequests {
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
+      await this.updateStudentGoal(studentId, field?.id as string, client);
       await this.updateStudentField(studentId, field?.id as string, client);
       await users.deleteUserSubfields(studentId, client);
       const subfields = field?.subfields;
@@ -163,6 +164,25 @@ export class UsersLessonRequests {
     }
     this.sendLessonRequestsFromDB();    
   }
+
+  async updateStudentGoal(studentId: string, fieldId: string, client: pg.PoolClient): Promise<void> {
+    const getUserFieldQuery = `SELECT field_id FROM users WHERE id = $1`;
+    let { rows }: pg.QueryResult = await client.query(getUserFieldQuery, [studentId]);
+    let previousFieldId = '';
+    if (rows[0]) {
+      previousFieldId = rows[0].field_id;    
+    }
+    if (fieldId != previousFieldId) {
+      const getFieldGoalQuery = `SELECT goal FROM fields_goals WHERE field_id = $1`;
+      ({ rows } = await client.query(getFieldGoalQuery, [fieldId]));
+      let goalText = '';
+      if (rows[0]) {
+        goalText = rows[0].goal;    
+      }
+      const updateStudentFieldQuery = `UPDATE users_goals SET text = $1 WHERE user_id = $2`;
+      await client.query(updateStudentFieldQuery, [goalText, studentId]);
+    }
+  }  
   
   async updateStudentField(studentId: string, fieldId: string, client: pg.PoolClient): Promise<void> {
     const updateStudentFieldQuery = `UPDATE users SET field_id = $1 WHERE id = $2`;
