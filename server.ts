@@ -24,6 +24,7 @@ import { UsersBackgroundProcesses } from './src/db_queries/users_background_proc
 import { Fields } from './src/db_queries/fields';
 import { Subfields } from './src/db_queries/subfields';
 import { Skills } from './src/db_queries/skills';
+import { FieldsGoals } from './src/db_queries/fields_goals';
 import { Tutorials } from './src/db_queries/tutorials';
 import { QuizzesSettings } from './src/db_queries/quizzes_settings';
 import { Updates } from './src/db_queries/updates';
@@ -59,6 +60,7 @@ const logger: Logger = new Logger();
 const fields: Fields = new Fields();
 const subfields: Subfields = new Subfields();
 const skills: Skills = new Skills();
+const fieldsGoals: FieldsGoals = new FieldsGoals();
 const tutorials: Tutorials = new Tutorials();
 const quizzesSettings: QuizzesSettings = new QuizzesSettings();
 const updates: Updates = new Updates();
@@ -178,6 +180,7 @@ app.get('/api/v1/app_flags', usersAppFlags.getAppFlags);
 
 // Fields
 app.get('/api/v1/fields', fields.getFields);
+app.get('/api/v1/fields_goals', fieldsGoals.getFieldsGoals);
 app.get('/api/v1/fields/:id', fields.getFieldById);
 app.post('/api/v1/fields', fields.addField);
 app.put('/api/v1/fields/:id', fields.updateField);
