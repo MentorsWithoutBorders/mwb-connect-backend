@@ -19,9 +19,9 @@ export class AdminAvailableMentors {
     const client = await pool.connect();    
     try {
       await client.query('BEGIN');
-      const lessons = await usersAvailableMentors.getAvailableMentorsLessons(client);
+      const lessons = await usersAvailableMentors.getAvailableMentorsLessons(undefined, client);
       response.status(200).json(lessons);
-      await client.query('COMMIT');      
+      await client.query('COMMIT');
     } catch (error) {
       response.status(400).send(error);
       await client.query('ROLLBACK');      

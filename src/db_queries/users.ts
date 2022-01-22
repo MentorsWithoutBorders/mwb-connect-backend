@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import autoBind from 'auto-bind';
 import moment from 'moment'
 import pg from 'pg';
+import * as redis from 'redis';
 import { validate as uuidValidate } from 'uuid';
 import { Conn } from '../db/conn';
 import { Auth } from './auth';
@@ -19,6 +20,7 @@ import { ValidationError } from '../utils/errors';
 
 const conn = new Conn();
 const pool = conn.pool;
+const redisClient = redis.createClient();
 const auth = new Auth();
 const helpers = new Helpers();
 
@@ -28,12 +30,36 @@ export class Users {
   }
 
   async getUsers(request: Request, response: Response): Promise<void> {
+    const client = await pool.connect();
     try {
+      await client.query('BEGIN');
+      await client.query(constants.READ_ONLY_TRANSACTION);
       const getUsersQuery = 'SELECT id, name, email, field_id, organization_id, is_mentor, is_available, available_from, registered_on FROM users ORDER BY id ASC';
       const { rows }: pg.QueryResult = await pool.query(getUsersQuery);
-      response.status(200).json(rows);
+      const users: Array<User> = [];
+      await redisClient.connect();
+      for (const row of rows) {
+        const userString = await redisClient.get('user' + row.id);
+        if (!userString) {
+          const user = await this.getUserFromDB(row.id, client);
+          await redisClient.set('user' + row.id, JSON.stringify(user));
+          users.push(user);
+        } else {
+          users.push(JSON.parse(userString));
+        }
+      }
+      response.status(200).json(users);
+      await client.query('COMMIT');
+      await redisClient.disconnect();
     } catch (error) {
-      response.status(400).send(error);
+      if (error instanceof ValidationError) {
+        response.status(400).send({message: error.message});
+      } else {
+        response.status(500).send(error);
+      }
+      await client.query('ROLLBACK');
+    } finally {
+      client.release();
     }
   }
 
@@ -211,6 +237,10 @@ export class Users {
         await this.insertUserSubfields(id, field?.subfields as Array<Subfield>, client);
         await this.updateUserLessonsAvailability(id, lessonsAvailability as LessonsAvailability, client);
       }
+      await redisClient.connect();
+      const user = await this.getUserFromDB(id, client);
+      await redisClient.set('user' + id, JSON.stringify(user));
+      await redisClient.disconnect();        
       response.status(200).send(id);
       await client.query('COMMIT');
     } catch (error) {

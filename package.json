@@ -16,6 +16,7 @@
     "@types/cors": "^2.8.12",
     "@types/jsonwebtoken": "^8.5.1",
     "@types/pg-pool": "^2.0.2",
+    "@types/redis": "^4.0.11",
     "@types/uuid": "^8.3.0",
     "auto-bind": "^4.0.0",
     "bcrypt": "^5.0.1",
@@ -30,6 +31,7 @@
     "nodemailer": "^2.7.2",
     "os-utils": "0.0.14",
     "pg": "^8.6.0",
+    "redis": "^4.0.2",
     "uuid": "^8.3.2"
   },
   "devDependencies": {

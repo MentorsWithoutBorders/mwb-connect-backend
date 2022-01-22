@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import autoBind from 'auto-bind';
 import pg from 'pg';
+import * as redis from 'redis';
 import moment from 'moment';
 import 'moment-timezone';
 import { Conn } from '../db/conn';
@@ -13,6 +14,7 @@ import Subfield from '../models/subfield.model';
 
 const conn = new Conn();
 const pool = conn.pool;
+const redisClient = redis.createClient();
 const users: Users = new Users();
 
 export class UsersAvailableMentors {
@@ -21,17 +23,26 @@ export class UsersAvailableMentors {
   }
 
   async getAvailableMentors(request: Request, response: Response): Promise<void> {
+    const { field, availabilities }: User = request.body;
     const client = await pool.connect();    
     try {
       await client.query('BEGIN');
-      const lessons = await this.getAvailableMentorsLessons(client);
+      const lessons = await this.getAvailableMentorsLessons(field?.id, client);
       const mentors: Array<User> = [];
+      await redisClient.connect();      
       for (const lesson of lessons) {
-        const mentor = await users.getUserFromDB(lesson.mentor?.id as string, client);
-        mentors.push(mentor);
+        const mentorString = await redisClient.get('user' + lesson.mentor?.id);
+        if (!mentorString) {
+          const mentor = await users.getUserFromDB(lesson.mentor?.id as string, client);
+          await redisClient.set('user' + lesson.mentor?.id, JSON.stringify(mentor));
+          mentors.push(mentor);
+        } else {
+          mentors.push(JSON.parse(mentorString));
+        }
       }
       response.status(200).json(mentors);
-      await client.query('COMMIT');      
+      await redisClient.disconnect();
+      await client.query('COMMIT');
     } catch (error) {
       response.status(400).send(error);
       await client.query('ROLLBACK');      
@@ -40,9 +51,9 @@ export class UsersAvailableMentors {
     }
   }  
 
-  async getAvailableMentorsLessons(client: pg.PoolClient): Promise<Array<Lesson>> {
-    const getLessonsQuery = `SELECT l.mentor_id, l.mentor_name, l.available_from, l.lesson_id, l.field_id, f.name AS field_name, l.subfield_name, l.date_time, l.is_recurrent, l.end_recurrence_date_time, l.is_canceled, l.should_contact, l.last_contacted_date_time, l.is_inactive 
-      FROM (SELECT u.id AS mentor_id, u.name AS mentor_name, u.available_from, ul.id AS lesson_id, fs.field_id, s.name AS subfield_name, ul.date_time, ul.is_recurrent, ul.end_recurrence_date_time, ul.is_canceled, aau.should_contact, aau.last_contacted_date_time, aau.is_inactive 
+  async getAvailableMentorsLessons(fieldId: string | undefined, client: pg.PoolClient): Promise<Array<Lesson>> {
+    let getLessonsQuery = `SELECT l.mentor_id, l.mentor_name, l.available_from, l.lesson_id, l.field_id, f.name AS field_name, l.subfield_name, l.date_time, l.is_recurrent, l.end_recurrence_date_time, l.is_canceled, l.should_contact, l.last_contacted_date_time, l.is_inactive 
+      FROM (SELECT u.id AS mentor_id, u.name AS mentor_name, u.field_id AS user_field_id, u.available_from, ul.id AS lesson_id, fs.field_id, s.name AS subfield_name, ul.date_time, ul.is_recurrent, ul.end_recurrence_date_time, ul.is_canceled, aau.should_contact, aau.last_contacted_date_time, aau.is_inactive 
         FROM users_lessons ul
         JOIN users u
           ON ul.mentor_id = u.id
@@ -56,7 +67,12 @@ export class UsersAvailableMentors {
       JOIN fields f
         ON l.field_id = f.id
       WHERE l.is_inactive IS DISTINCT FROM true`;
-    const { rows }: pg.QueryResult = await client.query(getLessonsQuery);
+    let values: Array<string> = [];
+    if (fieldId) {
+      getLessonsQuery += ' AND l.user_field_id = $1';
+      values = [fieldId];
+    }
+    const { rows }: pg.QueryResult = await client.query(getLessonsQuery, values);
     const group = rows.reduce((r, a) => {
       r[a.mentor_id] = [...r[a.mentor_id] || [], a];
       return r;
@@ -101,7 +117,7 @@ export class UsersAvailableMentors {
       }
     }
     lessons = this.getSortedLessons(lessons, true);
-    const mentorsWihoutLessons = await this.getMentorsWithoutLessons(client);
+    const mentorsWihoutLessons = await this.getMentorsWithoutLessons(fieldId, client);
     lessons = mentorsWihoutLessons.concat(lessons);
     return lessons.sort((a, b) => moment.utc(a.mentor?.availableFrom).diff(moment.utc(b.mentor?.availableFrom)));
   }
@@ -146,8 +162,8 @@ export class UsersAvailableMentors {
     return sortedLessons; 
   }
 
-  async getMentorsWithoutLessons(client: pg.PoolClient): Promise<Array<Lesson>> {
-    const getMentorsQuery = `SELECT u.id AS mentor_id, u.name AS mentor_name, u.available_from, u.field_id, f.name AS field_name, aau.should_contact, aau.last_contacted_date_time, aau.is_inactive 
+  async getMentorsWithoutLessons(fieldId: string | undefined, client: pg.PoolClient): Promise<Array<Lesson>> {
+    let getMentorsQuery = `SELECT u.id AS mentor_id, u.name AS mentor_name, u.available_from, u.field_id, f.name AS field_name, aau.should_contact, aau.last_contacted_date_time, aau.is_inactive 
       FROM users u
       JOIN fields f
         ON u.field_id = f.id
@@ -158,7 +174,12 @@ export class UsersAvailableMentors {
           SELECT DISTINCT mentor_id FROM users_lessons
         )
         AND aau.is_inactive IS DISTINCT FROM true`;
-    const { rows }: pg.QueryResult = await client.query(getMentorsQuery);
+    let values: Array<string> = [];
+    if (fieldId) {
+      getMentorsQuery += ' AND u.field_id = $1';
+      values = [fieldId];
+    }        
+    const { rows }: pg.QueryResult = await client.query(getMentorsQuery, values);
     const lessons: Array<Lesson> = [];
     for (const row of rows) {
       const field: Field = {
