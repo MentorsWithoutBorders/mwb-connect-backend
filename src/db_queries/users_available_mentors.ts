@@ -6,15 +6,19 @@ import moment from 'moment';
 import 'moment-timezone';
 import { Conn } from '../db/conn';
 import { constants } from '../utils/constants';
+import { Helpers } from '../utils/helpers';
 import { Users } from './users';
 import User from '../models/user.model';
 import Lesson from '../models/lesson.model';
 import Field from '../models/field.model';
 import Subfield from '../models/subfield.model';
+import Availability from '../models/availability.model';
+import AvailabilityTime from '../models/availability_time.model';
 
 const conn = new Conn();
 const pool = conn.pool;
 const redisClient = redis.createClient();
+const helpers = new Helpers();
 const users: Users = new Users();
 
 export class UsersAvailableMentors {
@@ -35,9 +39,13 @@ export class UsersAvailableMentors {
         if (!mentorString) {
           const mentor = await users.getUserFromDB(lesson.mentor?.id as string, client);
           await redisClient.set('user' + lesson.mentor?.id, JSON.stringify(mentor));
-          mentors.push(mentor);
+          if (this.isValidMentor(JSON.stringify(mentor), field, availabilities)) {
+            mentors.push(mentor);
+          }          
         } else {
-          mentors.push(JSON.parse(mentorString));
+          if (this.isValidMentor(mentorString, field, availabilities)) {
+            mentors.push(JSON.parse(mentorString));
+          }
         }
       }
       response.status(200).json(mentors);
@@ -49,7 +57,95 @@ export class UsersAvailableMentors {
     } finally {
       client.release();
     }
+  }
+
+  isValidMentor(mentorString: string, field: Field | undefined, filterAvailabilities: Array<Availability> | undefined): boolean {
+    let subfields;
+    if (field) {
+      subfields = field.subfields;
+    }
+    if (this.isValidSubfieldsAndSkills(mentorString, subfields)) {
+      return this.isValidAvailabilities(mentorString, filterAvailabilities);
+    } else {
+      return false;
+    }
+  }
+
+  isValidSubfieldsAndSkills(mentorString: string, subfields: Array<Subfield> | undefined): boolean {
+    let isValid = false;
+    if (subfields) {
+      const subfieldId = subfields[0].id as string;
+      const skills = subfields[0].skills;
+      const skillsIds: Array<string> = [];
+      if (skills) {
+        for (const skill of skills) {
+          skillsIds.push(skill.id);
+        }
+      }
+      if (skillsIds.length > 0) {
+        isValid = mentorString.includes(subfieldId) && skillsIds.some(skillId => mentorString.includes(skillId));
+      } else {
+        isValid = mentorString.includes(subfieldId);
+      }
+    } else {
+      isValid = true;
+    }
+    return isValid;
   }  
+
+  isValidAvailabilities(mentorString: string, filterAvailabilities: Array<Availability> | undefined): boolean {
+    let isValid = false;
+    if (filterAvailabilities) {
+      filterAvailabilities = this.getExpandedAvailabilities(filterAvailabilities);
+      const mentor = JSON.parse(mentorString);
+      mentor.availabilities = this.getExpandedAvailabilities(mentor.availabilities);
+      for (const filterAvailability of filterAvailabilities) {
+        for (const mentorAvailability of mentor.availabilities) {
+          if (this.isAvailabilityValid(filterAvailability, mentorAvailability)) {
+            isValid = true;
+            break;
+          }
+        }
+      }
+    } else {
+      isValid = true;
+    }
+    return isValid;
+  }
+
+  isAvailabilityValid(filterAvailability: Availability, mentorAvailability: Availability): boolean {
+    const filterTimeFrom = moment(filterAvailability.time.from, 'h:mma');
+    const filterTimeTo = moment(filterAvailability.time.to, 'h:mma');
+    const mentorTimeFrom = moment(mentorAvailability.time.from, 'h:mma');
+    const mentorTimeTo = moment(mentorAvailability.time.to, 'h:mma');
+    if (filterAvailability.dayOfWeek == mentorAvailability.dayOfWeek && 
+        (filterTimeFrom.isSameOrAfter(mentorTimeFrom) && filterTimeTo.isSameOrBefore(mentorTimeTo) ||
+         filterTimeFrom.isSameOrBefore(mentorTimeFrom) && filterTimeTo.isAfter(mentorTimeFrom) ||
+         filterTimeFrom.isBefore(mentorTimeTo) && filterTimeTo.isSameOrAfter(mentorTimeTo))) {
+      return true;
+    }
+    return false;
+  }
+
+  getExpandedAvailabilities(availabilities: Array<Availability>): Array<Availability> {
+    for (const availability of availabilities) {
+      const timeFrom = moment(availability.time.from, 'h:mma');
+      const timeTo = moment(availability.time.to, 'h:mma');
+      if (timeTo.isBefore(timeFrom)) {
+        availability.time.to = '11:59pm';
+        const timeNextDay: AvailabilityTime = {
+          from: '0:00am',
+          to: timeTo.format('h:mma')
+        };
+        const nextDayAvailability: Availability = {
+          dayOfWeek: helpers.getNextDayOfWeek(availability.dayOfWeek),
+          time: timeNextDay
+        };
+        availabilities.push(nextDayAvailability);
+      }
+    }
+    return availabilities;    
+  }
 
   async getAvailableMentorsLessons(fieldId: string | undefined, client: pg.PoolClient): Promise<Array<Lesson>> {
     let getLessonsQuery = `SELECT l.mentor_id, l.mentor_name, l.available_from, l.lesson_id, l.field_id, f.name AS field_name, l.subfield_name, l.date_time, l.is_recurrent, l.end_recurrence_date_time, l.is_canceled, l.should_contact, l.last_contacted_date_time, l.is_inactive 
