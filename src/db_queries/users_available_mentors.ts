@@ -27,6 +27,7 @@ export class UsersAvailableMentors {
   }
 
   async getAvailableMentors(request: Request, response: Response): Promise<void> {
+    const page = request.query.page as string;
     const { field, availabilities }: User = request.body;
     const client = await pool.connect();    
     try {
@@ -48,7 +49,8 @@ export class UsersAvailableMentors {
           }
         }
       }
-      response.status(200).json(mentors);
+      const paginatedMentors = this.getPaginatedMentors(mentors, parseInt(page));
+      response.status(200).json(paginatedMentors);
       await redisClient.disconnect();
       await client.query('COMMIT');
     } catch (error) {
@@ -57,6 +59,19 @@ export class UsersAvailableMentors {
     } finally {
       client.release();
     }
+  }
+
+  getPaginatedMentors(mentors: Array<User>, page: number): Array<User> {
+    const paginatedMentors: Array<User> = [];
+    if (!page) {
+      return mentors;
+    }
+    for (let i = 20 * (page - 1); i < 20 * page; i++) {
+      if (mentors[i]) {
+        paginatedMentors.push(mentors[i]);
+      }
+    }
+    return paginatedMentors;
   }
 
   isValidMentor(mentorString: string, field: Field | undefined, filterAvailabilities: Array<Availability> | undefined): boolean {
