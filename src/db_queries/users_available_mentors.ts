@@ -14,6 +14,7 @@ import Field from '../models/field.model';
 import Subfield from '../models/subfield.model';
 import Availability from '../models/availability.model';
 import AvailabilityTime from '../models/availability_time.model';
+import Skill from '../models/skill.model';
 
 const conn = new Conn();
 const pool = conn.pool;
@@ -32,26 +33,10 @@ export class UsersAvailableMentors {
     const client = await pool.connect();    
     try {
       await client.query('BEGIN');
-      const lessons = await this.getAvailableMentorsLessons(field?.id, client);
-      const mentors: Array<User> = [];
       await redisClient.connect();      
-      for (const lesson of lessons) {
-        const mentorString = await redisClient.get('user' + lesson.mentor?.id);
-        if (!mentorString) {
-          const mentor = await users.getUserFromDB(lesson.mentor?.id as string, client);
-          await redisClient.set('user' + lesson.mentor?.id, JSON.stringify(mentor));
-          if (this.isValidMentor(JSON.stringify(mentor), field, availabilities)) {
-            mentors.push(mentor);
-          }          
-        } else {
-          if (this.isValidMentor(mentorString, field, availabilities)) {
-            mentors.push(JSON.parse(mentorString));
-          }
-        }
-      }
-      const paginatedMentors = this.getPaginatedMentors(mentors, parseInt(page));
-      response.status(200).json(paginatedMentors);
-      await redisClient.disconnect();
+      const availableMentors = await this.getAvailableMentorsFromDB(field, availabilities, page, client);
+      await redisClient.disconnect();      
+      response.status(200).json(availableMentors);
       await client.query('COMMIT');
     } catch (error) {
       response.status(400).send(error);
@@ -61,12 +46,32 @@ export class UsersAvailableMentors {
     }
   }
 
-  getPaginatedMentors(mentors: Array<User>, page: number): Array<User> {
+  async getAvailableMentorsFromDB(field: Field | undefined, availabilities: Array<Availability> | undefined, page: string | undefined, client: pg.PoolClient): Promise<Array<User>> {
+    const lessons = await this.getAvailableMentorsLessons(field?.id, client);
+    const mentors: Array<User> = [];
+    for (const lesson of lessons) {
+      const mentorString = await redisClient.get('user' + lesson.mentor?.id);
+      if (!mentorString) {
+        const mentor = await users.getUserFromDB(lesson.mentor?.id as string, client);
+        await redisClient.set('user' + lesson.mentor?.id, JSON.stringify(mentor));
+        if (this.isValidMentor(JSON.stringify(mentor), field, availabilities)) {
+          mentors.push(mentor);
+        }          
+      } else {
+        if (this.isValidMentor(mentorString, field, availabilities)) {
+          mentors.push(JSON.parse(mentorString));
+        }
+      }
+    }
+    return this.getPaginatedMentors(mentors, page);
+  }
+
+  getPaginatedMentors(mentors: Array<User>, page: string | undefined): Array<User> {
     const paginatedMentors: Array<User> = [];
     if (!page) {
       return mentors;
     }
-    for (let i = 20 * (page - 1); i < 20 * page; i++) {
+    for (let i = 20 * (parseInt(page) - 1); i < 20 * parseInt(page); i++) {
       if (mentors[i]) {
         paginatedMentors.push(mentors[i]);
       }
@@ -162,6 +167,159 @@ export class UsersAvailableMentors {
     return availabilities;    
   }
 
+  async getAvailableMentorsFields(request: Request, response: Response): Promise<void> {
+    const client = await pool.connect();    
+    try {
+      await client.query('BEGIN');
+      await redisClient.connect();
+      const fieldsString = await redisClient.get('available_mentors_fields');
+      let fields: Array<Field> = [];
+      if (fieldsString && fieldsString != '{}') {
+        fields = JSON.parse(fieldsString);
+      } else {
+        fields = await this.getAvailableMentorsFieldsFromDB(client);
+        await redisClient.set('available_mentors_fields', JSON.stringify(fields));
+      }
+      await redisClient.disconnect();  
+      response.status(200).json(fields);
+      await client.query('COMMIT');
+    } catch (error) {
+      response.status(400).send(error);
+      await client.query('ROLLBACK');      
+    } finally {
+      client.release();
+    }  
+  }
+
+  async getAvailableMentorsFieldsFromDB(client: pg.PoolClient): Promise<Array<Field>> {
+    const availableMentors = await this.getAvailableMentorsFromDB(undefined, undefined, undefined, client);
+    let fields = this.getFields(availableMentors);
+    fields = this.getSubfields(fields, availableMentors);
+    fields = this.getSkills(fields, availableMentors);
+    return fields; 
+  }
+
+  getFields(availableMentors: Array<User>): Array<Field> {
+    const fields: Array<Field> = [];
+    const fieldsIds = new Map<string, number>();
+    for (const availableMentor of availableMentors) {
+      if (fields.filter(field => field.id === availableMentor.field?.id).length == 0) {
+        const field: Field = {
+          id: availableMentor.field?.id,
+          name: availableMentor.field?.name,
+          subfields: []
+        }
+        fields.push(field);
+        fieldsIds.set(field.id as string, 1);
+      } else {
+        const count = fieldsIds.get(availableMentor.field?.id as string) as number;
+        fieldsIds.set(availableMentor.field?.id as string, count + 1);         
+      }
+    }
+    fields.sort((a,b) => {
+      const fieldACount = fieldsIds.get(a.id as string) as number;
+      const fieldBCount = fieldsIds.get(b.id as string) as number;
+      const reverseCompare = (fieldACount > fieldBCount) ? -1 : 0;
+      return fieldACount < fieldBCount ? 1 : reverseCompare;
+    });
+    return fields;
+  }
+
+  getSubfields(fields: Array<Field>, availableMentors: Array<User>): Array<Field> {
+    for (let i = 0; i < fields.length; i++) {
+      const subfieldsIds = new Map<string, number>();
+      for (const availableMentor of availableMentors) {
+        if (availableMentor.field?.id == fields[i].id) {
+          fields[i] = this.groupSubfields(fields[i], availableMentor, subfieldsIds);
+        }
+      }
+    }
+    return fields;
+  }
+  
+  groupSubfields(field: Field, availableMentor: User, subfieldsIds: Map<string, number>): Field {
+    const mentorSubfields = availableMentor.field?.subfields || [];
+    for (const mentorSubfield of mentorSubfields) {
+      if (field.subfields?.filter(subfield => subfield.id === mentorSubfield.id).length == 0) {
+        const subfield: Subfield = {
+          id: mentorSubfield.id,
+          name: mentorSubfield.name,
+          skills: []
+        }
+        field.subfields?.push(subfield);
+        subfieldsIds.set(subfield.id as string, 1);
+      } else {
+        const count = subfieldsIds.get(mentorSubfield.id as string) as number;
+        subfieldsIds.set(mentorSubfield.id as string, count + 1);
+      }
+    }
+    field.subfields?.sort((a,b) => {
+      const subfieldACount = subfieldsIds.get(a.id as string) as number;
+      const subfieldBCount = subfieldsIds.get(b.id as string) as number;
+      const reverseCompare = (subfieldACount > subfieldBCount) ? -1 : 0;
+      return subfieldACount < subfieldBCount ? 1 : reverseCompare;
+    }); 
+    return field;
+  }
+
+  getSkills(fields: Array<Field>, availableMentors: Array<User>): Array<Field> {
+    for (let i = 0; i < fields.length; i++) {
+      const subfields = fields[i].subfields as Array<Subfield>;
+      for (const subfield of subfields) {
+        const skillsIds = new Map<string, number>();
+        for (const availableMentor of availableMentors) {
+          const mentorSubfields = availableMentor.field?.subfields as Array<Subfield>;
+          for (const mentorSubfield of mentorSubfields) {
+            if (mentorSubfield.id == subfield.id) {
+              fields[i] = this.groupSkills(fields[i], subfield, mentorSubfield, skillsIds);
+            }
+          }
+        }
+      }
+    }
+    return fields;
+  }
+  
+  groupSkills(field: Field, subfield: Subfield, mentorSubfield: Subfield, skillsIds: Map<string, number>): Field {
+    const mentorSkills = mentorSubfield.skills || [];
+    for (const mentorSkill of mentorSkills) {
+      if (subfield.skills?.filter(skill => skill.id === mentorSkill.id).length == 0) {
+        const skill: Skill = {
+          id: mentorSkill.id,
+          name: mentorSkill.name
+        }
+        subfield?.skills.push(skill);
+        skillsIds.set(skill.id, 1);
+      } else {
+        const count = skillsIds.get(mentorSkill.id) as number;
+        skillsIds.set(mentorSkill.id, count + 1);
+      }
+    }
+    subfield.skills?.sort((a,b) => {
+      const skillACount = skillsIds.get(a.id) as number;
+      const skillBCount = skillsIds.get(b.id) as number;
+      const reverseCompare = (skillACount > skillBCount) ? -1 : 0;
+      return skillACount < skillBCount ? 1 : reverseCompare;
+    }); 
+    return field;
+  }
+
+  async setAvailableMentorsFieldsFromDB(): Promise<void> {
+    const client = await pool.connect();    
+    try {
+      await client.query('BEGIN');
+      await redisClient.connect();
+      const fields = await this.getAvailableMentorsFieldsFromDB(client);
+      await redisClient.set('available_mentors_fields', JSON.stringify(fields));
+      await redisClient.disconnect(); 
+      await client.query('COMMIT');
+    } catch (error) {
+      await client.query('ROLLBACK');
+    } finally {
+      client.release();
+    }  
+  }  
+  
   async getAvailableMentorsLessons(fieldId: string | undefined, client: pg.PoolClient): Promise<Array<Lesson>> {
     let getLessonsQuery = `SELECT l.mentor_id, l.mentor_name, l.available_from, l.lesson_id, l.field_id, f.name AS field_name, l.subfield_name, l.date_time, l.is_recurrent, l.end_recurrence_date_time, l.is_canceled, l.should_contact, l.last_contacted_date_time, l.is_inactive 
       FROM (SELECT u.id AS mentor_id, u.name AS mentor_name, u.field_id AS user_field_id, u.available_from, ul.id AS lesson_id, fs.field_id, s.name AS subfield_name, ul.date_time, ul.is_recurrent, ul.end_recurrence_date_time, ul.is_canceled, aau.should_contact, aau.last_contacted_date_time, aau.is_inactive 

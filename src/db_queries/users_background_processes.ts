@@ -9,6 +9,7 @@ import { Conn } from '../db/conn';
 import { Helpers } from '../utils/helpers';
 import { UsersLessons } from './users_lessons';
 import { UsersLessonRequests } from './users_lesson_requests';
+import { UsersAvailableMentors } from './users_available_mentors';
 import { UsersSteps } from './users_steps';
 import { UsersQuizzes } from './users_quizzes';
 import { UsersTimeZones } from './users_timezones';
@@ -24,6 +25,7 @@ const pool = conn.pool;
 const helpers = new Helpers();
 const usersLessons = new UsersLessons();
 const usersLessonRequests = new UsersLessonRequests();
+const usersAvailableMentors = new UsersAvailableMentors();
 const usersSteps = new UsersSteps();
 const usersQuizzes = new UsersQuizzes();
 const usersAppVersions = new UsersAppVersions();
@@ -232,6 +234,15 @@ export class UsersBackgroundProcesses {
       showStepReminder = true;
     }
     return showStepReminder;
+  }
+
+  async setAvailableMentorsFields(request: Request, response: Response): Promise<void> {
+    try {
+      await usersAvailableMentors.setAvailableMentorsFieldsFromDB();
+      response.status(200).send('Available mentors fields are set');
+    } catch (error) {
+      response.status(400).send(error);
+    } 
   }
 
   sendCPUUsage(): void {

@@ -138,6 +138,7 @@ app.post('/api/v1/quizzes', usersQuizzes.addQuiz);
 
 // Users available mentors
 app.get('/api/v1/available_mentors', usersAvailableMentors.getAvailableMentors);
+app.get('/api/v1/available_mentors/fields', usersAvailableMentors.getAvailableMentorsFields);
 
 // Users lesson requests
 app.post('/api/v1/lesson_requests', usersLessonRequests.addLessonRequest);
@@ -222,6 +223,7 @@ app.post('/api/v1/send_lesson_requests', usersBackgroundProcesses.sendLessonRequ
 app.post('/api/v1/send_lesson_reminders', usersBackgroundProcesses.sendLessonReminders);
 app.post('/api/v1/send_after_lessons', usersBackgroundProcesses.sendAfterLesson);
 app.post('/api/v1/send_training_reminders', usersBackgroundProcesses.sendTrainingReminders);
+app.post('/api/v1/available_mentors/fields', usersBackgroundProcesses.setAvailableMentorsFields);
 
 cron.schedule('* * * * *', function() {
   // usersBackgroundProcesses.sendLessonRequestsFromDB();
@@ -230,6 +232,10 @@ cron.schedule('* * * * *', function() {
   usersBackgroundProcesses.sendTrainingRemindersFromDB(true);
   usersBackgroundProcesses.sendTrainingRemindersFromDB(false);
   usersBackgroundProcesses.sendCPUUsage();
+});
+
+cron.schedule("*/5 * * * *", function() {
+  usersAvailableMentors.setAvailableMentorsFieldsFromDB();
 });
 
 
