@@ -33,7 +33,9 @@ export class UsersAvailableMentors {
     const client = await pool.connect();    
     try {
       await client.query('BEGIN');
+      console.log('before Redis');
       await redisClient.connect();      
+      console.log('after Redis');
       const availableMentors = await this.getAvailableMentorsFromDB(field, availabilities, page, client);
       await redisClient.disconnect();      
       response.status(200).json(availableMentors);
