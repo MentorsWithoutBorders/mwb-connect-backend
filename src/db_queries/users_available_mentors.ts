@@ -53,6 +53,7 @@ export class UsersAvailableMentors {
     const mentors: Array<User> = [];
     for (const lesson of lessons) {
       const mentorString = await redisClient.get('user' + lesson.mentor?.id);
+      console.log(mentorString);
       if (!mentorString) {
         const mentor = await users.getUserFromDB(lesson.mentor?.id as string, client);
         await redisClient.set('user' + lesson.mentor?.id, JSON.stringify(mentor));
