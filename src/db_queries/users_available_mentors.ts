@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import autoBind from 'auto-bind';
 import pg from 'pg';
-import * as redis from 'redis';
+import { createClient } from 'async-redis';
 import moment from 'moment';
 import 'moment-timezone';
 import { Conn } from '../db/conn';
@@ -18,7 +18,7 @@ import Skill from '../models/skill.model';
 
 const conn = new Conn();
 const pool = conn.pool;
-let redisClient = redis.createClient();
+const redisClient = createClient();
 const helpers = new Helpers();
 const users: Users = new Users();
 
@@ -33,12 +33,11 @@ export class UsersAvailableMentors {
     const client = await pool.connect();    
     try {
       await client.query('BEGIN');
-      console.log('before Redis');
-      redisClient = redis.createClient();
-      await redisClient.connect();      
-      console.log('after Redis');
+      // console.log('before Redis');
+      // await redisClient.connect();
+      // console.log('after Redis');  
       const availableMentors = await this.getAvailableMentorsFromDB(field, availabilities, page, client);
-      await redisClient.disconnect();      
+      // await redisClient.disconnect();      
       response.status(200).json(availableMentors);
       await client.query('COMMIT');
     } catch (error) {
@@ -174,17 +173,17 @@ export class UsersAvailableMentors {
     const client = await pool.connect();    
     try {
       await client.query('BEGIN');
-      redisClient = redis.createClient();
-      await redisClient.connect();
+      // await redisClient.connect();
       const fieldsString = await redisClient.get('available_mentors_fields');
       let fields: Array<Field> = [];
       if (fieldsString && fieldsString != '{}') {
         fields = JSON.parse(fieldsString);
       } else {
         fields = await this.getAvailableMentorsFieldsFromDB(client);
-        await redisClient.set('available_mentors_fields', JSON.stringify(fields));
+        await redisClient.setex('available_mentors_fields', 10000, JSON.stringify(fields));
+        // await redisClient.set('available_mentors_fields', JSON.stringify(fields));
       }
-      await redisClient.disconnect();  
+      // await redisClient.disconnect();  
       response.status(200).json(fields);
       await client.query('COMMIT');
     } catch (error) {
@@ -312,11 +311,11 @@ export class UsersAvailableMentors {
     const client = await pool.connect();    
     try {
       await client.query('BEGIN');
-      redisClient = redis.createClient();
-      await redisClient.connect();
+      // await redisClient.connect();
       const fields = await this.getAvailableMentorsFieldsFromDB(client);
-      await redisClient.set('available_mentors_fields', JSON.stringify(fields));
-      await redisClient.disconnect(); 
+      await redisClient.setex('available_mentors_fields', 10000, JSON.stringify(fields));
+      // await redisClient.set('available_mentors_fields', JSON.stringify(fields));
+      // await redisClient.disconnect(); 
       await client.query('COMMIT');
     } catch (error) {
       await client.query('ROLLBACK');
