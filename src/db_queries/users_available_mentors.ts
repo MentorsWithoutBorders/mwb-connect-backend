@@ -18,7 +18,7 @@ import Skill from '../models/skill.model';
 
 const conn = new Conn();
 const pool = conn.pool;
-const redisClient = redis.createClient();
+let redisClient = redis.createClient();
 const helpers = new Helpers();
 const users: Users = new Users();
 
@@ -34,6 +34,7 @@ export class UsersAvailableMentors {
     try {
       await client.query('BEGIN');
       console.log('before Redis');
+      redisClient = redis.createClient();
       await redisClient.connect();      
       console.log('after Redis');
       const availableMentors = await this.getAvailableMentorsFromDB(field, availabilities, page, client);
@@ -173,6 +174,7 @@ export class UsersAvailableMentors {
     const client = await pool.connect();    
     try {
       await client.query('BEGIN');
+      redisClient = redis.createClient();
       await redisClient.connect();
       const fieldsString = await redisClient.get('available_mentors_fields');
       let fields: Array<Field> = [];
@@ -310,6 +312,7 @@ export class UsersAvailableMentors {
     const client = await pool.connect();    
     try {
       await client.query('BEGIN');
+      redisClient = redis.createClient();
       await redisClient.connect();
       const fields = await this.getAvailableMentorsFieldsFromDB(client);
       await redisClient.set('available_mentors_fields', JSON.stringify(fields));
