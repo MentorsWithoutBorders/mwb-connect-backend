@@ -33,11 +33,7 @@ export class UsersAvailableMentors {
     const client = await pool.connect();    
     try {
       await client.query('BEGIN');
-      // console.log('before Redis');
-      // await redisClient.connect();
-      // console.log('after Redis');  
       const availableMentors = await this.getAvailableMentorsFromDB(field, availabilities, page, client);
-      // await redisClient.disconnect();      
       response.status(200).json(availableMentors);
       await client.query('COMMIT');
     } catch (error) {
@@ -174,17 +170,14 @@ export class UsersAvailableMentors {
     const client = await pool.connect();    
     try {
       await client.query('BEGIN');
-      // await redisClient.connect();
       const fieldsString = await redisClient.get('available_mentors_fields');
       let fields: Array<Field> = [];
       if (fieldsString && fieldsString != '{}') {
         fields = JSON.parse(fieldsString);
       } else {
         fields = await this.getAvailableMentorsFieldsFromDB(client);
-        await redisClient.setex('available_mentors_fields', 10000, JSON.stringify(fields));
-        // await redisClient.set('available_mentors_fields', JSON.stringify(fields));
+        await redisClient.set('available_mentors_fields', JSON.stringify(fields));
       }
-      // await redisClient.disconnect();  
       response.status(200).json(fields);
       await client.query('COMMIT');
     } catch (error) {
@@ -312,11 +305,8 @@ export class UsersAvailableMentors {
     const client = await pool.connect();    
     try {
       await client.query('BEGIN');
-      // await redisClient.connect();
       const fields = await this.getAvailableMentorsFieldsFromDB(client);
-      await redisClient.setex('available_mentors_fields', 10000, JSON.stringify(fields));
-      // await redisClient.set('available_mentors_fields', JSON.stringify(fields));
-      // await redisClient.disconnect(); 
+      await redisClient.set('available_mentors_fields', JSON.stringify(fields));
       await client.query('COMMIT');
     } catch (error) {
       await client.query('ROLLBACK');

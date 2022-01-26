@@ -37,7 +37,6 @@ export class Users {
       const getUsersQuery = 'SELECT id, name, email, field_id, organization_id, is_mentor, is_available, available_from, registered_on FROM users ORDER BY id ASC';
       const { rows }: pg.QueryResult = await pool.query(getUsersQuery);
       const users: Array<User> = [];
-      // await redisClient.connect();
       for (const row of rows) {
         const userString = await redisClient.get('user' + row.id);
         if (!userString) {
@@ -50,7 +49,6 @@ export class Users {
       }
       response.status(200).json(users);
       await client.query('COMMIT');
-      // await redisClient.disconnect();
     } catch (error) {
       if (error instanceof ValidationError) {
         response.status(400).send({message: error.message});
@@ -237,11 +235,8 @@ export class Users {
         await this.insertUserSubfields(id, field?.subfields as Array<Subfield>, client);
         await this.updateUserLessonsAvailability(id, lessonsAvailability as LessonsAvailability, client);
       }
-      // await redisClient.connect();
       const user = await this.getUserFromDB(id, client);
-      // await redisClient.set('user' + id, JSON.stringify(user));
-      await redisClient.setex('user' + id, 10000, JSON.stringify(user));
-      // await redisClient.disconnect();        
+      await redisClient.set('user' + id, JSON.stringify(user));
       response.status(200).send(id);
       await client.query('COMMIT');
     } catch (error) {
