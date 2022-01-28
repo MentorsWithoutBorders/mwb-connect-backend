@@ -137,7 +137,7 @@ app.get('/api/v1/quiz_number', usersQuizzes.getQuizNumber);
 app.post('/api/v1/quizzes', usersQuizzes.addQuiz);
 
 // Users available mentors
-app.get('/api/v1/available_mentors', usersAvailableMentors.getAvailableMentors);
+app.post('/api/v1/available_mentors', usersAvailableMentors.getAvailableMentors);
 app.get('/api/v1/available_mentors/fields', usersAvailableMentors.getAvailableMentorsFields);
 
 // Users lesson requests
