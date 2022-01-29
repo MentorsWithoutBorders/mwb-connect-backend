@@ -91,10 +91,35 @@ export class UsersAvailableMentors {
 
   isValidSubfieldsAndSkills(mentorString: string, subfields: Array<Subfield> | undefined): boolean {
     let isValid = false;
-    if (subfields && subfields.length > 0) {
-      const subfieldId = subfields[0].id as string;
-      const skills = subfields[0].skills;
-      const skillsIds: Array<string> = [];
+    if (!subfields || subfields.length == 0) {
+      return true;
+    }
+    const allSkillsIds = [];
+    for (const subfield of subfields) {
+      const skills = subfield.skills;
+      if (skills) {
+        for (const skill of skills) {
+          allSkillsIds.push(skill.id);
+        }
+      }
+    }
+    for (const subfield of subfields) {
+      isValid = this.isValidSubfieldAndSkills(mentorString, subfield, allSkillsIds);
+      if (isValid) {
+        break;
+      }        
+    }
+    return isValid;
+  }
+  
+  isValidSubfieldAndSkills(mentorString: string, subfield: Subfield, allSkillsIds: Array<string>): boolean {
+    let isValid = false;
+    const subfieldId = subfield.id as string;
+    if (subfieldId == 'all') {
+      isValid = allSkillsIds.some(skillId => mentorString.includes(skillId));
+    } else {
+      const skills = subfield.skills;
+      const skillsIds = [];
       if (skills) {
         for (const skill of skills) {
           skillsIds.push(skill.id);
@@ -105,11 +130,9 @@ export class UsersAvailableMentors {
       } else {
         isValid = mentorString.includes(subfieldId);
       }
-    } else {
-      isValid = true;
     }
     return isValid;
-  }  
+  }
 
   isValidAvailabilities(mentorString: string, filterAvailabilities: Array<Availability> | undefined): boolean {
     let isValid = false;
