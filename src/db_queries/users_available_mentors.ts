@@ -91,7 +91,7 @@ export class UsersAvailableMentors {
 
   isValidSubfieldsAndSkills(mentorString: string, subfields: Array<Subfield> | undefined): boolean {
     let isValid = false;
-    if (subfields) {
+    if (subfields && subfields.length > 0) {
       const subfieldId = subfields[0].id as string;
       const skills = subfields[0].skills;
       const skillsIds: Array<string> = [];
@@ -113,7 +113,7 @@ export class UsersAvailableMentors {
 
   isValidAvailabilities(mentorString: string, filterAvailabilities: Array<Availability> | undefined): boolean {
     let isValid = false;
-    if (filterAvailabilities) {
+    if (filterAvailabilities && filterAvailabilities.length > 0) {
       filterAvailabilities = this.getExpandedAvailabilities(filterAvailabilities);
       const mentor = JSON.parse(mentorString);
       mentor.availabilities = this.getExpandedAvailabilities(mentor.availabilities);
