@@ -20,7 +20,7 @@ const conn = new Conn();
 const pool = conn.pool;
 const redisClient = createClient();
 const helpers = new Helpers();
-const users: Users = new Users();
+const users = new Users();
 
 export class UsersAvailableMentors {
   constructor() {
@@ -69,7 +69,7 @@ export class UsersAvailableMentors {
     if (!page) {
       return mentors;
     }
-    for (let i = 20 * (parseInt(page) - 1); i < 20 * parseInt(page); i++) {
+    for (let i = constants.AVAILABLE_MENTORS_RESULTS_PER_PAGE * (parseInt(page) - 1); i < constants.AVAILABLE_MENTORS_RESULTS_PER_PAGE * parseInt(page); i++) {
       if (mentors[i]) {
         paginatedMentors.push(mentors[i]);
       }
