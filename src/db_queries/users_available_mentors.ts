@@ -52,11 +52,11 @@ export class UsersAvailableMentors {
       if (!mentorString) {
         const mentor = await users.getUserFromDB(lesson.mentor?.id as string, client);
         await redisClient.set('user' + lesson.mentor?.id, JSON.stringify(mentor));
-        if (this.isValidMentor(JSON.stringify(mentor), field, availabilities)) {
+        if (this.isValidMentor(mentor, field, availabilities)) {
           mentors.push(mentor);
         }          
       } else {
-        if (this.isValidMentor(mentorString, field, availabilities)) {
+        if (this.isValidMentor(JSON.parse(mentorString), field, availabilities)) {
           mentors.push(JSON.parse(mentorString));
         }
       }
@@ -77,11 +77,16 @@ export class UsersAvailableMentors {
     return paginatedMentors;
   }
 
-  isValidMentor(mentorString: string, field: Field | undefined, filterAvailabilities: Array<Availability> | undefined): boolean {
+  isValidMentor(mentor: User, field: Field | undefined, filterAvailabilities: Array<Availability> | undefined): boolean {
+    if (!mentor?.field?.subfields || mentor?.field?.subfields.length == 0 ||
+          !mentor?.availabilities || mentor?.availabilities.length == 0) {
+      return false;
+    }
     let subfields;
     if (field) {
       subfields = field.subfields;
     }
+    const mentorString = JSON.stringify(mentor);
     if (this.isValidSubfieldsAndSkills(mentorString, subfields)) {
       return this.isValidAvailabilities(mentorString, filterAvailabilities);
     } else {
