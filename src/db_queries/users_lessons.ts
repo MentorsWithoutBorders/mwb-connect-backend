@@ -327,7 +327,7 @@ export class UsersLessons {
     const endRecurrenceDateTime = moment.utc(lesson.endRecurrenceDateTime);
     let lessonDateTime = moment.utc(lesson.dateTime);
     if (lesson.isRecurrent) {
-      while (lessonDateTime.isBefore(now)) {
+      while (lessonDateTime.isSameOrBefore(endRecurrenceDateTime)) {
         lessonDateTime = lessonDateTime.add(7, 'd');
       }
       lessonDateTime = lessonDateTime.subtract(7, 'd');
