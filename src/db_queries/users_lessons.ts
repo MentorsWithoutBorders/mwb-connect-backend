@@ -13,7 +13,6 @@ import { UsersSendEmails } from './users_send_emails';
 import User from '../models/user.model';
 import Field from '../models/field.model';
 import Subfield from '../models/subfield.model';
-import Organization from '../models/organization.model';
 import Lesson from '../models/lesson.model';
 import LessonNote from '../models/lesson_note.model';
 import GuideTutorial from '../models/guide_tutorial.model';
@@ -254,7 +253,8 @@ export class UsersLessons {
         const mentor: User = {
           id: user.id as string,
           name: user.name as string,
-          organization: user.organization as Organization
+          field: user.field,
+          organization: user.organization
         }
         lesson.mentor = mentor;
       }
