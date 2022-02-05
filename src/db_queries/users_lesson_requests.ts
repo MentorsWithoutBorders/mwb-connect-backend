@@ -152,7 +152,6 @@ export class UsersLessonRequests {
       }
       const mentorId = id as string;
       await this.updatePreferredMentor(studentId, mentorId, client);
-      await this.deleteStudentLessonRequest(studentId, client);
       const lessonRequest = await this.addLessonRequestFromDB(studentId, client);
       response.status(200).send(lessonRequest);
       await client.query('COMMIT');
@@ -202,11 +201,6 @@ export class UsersLessonRequests {
       VALUES ($1, $2)`;
     await client.query(insertPreferredMentorQuery, [studentId, mentorId]); 
   }
-  
-  async deleteStudentLessonRequest(studentId: string, client: pg.PoolClient): Promise<void> {
-    const deleteLessonRequestQuery = `DELETE FROM users_lesson_requests WHERE student_id = $1`;
-    await client.query(deleteLessonRequestQuery, [studentId]);    
-  }  
 
   async acceptLessonRequest(request: Request, response: Response): Promise<void> {
     const mentorId = request.user.id as string;
@@ -393,7 +387,7 @@ export class UsersLessonRequests {
         const studentSubfield = studentSubfields != null && studentSubfields.length > 0 ? studentSubfields[0] : null;
         const studentSkills = this.getStudentSkills(studentSubfields as Array<Subfield>);
         const preferredMentorId = await this.getPreferredMentorId(student?.id as string, client);
-        const isAllowedLastMentor = lessonRequest.isAllowedLastMentor || false; 
+        const isAllowedLastMentor = lessonRequest.isAllowedLastMentor || true; 
         const lastMentorId = await this.getLastMentorId(student?.id as string, client);
         const availableLessons = await this.getAvailableLessonsFromDB(student, client);
         const availableLessonOptions = await this.getAvailableLessonOptions(availableLessons, preferredMentorId, isAllowedLastMentor, lastMentorId, student.registeredOn as string, studentSkills, client);
