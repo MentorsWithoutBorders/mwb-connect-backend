@@ -149,17 +149,15 @@ export class UsersPushNotifications {
     this.sendPushNotification(lesson.mentor?.id as string, pushNotificationMentor);
   }    
 
-  sendPNLessonRequest(student: User, lessonRequestOptions: Array<LessonRequest>): void {
-    if (lessonRequestOptions.length > 0) {
-      const mentorId = lessonRequestOptions[0].mentor?.id;
-      const subfieldName = lessonRequestOptions[0].subfield?.name?.toLowerCase();
-      const pushNotification: PushNotification = {
-        title: 'New lesson request',
-        body: `${student.name} from ${student.organization?.name} is requesting a ${subfieldName} lesson with you`,
-        type: PushNotificationType.LessonRequest
-      }
-      this.sendPushNotification(mentorId as string, pushNotification);
+  sendPNLessonRequest(student: User, lessonRequest: LessonRequest): void {
+    const mentorId = lessonRequest.mentor?.id;
+    const subfieldName = lessonRequest.subfield?.name?.toLowerCase();
+    const pushNotification: PushNotification = {
+      title: 'New lesson request',
+      body: `${student.name} from ${student.organization?.name} is requesting a ${subfieldName} lesson with you`,
+      type: PushNotificationType.LessonRequest
     }
+    this.sendPushNotification(mentorId as string, pushNotification);
   }
   
   sendPNLessonRequestAccepted(lesson: Lesson): void {

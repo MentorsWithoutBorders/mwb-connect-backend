@@ -219,14 +219,12 @@ app.post('/api/v1/logger', logger.addLogEntry);
 
 
 // Users background processes
-app.post('/api/v1/send_lesson_requests', usersBackgroundProcesses.sendLessonRequests);
 app.post('/api/v1/send_lesson_reminders', usersBackgroundProcesses.sendLessonReminders);
 app.post('/api/v1/send_after_lessons', usersBackgroundProcesses.sendAfterLesson);
 app.post('/api/v1/send_training_reminders', usersBackgroundProcesses.sendTrainingReminders);
 app.post('/api/v1/available_mentors/fields', usersBackgroundProcesses.setAvailableMentorsFields);
 
 cron.schedule('* * * * *', function() {
-  // usersBackgroundProcesses.sendLessonRequestsFromDB();
   usersBackgroundProcesses.sendLessonRemindersFromDB();
   usersBackgroundProcesses.sendAfterLessonFromDB();
   usersBackgroundProcesses.sendTrainingRemindersFromDB(true);

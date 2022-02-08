@@ -33,16 +33,16 @@ export class UsersSendEmails {
       }
     });
     
-    // if (recipientEmailAddress && recipientEmailAddress.indexOf('fake') == -1) {
-    //   transporter.sendMail({
-    //     to: recipientEmailAddress,
-    //     from: process.env.SMTP_SENDER,
-    //     subject: email.subject,
-    //     html: email.body
-    //   })
-    //     .then(() => console.log(`Email successfully sent: ${recipientEmailAddress}`))
-    //     .catch(() => console.log(`Email hasn't been sent successfully: ${recipientEmailAddress}`))
-    // }
+    if (recipientEmailAddress && recipientEmailAddress.indexOf('fake') == -1) {
+      transporter.sendMail({
+        to: recipientEmailAddress,
+        from: process.env.SMTP_SENDER,
+        subject: email.subject,
+        html: email.body
+      })
+        .then(() => console.log(`Email successfully sent: ${recipientEmailAddress}`))
+        .catch(() => console.log(`Email hasn't been sent successfully: ${recipientEmailAddress}`))
+    }
   }
 
   sendEmailFirstTrainingReminder(user: User, showStepReminder: boolean, showQuizReminder: boolean, remainingQuizzes: number): void {
@@ -142,21 +142,19 @@ export class UsersSendEmails {
     return `Hi ${userName},<br><br>` + body + '<br><br>Regards,<br>MWB Support Team';
   }
 
-  sendEmailLessonRequest(student: User, lessonRequestOptions: Array<LessonRequest>): void {
-    if (lessonRequestOptions.length > 0) {
-      const mentor = lessonRequestOptions[0].mentor;
-      const subfield = lessonRequestOptions[0].subfield;
-      const mentorFirstName = helpers.getUserFirstName(mentor as User);
-      const mentorEmailAddress = mentor?.email;
-      const subfieldName = subfield?.name?.toLowerCase();
-      let body = `${student.name} from ${student.organization?.name} is requesting a ${subfieldName} lesson with you. Kindly see the details in the MWB Connect app.`;
-      body = this.setEmailBody(mentorFirstName, body);
-      const email: Email = {
-        subject: 'New lesson request',
-        body: body
-      }
-      this.sendEmail(mentorEmailAddress as string, email);
+  sendEmailLessonRequest(student: User, lessonRequest: LessonRequest): void {
+    const mentor = lessonRequest.mentor;
+    const subfield = lessonRequest.subfield;
+    const mentorFirstName = helpers.getUserFirstName(mentor as User);
+    const mentorEmailAddress = mentor?.email;
+    const subfieldName = subfield?.name?.toLowerCase();
+    let body = `${student.name} from ${student.organization?.name} is requesting a ${subfieldName} lesson with you. Kindly see the details in the MWB Connect app.`;
+    body = this.setEmailBody(mentorFirstName, body);
+    const email: Email = {
+      subject: 'New lesson request',
+      body: body
     }
+    this.sendEmail(mentorEmailAddress as string, email);
   }  
   
   sendEmailLessonRequestAccepted(lesson: Lesson): void {

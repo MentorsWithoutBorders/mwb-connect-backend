@@ -33,7 +33,10 @@ export class UsersAvailableMentors {
     const client = await pool.connect();    
     try {
       await client.query('BEGIN');
-      const availableMentors = await this.getAvailableMentorsFromDB(field, availabilities, page, client);
+      let availableMentors = await this.getAvailableMentorsFromDB(field, availabilities, client);
+      const availableLessonsMentors = await this.getAvailableLessonsMentorsFromDB(field, availabilities, client);
+      availableMentors = availableMentors.concat(availableLessonsMentors);
+      availableMentors = this.getPaginatedMentors(availableMentors, page);
       response.status(200).json(availableMentors);
       await client.query('COMMIT');
     } catch (error) {
@@ -44,14 +47,43 @@ export class UsersAvailableMentors {
     }
   }
 
-  async getAvailableMentorsFromDB(field: Field | undefined, availabilities: Array<Availability> | undefined, page: string | undefined, client: pg.PoolClient): Promise<Array<User>> {
-    const lessons = await this.getAvailableMentorsLessons(field?.id, client);
+  async getAvailableMentorsFromDB(field: Field | undefined, availabilities: Array<Availability> | undefined, client: pg.PoolClient): Promise<Array<User>> {
+    const getAvailableMentorsQuery = `SELECT DISTINCT u.id, u.name, u.is_available, u.available_from, ul.date_time, ul.is_recurrent, ul.end_recurrence_date_time, ul.is_canceled
+      FROM users u
+      FULL OUTER JOIN (
+        SELECT *,
+          row_number() over (PARTITION BY mentor_id ORDER BY date_time DESC) AS row_number_lessons
+          FROM users_lessons 
+      ) ul 
+        ON u.id = ul.mentor_id
+      FULL OUTER JOIN (
+        SELECT *,
+          row_number() over (PARTITION BY mentor_id ORDER BY sent_date_time DESC) AS row_number_lesson_requests
+          FROM users_lesson_requests 
+      ) ulr      
+        ON u.id = ulr.mentor_id          
+      FULL OUTER JOIN users_subfields us
+        ON u.id = us.user_id
+      LEFT OUTER JOIN admin_available_users aau
+        ON u.id = aau.user_id            
+      WHERE u.is_mentor = true
+        AND u.available_from <= now()        
+        AND us.subfield_id IS NOT NULL
+        AND (ul.row_number_lessons = 1 AND (ul.is_recurrent IS DISTINCT FROM true AND ul.date_time < now() 
+            OR ul.is_recurrent IS true AND ul.end_recurrence_date_time < now() 
+            OR ul.is_canceled IS true AND EXTRACT(EPOCH FROM (now() - ul.canceled_date_time))/3600 > 72) 
+            OR ul.id IS NULL)
+        AND (ulr.row_number_lesson_requests = 1 AND (ulr.is_canceled IS true OR EXTRACT(EPOCH FROM (now() - ulr.sent_date_time))/3600 > 72)
+            OR ulr.id IS NULL)
+        AND aau.is_inactive IS DISTINCT FROM true`;
+    const { rows } = await client.query(getAvailableMentorsQuery);
     const mentors: Array<User> = [];
-    for (const lesson of lessons) {
-      const mentorString = await redisClient.get('user' + lesson.mentor?.id);
+    for (const row of rows) {
+      const mentorId = row.id;
+      const mentorString = await redisClient.get('user' + mentorId);
       if (!mentorString) {
-        const mentor = await users.getUserFromDB(lesson.mentor?.id as string, client);
-        await redisClient.set('user' + lesson.mentor?.id, JSON.stringify(mentor));
+        const mentor = await users.getUserFromDB(mentorId, client);
+        await redisClient.set('user' + mentorId, JSON.stringify(mentor));
         if (this.isValidMentor(mentor, field, availabilities)) {
           mentors.push(mentor);
         }          
@@ -61,8 +93,49 @@ export class UsersAvailableMentors {
         }
       }
     }
-    return this.getPaginatedMentors(mentors, page);
+    return mentors;
   }
+
+  async getAvailableLessonsMentorsFromDB(field: Field | undefined, availabilities: Array<Availability> | undefined, client: pg.PoolClient): Promise<Array<User>> {
+    const getLessonsQuery = `SELECT ul.id, ul.mentor_id, ula.max_students, fs.field_id, ul.subfield_id, ul.date_time, ul.is_recurrent, ul.end_recurrence_date_time 
+      FROM users_lessons ul
+      JOIN fields_subfields fs
+        ON fs.subfield_id = ul.subfield_id
+      JOIN users_lessons_availabilities ula
+        ON ul.mentor_id = ula.user_id          
+      WHERE ul.is_canceled IS DISTINCT FROM true
+        AND (ul.is_recurrent IS DISTINCT FROM true AND ul.date_time > now() 
+            OR ul.is_recurrent IS true AND ul.end_recurrence_date_time > now())`;
+    const { rows }: pg.QueryResult = await client.query(getLessonsQuery);
+    const mentors: Array<User> = [];
+    for (const row of rows) {
+      const mentorId = row.mentor_id;
+      const maxStudents = row.max_students;
+      const lessonStudentsNumber = await this.getLessonStudentsNumber(row.id, client);
+      const mentorString = await redisClient.get('user' + mentorId);
+      if (lessonStudentsNumber < maxStudents) {
+        if (!mentorString) {
+          const mentor = await users.getUserFromDB(mentorId, client);
+          await redisClient.set('user' + mentorId, JSON.stringify(mentor));
+          if (this.isValidMentor(mentor, field, availabilities)) {
+            mentors.push(mentor);
+          }          
+        } else {
+          if (this.isValidMentor(JSON.parse(mentorString), field, availabilities)) {
+            mentors.push(JSON.parse(mentorString));
+          }
+        }
+      }
+    }
+    return mentors;
+  }
+  
+  async getLessonStudentsNumber(lessonId: string, client: pg.PoolClient): Promise<number> {
+    const getLessonStudentsQuery = `SELECT id, is_canceled FROM users_lessons_students
+        WHERE is_canceled IS DISTINCT FROM true AND lesson_id = $1`;
+    const { rows }: pg.QueryResult = await client.query(getLessonStudentsQuery, [lessonId]);
+    return rows.length;
+  }  
 
   getPaginatedMentors(mentors: Array<User>, page: string | undefined): Array<User> {
     const paginatedMentors: Array<User> = [];
@@ -216,7 +289,9 @@ export class UsersAvailableMentors {
   }
 
   async getAvailableMentorsFieldsFromDB(client: pg.PoolClient): Promise<Array<Field>> {
-    const availableMentors = await this.getAvailableMentorsFromDB(undefined, undefined, undefined, client);
+    let availableMentors = await this.getAvailableMentorsFromDB(undefined, undefined, client);
+    const availableLessonsMentors = await this.getAvailableLessonsMentorsFromDB(undefined, undefined, client);
+    availableMentors = availableMentors.concat(availableLessonsMentors);    
     let fields = this.getFields(availableMentors);
     fields = this.getSubfields(fields, availableMentors);
     fields = this.getSkills(fields, availableMentors);

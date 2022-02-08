@@ -167,7 +167,7 @@ export class Users {
   }
   
   async getUserAvailabilities(userId: string, client: pg.PoolClient): Promise<Array<Availability>> {
-    const getAvailabilitiesQuery = `SELECT utc_time_to,connected_to, id, utc_time_from, utc_day_of_week, is_preferred FROM users_availabilities
+    const getAvailabilitiesQuery = `SELECT utc_time_to,connected_to, id, utc_time_from, utc_day_of_week FROM users_availabilities
       WHERE user_id = $1`;
     const { rows }: pg.QueryResult = await client.query(getAvailabilitiesQuery, [userId]);
     const availabilities: Array<Availability> = [];
@@ -186,8 +186,7 @@ export class Users {
         }
         const availability: Availability = {
           dayOfWeek: row.utc_day_of_week,
-          time: time,
-          isPreferred: row.is_preferred
+          time: time
         };
         availabilities.push(availability);
       }
@@ -287,8 +286,8 @@ export class Users {
   
   async insertUserAvailabilities(userId: string, availabilities: Array<Availability>, client: pg.PoolClient): Promise<void> {
     for (const availability of availabilities) {
-      const insertAvailabilityQuery = `INSERT INTO users_availabilities (user_id, utc_day_of_week, utc_time_from, utc_time_to, is_preferred)
-        VALUES ($1, $2, $3, $4, $5) RETURNING id`;
+      const insertAvailabilityQuery = `INSERT INTO users_availabilities (user_id, utc_day_of_week, utc_time_from, utc_time_to)
+        VALUES ($1, $2, $3, $4) RETURNING id`;
       const timeFrom = moment(availability.time.from, 'h:ma').format('HH:mm');
       let timeTo = moment(availability.time.to, 'h:ma').format('HH:mm');
       let dayOfWeekConnected = null;
@@ -300,7 +299,7 @@ export class Users {
         dayOfWeekConnected = helpers.getNextDayOfWeek(availability.dayOfWeek);
         timeTo = '24:00';
       }
-      let values = [userId, availability.dayOfWeek, timeFrom, timeTo, availability.isPreferred];
+      let values = [userId, availability.dayOfWeek, timeFrom, timeTo];
       const { rows }: pg.QueryResult = await client.query(insertAvailabilityQuery, values);
       const id = rows[0].id;
       if (dayOfWeekConnected && timeToConnected != '00:00') {

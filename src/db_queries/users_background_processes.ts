@@ -8,7 +8,6 @@ import dotenv from 'dotenv';
 import { Conn } from '../db/conn';
 import { Helpers } from '../utils/helpers';
 import { UsersLessons } from './users_lessons';
-import { UsersLessonRequests } from './users_lesson_requests';
 import { UsersAvailableMentors } from './users_available_mentors';
 import { UsersSteps } from './users_steps';
 import { UsersQuizzes } from './users_quizzes';
@@ -24,7 +23,6 @@ const conn = new Conn();
 const pool = conn.pool;
 const helpers = new Helpers();
 const usersLessons = new UsersLessons();
-const usersLessonRequests = new UsersLessonRequests();
 const usersAvailableMentors = new UsersAvailableMentors();
 const usersSteps = new UsersSteps();
 const usersQuizzes = new UsersQuizzes();
@@ -38,15 +36,6 @@ dotenv.config();
 export class UsersBackgroundProcesses {
   constructor() {
     autoBind(this);
-  }
-
-  async sendLessonRequests(request: Request, response: Response): Promise<void> {
-    try {
-      await usersLessonRequests.sendLessonRequestsFromDB();
-      response.status(200).send('Lesson request sent');
-    } catch (error) {
-      response.status(400).send(error);
-    }    
   }
 
   async sendLessonReminders(request: Request, response: Response): Promise<void> {
