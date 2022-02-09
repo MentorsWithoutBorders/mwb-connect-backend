@@ -176,7 +176,7 @@ export class UsersSendEmails {
   sendEmailLessonRequestRejected(student: User, mentor: User): void {
     const mentorName = mentor?.name;
     const studentFirstName = helpers.getUserFirstName(student);
-    let body = `Unfortunately ${mentorName} has rejected your lesson request. Please find a new mentor.`;
+    let body = `We're sorry but ${mentorName} has rejected your lesson request. Please find a new mentor.`;
     body = this.setEmailBody(studentFirstName, body);
     const email: Email = {
       subject: 'Lesson request rejected',

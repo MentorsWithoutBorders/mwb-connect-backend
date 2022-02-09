@@ -177,7 +177,7 @@ export class UsersPushNotifications {
     const mentorName = mentor?.name;
     const pushNotification: PushNotification = {
       title: 'Lesson request rejected',
-      body: `Unfortunately ${mentorName} has rejected your lesson request`
+      body: `We're sorry but ${mentorName} has rejected your lesson request`
     }
     this.sendPushNotification(student.id as string, pushNotification);
   }

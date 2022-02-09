@@ -408,12 +408,14 @@ export class UsersLessonRequests {
   }
 
   async updateLessonRequest(request: Request, response: Response): Promise<void> {
-    const mentorId = request.user.id as string;
+    const userId = request.user.id as string;
     const lessonRequestId = request.params.id;
     const { wasRejectedShown, wasCanceledShown, wasExpiredShown }: LessonRequest = request.body;
     try {
-      const updateLessonRequestQuery = 'UPDATE users_lesson_requests SET was_rejected_shown = $1, was_canceled_shown = $2, was_expired_shown = $3 WHERE mentor_id = $4 AND id = $5';
-      await pool.query(updateLessonRequestQuery, [wasRejectedShown, wasCanceledShown, wasExpiredShown, mentorId, lessonRequestId]);
+      const updateLessonRequestQuery = `UPDATE users_lesson_requests SET was_rejected_shown = $1, was_canceled_shown = $2, was_expired_shown = $3 
+        WHERE (mentor_id = $4 OR student_id = $4)
+          AND id = $5`;
+      await pool.query(updateLessonRequestQuery, [wasRejectedShown, wasCanceledShown, wasExpiredShown, userId, lessonRequestId]);
       response.status(200).send(`Lesson request modified with ID: ${lessonRequestId}`);
     } catch (error) {
       response.status(400).send(error);
