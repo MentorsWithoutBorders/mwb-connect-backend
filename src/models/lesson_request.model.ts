@@ -8,11 +8,12 @@ export default interface LessonRequest {
   subfield?: Subfield;
   sentDateTime?: string;
   lessonDateTime?: string;
-  isCanceled?: boolean
-  isRejected?: boolean
-  isExpired?: boolean
+  isRejected?: boolean;
+  isCanceled?: boolean;
+  isExpired?: boolean;
+  wasRejectedShown?: boolean;
+  wasCanceledShown?: boolean;
+  wasExpiredShown?: boolean;
   isAllowedLastMentor?: boolean;
-  wasCanceledShown?: boolean
-  wasExpiredShown?: boolean
   score?: number;
 }
