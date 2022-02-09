@@ -111,18 +111,22 @@ export class UsersAvailableMentors {
     for (const row of rows) {
       const mentorId = row.mentor_id;
       const maxStudents = row.max_students;
+      const lessonDateTime = row.date_time;
       const lessonStudentsNumber = await this.getLessonStudentsNumber(row.id, client);
       const mentorString = await redisClient.get('user' + mentorId);
       if (lessonStudentsNumber < maxStudents) {
         if (!mentorString) {
-          const mentor = await users.getUserFromDB(mentorId, client);
+          let mentor = await users.getUserFromDB(mentorId, client);
+          mentor = this.addLessonAvailability(mentor, lessonDateTime);
           await redisClient.set('user' + mentorId, JSON.stringify(mentor));
           if (this.isValidMentor(mentor, field, availabilities)) {
             mentors.push(mentor);
           }          
         } else {
-          if (this.isValidMentor(JSON.parse(mentorString), field, availabilities)) {
-            mentors.push(JSON.parse(mentorString));
+          let mentor = JSON.parse(mentorString);
+          mentor = this.addLessonAvailability(mentor, lessonDateTime);
+          if (this.isValidMentor(mentor, field, availabilities)) {
+            mentors.push(mentor);
           }
         }
       }
@@ -135,7 +139,20 @@ export class UsersAvailableMentors {
         WHERE is_canceled IS DISTINCT FROM true AND lesson_id = $1`;
     const { rows }: pg.QueryResult = await client.query(getLessonStudentsQuery, [lessonId]);
     return rows.length;
-  }  
+  }
+  
+  addLessonAvailability(mentor: User, lessonDateTime: string): User {
+    const availabilityTime: AvailabilityTime = {
+      from: moment.utc(lessonDateTime).format('h:mma'),
+      to: moment.utc(lessonDateTime).add(1, 'h').format('h:mma')
+    };    
+    const availability: Availability = {
+      dayOfWeek: moment.utc(lessonDateTime).format('dddd'),
+      time: availabilityTime
+    };
+    mentor.availabilities = [availability];
+    return mentor;
+  }
 
   getPaginatedMentors(mentors: Array<User>, page: string | undefined): Array<User> {
     const paginatedMentors: Array<User> = [];
