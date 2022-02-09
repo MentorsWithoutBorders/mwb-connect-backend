@@ -77,7 +77,10 @@ export class UsersLessonRequests {
           FROM users_lesson_requests ulr
           LEFT OUTER JOIN subfields s
             ON ulr.subfield_id = s.id
-          WHERE ulr.student_id = $1 AND ulr.is_canceled IS DISTINCT FROM true AND ulr.is_obsolete IS DISTINCT FROM true
+          WHERE ulr.student_id = $1 
+            AND ulr.is_canceled IS DISTINCT FROM true 
+            AND ulr.is_rejected IS DISTINCT FROM true 
+            AND ulr.is_obsolete IS DISTINCT FROM true
           ORDER BY ulr.sent_date_time DESC LIMIT 1`;
       }
       const { rows }: pg.QueryResult = await client.query(getLessonRequestQuery, [userId]);
@@ -250,14 +253,15 @@ export class UsersLessonRequests {
 
   async addNewLessonRequest(lessonRequest: LessonRequest, client: pg.PoolClient): Promise<LessonRequest> {
     const insertLessonRequestQuery = `INSERT INTO users_lesson_requests 
-      (student_id, mentor_id, subfield_id, lesson_date_time, sent_date_time) 
-      VALUES ($1, $2, $3, $4, $5) RETURNING *`;
-    const values: Array<string> = [
+      (student_id, mentor_id, subfield_id, lesson_date_time, sent_date_time, is_allowed_last_mentor) 
+      VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`;
+    const values = [
       lessonRequest.student?.id as string,
       lessonRequest.mentor?.id as string,
       lessonRequest.subfield?.id as string,
       lessonRequest.lessonDateTime as string,
-      moment.utc().format(constants.DATE_TIME_FORMAT)
+      moment.utc().format(constants.DATE_TIME_FORMAT),
+      true
     ];
     const { rows }: pg.QueryResult = await client.query(insertLessonRequestQuery, values);
     if (rows[0]) {
@@ -368,12 +372,25 @@ export class UsersLessonRequests {
   async rejectLessonRequest(request: Request, response: Response): Promise<void> {
     const mentorId = request.user.id as string;
     const lessonRequestId = request.params.id;
+    const client = await pool.connect();
     try {
+      await client.query('BEGIN');
+      const getLessonRequestQuery = 'SELECT student_id FROM users_lesson_requests WHERE id = $1';
+      const { rows }: pg.QueryResult = await client.query(getLessonRequestQuery, [lessonRequestId]);
+      const studentId = rows[0].student_id;
       const updateLessonRequestQuery = 'UPDATE users_lesson_requests SET is_rejected = true WHERE mentor_id = $1 AND id = $2';
-      await pool.query(updateLessonRequestQuery, [mentorId, lessonRequestId]);
+      await client.query(updateLessonRequestQuery, [mentorId, lessonRequestId]);
+      const student = await users.getUserFromDB(studentId, client);
+      const mentor = await users.getUserFromDB(mentorId, client);
+      usersPushNotifications.sendPNLessonRequestRejected(student, mentor);
+      usersSendEmails.sendEmailLessonRequestRejected(student, mentor);
       response.status(200).send(`Lesson request modified with ID: ${lessonRequestId}`);
+      await client.query('COMMIT');
     } catch (error) {
       response.status(400).send(error);
+      await client.query('ROLLBACK');
+    } finally {
+      client.release();
     }
   }
 

@@ -172,6 +172,15 @@ export class UsersPushNotifications {
     }
     this.sendPushNotification(student.id as string, pushNotification);
   }
+
+  sendPNLessonRequestRejected(student: User, mentor: User): void {
+    const mentorName = mentor?.name;
+    const pushNotification: PushNotification = {
+      title: 'Lesson request rejected',
+      body: `Unfortunately ${mentorName} has rejected your lesson request`
+    }
+    this.sendPushNotification(student.id as string, pushNotification);
+  }
   
   sendPNLessonCanceled(lesson: Lesson, student: User, isCancelAll: boolean, lessonsCanceled: number): void {
     const isMentor = lesson.mentor == null ? true : false;

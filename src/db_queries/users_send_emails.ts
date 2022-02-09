@@ -173,6 +173,18 @@ export class UsersSendEmails {
     this.sendEmail(student?.email as string, email);
   }
 
+  sendEmailLessonRequestRejected(student: User, mentor: User): void {
+    const mentorName = mentor?.name;
+    const studentFirstName = helpers.getUserFirstName(student);
+    let body = `Unfortunately ${mentorName} has rejected your lesson request. Please find a new mentor.`;
+    body = this.setEmailBody(studentFirstName, body);
+    const email: Email = {
+      subject: 'Lesson request rejected',
+      body: body
+    }
+    this.sendEmail(student?.email as string, email);
+  }  
+
   async sendEmailLessonScheduled(mentor: User, lesson: Lesson, client: pg.PoolClient): Promise<void> {
     const mentorFirstName = helpers.getUserFirstName(mentor);
     let student: User = {};
