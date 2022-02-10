@@ -195,24 +195,10 @@ export class Users {
   }
   
   async getUserLessonsAvailability(userId: string, client: pg.PoolClient): Promise<LessonsAvailability> {
-    const getLessonsAvailabilityQuery = `SELECT min_interval_in_days, min_interval_unit, max_students FROM users_lessons_availabilities
+    const getLessonsAvailabilityQuery = `SELECT max_students FROM users_lessons_availabilities
       WHERE user_id = $1`;
-    const { rows }: pg.QueryResult = await client.query(getLessonsAvailabilityQuery, [userId]);
-    let minInterval = rows[0].min_interval_in_days;
-    switch(rows[0].min_interval_unit) {
-      case 'week':
-        minInterval /= 7;
-        break;
-      case 'month':
-        minInterval /= 30;
-        break;
-      case 'year':
-        minInterval /= 365;
-        break;        
-    }    
+    const { rows }: pg.QueryResult = await client.query(getLessonsAvailabilityQuery, [userId]);  
     return {
-      minInterval: minInterval,
-      minIntervalUnit: rows[0].min_interval_unit,
       maxStudents: rows[0].max_students
     };
   }    
@@ -313,21 +299,9 @@ export class Users {
 
   async updateUserLessonsAvailability(userId: string, lessonsAvailability: LessonsAvailability, client: pg.PoolClient): Promise<void> {
     const updateLessonsAvailabilityQuery = `UPDATE users_lessons_availabilities 
-      SET min_interval_in_days = $1, min_interval_unit = $2, max_students = $3
-      WHERE user_id = $4`;
-    let minIntervalInDays = lessonsAvailability.minInterval;
-    switch(lessonsAvailability.minIntervalUnit) {
-      case 'week':
-        minIntervalInDays *= 7;
-        break;
-      case 'month':
-        minIntervalInDays *= 30;
-        break;
-      case 'year':
-        minIntervalInDays *= 365;
-        break;
-    }
-    const values = [minIntervalInDays, lessonsAvailability.minIntervalUnit, lessonsAvailability.maxStudents, userId];
+      SET max_students = $1
+      WHERE user_id = $2`;
+    const values = [lessonsAvailability.maxStudents, userId];
     await client.query(updateLessonsAvailabilityQuery, values);
   }  
 
