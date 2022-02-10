@@ -73,7 +73,7 @@ export class UsersLessonRequests {
           WHERE ulr.mentor_id = $1 AND ulr.is_rejected IS DISTINCT FROM true
           ORDER BY ulr.sent_date_time DESC LIMIT 1`;
       } else {
-        getLessonRequestQuery = `SELECT ulr.id, ulr.student_id, ulr.subfield_id, ulr.sent_date_time, ulr.lesson_date_time, s.name AS subfield_name, ulr.is_rejected, ulr.is_canceled, ulr.is_obsolete, ulr.was_rejected_shown
+        getLessonRequestQuery = `SELECT ulr.id, ulr.student_id, ulr.subfield_id, ulr.sent_date_time, ulr.lesson_date_time, s.name AS subfield_name, ulr.is_rejected, ulr.is_canceled, ulr.is_obsolete
           FROM users_lesson_requests ulr
           LEFT OUTER JOIN subfields s
             ON ulr.subfield_id = s.id
@@ -101,7 +101,6 @@ export class UsersLessonRequests {
           isRejected: rows[0].is_rejected,
           isCanceled: rows[0].is_canceled,
           isExpired: rows[0].is_expired,
-          wasRejectedShown: rows[0].was_rejected_shown,
           wasCanceledShown: rows[0].was_canceled_shown,
           wasExpiredShown: rows[0].was_expired_shown
         }
@@ -410,12 +409,12 @@ export class UsersLessonRequests {
   async updateLessonRequest(request: Request, response: Response): Promise<void> {
     const userId = request.user.id as string;
     const lessonRequestId = request.params.id;
-    const { wasRejectedShown, wasCanceledShown, wasExpiredShown }: LessonRequest = request.body;
+    const { wasCanceledShown, wasExpiredShown }: LessonRequest = request.body;
     try {
-      const updateLessonRequestQuery = `UPDATE users_lesson_requests SET was_rejected_shown = $1, was_canceled_shown = $2, was_expired_shown = $3 
-        WHERE (mentor_id = $4 OR student_id = $4)
-          AND id = $5`;
-      await pool.query(updateLessonRequestQuery, [wasRejectedShown, wasCanceledShown, wasExpiredShown, userId, lessonRequestId]);
+      const updateLessonRequestQuery = `UPDATE users_lesson_requests SET was_canceled_shown = $1, was_expired_shown = $2
+        WHERE (mentor_id = $3 OR student_id = $3)
+          AND id = $4`;
+      await pool.query(updateLessonRequestQuery, [wasCanceledShown, wasExpiredShown, userId, lessonRequestId]);
       response.status(200).send(`Lesson request modified with ID: ${lessonRequestId}`);
     } catch (error) {
       response.status(400).send(error);

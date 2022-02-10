@@ -11,7 +11,6 @@ export default interface LessonRequest {
   isRejected?: boolean;
   isCanceled?: boolean;
   isExpired?: boolean;
-  wasRejectedShown?: boolean;
   wasCanceledShown?: boolean;
   wasExpiredShown?: boolean;
   isAllowedLastMentor?: boolean;
