@@ -150,7 +150,6 @@ export class UsersLessonRequests {
         availability = availabilities[0];
         const timeTo = moment(availability.time.from, 'h:ma').add(2, 'h').format('h:ma');
         availability.time.to = timeTo;
-        users.insertUserAvailabilities(studentId, [availability], client);
       }
       const mentorId = id as string;
       const availableMentors = await usersAvailableMentors.getAvailableMentorsFromDB(undefined, undefined, client);
