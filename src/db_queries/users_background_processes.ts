@@ -115,6 +115,7 @@ export class UsersBackgroundProcesses {
           }
           if (difference.asSeconds() < 60) {
             previousLesson.mentor = mentor;
+            usersPushNotifications.sendPNAfterLesson(previousLesson);
           }
           await client.query('COMMIT');
         } catch (error) {
