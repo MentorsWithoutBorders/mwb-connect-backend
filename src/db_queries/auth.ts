@@ -126,6 +126,8 @@ export class Auth {
     const getDefaultUserQuery = 'SELECT lessons_availability_min_interval_in_days, lessons_availability_min_interval_unit, lessons_availability_max_students, notifications_enabled, notifications_time, is_available FROM user_default_profile';
     const { rows }: pg.QueryResult = await client.query(getDefaultUserQuery);
     const lessonsAvailability: LessonsAvailability = {
+      minInterval: rows[0].lessons_availability_min_interval_in_days,
+      minIntervalUnit: rows[0].lessons_availability_min_interval_unit,
       maxStudents: rows[0].lessons_availability_max_students
     };
     const notificationsSettings: NotificationsSettings = {
@@ -139,9 +141,9 @@ export class Auth {
     const updateUserQuery = `UPDATE users SET is_available = $1 WHERE id = $2`;
     await client.query(updateUserQuery, [defaultUser.isAvailable, userId]);
     if (isMentor) {
-      const insertUserLessonsAvailabilityQuery = `INSERT INTO users_lessons_availabilities (user_id, max_students)
-        VALUES ($1, $2)`;
-      await client.query(insertUserLessonsAvailabilityQuery, [userId, lessonsAvailability.maxStudents]);
+      const insertUserLessonsAvailabilityQuery = `INSERT INTO users_lessons_availabilities (user_id, min_interval_in_days, min_interval_unit, max_students)
+        VALUES ($1, $2, $3, $4)`;
+      await client.query(insertUserLessonsAvailabilityQuery, [userId, lessonsAvailability.minInterval, lessonsAvailability.minIntervalUnit, lessonsAvailability.maxStudents]);
     }
     const insertNotificationsSettingsQuery = `INSERT INTO users_notifications_settings (user_id, enabled, time)
       VALUES ($1, $2, $3)`;
