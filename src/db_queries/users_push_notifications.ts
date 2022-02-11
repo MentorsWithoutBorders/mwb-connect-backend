@@ -268,24 +268,13 @@ export class UsersPushNotifications {
   }  
   
   sendPNAfterLesson(lesson: Lesson): void {
-    const pushNotificationMentor: PushNotification = {
+    const pushNotification: PushNotification = {
       title: 'Taught today',
       body: 'Please mention briefly what you have taught today',
       type: PushNotificationType.AfterLesson
     }
-    const pushNotificationStudent: PushNotification = {
-      title: 'Learned today',
-      body: 'Please mention briefly what you have learned today',
-      type: PushNotificationType.AfterLesson
-    }
     const mentor = lesson.mentor;
-    this.sendPushNotification(mentor?.id as string, pushNotificationMentor);
-    const students = lesson.students;
-    if (students != null) {
-      for (const student of students) {
-        this.sendPushNotification(student.id as string, pushNotificationStudent);
-      }
-    }
+    this.sendPushNotification(mentor?.id as string, pushNotification);
   }
 }
 

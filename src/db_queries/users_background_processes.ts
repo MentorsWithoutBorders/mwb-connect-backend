@@ -115,10 +115,6 @@ export class UsersBackgroundProcesses {
           }
           if (difference.asSeconds() < 60) {
             previousLesson.mentor = mentor;
-            const students = previousLesson.students;
-            if (students != null && students.length > 0) {
-              usersPushNotifications.sendPNAfterLesson(previousLesson);
-            }
           }
           await client.query('COMMIT');
         } catch (error) {
