@@ -111,12 +111,14 @@ export class UsersAvailableMentors {
     for (const row of rows) {
       const mentorId = row.mentor_id;
       const maxStudents = row.max_students;
+      const subfieldId = row.subfield_id;
       const lessonDateTime = row.date_time;
       const lessonStudentsNumber = await this.getLessonStudentsNumber(row.id, client);
       const mentorString = await redisClient.get('user' + mentorId);
       if (lessonStudentsNumber < maxStudents) {
         if (!mentorString) {
           let mentor = await users.getUserFromDB(mentorId, client);
+          mentor = this.addLessonSubfield(mentor, subfieldId);
           mentor = this.addLessonAvailability(mentor, lessonDateTime);
           await redisClient.set('user' + mentorId, JSON.stringify(mentor));
           if (this.isValidMentor(mentor, field, availabilities)) {
@@ -124,6 +126,7 @@ export class UsersAvailableMentors {
           }          
         } else {
           let mentor = JSON.parse(mentorString);
+          mentor = this.addLessonSubfield(mentor, subfieldId);
           mentor = this.addLessonAvailability(mentor, lessonDateTime);
           if (this.isValidMentor(mentor, field, availabilities)) {
             mentors.push(mentor);
@@ -140,6 +143,22 @@ export class UsersAvailableMentors {
     const { rows }: pg.QueryResult = await client.query(getLessonStudentsQuery, [lessonId]);
     return rows.length;
   }
+
+  addLessonSubfield(mentor: User, subfieldId: string): User {
+    const subfields = mentor.field?.subfields;
+    let lessonSubfield;
+    if (subfields && subfields.length > 0) {
+      for (const subfield of subfields) {
+        if (subfield.id == subfieldId) {
+          lessonSubfield = subfield;
+          break;
+        }
+      }
+    }
+    mentor.field?.subfields?.splice(0, subfields?.length);
+    mentor.field?.subfields?.push(lessonSubfield as Subfield);
+    return mentor;
+  }  
   
   addLessonAvailability(mentor: User, lessonDateTime: string): User {
     const availabilityTime: AvailabilityTime = {
