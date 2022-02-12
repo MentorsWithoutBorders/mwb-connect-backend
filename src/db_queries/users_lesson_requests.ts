@@ -140,11 +140,11 @@ export class UsersLessonRequests {
       await this.updateStudentField(studentId, field?.id as string, client);
       await users.deleteUserSubfields(studentId, client);
       const subfields = field?.subfields;
-      let subfieldId;
+      let subfield;
       if (subfields && subfields?.length > 0) {
-        subfieldId = subfields[0].id;
+        subfield = subfields[0];
       }
-      await this.insertStudentSubfield(studentId, subfieldId as string, client);
+      await this.insertStudentSubfield(studentId, subfield?.id as string, client);
       let availability;
       if (availabilities) {
         availability = availabilities[0];
@@ -160,9 +160,6 @@ export class UsersLessonRequests {
       };
       const lessonRequestResult: LessonRequestResult = {};
       if (this.getIsInAvailableMentors(mentorId, availableMentors)) {
-        const subfield: Subfield = {
-          id: subfieldId
-        };
         let lessonDateTime = moment.utc();
         while (lessonDateTime.format('dddd') != availability?.dayOfWeek) {
           lessonDateTime = lessonDateTime.add(1, 'd');
