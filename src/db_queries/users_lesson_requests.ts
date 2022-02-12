@@ -369,15 +369,17 @@ export class UsersLessonRequests {
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
-      const getLessonRequestQuery = 'SELECT student_id FROM users_lesson_requests WHERE id = $1';
+      const getLessonRequestQuery = 'SELECT student_id, is_canceled FROM users_lesson_requests WHERE id = $1';
       const { rows }: pg.QueryResult = await client.query(getLessonRequestQuery, [lessonRequestId]);
-      const studentId = rows[0].student_id;
-      const updateLessonRequestQuery = 'UPDATE users_lesson_requests SET is_rejected = true WHERE mentor_id = $1 AND id = $2';
-      await client.query(updateLessonRequestQuery, [mentorId, lessonRequestId]);
-      const student = await users.getUserFromDB(studentId, client);
-      const mentor = await users.getUserFromDB(mentorId, client);
-      usersPushNotifications.sendPNLessonRequestRejected(student, mentor);
-      usersSendEmails.sendEmailLessonRequestRejected(student, mentor);
+      if (rows && rows[0] && !rows[0].is_canceled) {
+        const studentId = rows[0].student_id;
+        const updateLessonRequestQuery = 'UPDATE users_lesson_requests SET is_rejected = true WHERE mentor_id = $1 AND id = $2';
+        await client.query(updateLessonRequestQuery, [mentorId, lessonRequestId]);
+        const student = await users.getUserFromDB(studentId, client);
+        const mentor = await users.getUserFromDB(mentorId, client);
+        usersPushNotifications.sendPNLessonRequestRejected(student, mentor);
+        usersSendEmails.sendEmailLessonRequestRejected(student, mentor);
+      }
       response.status(200).send(`Lesson request modified with ID: ${lessonRequestId}`);
       await client.query('COMMIT');
     } catch (error) {
