@@ -67,7 +67,7 @@ export class UsersAvailableMentors {
       LEFT OUTER JOIN admin_available_users aau
         ON u.id = aau.user_id            
       WHERE u.is_mentor = true
-        AND u.available_from <= now()        
+        AND (u.is_available IS true OR u.available_from <= now())      
         AND us.subfield_id IS NOT NULL
         AND (ul.row_number_lessons = 1 AND (ul.is_recurrent IS DISTINCT FROM true AND ul.date_time < now() 
             OR ul.is_recurrent IS true AND ul.end_recurrence_date_time < now() 
