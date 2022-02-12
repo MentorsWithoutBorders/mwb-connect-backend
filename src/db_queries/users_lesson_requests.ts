@@ -155,9 +155,7 @@ export class UsersLessonRequests {
       const availableMentors = await usersAvailableMentors.getAvailableMentorsFromDB(undefined, undefined, client);
       const availableLessonsMentors = await usersAvailableMentors.getAvailableLessonsMentorsFromDB(undefined, undefined, client);
       const student = await users.getUserFromDB(studentId, client);
-      const mentor: User = {
-        id: id
-      };
+      const mentor = await users.getUserFromDB(id as string, client);
       const lessonRequestResult: LessonRequestResult = {};
       if (this.getIsInAvailableMentors(mentorId, availableMentors)) {
         let lessonDateTime = moment.utc();
