@@ -50,7 +50,7 @@ export class UsersAvailableMentors {
   }
 
   async getAvailableMentorsFromDB(field: Field | undefined, availabilities: Array<Availability> | undefined, client: pg.PoolClient): Promise<Array<User>> {
-    const getAvailableMentorsQuery = `SELECT DISTINCT u.id, u.name, u.is_available, u.available_from, ul.date_time, ul.is_recurrent, ul.end_recurrence_date_time, ul.is_canceled
+    let getAvailableMentorsQuery = `SELECT DISTINCT u.id, u.name, u.is_available, u.available_from, ul.date_time, ul.is_recurrent, ul.end_recurrence_date_time, ul.is_canceled
       FROM users u
       FULL OUTER JOIN (
         SELECT *,
@@ -78,8 +78,13 @@ export class UsersAvailableMentors {
         AND (ulr.row_number_lesson_requests = 1 AND (ulr.is_canceled IS true OR EXTRACT(EPOCH FROM (now() - ulr.sent_date_time))/3600 > 72)
             OR ulr.id IS NULL)
         AND aau.is_inactive IS DISTINCT FROM true`;
-    const { rows } = await client.query(getAvailableMentorsQuery);
-    const mentors: Array<User> = [];
+    let values: Array<string> = [];
+    if (field && field.id) {
+      getAvailableMentorsQuery += ` AND u.field_id = $1`;
+      values = [field?.id];
+    }
+    const { rows } = await client.query(getAvailableMentorsQuery, values);
+    let mentors: Array<User> = [];
     const server = process.env.SERVER as string;
     for (const row of rows) {
       const mentorId = row.id;
@@ -87,20 +92,24 @@ export class UsersAvailableMentors {
       if (!mentorString) {
         const mentor = await users.getUserFromDB(mentorId, client);
         await redisClient.set(`user-${server}-${mentorId}`, JSON.stringify(mentor));
-        if (this.isValidMentor(mentor, field, availabilities)) {
-          mentors.push(mentor);
-        }          
+        mentors = this.addAvailableMentor(mentors, mentor, field, availabilities);         
       } else {
-        if (this.isValidMentor(JSON.parse(mentorString), field, availabilities)) {
-          mentors.push(JSON.parse(mentorString));
-        }
+        const mentor = JSON.parse(mentorString);
+        mentors = this.addAvailableMentor(mentors, mentor, field, availabilities);
       }
     }
     return mentors;
   }
 
+  addAvailableMentor(mentors: Array<User>, mentor: User, field: Field | undefined, availabilities: Array<Availability> | undefined): Array<User> {
+    if (this.isValidMentor(mentor, field, availabilities)) {
+      mentors.push(mentor);
+    }
+    return mentors;
+  }
+
   async getAvailableLessonsMentorsFromDB(field: Field | undefined, availabilities: Array<Availability> | undefined, client: pg.PoolClient): Promise<Array<User>> {
-    const getLessonsQuery = `SELECT ul.id, ul.mentor_id, ula.max_students, fs.field_id, ul.subfield_id, ul.date_time, ul.is_recurrent, ul.end_recurrence_date_time 
+    let getLessonsQuery = `SELECT ul.id, ul.mentor_id, ula.max_students, fs.field_id, ul.subfield_id, ul.date_time, ul.is_recurrent, ul.end_recurrence_date_time 
       FROM users_lessons ul
       JOIN fields_subfields fs
         ON fs.subfield_id = ul.subfield_id
@@ -109,8 +118,13 @@ export class UsersAvailableMentors {
       WHERE ul.is_canceled IS DISTINCT FROM true
         AND (ul.is_recurrent IS DISTINCT FROM true AND ul.date_time > now() 
             OR ul.is_recurrent IS true AND ul.end_recurrence_date_time > now())`;
-    const { rows }: pg.QueryResult = await client.query(getLessonsQuery);
-    const mentors: Array<User> = [];
+    let values: Array<string> = [];
+    if (field && field.id) {
+      getLessonsQuery += ` AND fs.field_id = $1`;
+      values = [field?.id];
+    }            
+    const { rows }: pg.QueryResult = await client.query(getLessonsQuery, values);
+    let mentors: Array<User> = [];
     const server = process.env.SERVER as string;
     for (const row of rows) {
       const mentorId = row.mentor_id;
@@ -125,16 +139,12 @@ export class UsersAvailableMentors {
           mentor = this.addLessonSubfield(mentor, subfieldId);
           mentor = this.addLessonAvailability(mentor, lessonDateTime);
           await redisClient.set(`user-${server}-${mentorId}`, JSON.stringify(mentor));
-          if (this.isValidMentor(mentor, field, availabilities)) {
-            mentors.push(mentor);
-          }          
+          mentors = this.addAvailableMentor(mentors, mentor, field, availabilities);          
         } else {
           let mentor = JSON.parse(mentorString);
           mentor = this.addLessonSubfield(mentor, subfieldId);
           mentor = this.addLessonAvailability(mentor, lessonDateTime);
-          if (this.isValidMentor(mentor, field, availabilities)) {
-            mentors.push(mentor);
-          }
+          mentors = this.addAvailableMentor(mentors, mentor, field, availabilities); 
         }
       }
     }
