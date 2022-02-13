@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import autoBind from 'auto-bind';
 import moment from 'moment'
 import pg from 'pg';
+import dotenv from 'dotenv';
 import { createClient } from 'async-redis';
 import { validate as uuidValidate } from 'uuid';
 import { Conn } from '../db/conn';
@@ -23,6 +24,7 @@ const pool = conn.pool;
 const redisClient = createClient();
 const auth = new Auth();
 const helpers = new Helpers();
+dotenv.config();
 
 export class Users {
   constructor() {
@@ -37,11 +39,13 @@ export class Users {
       const getUsersQuery = 'SELECT id, name, email, field_id, organization_id, is_mentor, is_available, available_from, registered_on FROM users ORDER BY id ASC';
       const { rows }: pg.QueryResult = await pool.query(getUsersQuery);
       const users: Array<User> = [];
+      const server = process.env.SERVER as string;
       for (const row of rows) {
-        const userString = await redisClient.get('user' + row.id);
+        const userId = row.id;
+        const userString = await redisClient.get(`user-${server}-${userId}`);
         if (!userString) {
           const user = await this.getUserFromDB(row.id, client);
-          await redisClient.set('user' + row.id, JSON.stringify(user));
+          await redisClient.set(`user-${server}-${userId}`, JSON.stringify(user));
           users.push(user);
         } else {
           users.push(JSON.parse(userString));
@@ -218,25 +222,26 @@ export class Users {
   }    
 
   async updateUser(request: Request, response: Response): Promise<void> {
-    const id = request.user.id as string;
+    const userId = request.user.id as string;
     const { name, email, isMentor, field, isAvailable, availableFrom, availabilities, lessonsAvailability }: User = request.body
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
       const updateUserQuery = 'UPDATE users SET name = $1, email = $2, field_id = $3, is_available = $4, available_from = $5 WHERE id = $6';
-      const values = [name, email, field?.id, isAvailable, availableFrom, id];
+      const values = [name, email, field?.id, isAvailable, availableFrom, userId];
       await client.query(updateUserQuery, values);
-      await this.deleteUserAvailabilities(id, client);
-      await this.insertUserAvailabilities(id, availabilities as Array<Availability>, client);
+      await this.deleteUserAvailabilities(userId, client);
+      await this.insertUserAvailabilities(userId, availabilities as Array<Availability>, client);
       if (isMentor) {
-        await this.deleteUserSubfields(id, client);
-        await this.deleteUserSkills(id, client);
-        await this.insertUserSubfields(id, field?.subfields as Array<Subfield>, client);
-        await this.updateUserLessonsAvailability(id, lessonsAvailability as LessonsAvailability, client);
+        await this.deleteUserSubfields(userId, client);
+        await this.deleteUserSkills(userId, client);
+        await this.insertUserSubfields(userId, field?.subfields as Array<Subfield>, client);
+        await this.updateUserLessonsAvailability(userId, lessonsAvailability as LessonsAvailability, client);
       }
-      const user = await this.getUserFromDB(id, client);
-      await redisClient.set('user' + id, JSON.stringify(user));
-      response.status(200).send(id);
+      const user = await this.getUserFromDB(userId, client);
+      const server = process.env.SERVER as string;
+      await redisClient.set(`user-${server}-${userId}`, JSON.stringify(user));
+      response.status(200).send(userId);
       await client.query('COMMIT');
     } catch (error) {
       response.status(400).send(error);

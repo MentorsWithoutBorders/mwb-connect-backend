@@ -4,6 +4,7 @@ import pg from 'pg';
 import { createClient } from 'async-redis';
 import moment from 'moment';
 import 'moment-timezone';
+import dotenv from 'dotenv';
 import { Conn } from '../db/conn';
 import { constants } from '../utils/constants';
 import { Helpers } from '../utils/helpers';
@@ -21,6 +22,7 @@ const pool = conn.pool;
 const redisClient = createClient();
 const helpers = new Helpers();
 const users = new Users();
+dotenv.config();
 
 export class UsersAvailableMentors {
   constructor() {
@@ -78,12 +80,13 @@ export class UsersAvailableMentors {
         AND aau.is_inactive IS DISTINCT FROM true`;
     const { rows } = await client.query(getAvailableMentorsQuery);
     const mentors: Array<User> = [];
+    const server = process.env.SERVER as string;
     for (const row of rows) {
       const mentorId = row.id;
-      const mentorString = await redisClient.get('user' + mentorId);
+      const mentorString = await redisClient.get(`user-${server}-${mentorId}`);
       if (!mentorString) {
         const mentor = await users.getUserFromDB(mentorId, client);
-        await redisClient.set('user' + mentorId, JSON.stringify(mentor));
+        await redisClient.set(`user-${server}-${mentorId}`, JSON.stringify(mentor));
         if (this.isValidMentor(mentor, field, availabilities)) {
           mentors.push(mentor);
         }          
@@ -108,19 +111,20 @@ export class UsersAvailableMentors {
             OR ul.is_recurrent IS true AND ul.end_recurrence_date_time > now())`;
     const { rows }: pg.QueryResult = await client.query(getLessonsQuery);
     const mentors: Array<User> = [];
+    const server = process.env.SERVER as string;
     for (const row of rows) {
       const mentorId = row.mentor_id;
       const maxStudents = row.max_students;
       const subfieldId = row.subfield_id;
       const lessonDateTime = row.date_time;
       const lessonStudentsNumber = await this.getLessonStudentsNumber(row.id, client);
-      const mentorString = await redisClient.get('user' + mentorId);
+      const mentorString = await redisClient.get(`user-${server}-${mentorId}`);
       if (lessonStudentsNumber < maxStudents) {
         if (!mentorString) {
           let mentor = await users.getUserFromDB(mentorId, client);
           mentor = this.addLessonSubfield(mentor, subfieldId);
           mentor = this.addLessonAvailability(mentor, lessonDateTime);
-          await redisClient.set('user' + mentorId, JSON.stringify(mentor));
+          await redisClient.set(`user-${server}-${mentorId}`, JSON.stringify(mentor));
           if (this.isValidMentor(mentor, field, availabilities)) {
             mentors.push(mentor);
           }          
@@ -306,13 +310,14 @@ export class UsersAvailableMentors {
     const client = await pool.connect();    
     try {
       await client.query('BEGIN');
-      const fieldsString = await redisClient.get('available_mentors_fields');
+      const server = process.env.SERVER as string;
+      const fieldsString = await redisClient.get(`available_mentors_fields-${server}`);
       let fields: Array<Field> = [];
       if (fieldsString && fieldsString != '{}') {
         fields = JSON.parse(fieldsString);
       } else {
         fields = await this.getAvailableMentorsFieldsFromDB(client);
-        await redisClient.set('available_mentors_fields', JSON.stringify(fields));
+        await redisClient.set(`available_mentors_fields-${server}`, JSON.stringify(fields));
       }
       response.status(200).json(fields);
       await client.query('COMMIT');
@@ -444,7 +449,8 @@ export class UsersAvailableMentors {
     try {
       await client.query('BEGIN');
       const fields = await this.getAvailableMentorsFieldsFromDB(client);
-      await redisClient.set('available_mentors_fields', JSON.stringify(fields));
+      const server = process.env.SERVER as string;
+      await redisClient.set(`available_mentors_fields-${server}`, JSON.stringify(fields));
       await client.query('COMMIT');
     } catch (error) {
       await client.query('ROLLBACK');
