@@ -283,10 +283,10 @@ export class UsersAvailableMentors {
   }
 
   isAvailabilityValid(filterAvailability: Availability, mentorAvailability: Availability): boolean {
-    const filterTimeFrom = moment(filterAvailability.time.from, 'h:mma');
-    const filterTimeTo = moment(filterAvailability.time.to, 'h:mma');
-    const mentorTimeFrom = moment(mentorAvailability.time.from, 'h:mma');
-    const mentorTimeTo = moment(mentorAvailability.time.to, 'h:mma');
+    const filterTimeFrom = moment(filterAvailability.time.from, 'ha');
+    const filterTimeTo = moment(filterAvailability.time.to, 'ha');
+    const mentorTimeFrom = moment(mentorAvailability.time.from, 'ha');
+    const mentorTimeTo = moment(mentorAvailability.time.to, 'ha');
     if (filterAvailability.dayOfWeek == mentorAvailability.dayOfWeek && 
         (filterTimeFrom.isSameOrAfter(mentorTimeFrom) && filterTimeTo.isSameOrBefore(mentorTimeTo) ||
          filterTimeFrom.isSameOrBefore(mentorTimeFrom) && filterTimeTo.isAfter(mentorTimeFrom) ||
