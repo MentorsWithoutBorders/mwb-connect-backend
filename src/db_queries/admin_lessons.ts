@@ -31,7 +31,7 @@ export class AdminLessons {
             ON ul.id = uls.lesson_id) ml
         JOIN users u
           ON ml.student_id = u.id
-        ORDER BY ml.mentor_name`;
+        ORDER BY ml.mentor_name, ml.date_time DESC`;
       const { rows }: pg.QueryResult = await client.query(getLessonsQuery);
       const group = rows.reduce((r, a) => {
         r[a.mentor_id] = [...r[a.mentor_id] || [], a];
@@ -43,32 +43,35 @@ export class AdminLessons {
         const lessonItems = group[i];
         const students: Array<User> = [];
         let lesson: Lesson = {};
-        for (const row of lessonItems) {
+        let j = 0;
+        while (lessonItems[j].lesson_id == lessonItems[0].lesson_id) {
+          const lessonItem = lessonItems[j];
           const mentor: User = {
-            id: row.mentor_id,
-            name: row.mentor_name
+            id: lessonItem.mentor_id,
+            name: lessonItem.mentor_name
           }
           const student: User = {
-            id: row.student_id,
-            name: row.student_name
+            id: lessonItem.student_id,
+            name: lessonItem.student_name
           }
           students.push(student);
           const subfield: Subfield = {
-            name: row.subfield_name
+            name: lessonItem.subfield_name
           }
           lesson = {
-            id: row.lesson_id,
+            id: lessonItem.lesson_id,
             mentor: mentor,
             students: students,
             subfield: subfield,
-            dateTime: moment.utc(row.date_time).format(constants.DATE_TIME_FORMAT),
-            meetingUrl: row.meeting_url,
-            isRecurrent: row.is_recurrent ?? false,
-            isCanceled: row.is_canceled ?? false
+            dateTime: moment.utc(lessonItem.date_time).format(constants.DATE_TIME_FORMAT),
+            meetingUrl: lessonItem.meeting_url,
+            isRecurrent: lessonItem.is_recurrent ?? false,
+            isCanceled: lessonItem.is_canceled ?? false
           };
           if (lesson.isRecurrent) {
-            lesson.endRecurrenceDateTime = moment.utc(row.end_recurrence_date_time).format(constants.DATE_TIME_FORMAT);            
+            lesson.endRecurrenceDateTime = moment.utc(lessonItem.end_recurrence_date_time).format(constants.DATE_TIME_FORMAT);            
           }
+          j++;
         }
         lessons.push(lesson);     
       }
