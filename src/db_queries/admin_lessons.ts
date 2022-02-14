@@ -44,7 +44,7 @@ export class AdminLessons {
         const students: Array<User> = [];
         let lesson: Lesson = {};
         let j = 0;
-        while (lessonItems[j].lesson_id == lessonItems[0].lesson_id) {
+        while (lessonItems[j] && lessonItems[j].lesson_id == lessonItems[0].lesson_id) {
           const lessonItem = lessonItems[j];
           const mentor: User = {
             id: lessonItem.mentor_id,
