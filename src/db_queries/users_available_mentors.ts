@@ -30,6 +30,7 @@ export class UsersAvailableMentors {
   }
 
   async getAvailableMentors(request: Request, response: Response): Promise<void> {
+    const studentId = request.user.id as string;
     const page = request.query.page as string;
     const { field, availabilities }: User = request.body;
     const client = await pool.connect();    
@@ -38,6 +39,8 @@ export class UsersAvailableMentors {
       let availableMentors = await this.getAvailableMentorsFromDB(field, availabilities, client);
       const availableLessonsMentors = await this.getAvailableLessonsMentorsFromDB(field, availabilities, client);
       availableMentors = availableMentors.concat(availableLessonsMentors);
+      const mentorsCanceledLessons = await this.getMentorsCanceledLessons(studentId, client);
+      availableMentors = this.getFinalAvailableMentors(availableMentors, mentorsCanceledLessons);
       availableMentors = this.getPaginatedMentors(availableMentors, page);
       response.status(200).json(availableMentors);
       await client.query('COMMIT');
@@ -48,6 +51,41 @@ export class UsersAvailableMentors {
       client.release();
     }
   }
+
+  async getMentorsCanceledLessons(studentId: string, client: pg.PoolClient): Promise<Array<string>> {
+    const getLessonsQuery = `SELECT lesson_id FROM users_lessons_students
+        WHERE student_id = $1`;
+    let { rows }: pg.QueryResult = await client.query(getLessonsQuery, [studentId]);
+    let lessonsIds = '';
+    for (const row of rows) {
+      const lessonId = row.lesson_id;
+      lessonsIds = lessonsIds + `id = '${lessonId}' OR `;
+    }
+    const mentorsIds = [];
+    if (lessonsIds) {
+      lessonsIds = lessonsIds.substring(0, lessonsIds.length - 4);
+      lessonsIds = ` AND (${lessonsIds})`
+      const getMentorsQuery = `SELECT mentor_id FROM users_lessons
+          WHERE is_canceled = true
+          ${lessonsIds}`;
+      ({ rows } = await client.query(getMentorsQuery));
+      for (const row of rows) {
+        mentorsIds.push(row.mentor_id);
+      }
+    }
+    return mentorsIds;
+  }
+
+  getFinalAvailableMentors(availableMentors: Array<User>, mentorsCanceledLessons: Array<string>): Array<User> {
+    const finalAvailableMentors: Array<User> = [];
+    for (const availableMentor of availableMentors) {
+      if (!mentorsCanceledLessons.includes(availableMentor.id as string)) {
+        finalAvailableMentors.push(availableMentor);
+      }
+    }
+    return finalAvailableMentors;
+  }
+
 
   async getAvailableMentorsFromDB(field: Field | undefined, availabilities: Array<Availability> | undefined, client: pg.PoolClient): Promise<Array<User>> {
     let getAvailableMentorsQuery = `SELECT DISTINCT u.id, u.name, u.is_available, u.available_from, ul.date_time, ul.is_recurrent, ul.end_recurrence_date_time, ul.is_canceled
