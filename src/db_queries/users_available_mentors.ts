@@ -53,8 +53,7 @@ export class UsersAvailableMentors {
   }
 
   async getMentorsCanceledLessons(studentId: string, client: pg.PoolClient): Promise<Array<string>> {
-    const getLessonsQuery = `SELECT lesson_id FROM users_lessons_students
-        WHERE student_id = $1`;
+    const getLessonsQuery = `SELECT lesson_id FROM users_lessons_students WHERE student_id = $1`;
     let { rows }: pg.QueryResult = await client.query(getLessonsQuery, [studentId]);
     let lessonsIds = '';
     for (const row of rows) {
@@ -64,10 +63,10 @@ export class UsersAvailableMentors {
     const mentorsIds = [];
     if (lessonsIds) {
       lessonsIds = lessonsIds.substring(0, lessonsIds.length - 4);
-      lessonsIds = ` AND (${lessonsIds})`
+      lessonsIds = ` AND (${lessonsIds})`;
       const getMentorsQuery = `SELECT mentor_id FROM users_lessons
-          WHERE is_canceled = true
-          ${lessonsIds}`;
+        WHERE is_canceled = true
+        ${lessonsIds}`;
       ({ rows } = await client.query(getMentorsQuery));
       for (const row of rows) {
         mentorsIds.push(row.mentor_id);

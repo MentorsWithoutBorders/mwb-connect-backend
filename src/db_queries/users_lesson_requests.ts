@@ -375,6 +375,7 @@ export class UsersLessonRequests {
         const studentId = rows[0].student_id;
         const updateLessonRequestQuery = 'UPDATE users_lesson_requests SET is_rejected = true WHERE mentor_id = $1 AND id = $2';
         await client.query(updateLessonRequestQuery, [mentorId, lessonRequestId]);
+        await this.cancelLessons(mentorId, studentId, client);
         const student = await users.getUserFromDB(studentId, client);
         const mentor = await users.getUserFromDB(mentorId, client);
         usersPushNotifications.sendPNLessonRequestRejected(student, mentor);
@@ -389,6 +390,34 @@ export class UsersLessonRequests {
       client.release();
     }
   }
+
+  async cancelLessons(mentorId: string, studentId: string, client: pg.PoolClient): Promise<void> {
+    const getStudentLessonsQuery = `SELECT lesson_id FROM users_lessons_students WHERE student_id = $1`;
+    let { rows }: pg.QueryResult = await client.query(getStudentLessonsQuery, [studentId]);
+    const studentLessonsIds: Array<string> = [];
+    for (const row of rows) {
+      studentLessonsIds.push(row.lesson_id);
+    }
+    const getMentorLessonsQuery = `SELECT id FROM users_lessons WHERE mentor_id = $1`;
+    ({ rows } = await client.query(getMentorLessonsQuery, [mentorId]));
+    const mentorLessonsIds: Array<string> = [];
+    for (const row of rows) {
+      mentorLessonsIds.push(row.id);
+    }   
+    const commonLessonsIds = studentLessonsIds.filter(studentLessonId => mentorLessonsIds.includes(studentLessonId));
+    let lessonsIds = '';
+    for (const lessonId of commonLessonsIds) {
+      lessonsIds = lessonsIds + `id = '${lessonId}' OR `;
+    }
+    if (lessonsIds) {
+      lessonsIds = lessonsIds.substring(0, lessonsIds.length - 4);
+      lessonsIds = ` AND (${lessonsIds})`;
+      const updateLessonsQuery = `UPDATE users_lessons SET is_canceled = true 
+        WHERE mentor_id = $1
+        ${lessonsIds}`;
+      await client.query(updateLessonsQuery, [mentorId]);      
+    }
+  }  
 
   async cancelLessonRequest(request: Request, response: Response): Promise<void> {
     const studentId = request.user.id as string;
