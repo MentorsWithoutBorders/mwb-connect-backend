@@ -359,7 +359,7 @@ export class AdminTrainingReminders {
   
   async getAllTrainingRemindersFromDB(trainerId: string, client: pg.PoolClient): Promise<Array<TrainingReminder>> {
     const trainer = await users.getUserFromDB(trainerId, client);
-    let getTrainingRemindersQuery = `SELECT u.id, u.name, u.email, u.phone_number, u.is_mentor, u.registered_on, atr.last_contacted_date_time, ac.conversations
+    let getTrainingRemindersQuery = `SELECT u.id, u.name, u.email, u.phone_number, u.is_mentor, u.registered_on, atr.id AS training_reminder_id, atr.last_contacted_date_time, ac.conversations
       FROM users u
       FULL OUTER JOIN admin_training_reminders atr
         ON u.id = atr.user_id
@@ -393,6 +393,7 @@ export class AdminTrainingReminders {
       const allUserQuizzes = await usersQuizzes.getAllQuizzes(user.id as string, client);
       const quizSettings = await quizzesSettings.getQuizzesSettingsFromDB(client);
       const trainingReminder: TrainingReminder = {
+        id: row.training_reminder_id,
         user: user,
         certificateDate: certificateDate,
         lastContactedDateTime: lastContactedDateTime,
