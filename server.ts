@@ -4,6 +4,7 @@ import dotenv from 'dotenv';
 import cors from 'cors';
 import { Request, Response, NextFunction } from 'express';
 import { Auth } from './src/db_queries/auth';
+import { ApprovedUsers } from './src/db_queries/approved_users';
 import { Users } from './src/db_queries/users';
 import { UsersResetPassword } from './src/db_queries/users_reset_password';
 import { UsersTimeZones } from './src/db_queries/users_timezones';
@@ -40,6 +41,7 @@ const port = process.env.PORT;
 const app: express.Express = express();
 const auth: Auth = new Auth();
 const users: Users = new Users();
+const approvedUsers: ApprovedUsers = new ApprovedUsers();
 const usersTimeZones: UsersTimeZones = new UsersTimeZones();
 const usersResetPassword: UsersResetPassword = new UsersResetPassword();
 const usersPushNotifications: UsersPushNotifications = new UsersPushNotifications();
@@ -85,7 +87,7 @@ const verifyAccessTokenFilter = function(request: Request, response: Response, n
     } else {
       next();
     }
-  } else if (['/signup', '/login', '/access_token', '/send_reset_password', '/reset_password', '/tutorials', '/quizzes_settings'].some(route => request.originalUrl.includes(route))) {
+  } else if (['/approved_user', '/signup', '/login', '/access_token', '/send_reset_password', '/reset_password', '/tutorials', '/quizzes_settings'].some(route => request.originalUrl.includes(route))) {
     next();
   } else {
     auth.verifyAccessToken(request, response, next);
@@ -93,6 +95,9 @@ const verifyAccessTokenFilter = function(request: Request, response: Response, n
 }
 
 app.use(verifyAccessTokenFilter);
+
+// Approved users
+app.post('/api/v1/approved_user', approvedUsers.addApprovedUser);
 
 // Authentication
 app.post('/api/v1/signup', auth.signUp);
