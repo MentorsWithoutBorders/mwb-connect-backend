@@ -3,6 +3,8 @@ import pg from 'pg';
 import autoBind from 'auto-bind';
 import { Conn } from '../db/conn';
 import ApprovedUser from '../models/approved_user.model';
+import Field from '../models/field.model';
+import Organization from '../models/organization.model';
 
 const conn = new Conn();
 const pool = conn.pool;
@@ -11,6 +13,33 @@ export class ApprovedUsers {
   constructor() {
     autoBind(this);
   }
+
+  async getApprovedUser(email: string, client: pg.PoolClient): Promise<ApprovedUser> {
+    let approvedUser: ApprovedUser = {
+      email: email
+    };
+    const getApprovedUserQuery = 'SELECT field_id, organization_id, name, is_mentor, goal FROM approved_users WHERE LOWER(email) = $1';
+    const { rows }: pg.QueryResult = await client.query(getApprovedUserQuery, [email.toLowerCase()]);
+    if (!rows[0]) {
+      approvedUser.email = '';
+    } else {
+      const field: Field = {
+        id: rows[0].field_id
+      }
+      const organization: Organization = {
+        id: rows[0].organization_id
+      }      
+      approvedUser = {
+        email: email,
+        name: rows[0].name,
+        field: field,
+        organization: organization,
+        isMentor: rows[0].is_mentor,
+        goal: rows[0].goal
+      };
+    }
+    return approvedUser;
+  }  
 
   async addApprovedUser(request: Request, response: Response): Promise<void> {
     const { email, organization, isMentor }: ApprovedUser = request.body    

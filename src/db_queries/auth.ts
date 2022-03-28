@@ -8,6 +8,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { Conn } from '../db/conn';
 import { constants } from '../utils/constants';
 import { Helpers } from '../utils/helpers';
+import { ApprovedUsers } from './approved_users';
 import { UsersAppFlags } from './users_app_flags';
 import { UsersGoals } from './users_goals';
 import { UsersTimeZones } from './users_timezones';
@@ -15,8 +16,6 @@ import Token from '../models/token.model';
 import Tokens from '../models/tokens.model';
 import User from '../models/user.model';
 import ApprovedUser from '../models/approved_user.model';
-import Field from '../models/field.model';
-import Organization from '../models/organization.model';
 import LessonsAvailability from '../models/lessons_availability';
 import TimeZone from '../models/timezone.model';
 import NotificationsSettings from '../models/notifications_settings.model';
@@ -24,6 +23,7 @@ import NotificationsSettings from '../models/notifications_settings.model';
 const conn = new Conn();
 const pool = conn.pool;
 const helpers = new Helpers();
+const approvedUsers = new ApprovedUsers();
 const usersAppFlags = new UsersAppFlags();
 const usersGoals = new UsersGoals();
 const usersTimeZones = new UsersTimeZones();
@@ -54,7 +54,7 @@ export class Auth {
         return ;
       }
 
-      const approvedUser: ApprovedUser = await this.getApprovedUser(email, client);
+      const approvedUser: ApprovedUser = await approvedUsers.getApprovedUser(email, client);
       if (approvedUser.email == '') {
         response.status(400).send({'message': 'You have to be a student from one of our partner NGOs or an employee of one of our partner companies.'});
         return ;
@@ -93,33 +93,6 @@ export class Auth {
     } finally {
       client.release();
     }
-  }
-
-  async getApprovedUser(email: string, client: pg.PoolClient): Promise<ApprovedUser> {
-    let approvedUser: ApprovedUser = {
-      email: email
-    };
-    const getApprovedUserQuery = 'SELECT field_id, organization_id, name, is_mentor, goal FROM approved_users WHERE LOWER(email) = $1';
-    const { rows }: pg.QueryResult = await client.query(getApprovedUserQuery, [email.toLowerCase()]);
-    if (!rows[0]) {
-      approvedUser.email = '';
-    } else {
-      const field: Field = {
-        id: rows[0].field_id
-      }
-      const organization: Organization = {
-        id: rows[0].organization_id
-      }      
-      approvedUser = {
-        email: email,
-        name: rows[0].name,
-        field: field,
-        organization: organization,
-        isMentor: rows[0].is_mentor,
-        goal: rows[0].goal
-      };
-    }
-    return approvedUser;
   }
 
   async setDefaultUserProfile(userId: string, isMentor: boolean, client: pg.PoolClient): Promise<void> {
