@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import pg from 'pg';
 import autoBind from 'auto-bind';
+import dotenv from 'dotenv';
 import { Conn } from '../db/conn';
 import ApprovedUser from '../models/approved_user.model';
 import Field from '../models/field.model';
@@ -8,6 +9,7 @@ import Organization from '../models/organization.model';
 
 const conn = new Conn();
 const pool = conn.pool;
+dotenv.config();
 
 export class ApprovedUsers {
   constructor() {
@@ -54,7 +56,7 @@ export class ApprovedUsers {
       }
       if (!approvedUserExists) {
         if (organization) {
-          organization.id = '1838ae4e-4d07-4b03-8c7e-e1aa07fa9835'; // Other organization
+          organization.id = process.env.OTHER_ORGANIZATION_ID;
           const getOrganizationQuery = 'SELECT id FROM organizations WHERE name = $1';
           ({ rows } = await client.query(getOrganizationQuery, [organization.name]));
           if (rows[0]) {
@@ -64,12 +66,12 @@ export class ApprovedUsers {
         let insertApprovedUserQuery;
         let values;
         if (isMentor) {
-          const fieldId = 'b021984a-c02c-4fd4-87a7-1aec84c68d6b'; // Programming
+          const fieldId = process.env.PROGRAMMING_ID;
           insertApprovedUserQuery = `INSERT INTO approved_users (email, field_id, organization_id, is_mentor)
           VALUES ($1, $2, $3, $4)`;
           values = [email, fieldId, organization?.id, isMentor];
         } else {
-          const fieldId = '62a9dce6-2e92-45cc-a580-035d64a65b5b'; // Other
+          const fieldId = process.env.OTHER_FIELD_ID;
           const goal = 'I want to have an income of at least $1000 USD per month';
           insertApprovedUserQuery = `INSERT INTO approved_users (email, whatsapp_number, field_id, organization_id, is_mentor, goal)
             VALUES ($1, $2, $3, $4, $5, $6)`;
