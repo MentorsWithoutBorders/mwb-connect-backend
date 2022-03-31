@@ -33,16 +33,16 @@ export class UsersSendEmails {
       }
     });
     
-    // if (recipientEmailAddress && recipientEmailAddress.indexOf('fake') == -1) {
-    //   transporter.sendMail({
-    //     to: recipientEmailAddress,
-    //     from: process.env.SMTP_SENDER,
-    //     subject: email.subject,
-    //     html: email.body
-    //   })
-    //     .then(() => console.log(`Email successfully sent: ${recipientEmailAddress}`))
-    //     .catch(() => console.log(`Email hasn't been sent successfully: ${recipientEmailAddress}`))
-    // }
+    if (recipientEmailAddress && recipientEmailAddress.indexOf('fake') == -1) {
+      transporter.sendMail({
+        to: recipientEmailAddress,
+        from: process.env.SMTP_SENDER,
+        subject: email.subject,
+        html: email.body
+      })
+        .then(() => console.log(`Email successfully sent: ${recipientEmailAddress}`))
+        .catch(() => console.log(`Email hasn't been sent successfully: ${recipientEmailAddress}`))
+    }
   }
 
   sendEmailFirstTrainingReminder(user: User, showStepReminder: boolean, showQuizReminder: boolean, remainingQuizzes: number): void {
