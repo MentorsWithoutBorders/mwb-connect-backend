@@ -3,14 +3,12 @@ import pg from 'pg';
 import autoBind from 'auto-bind';
 import dotenv from 'dotenv';
 import { Conn } from '../db/conn';
-import { Organizations } from './organizations';
 import ApprovedUser from '../models/approved_user.model';
 import Field from '../models/field.model';
 import Organization from '../models/organization.model';
 
 const conn = new Conn();
 const pool = conn.pool;
-const organizations: Organizations = new Organizations();
 dotenv.config();
 
 export class ApprovedUsers {
@@ -57,12 +55,8 @@ export class ApprovedUsers {
         approvedUserExists = true;
       }
       if (!approvedUserExists) {
-        if (organization) {
+        if (organization && !organization.id) {
           organization.id = process.env.OTHER_ORGANIZATION_ID;
-          const organizationFromDB = await organizations.getOrganizationByNameFromDB(organization.name as string, client);
-          if (organizationFromDB.id) {
-            organization.id = organizationFromDB.id;
-          }
         }
         let insertApprovedUserQuery;
         let values;
