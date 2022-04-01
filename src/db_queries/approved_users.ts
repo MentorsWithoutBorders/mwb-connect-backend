@@ -3,12 +3,14 @@ import pg from 'pg';
 import autoBind from 'auto-bind';
 import dotenv from 'dotenv';
 import { Conn } from '../db/conn';
+import { Organizations } from './organizations';
 import ApprovedUser from '../models/approved_user.model';
 import Field from '../models/field.model';
 import Organization from '../models/organization.model';
 
 const conn = new Conn();
 const pool = conn.pool;
+const organizations: Organizations = new Organizations();
 dotenv.config();
 
 export class ApprovedUsers {
@@ -41,26 +43,25 @@ export class ApprovedUsers {
       };
     }
     return approvedUser;
-  }  
+  }
 
   async addApprovedUser(request: Request, response: Response): Promise<void> {
-    const { email, whatsappNumber, organization, isMentor }: ApprovedUser = request.body    
+    const { email, whatsappNumber, organization, isMentor }: ApprovedUser = request.body;
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
       let approvedUserExists = false;
       const getApprovedUsersQuery = 'SELECT id FROM approved_users WHERE email = $1';
-      let { rows }: pg.QueryResult = await client.query(getApprovedUsersQuery, [email]);
+      const { rows }: pg.QueryResult = await client.query(getApprovedUsersQuery, [email]);
       if (rows[0]) {
         approvedUserExists = true;
       }
       if (!approvedUserExists) {
         if (organization) {
           organization.id = process.env.OTHER_ORGANIZATION_ID;
-          const getOrganizationQuery = 'SELECT id FROM organizations WHERE name = $1';
-          ({ rows } = await client.query(getOrganizationQuery, [organization.name]));
-          if (rows[0]) {
-            organization.id = rows[0].id;
+          const organizationFromDB = await organizations.getOrganizationByNameFromDB(organization.name as string, client);
+          if (organizationFromDB.id) {
+            organization.id = organizationFromDB.id;
           }
         }
         let insertApprovedUserQuery;

@@ -22,6 +22,7 @@ import { UsersPushNotifications } from './src/db_queries/users_push_notification
 import { UsersAppVersions } from './src/db_queries/users_app_versions';
 import { UsersAppFlags } from './src/db_queries/users_app_flags';
 import { UsersBackgroundProcesses } from './src/db_queries/users_background_processes';
+import { Organizations } from './src/db_queries/organizations';
 import { Fields } from './src/db_queries/fields';
 import { Subfields } from './src/db_queries/subfields';
 import { Skills } from './src/db_queries/skills';
@@ -58,7 +59,7 @@ const usersSupportRequests: UsersSupportRequests = new UsersSupportRequests();
 const usersAppVersions: UsersAppVersions = new UsersAppVersions();
 const usersAppFlags: UsersAppFlags = new UsersAppFlags();
 const usersBackgroundProcesses: UsersBackgroundProcesses = new UsersBackgroundProcesses();
-const logger: Logger = new Logger();
+const organizations: Organizations = new Organizations();
 const fields: Fields = new Fields();
 const subfields: Subfields = new Subfields();
 const skills: Skills = new Skills();
@@ -66,6 +67,7 @@ const fieldsGoals: FieldsGoals = new FieldsGoals();
 const tutorials: Tutorials = new Tutorials();
 const quizzesSettings: QuizzesSettings = new QuizzesSettings();
 const updates: Updates = new Updates();
+const logger: Logger = new Logger();
 const adminStudentsCertificates: AdminStudentsCertificates = new AdminStudentsCertificates();
 const adminTrainingReminders: AdminTrainingReminders = new AdminTrainingReminders();
 const adminLessons: AdminLessons = new AdminLessons();
@@ -87,7 +89,7 @@ const verifyAccessTokenFilter = function(request: Request, response: Response, n
     } else {
       next();
     }
-  } else if (['/approved_user', '/signup', '/login', '/access_token', '/send_reset_password', '/reset_password', '/tutorials', '/quizzes_settings'].some(route => request.originalUrl.includes(route))) {
+  } else if (['/approved_user', '/organizations', '/signup', '/login', '/access_token', '/send_reset_password', '/reset_password', '/tutorials', '/quizzes_settings'].some(route => request.originalUrl.includes(route))) {
     next();
   } else {
     auth.verifyAccessToken(request, response, next);
@@ -183,6 +185,10 @@ app.post('/api/v1/support_requests', usersSupportRequests.addSupportRequest);
 
 // Users app flags
 app.get('/api/v1/app_flags', usersAppFlags.getAppFlags);
+
+// Organizations
+app.get('/api/v1/organizations/id/:id', organizations.getOrganizationById);
+app.get('/api/v1/organizations/name/:name', organizations.getOrganizationByName);
 
 // Fields
 app.get('/api/v1/fields', fields.getFields);

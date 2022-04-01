@@ -37,6 +37,14 @@ export class Helpers {
   checkArraysEqual(a1: Array<string>, a2: Array<string>): boolean {
     return JSON.stringify(a1) == JSON.stringify(a2);
   }
+
+  replaceAll(str: string, find: string, replace: string): string {
+    return str.replace(new RegExp(this.escapeRegExp(find), 'g'), replace);
+  }
+  
+  escapeRegExp(str: string): string {
+    return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  }  
   
   getNextDayOfWeek(dayOfWeek: string): string {
     let date = moment();
@@ -79,5 +87,5 @@ export class Helpers {
       }
     }
     return remainingQuizzes;
-  }  
+  }
 }
