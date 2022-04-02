@@ -62,14 +62,15 @@ export class Auth {
 
       const hashPassword: string = helpers.hashPassword(password);  
       const createUserQuery = `INSERT INTO 
-        users (id, name, email, password, field_id, organization_id, is_mentor, available_from, registered_on) 
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) 
+        users (id, name, email, password, phone_number, field_id, organization_id, is_mentor, available_from, registered_on) 
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) 
         RETURNING *`;
       const values = [
         uuidv4(),
         name || approvedUser.name || '',
         email,
         hashPassword,
+        approvedUser.phoneNumber,
         approvedUser.field != null ? approvedUser.field.id : '',
         approvedUser.organization != null ? approvedUser.organization.id as string : '',
         String(approvedUser.isMentor),

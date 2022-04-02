@@ -20,7 +20,7 @@ export class ApprovedUsers {
     let approvedUser: ApprovedUser = {
       email: email
     };
-    const getApprovedUserQuery = 'SELECT field_id, organization_id, name, is_mentor, goal FROM approved_users WHERE LOWER(email) = $1';
+    const getApprovedUserQuery = 'SELECT field_id, organization_id, name, phone_number, is_mentor, goal FROM approved_users WHERE LOWER(email) = $1';
     const { rows }: pg.QueryResult = await client.query(getApprovedUserQuery, [email.toLowerCase()]);
     if (!rows[0]) {
       approvedUser.email = '';
@@ -34,6 +34,7 @@ export class ApprovedUsers {
       approvedUser = {
         email: email,
         name: rows[0].name,
+        phoneNumber: rows[0].phone_number,
         field: field,
         organization: organization,
         isMentor: rows[0].is_mentor,
