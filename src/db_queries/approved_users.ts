@@ -44,7 +44,7 @@ export class ApprovedUsers {
   }
 
   async addApprovedUser(request: Request, response: Response): Promise<void> {
-    const { email, whatsappNumber, organization, isMentor }: ApprovedUser = request.body;
+    const { email, phoneNumber, organization, isMentor }: ApprovedUser = request.body;
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
@@ -68,9 +68,9 @@ export class ApprovedUsers {
         } else {
           const fieldId = process.env.OTHER_FIELD_ID;
           const goal = 'I want to have an income of at least $1000 USD per month';
-          insertApprovedUserQuery = `INSERT INTO approved_users (email, whatsapp_number, field_id, organization_id, is_mentor, goal)
+          insertApprovedUserQuery = `INSERT INTO approved_users (email, phone_number, field_id, organization_id, is_mentor, goal)
             VALUES ($1, $2, $3, $4, $5, $6)`;
-          values = [email, whatsappNumber, fieldId, organization?.id, isMentor, goal];        
+          values = [email, phoneNumber, fieldId, organization?.id, isMentor, goal];        
         }
         await client.query(insertApprovedUserQuery, values);
         response.status(200).send('Approved user has been added');
