@@ -108,8 +108,8 @@ export class UsersAvailableMentors {
       WHERE u.is_mentor = true
         AND (u.is_available IS true OR u.available_from <= now())      
         AND us.subfield_id IS NOT NULL
-        AND (ul.row_number_lessons = 1 AND (ul.is_recurrent IS DISTINCT FROM true AND ul.date_time < now() 
-            OR ul.is_recurrent IS true AND ul.end_recurrence_date_time < now() 
+        AND (ul.row_number_lessons = 1 AND (ul.is_recurrent IS DISTINCT FROM true AND EXTRACT(EPOCH FROM (now() - ul.date_time))/3600 > 336
+            OR ul.is_recurrent IS true AND EXTRACT(EPOCH FROM (now() - ul.end_recurrence_date_time))/3600 > 336 
             OR ul.is_canceled IS true AND EXTRACT(EPOCH FROM (now() - ul.canceled_date_time))/3600 > 72) 
             OR ul.id IS NULL)
         AND (ulr.row_number_lesson_requests = 1 AND (ulr.is_canceled IS true OR EXTRACT(EPOCH FROM (now() - ulr.sent_date_time))/3600 > 72)
@@ -154,7 +154,8 @@ export class UsersAvailableMentors {
         ON ul.mentor_id = ula.user_id          
       WHERE ul.is_canceled IS DISTINCT FROM true
         AND (ul.is_recurrent IS DISTINCT FROM true AND ul.date_time > now() 
-            OR ul.is_recurrent IS true AND ul.end_recurrence_date_time > now())`;
+            OR ul.is_recurrent IS true AND ul.end_recurrence_date_time > now())
+        AND EXTRACT(EPOCH FROM (now() - ul.date_time))/3600 < 504`;
     let values: Array<string> = [];
     if (field && field.id) {
       getLessonsQuery += ` AND fs.field_id = $1`;
