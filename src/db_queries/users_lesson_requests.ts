@@ -159,7 +159,13 @@ export class UsersLessonRequests {
       const previousLesson = await usersLessons.getPreviousLessonFromDB(studentId, client);
       const isPreviousMentor = previousLesson.mentor?.id === mentorId;
       const lessonRequestResult: LessonRequestResult = {};
-      if (this.getIsInAvailableMentors(mentorId, availableMentors) || isPreviousMentor) {
+      if (this.getIsInAvailableLessonsMentors(mentorId, availableLessonsMentors)) {
+        const availableLesson = await usersLessons.getNextLessonFromDB(mentor.id as string, true, client);
+        availableLesson.mentor = mentor;
+        await this.addStudentToAvailableLesson(student, availableLesson, client);
+        lessonRequestResult.id = availableLesson.id;
+        lessonRequestResult.isLessonRequest = false;
+      } else if (this.getIsInAvailableMentors(mentorId, availableMentors) || isPreviousMentor) {
         let lessonDateTime = moment.utc();
         while (lessonDateTime.format('dddd') != availability?.dayOfWeek) {
           lessonDateTime = lessonDateTime.add(1, 'd');
@@ -178,12 +184,6 @@ export class UsersLessonRequests {
         lessonRequestResult.isLessonRequest = true;
         usersPushNotifications.sendPNLessonRequest(student, lessonRequest);
         usersSendEmails.sendEmailLessonRequest(student, lessonRequest);
-      } else if (this.getIsInAvailableLessonsMentors(mentorId, availableLessonsMentors)) {
-        const availableLesson = await usersLessons.getNextLessonFromDB(mentor.id as string, true, client);
-        availableLesson.mentor = mentor;
-        await this.addStudentToAvailableLesson(student, availableLesson, client);
-        lessonRequestResult.id = availableLesson.id;
-        lessonRequestResult.isLessonRequest = false;
       }
       response.status(200).send(lessonRequestResult);
       await client.query('COMMIT');
