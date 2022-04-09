@@ -354,7 +354,7 @@ export class UsersAvailableMentors {
     return availabilities;    
   }
 
-  async getAvailableMentorsFields(request: Request, response: Response): Promise<void> {
+  async getAvailableMentorsFields(response: Response): Promise<void> {
     const client = await pool.connect();    
     try {
       await client.query('BEGIN');

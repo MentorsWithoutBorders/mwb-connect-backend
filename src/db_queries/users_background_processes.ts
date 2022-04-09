@@ -1,4 +1,4 @@
-import { Request, Response } from 'express';
+import { Response } from 'express';
 import autoBind from 'auto-bind';
 import moment from 'moment';
 import 'moment-timezone';
@@ -38,7 +38,7 @@ export class UsersBackgroundProcesses {
     autoBind(this);
   }
 
-  async sendLessonReminders(request: Request, response: Response): Promise<void> {
+  async sendLessonReminders(response: Response): Promise<void> {
     try {
       await this.sendLessonRemindersFromDB();
       response.status(200).send('Lesson reminders sent');
@@ -83,7 +83,7 @@ export class UsersBackgroundProcesses {
     }
   }  
 
-  async sendAfterLesson(request: Request, response: Response): Promise<void> {
+  async sendAfterLesson(response: Response): Promise<void> {
     try {
       await this.sendAfterLessonFromDB();
       response.status(200).send('After lesson sent');
@@ -129,7 +129,7 @@ export class UsersBackgroundProcesses {
     }
   }
 
-  async sendTrainingReminders(request: Request, response: Response): Promise<void> {
+  async sendTrainingReminders(response: Response): Promise<void> {
     try {
       await this.sendTrainingRemindersFromDB(true);
       await this.sendTrainingRemindersFromDB(false);
@@ -222,7 +222,7 @@ export class UsersBackgroundProcesses {
     return showStepReminder;
   }
 
-  async setAvailableMentorsFields(request: Request, response: Response): Promise<void> {
+  async setAvailableMentorsFields(response: Response): Promise<void> {
     try {
       await usersAvailableMentors.setAvailableMentorsFieldsFromDB();
       response.status(200).send('Available mentors fields are set');

@@ -156,8 +156,10 @@ export class UsersLessonRequests {
       const availableLessonsMentors = await usersAvailableMentors.getAvailableLessonsMentorsFromDB(undefined, undefined, client);
       const student = await users.getUserFromDB(studentId, client);
       const mentor = await users.getUserFromDB(id as string, client);
+      const previousLesson = await usersLessons.getPreviousLessonFromDB(studentId, client);
+      const isPreviousMentor = previousLesson.mentor?.id === mentorId;
       const lessonRequestResult: LessonRequestResult = {};
-      if (this.getIsInAvailableMentors(mentorId, availableMentors)) {
+      if (this.getIsInAvailableMentors(mentorId, availableMentors) || isPreviousMentor) {
         let lessonDateTime = moment.utc();
         while (lessonDateTime.format('dddd') != availability?.dayOfWeek) {
           lessonDateTime = lessonDateTime.add(1, 'd');

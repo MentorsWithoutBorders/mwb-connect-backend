@@ -1,4 +1,4 @@
-import { Request, Response } from 'express';
+import { Response } from 'express';
 import pg from 'pg';
 import autoBind from 'auto-bind';
 import { Conn } from '../db/conn';
@@ -13,7 +13,7 @@ export class FieldsGoals {
     autoBind(this);
   }
 
-  async getFieldsGoals(request: Request, response: Response): Promise<void> {
+  async getFieldsGoals(response: Response): Promise<void> {
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
