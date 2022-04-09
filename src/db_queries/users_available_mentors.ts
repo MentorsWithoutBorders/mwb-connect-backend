@@ -154,8 +154,7 @@ export class UsersAvailableMentors {
         ON ul.mentor_id = ula.user_id          
       WHERE ul.is_canceled IS DISTINCT FROM true
         AND (ul.is_recurrent IS DISTINCT FROM true AND ul.date_time > now() 
-            OR ul.is_recurrent IS true AND ul.end_recurrence_date_time > now())
-        AND EXTRACT(EPOCH FROM (now() - ul.date_time))/3600 < 504`;
+            OR ul.is_recurrent IS true AND ul.end_recurrence_date_time > now() AND EXTRACT(EPOCH FROM (now() - ul.date_time))/3600 < 504)`;
     let values: Array<string> = [];
     if (field && field.id) {
       getLessonsQuery += ` AND fs.field_id = $1`;
