@@ -15,7 +15,7 @@ export class Fields {
     autoBind(this);
   }
 
-  async getFields(response: Response): Promise<void> {
+  async getFields(request: Request, response: Response): Promise<void> {
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
