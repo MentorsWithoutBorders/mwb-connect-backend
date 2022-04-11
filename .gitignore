@@ -5,3 +5,4 @@ mwb-connect-firebase-adminsdk.json
 mwb-connect-firebase-adminsdk.prod.json
 \node_modules
 \dist
+\.wwebjs_auth

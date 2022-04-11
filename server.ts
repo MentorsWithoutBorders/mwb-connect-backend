@@ -2,6 +2,8 @@ import express from 'express';
 import cron from 'node-cron';
 import dotenv from 'dotenv';
 import cors from 'cors';
+import qrcode from 'qrcode-terminal';
+import { Client, LocalAuth } from 'whatsapp-web.js';
 import { Request, Response, NextFunction } from 'express';
 import { Auth } from './src/db_queries/auth';
 import { ApprovedUsers } from './src/db_queries/approved_users';
@@ -38,6 +40,7 @@ import { AdminAvailableMentors } from './src/db_queries/admin_available_mentors'
 import { AdminAvailableStudents } from './src/db_queries/admin_available_students';
 
 dotenv.config();
+const whatsAppClient = new Client({authStrategy: new LocalAuth()});
 const port = process.env.PORT;
 const app: express.Express = express();
 const auth: Auth = new Auth();
@@ -81,6 +84,16 @@ app.use(cors());
 app.get('/', (request: express.Request, response: express.Response): void => {
   response.json({ info: 'Node.js, Express, and Postgres API' })
 })
+
+whatsAppClient.on('qr', (qr) => {
+  qrcode.generate(qr, {small: true});
+});
+
+whatsAppClient.on('ready', () => {
+  console.log('WhatsApp client is ready!');
+});
+
+whatsAppClient.initialize();
 
 const verifyAccessTokenFilter = function(request: Request, response: Response, next: NextFunction): void {
   if (request.originalUrl.includes('/logger')) {
@@ -227,11 +240,14 @@ app.post('/api/v1/app_versions', usersAppVersions.addAppVersion);
 // Logger
 app.post('/api/v1/logger', logger.addLogEntry);
 
+const sendTrainingReminders = (request: Request, response: Response) => {
+  usersBackgroundProcesses.sendTrainingReminders(request, response, whatsAppClient);
+}
 
 // Users background processes
 app.post('/api/v1/send_lesson_reminders', usersBackgroundProcesses.sendLessonReminders);
 app.post('/api/v1/send_after_lessons', usersBackgroundProcesses.sendAfterLesson);
-app.post('/api/v1/send_training_reminders', usersBackgroundProcesses.sendTrainingReminders);
+app.post('/api/v1/send_training_reminders', sendTrainingReminders);
 app.post('/api/v1/available_mentors/fields', usersBackgroundProcesses.setAvailableMentorsFields);
 
 cron.schedule('* * * * *', function() {
