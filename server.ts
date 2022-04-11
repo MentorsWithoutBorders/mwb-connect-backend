@@ -40,7 +40,21 @@ import { AdminAvailableMentors } from './src/db_queries/admin_available_mentors'
 import { AdminAvailableStudents } from './src/db_queries/admin_available_students';
 
 dotenv.config();
-const whatsAppClient = new Client({authStrategy: new LocalAuth()});
+const whatsAppClient = new Client({
+  puppeteer: {
+    headless: true,
+    args: [
+      '--no-sandbox',
+      '--disable-setuid-sandbox',
+      '--disable-dev-shm-usage',
+      '--disable-accelerated-2d-canvas',
+      '--no-first-run',
+      '--no-zygote',
+      '--disable-gpu'
+    ]
+  },
+  authStrategy: new LocalAuth()  
+});
 const port = process.env.PORT;
 const app: express.Express = express();
 const auth: Auth = new Auth();
