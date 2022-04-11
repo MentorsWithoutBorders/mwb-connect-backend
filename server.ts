@@ -46,7 +46,8 @@ const whatsAppClient = new Client({
     args: [
       '--no-sandbox'
     ]
-  } 
+  },
+  authStrategy: new LocalAuth()  
 });
 const port = process.env.PORT;
 const app: express.Express = express();
