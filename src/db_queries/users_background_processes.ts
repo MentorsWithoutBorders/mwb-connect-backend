@@ -19,6 +19,7 @@ import { UsersSendEmails } from './users_send_emails';
 import { AdminTrainingReminders } from './admin_training_reminders';
 import User from '../models/user.model';
 import Email from '../models/email.model';
+import { ServerResponse } from 'http';
 
 const conn = new Conn();
 const pool = conn.pool;
@@ -130,9 +131,9 @@ export class UsersBackgroundProcesses {
     }
   }
 
-  async sendTrainingReminders(request: Request, response: Response, whatsAppClient: Client): Promise<void> {
+  async sendTrainingReminders(request: Request, response: Response): Promise<void> {
     try {
-      whatsAppClient.sendMessage('40759460158@c.us', 'test reminder');
+      // whatsAppClient.sendMessage('40759460158@c.us', 'test reminder');
       await this.sendTrainingRemindersFromDB(true);
       await this.sendTrainingRemindersFromDB(false);
       response.status(200).send('Training reminders sent');
