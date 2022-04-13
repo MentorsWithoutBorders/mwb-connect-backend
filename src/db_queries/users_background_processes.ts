@@ -133,7 +133,6 @@ export class UsersBackgroundProcesses {
 
   async sendTrainingReminders(request: Request, response: Response): Promise<void> {
     try {
-      // whatsAppClient.sendMessage('40759460158@c.us', 'test reminder');
       await this.sendTrainingRemindersFromDB(true);
       await this.sendTrainingRemindersFromDB(false);
       response.status(200).send('Training reminders sent');
