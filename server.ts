@@ -48,7 +48,7 @@ const whatsAppClient = new Client({
     ]
   },
   // authStrategy: new LocalAuth(),
-  // authTimeoutMs: 900000
+  authTimeoutMs: 900000
 });
 const port = process.env.PORT;
 const app: express.Express = express();
@@ -259,17 +259,17 @@ app.post('/api/v1/send_after_lessons', usersBackgroundProcesses.sendAfterLesson)
 app.post('/api/v1/send_training_reminders', sendTrainingReminders);
 app.post('/api/v1/available_mentors/fields', usersBackgroundProcesses.setAvailableMentorsFields);
 
-cron.schedule('* * * * *', function() {
-  usersBackgroundProcesses.sendLessonRemindersFromDB();
-  usersBackgroundProcesses.sendAfterLessonFromDB();
-  usersBackgroundProcesses.sendTrainingRemindersFromDB(true);
-  usersBackgroundProcesses.sendTrainingRemindersFromDB(false);
-  usersBackgroundProcesses.sendCPUUsage();
-});
+// cron.schedule('* * * * *', function() {
+//   usersBackgroundProcesses.sendLessonRemindersFromDB();
+//   usersBackgroundProcesses.sendAfterLessonFromDB();
+//   usersBackgroundProcesses.sendTrainingRemindersFromDB(true);
+//   usersBackgroundProcesses.sendTrainingRemindersFromDB(false);
+//   usersBackgroundProcesses.sendCPUUsage();
+// });
 
-cron.schedule("*/5 * * * *", function() {
-  usersAvailableMentors.setAvailableMentorsFieldsFromDB();
-});
+// cron.schedule("*/5 * * * *", function() {
+//   usersAvailableMentors.setAvailableMentorsFieldsFromDB();
+// });
 
 
 // Admin students certificates
