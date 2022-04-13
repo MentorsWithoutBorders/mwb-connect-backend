@@ -5,6 +5,7 @@ import 'moment-timezone';
 import pg from 'pg';
 import os from 'os-utils';
 import dotenv from 'dotenv';
+import { Client } from 'whatsapp-web.js';
 import { Conn } from '../db/conn';
 import { Helpers } from '../utils/helpers';
 import { UsersLessons } from './users_lessons';
@@ -131,6 +132,7 @@ export class UsersBackgroundProcesses {
 
   async sendTrainingReminders(request: Request, response: Response): Promise<void> {
     try {
+      // whatsAppClient.sendMessage('40759460158@c.us', 'test reminder');
       await this.sendTrainingRemindersFromDB(true);
       await this.sendTrainingRemindersFromDB(false);
       response.status(200).send('Training reminders sent');
