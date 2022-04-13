@@ -2,8 +2,6 @@ import express from 'express';
 import cron from 'node-cron';
 import dotenv from 'dotenv';
 import cors from 'cors';
-import qrcode from 'qrcode-terminal';
-import { Client, LocalAuth } from 'whatsapp-web.js';
 import { Request, Response, NextFunction } from 'express';
 import { Auth } from './src/db_queries/auth';
 import { ApprovedUsers } from './src/db_queries/approved_users';
@@ -40,16 +38,6 @@ import { AdminAvailableMentors } from './src/db_queries/admin_available_mentors'
 import { AdminAvailableStudents } from './src/db_queries/admin_available_students';
 
 dotenv.config();
-// const whatsAppClient = new Client({
-//   puppeteer: {
-//     headless: true,
-//     args: [
-//       '--no-sandbox'
-//     ]
-//   },
-//   // authStrategy: new LocalAuth(),
-//   authTimeoutMs: 900000
-// });
 const port = process.env.PORT;
 const app: express.Express = express();
 const auth: Auth = new Auth();
@@ -248,10 +236,6 @@ app.post('/api/v1/app_versions', usersAppVersions.addAppVersion);
 
 // Logger
 app.post('/api/v1/logger', logger.addLogEntry);
-
-const sendTrainingReminders = (request: Request, response: Response) => {
-  // usersBackgroundProcesses.sendTrainingReminders(request, response, whatsAppClient);
-}
 
 // Users background processes
 app.post('/api/v1/send_lesson_reminders', usersBackgroundProcesses.sendLessonReminders);
