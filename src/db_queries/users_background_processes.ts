@@ -5,7 +5,6 @@ import 'moment-timezone';
 import pg from 'pg';
 import os from 'os-utils';
 import dotenv from 'dotenv';
-import { Client } from 'whatsapp-web.js';
 import { Conn } from '../db/conn';
 import { Helpers } from '../utils/helpers';
 import { UsersLessons } from './users_lessons';
@@ -19,7 +18,6 @@ import { UsersSendEmails } from './users_send_emails';
 import { AdminTrainingReminders } from './admin_training_reminders';
 import User from '../models/user.model';
 import Email from '../models/email.model';
-import { ServerResponse } from 'http';
 
 const conn = new Conn();
 const pool = conn.pool;
