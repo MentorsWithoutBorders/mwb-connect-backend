@@ -262,8 +262,8 @@ app.post('/api/v1/available_mentors/fields', usersBackgroundProcesses.setAvailab
 cron.schedule('* * * * *', function() {
   usersBackgroundProcesses.sendLessonRemindersFromDB();
   usersBackgroundProcesses.sendAfterLessonFromDB();
-  usersBackgroundProcesses.sendTrainingRemindersFromDB(true);
-  usersBackgroundProcesses.sendTrainingRemindersFromDB(false);
+  usersBackgroundProcesses.sendTrainingRemindersFromDB(true, whatsAppClient);
+  usersBackgroundProcesses.sendTrainingRemindersFromDB(false, whatsAppClient);
   usersBackgroundProcesses.sendCPUUsage();
 });
 

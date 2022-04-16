@@ -32,7 +32,7 @@ export class UsersSendEmails {
         pass: process.env.SMTP_PASSWORD
       }
     });
-    
+
     if (recipientEmailAddress && recipientEmailAddress.indexOf('fake') == -1) {
       transporter.sendMail({
         to: recipientEmailAddress,
@@ -50,11 +50,11 @@ export class UsersSendEmails {
     let body = '';
     const quizzes = this.getRemainingQuizzesText(remainingQuizzes);
     if (showStepReminder && !showQuizReminder) {
-      body += 'This is a gentle reminder to add a new step to your plan.';
+      body += 'This is a gentle reminder to add a new step to your plan in the MWB Connect app.';
     } else if (showStepReminder && showQuizReminder) {
-      body += `This is a gentle reminder to add a new step to your plan and to solve the ${quizzes}.`;
+      body += `This is a gentle reminder to add a new step to your plan and to solve the ${quizzes} in the MWB Connect app.`;
     } else if (!showStepReminder && showQuizReminder) {
-      body += `This is a gentle reminder to solve the ${quizzes}.`;
+      body += `This is a gentle reminder to solve the ${quizzes} in the MWB Connect app.`;
     }
     body = this.setEmailBody(userFirstName, body);
     const email: Email = {
@@ -86,11 +86,11 @@ export class UsersSendEmails {
     let body = '';
     const quizzes = this.getRemainingQuizzesText(remainingQuizzes);
     if (showStepReminder && !showQuizReminder) {
-      body += 'This is a gentle reminder that today is the last day for adding a new step to your plan.';
+      body += 'This is a gentle reminder that today is the last day for adding a new step to your plan in the MWB Connect app.';
     } else if (showStepReminder && showQuizReminder) {
-      body += `This is a gentle reminder that today is the last day for adding a new step to your plan and for solving the ${quizzes}.`;
+      body += `This is a gentle reminder that today is the last day for adding a new step to your plan and for solving the ${quizzes} in the MWB Connect app.`;
     } else if (!showStepReminder && showQuizReminder) {
-      body += `This is a gentle reminder that today is the last day for solving the ${quizzes}.`;
+      body += `This is a gentle reminder that today is the last day for solving the ${quizzes} in the MWB Connect app.`;
     }
     body = this.setEmailBody(userFirstName, body);
     const email: Email = {
@@ -176,7 +176,7 @@ export class UsersSendEmails {
   sendEmailLessonRequestRejected(student: User, mentor: User): void {
     const mentorName = mentor?.name;
     const studentFirstName = helpers.getUserFirstName(student);
-    let body = `We're sorry but ${mentorName} has rejected your lesson request. Please find a new mentor.`;
+    let body = `We're sorry but ${mentorName} has rejected your lesson request. Please find a new mentor in the MWB Connect app.`;
     body = this.setEmailBody(studentFirstName, body);
     const email: Email = {
       subject: 'Lesson request rejected',
@@ -232,7 +232,7 @@ export class UsersSendEmails {
     let body = '';
     if (lesson.isRecurrent && isCancelAll) {
       subject = 'Lesson recurrence canceled';
-      body = `We're sorry but the mentor has canceled the lesson recurrence. Please feel free to use the MWB Connect app in order to find a new mentor.`;         
+      body = `We're sorry but the mentor has canceled the lesson recurrence. Please feel free to use the MWB Connect app in order to find a new mentor.`;
     } else {
       subject = 'Next lesson canceled';
       body = `We're sorry but the mentor has canceled the next lesson. If there aren't any other lessons scheduled, please feel free to use the MWB Connect app in order to find a new mentor.`;

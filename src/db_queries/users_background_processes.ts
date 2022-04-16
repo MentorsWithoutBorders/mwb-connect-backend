@@ -16,6 +16,7 @@ import { UsersTimeZones } from './users_timezones';
 import { UsersAppVersions } from './users_app_versions';
 import { UsersPushNotifications } from './users_push_notifications';
 import { UsersSendEmails } from './users_send_emails';
+import { UsersWhatsAppMessages } from './users_whatsapp_messages';
 import { AdminTrainingReminders } from './admin_training_reminders';
 import User from '../models/user.model';
 import Email from '../models/email.model';
@@ -31,6 +32,7 @@ const usersAppVersions = new UsersAppVersions();
 const usersTimeZones = new UsersTimeZones();
 const usersPushNotifications = new UsersPushNotifications();
 const usersSendEmails = new UsersSendEmails();
+const usersWhatsAppMessages = new UsersWhatsAppMessages();
 const adminTrainingReminders = new AdminTrainingReminders();
 dotenv.config();
 
@@ -132,18 +134,17 @@ export class UsersBackgroundProcesses {
 
   async sendTrainingReminders(request: Request, response: Response, whatsAppClient: Client): Promise<void> {
     try {
-      whatsAppClient.sendMessage('40759460158@c.us', 'test reminder');
-      await this.sendTrainingRemindersFromDB(true);
-      await this.sendTrainingRemindersFromDB(false);
+      await this.sendTrainingRemindersFromDB(true, whatsAppClient);
+      await this.sendTrainingRemindersFromDB(false, whatsAppClient);
       response.status(200).send('Training reminders sent');
     } catch (error) {
       response.status(400).send(error);
     }    
   }
   
-  async sendTrainingRemindersFromDB(isFirst: boolean): Promise<void> {
+  async sendTrainingRemindersFromDB(isFirst: boolean, whatsAppClient: Client): Promise<void> {
     const days = isFirst ? 5 : 0;
-    const getUsersForTrainingReminderQuery = `SELECT u.id, u.name, u.email, u.is_mentor, u.registered_on FROM users AS u
+    const getUsersForTrainingReminderQuery = `SELECT u.id, u.name, u.email, u.phone_number, u.is_mentor, u.registered_on FROM users AS u
       JOIN users_notifications_settings AS uns
         ON u.id = uns.user_id
       JOIN users_timezones AS ut
@@ -161,6 +162,7 @@ export class UsersBackgroundProcesses {
           id: row.id,
           name: row.name,
           email: row.email,
+          phoneNumber: row.phone_number,
           isMentor: row.is_mentor,
           registeredOn: row.registered_on
         }
@@ -177,7 +179,7 @@ export class UsersBackgroundProcesses {
           remainingQuizzes = helpers.getRemainingQuizzes(quizzes);
           showQuizReminder = remainingQuizzes > 0 ? true : false;
         }
-        this.sendFirstAndSecondTrainingReminders(isFirst, user, showStepReminder, showQuizReminder, remainingQuizzes, client);
+        this.sendFirstAndSecondTrainingReminders(isFirst, user, showStepReminder, showQuizReminder, remainingQuizzes, whatsAppClient, client);
         await client.query('COMMIT');
       } catch (error) {
         await client.query('ROLLBACK');
@@ -187,14 +189,20 @@ export class UsersBackgroundProcesses {
     }
   }
 
-  sendFirstAndSecondTrainingReminders(isFirst: boolean, user: User, showStepReminder: boolean, showQuizReminder: boolean, remainingQuizzes: number, client: pg.PoolClient): void {
+  sendFirstAndSecondTrainingReminders(isFirst: boolean, user: User, showStepReminder: boolean, showQuizReminder: boolean, remainingQuizzes: number, whatsAppClient: Client, client: pg.PoolClient): void {
     if (showStepReminder || showQuizReminder) {
       if (isFirst) {
         usersPushNotifications.sendPNFirstTrainingReminder(user.id as string, showStepReminder, showQuizReminder, remainingQuizzes);
         usersSendEmails.sendEmailFirstTrainingReminder(user, showStepReminder, showQuizReminder, remainingQuizzes);
+        if (!user.isMentor) {
+          usersWhatsAppMessages.sendWMFirstTrainingReminder(user, showStepReminder, showQuizReminder, remainingQuizzes, whatsAppClient);
+        }
       } else {
         usersPushNotifications.sendPNSecondTrainingReminder(user.id as string, showStepReminder, showQuizReminder, remainingQuizzes);
         usersSendEmails.sendEmailSecondTrainingReminder(user, showStepReminder, showQuizReminder, remainingQuizzes);
+        if (!user.isMentor) {
+          usersWhatsAppMessages.sendWMSecondTrainingReminder(user, showStepReminder, showQuizReminder, remainingQuizzes, whatsAppClient);
+        }        
         adminTrainingReminders.addTrainingReminder(user, !showStepReminder, remainingQuizzes, client);
       }
     }

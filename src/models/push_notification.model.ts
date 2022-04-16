@@ -1,4 +1,4 @@
-export default interface Email {
+export default interface PushNotification {
   title: string;
   body: string;
   type?: number;

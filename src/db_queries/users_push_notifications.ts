@@ -11,7 +11,6 @@ import LessonRequest from '../models/lesson_request.model';
 import Lesson from '../models/lesson.model';
 import { PushNotificationType } from '../utils/push_notification_type';
 
-
 const conn = new Conn();
 const pool = conn.pool;
 admin.initializeApp({
