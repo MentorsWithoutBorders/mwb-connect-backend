@@ -41,16 +41,16 @@ export class UsersBackgroundProcesses {
     autoBind(this);
   }
 
-  async sendLessonReminders(request: Request, response: Response): Promise<void> {
+  async sendLessonReminders(request: Request, response: Response, whatsAppClient: Client): Promise<void> {
     try {
-      await this.sendLessonRemindersFromDB();
+      await this.sendLessonRemindersFromDB(whatsAppClient);
       response.status(200).send('Lesson reminders sent');
     } catch (error) {
       response.status(400).send(error);
     }    
   }
   
-  async sendLessonRemindersFromDB(): Promise<void> {
+  async sendLessonRemindersFromDB(whatsAppClient: Client): Promise<void> {
     const getLessonsQuery = `SELECT * FROM
       (SELECT id, mentor_id, is_canceled, EXTRACT(EPOCH FROM (date_trunc('minute', now()) + interval '30 minutes' - date_time)) / 3600 / 24 / 7 AS diff_date_time
           FROM users_lessons) ul
@@ -75,6 +75,7 @@ export class UsersBackgroundProcesses {
           if (students != null && students.length > 0) {
             usersSendEmails.sendEmailLessonReminder(nextLesson, client);
             usersPushNotifications.sendPNLessonReminder(nextLesson);
+            usersWhatsAppMessages.sendWMLessonReminder(nextLesson, whatsAppClient);
           }
         }
         await client.query('COMMIT');

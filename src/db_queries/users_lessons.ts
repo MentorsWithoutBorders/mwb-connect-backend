@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import autoBind from 'auto-bind';
 import moment from 'moment';
 import pg from 'pg';
+import { Client } from 'whatsapp-web.js';
 import { Conn } from '../db/conn';
 import { constants } from '../utils/constants';
 import { Helpers } from '../utils/helpers';
@@ -10,6 +11,7 @@ import { UsersSkills } from './users_skills';
 import { Skills } from './skills';
 import { UsersPushNotifications } from './users_push_notifications';
 import { UsersSendEmails } from './users_send_emails';
+import { UsersWhatsAppMessages } from './users_whatsapp_messages';
 import User from '../models/user.model';
 import Field from '../models/field.model';
 import Subfield from '../models/subfield.model';
@@ -28,6 +30,7 @@ const usersSkills = new UsersSkills();
 const skillsQueries = new Skills();
 const usersPushNotifications = new UsersPushNotifications();
 const usersSendEmails = new UsersSendEmails();
+const usersWhatsAppMessages = new UsersWhatsAppMessages();
 
 export class UsersLessons {
   constructor() {
@@ -357,7 +360,7 @@ export class UsersLessons {
     return updatedLessonDateTime;
   }
 
-  async cancelLesson(request: Request, response: Response): Promise<void> {
+  async cancelLesson(request: Request, response: Response, whatsAppClient: Client): Promise<void> {
     const userId = request.user.id as string;
     const lessonId = request.params.id;
     const lesson: Lesson = request.body
@@ -385,7 +388,7 @@ export class UsersLessons {
           isCancelAll = true;
         }        
       }
-      // For the push notification and email
+      // For the push notifications, emails and WhatsApp messages
       let student: User = {};
       if (isMentor) {
         lesson.students = await this.getLessonStudents(lesson, false, client);
@@ -397,6 +400,9 @@ export class UsersLessons {
       response.status(200).send(`Lesson modified with ID: ${lessonId}`);
       usersPushNotifications.sendPNLessonCanceled(lesson, student, isCancelAll, lessonsCanceled);
       usersSendEmails.sendEmailLessonCanceled(lesson, student, isCancelAll, lessonsCanceled);
+      if (isMentor) {
+        usersWhatsAppMessages.sendWMLessonCanceled(lesson, isCancelAll, whatsAppClient);
+      }
     } catch (error) {
       response.status(400).send(error);
       await client.query('ROLLBACK');
@@ -518,7 +524,7 @@ export class UsersLessons {
     }
   }
   
-  async setLessonRecurrence(request: Request, response: Response): Promise<void> {
+  async setLessonRecurrence(request: Request, response: Response, whatsAppClient: Client): Promise<void> {
     const mentorId = request.user.id as string;
     const lessonId = request.params.id;
     const { isRecurrent, endRecurrenceDateTime, isRecurrenceDateSelected }: Lesson = request.body
@@ -536,6 +542,7 @@ export class UsersLessons {
       if (nextLesson.isRecurrent != isRecurrent || nextLesson.endRecurrenceDateTime != endRecurrenceDateTime) {
         usersPushNotifications.sendPNLessonRecurrenceUpdated(students);
         usersSendEmails.sendEmailLessonRecurrenceUpdated(students);
+        usersWhatsAppMessages.sendWMLessonRecurrenceUpdated(students, whatsAppClient);
       }
       response.status(200).send(`Lesson modified with ID: ${lessonId}`);
       await client.query('COMMIT');

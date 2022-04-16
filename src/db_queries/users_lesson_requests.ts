@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import autoBind from 'auto-bind';
 import moment from 'moment';
 import pg from 'pg';
+import { Client } from 'whatsapp-web.js';
 import { Conn } from '../db/conn';
 import { constants } from '../utils/constants';
 import { Users } from './users';
@@ -9,6 +10,7 @@ import { UsersAvailableMentors } from './users_available_mentors';
 import { UsersLessons } from './users_lessons';
 import { UsersPushNotifications } from './users_push_notifications';
 import { UsersSendEmails } from './users_send_emails';
+import { UsersWhatsAppMessages } from './users_whatsapp_messages';
 import User from '../models/user.model';
 import Subfield from '../models/subfield.model';
 import Organization from '../models/organization.model';
@@ -23,6 +25,7 @@ const usersAvailableMentors = new UsersAvailableMentors();
 const usersLessons = new UsersLessons();
 const usersPushNotifications = new UsersPushNotifications();
 const usersSendEmails = new UsersSendEmails();
+const usersWhatsAppMessages = new UsersWhatsAppMessages();
 
 export class UsersLessonRequests {
   constructor() {
@@ -266,7 +269,7 @@ export class UsersLessonRequests {
     return lessonRequest;
   }  
 
-  async acceptLessonRequest(request: Request, response: Response): Promise<void> {
+  async acceptLessonRequest(request: Request, response: Response, whatsAppClient: Client): Promise<void> {
     const mentorId = request.user.id as string;
     const lessonRequestId = request.params.id;
     const { meetingUrl, isRecurrent, endRecurrenceDateTime, isRecurrenceDateSelected }: Lesson = request.body
@@ -311,6 +314,7 @@ export class UsersLessonRequests {
         lesson.mentor = mentor;
         usersPushNotifications.sendPNLessonRequestAccepted(lesson);
         usersSendEmails.sendEmailLessonRequestAccepted(lesson);
+        usersWhatsAppMessages.sendWMLessonRequestAccepted(lesson, whatsAppClient);
         usersSendEmails.sendEmailLessonScheduled(mentor, lesson, client);
       }
     } catch (error) {
@@ -365,7 +369,7 @@ export class UsersLessonRequests {
     await client.query(deleteLessonRequestQuery, [lessonRequestId]);
   }
   
-  async rejectLessonRequest(request: Request, response: Response): Promise<void> {
+  async rejectLessonRequest(request: Request, response: Response, whatsAppClient: Client): Promise<void> {
     const mentorId = request.user.id as string;
     const lessonRequestId = request.params.id;
     const client = await pool.connect();
@@ -382,6 +386,7 @@ export class UsersLessonRequests {
         const mentor = await users.getUserFromDB(mentorId, client);
         usersPushNotifications.sendPNLessonRequestRejected(student, mentor);
         usersSendEmails.sendEmailLessonRequestRejected(student, mentor);
+        usersWhatsAppMessages.sendWMLessonRequestRejected(student, mentor, whatsAppClient);
       }
       response.status(200).send(`Lesson request modified with ID: ${lessonRequestId}`);
       await client.query('COMMIT');

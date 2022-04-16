@@ -169,20 +169,32 @@ app.post('/api/v1/available_mentors', usersAvailableMentors.getAvailableMentors)
 app.get('/api/v1/available_mentors/fields', usersAvailableMentors.getAvailableMentorsFields);
 
 // Users lesson requests
+const acceptLessonRequest = (request: Request, response: Response) => {
+  usersLessonRequests.acceptLessonRequest(request, response, whatsAppClient);
+}
+const rejectLessonRequest = (request: Request, response: Response) => {
+  usersLessonRequests.rejectLessonRequest(request, response, whatsAppClient);
+}
 app.post('/api/v1/lesson_requests', usersLessonRequests.addLessonRequest);
 app.get('/api/v1/lesson_request', usersLessonRequests.getLessonRequest);
 app.post('/api/v1/lesson_requests/send_custom_lesson_request', usersLessonRequests.sendCustomLessonRequest);
-app.post('/api/v1/lesson_requests/:id/accept_lesson_request', usersLessonRequests.acceptLessonRequest);
-app.put('/api/v1/lesson_requests/:id/reject_lesson_request', usersLessonRequests.rejectLessonRequest);
+app.post('/api/v1/lesson_requests/:id/accept_lesson_request', acceptLessonRequest);
+app.put('/api/v1/lesson_requests/:id/reject_lesson_request', rejectLessonRequest);
 app.put('/api/v1/lesson_requests/:id/cancel_lesson_request', usersLessonRequests.cancelLessonRequest);
 app.put('/api/v1/lesson_requests/:id/update_lesson_request', usersLessonRequests.updateLessonRequest);
 
 // Users lessons
+const cancelLesson = (request: Request, response: Response) => {
+  usersLessons.cancelLesson(request, response, whatsAppClient);
+}
+const setLessonRecurrence = (request: Request, response: Response) => {
+  usersLessons.setLessonRecurrence(request, response, whatsAppClient);
+}
 app.get('/api/v1/next_lesson', usersLessons.getNextLesson);
 app.get('/api/v1/previous_lesson', usersLessons.getPreviousLesson);
-app.put('/api/v1/lessons/:id/cancel_lesson', usersLessons.cancelLesson);
+app.put('/api/v1/lessons/:id/cancel_lesson', cancelLesson);
 app.put('/api/v1/lessons/:id/meeting_url', usersLessons.setLessonMeetingUrl);
-app.put('/api/v1/lessons/:id/recurrence', usersLessons.setLessonRecurrence);
+app.put('/api/v1/lessons/:id/recurrence', setLessonRecurrence);
 app.put('/api/v1/lessons/:id/skills', usersLessons.addStudentsSkills);
 app.post('/api/v1/lessons/:id/notes', usersLessons.addStudentsLessonNotes);
 app.get('/api/v1/users/:id/lessons_notes', usersLessons.getStudentLessonNotes);
@@ -249,18 +261,21 @@ app.post('/api/v1/app_versions', usersAppVersions.addAppVersion);
 // Logger
 app.post('/api/v1/logger', logger.addLogEntry);
 
+
+// Users background processes
 const sendTrainingReminders = (request: Request, response: Response) => {
   usersBackgroundProcesses.sendTrainingReminders(request, response, whatsAppClient);
 }
-
-// Users background processes
-app.post('/api/v1/send_lesson_reminders', usersBackgroundProcesses.sendLessonReminders);
+const sendLessonReminders = (request: Request, response: Response) => {
+  usersBackgroundProcesses.sendLessonReminders(request, response, whatsAppClient);
+}
+app.post('/api/v1/send_lesson_reminders', sendLessonReminders);
 app.post('/api/v1/send_after_lessons', usersBackgroundProcesses.sendAfterLesson);
 app.post('/api/v1/send_training_reminders', sendTrainingReminders);
 app.post('/api/v1/available_mentors/fields', usersBackgroundProcesses.setAvailableMentorsFields);
 
 cron.schedule('* * * * *', function() {
-  usersBackgroundProcesses.sendLessonRemindersFromDB();
+  usersBackgroundProcesses.sendLessonRemindersFromDB(whatsAppClient);
   usersBackgroundProcesses.sendAfterLessonFromDB();
   usersBackgroundProcesses.sendTrainingRemindersFromDB(true, whatsAppClient);
   usersBackgroundProcesses.sendTrainingRemindersFromDB(false, whatsAppClient);
