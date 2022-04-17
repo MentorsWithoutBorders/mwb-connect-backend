@@ -169,7 +169,7 @@ export class UsersLessonRequests {
         lessonRequestResult.id = availableLesson.id;
         lessonRequestResult.isLessonRequest = false;
       } else if (this.getIsInAvailableMentors(mentorId, availableMentors) || isPreviousMentor) {
-        let lessonDateTime = moment.utc();
+        let lessonDateTime = moment.utc().add(1, 'd');
         while (lessonDateTime.format('dddd') != availability?.dayOfWeek) {
           lessonDateTime = lessonDateTime.add(1, 'd');
         }
