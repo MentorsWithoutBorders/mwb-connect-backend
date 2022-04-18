@@ -1,10 +1,14 @@
 import autoBind from 'auto-bind';
+import moment from 'moment';
+import { createClient } from 'async-redis';
 import { Client } from 'whatsapp-web.js';
 import { Helpers } from '../utils/helpers';
+import { constants } from '../utils/constants';
 import User from '../models/user.model';
 import Lesson from '../models/lesson.model';
 
 const helpers = new Helpers();
+const redisClient = createClient();
 
 export class UsersWhatsAppMessages {
   constructor() {
@@ -13,9 +17,23 @@ export class UsersWhatsAppMessages {
 
   async sendWhatsAppMessage(phoneNumber: string | undefined, message: string, whatsAppClient: Client): Promise<void> {
     if (phoneNumber) {
-      whatsAppClient.sendMessage(phoneNumber.match(/\d/g)?.join('') + '@c.us', message);
+      const lastWMDateTime = await redisClient.get('lastWMDateTime');
+      let delay = 0;
+      if (lastWMDateTime) {
+        if (moment.utc(lastWMDateTime).isAfter(moment.utc())) {
+          await redisClient.set('lastWMDateTime', moment.utc(lastWMDateTime).add(3, 'seconds').format(constants.DATE_TIME_FORMAT));
+          delay = moment.duration(moment.utc(lastWMDateTime).diff(moment.utc())).asMilliseconds() + 5000;
+        } else {
+          await redisClient.set('lastWMDateTime', moment.utc().add(3, 'seconds').format(constants.DATE_TIME_FORMAT));
+        }
+      } else {
+        await redisClient.set('lastWMDateTime', moment.utc().format(constants.DATE_TIME_FORMAT));
+      }
+      setTimeout(() => {
+        whatsAppClient.sendMessage(phoneNumber.match(/\d/g)?.join('') + '@c.us', message);
+      }, delay);
     }
-  }  
+  }
 
   sendWMFirstTrainingReminder(user: User, showStepReminder: boolean, showQuizReminder: boolean, remainingQuizzes: number, whatsAppClient: Client): void {
     const userFirstName = helpers.getUserFirstName(user);
