@@ -112,7 +112,7 @@ export class UsersAvailableMentors {
             OR ul.is_recurrent IS true AND EXTRACT(EPOCH FROM (now() - ul.end_recurrence_date_time))/3600 > 336 
             OR ul.is_canceled IS true AND EXTRACT(EPOCH FROM (now() - ul.canceled_date_time))/3600 > 72) 
             OR ul.id IS NULL)
-        AND (ulr.row_number_lesson_requests = 1 AND (ulr.is_canceled IS true OR EXTRACT(EPOCH FROM (now() - ulr.sent_date_time))/3600 > 72)
+        AND (ulr.row_number_lesson_requests = 1 AND (ulr.is_canceled IS true OR ulr.is_rejected AND EXTRACT(EPOCH FROM (now() - ulr.sent_date_time))/3600 > 168)
             OR ulr.id IS NULL)
         AND aau.is_inactive IS DISTINCT FROM true`;
     let values: Array<string> = [];
