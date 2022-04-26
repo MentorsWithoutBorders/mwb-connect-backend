@@ -176,11 +176,13 @@ export class UsersAvailableMentors {
           await redisClient.set(`user-${server}-${mentorId}`, JSON.stringify(mentor));
           mentor = this.addLessonSubfield(mentor, subfieldId);
           mentor = this.addLessonAvailability(mentor, lessonDateTime);
+          mentor.hasScheduledLesson = true;
           mentors = this.addAvailableMentor(mentors, mentor, field, availabilities);          
         } else {
           let mentor = JSON.parse(mentorString);
           mentor = this.addLessonSubfield(mentor, subfieldId);
           mentor = this.addLessonAvailability(mentor, lessonDateTime);
+          mentor.hasScheduledLesson = true;
           mentors = this.addAvailableMentor(mentors, mentor, field, availabilities); 
         }
       }
