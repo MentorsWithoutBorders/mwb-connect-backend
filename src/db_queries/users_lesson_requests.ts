@@ -272,7 +272,7 @@ export class UsersLessonRequests {
   async acceptLessonRequest(request: Request, response: Response, whatsAppClient: Client): Promise<void> {
     const mentorId = request.user.id as string;
     const lessonRequestId = request.params.id;
-    const { meetingUrl, isRecurrent, endRecurrenceDateTime, isRecurrenceDateSelected }: Lesson = request.body
+    const { meetingUrl, isRecurrent, endRecurrenceDateTime }: Lesson = request.body
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
@@ -300,8 +300,7 @@ export class UsersLessonRequests {
           dateTime: rows[0].lesson_date_time,
           meetingUrl: meetingUrl,
           isRecurrent: isRecurrent,
-          endRecurrenceDateTime: endRecurrenceDateTime,
-          isRecurrenceDateSelected: isRecurrenceDateSelected
+          endRecurrenceDateTime: endRecurrenceDateTime
         }
         lesson = await this.addLesson(lesson, client);
         lesson.students = [student];
@@ -326,11 +325,11 @@ export class UsersLessonRequests {
   }
   
   async addLesson(lesson: Lesson, client: pg.PoolClient): Promise<Lesson> {
-    const insertLessonQuery = `INSERT INTO users_lessons (mentor_id, subfield_id, date_time, meeting_url, is_recurrent, end_recurrence_date_time, is_recurrence_date_selected)
-      VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`;
+    const insertLessonQuery = `INSERT INTO users_lessons (mentor_id, subfield_id, date_time, meeting_url, is_recurrent, end_recurrence_date_time)
+      VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`;
     const dateTime = moment.utc(lesson.dateTime);
     const endRecurrence = lesson.isRecurrent && lesson.endRecurrenceDateTime != undefined ? moment.utc(lesson.endRecurrenceDateTime) : null;
-    const values = [lesson.mentor?.id, lesson.subfield?.id, dateTime, lesson.meetingUrl, lesson.isRecurrent, endRecurrence, lesson.isRecurrenceDateSelected];
+    const values = [lesson.mentor?.id, lesson.subfield?.id, dateTime, lesson.meetingUrl, lesson.isRecurrent, endRecurrence];
     const { rows }: pg.QueryResult = await client.query(insertLessonQuery, values);
     const addedLesson = {
       id: rows[0].id

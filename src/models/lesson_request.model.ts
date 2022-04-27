@@ -14,5 +14,4 @@ export default interface LessonRequest {
   wasCanceledShown?: boolean;
   wasExpiredShown?: boolean;
   isAllowedLastMentor?: boolean;
-  score?: number;
 }

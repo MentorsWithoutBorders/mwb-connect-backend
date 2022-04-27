@@ -82,14 +82,14 @@ export class UsersLessons {
   async getNextLessonFromDB(userId: string, isMentor: boolean, client: pg.PoolClient): Promise<Lesson> {
     let getNextLessonQuery = '';
     if (isMentor) {
-      getNextLessonQuery = `SELECT ul.id, ul.mentor_id, ul.subfield_id, ul.date_time, s.name AS subfield_name, ul.meeting_url, ul.is_recurrent, ul.end_recurrence_date_time, ul.is_recurrence_date_selected, ul.is_canceled
+      getNextLessonQuery = `SELECT ul.id, ul.mentor_id, ul.subfield_id, ul.date_time, s.name AS subfield_name, ul.meeting_url, ul.is_recurrent, ul.end_recurrence_date_time, ul.is_canceled
         FROM users_lessons ul
         JOIN subfields s
           ON ul.subfield_id = s.id
         WHERE ul.mentor_id = $1 AND ul.is_canceled IS DISTINCT FROM true
         ORDER BY ul.date_time DESC LIMIT 1`;
     } else {
-      getNextLessonQuery = `SELECT ul.id, ul.mentor_id, ul.subfield_id, ul.date_time, s.name AS subfield_name, ul.meeting_url, ul.is_recurrent, ul.end_recurrence_date_time, ul.is_recurrence_date_selected, ul.is_canceled
+      getNextLessonQuery = `SELECT ul.id, ul.mentor_id, ul.subfield_id, ul.date_time, s.name AS subfield_name, ul.meeting_url, ul.is_recurrent, ul.end_recurrence_date_time, ul.is_canceled
         FROM users_lessons ul
         JOIN users_lessons_students uls
           ON ul.id = uls.lesson_id        
@@ -104,8 +104,7 @@ export class UsersLessons {
       const lesson: Lesson = {
         id: lessonRow.id,
         dateTime: moment.utc(lessonRow.date_time).format(constants.DATE_TIME_FORMAT),
-        isRecurrent: lessonRow.is_recurrent,
-        isRecurrenceDateSelected: lessonRow.is_recurrence_date_selected
+        isRecurrent: lessonRow.is_recurrent
       }
       if (lessonRow.end_recurrence_date_time != null) {
         lesson.endRecurrenceDateTime = moment.utc(lessonRow.end_recurrence_date_time).format(constants.DATE_TIME_FORMAT)
@@ -249,7 +248,6 @@ export class UsersLessons {
         lesson.endRecurrenceDateTime = moment.utc(lessonRow.end_recurrence_date_time).format(constants.DATE_TIME_FORMAT)
       }
       if (isMentor) {
-        lesson.isRecurrenceDateSelected = lessonRow.is_recurrence_date_selected;
         lesson.students = await this.getLessonStudents(lesson, false,client);
       } else {
         const user = await users.getUserFromDB(lessonRow.mentor_id, client);
@@ -527,14 +525,14 @@ export class UsersLessons {
   async setLessonRecurrence(request: Request, response: Response, whatsAppClient: Client): Promise<void> {
     const mentorId = request.user.id as string;
     const lessonId = request.params.id;
-    const { isRecurrent, endRecurrenceDateTime, isRecurrenceDateSelected }: Lesson = request.body
+    const { isRecurrent, endRecurrenceDateTime }: Lesson = request.body
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
       const nextLesson = await this.getNextLessonFromDB(mentorId, true, client);
-      const updateLessonQuery = 'UPDATE users_lessons SET is_recurrent = $1, end_recurrence_date_time = $2, is_recurrence_date_selected = $3 WHERE mentor_id = $4 AND id = $5';
+      const updateLessonQuery = 'UPDATE users_lessons SET is_recurrent = $1, end_recurrence_date_time = $2 WHERE mentor_id = $3 AND id = $4';
       const endRecurrence = isRecurrent && endRecurrenceDateTime != undefined ? moment.utc(endRecurrenceDateTime) : null;
-      await client.query(updateLessonQuery, [isRecurrent, endRecurrence, isRecurrenceDateSelected, mentorId, lessonId]);
+      await client.query(updateLessonQuery, [isRecurrent, endRecurrence, mentorId, lessonId]);
       const lesson: Lesson = {
         id: lessonId
       }      
