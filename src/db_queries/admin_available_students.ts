@@ -5,6 +5,7 @@ import moment from 'moment';
 import 'moment-timezone';
 import { Conn } from '../db/conn';
 import { constants } from '../utils/constants';
+import { Helpers } from '../utils/helpers';
 import User from '../models/user.model';
 import Lesson from '../models/lesson.model';
 import Field from '../models/field.model';
@@ -12,6 +13,7 @@ import Subfield from '../models/subfield.model';
 
 const conn = new Conn();
 const pool = conn.pool;
+const helpers = new Helpers();
 
 export class AdminAvailableStudents {
   constructor() {
@@ -22,8 +24,8 @@ export class AdminAvailableStudents {
     const client = await pool.connect();    
     try {
       await client.query('BEGIN');
-      const getLessonsQuery = `SELECT l.student_id, u.name AS student_name, u.available_from, l.lesson_id, l.field_id, f.name AS field_name, l.subfield_name, l.date_time, l.is_recurrent, l.end_recurrence_date_time, l.is_canceled_by_mentor, l.is_canceled_by_student, aau.should_contact, aau.last_contacted_date_time, aau.is_inactive 
-        FROM (SELECT ul.id AS lesson_id, fs.field_id, s.name AS subfield_name, ul.date_time, ul.is_recurrent, ul.end_recurrence_date_time, ul.is_canceled AS is_canceled_by_mentor, uls.student_id, uls.is_canceled AS is_canceled_by_student 
+      const getLessonsQuery = `SELECT l.student_id, u.name AS student_name, u.available_from, l.lesson_id, l.field_id, f.name AS field_name, l.subfield_name, l.date_time, l.end_recurrence_date_time, l.is_canceled_by_mentor, l.is_canceled_by_student, aau.should_contact, aau.last_contacted_date_time, aau.is_inactive 
+        FROM (SELECT ul.id AS lesson_id, fs.field_id, s.name AS subfield_name, ul.date_time, ul.end_recurrence_date_time, ul.is_canceled AS is_canceled_by_mentor, uls.student_id, uls.is_canceled AS is_canceled_by_student 
           FROM users_lessons ul
           JOIN users_lessons_students uls
             ON ul.id = uls.lesson_id
@@ -70,10 +72,10 @@ export class AdminAvailableStudents {
             students: [student],
             subfield: subfield,
             dateTime: moment.utc(row.date_time).format(constants.DATE_TIME_FORMAT),
-            isRecurrent: row.is_recurrent ?? false,
             isCanceled: this.getIsLessonCanceled(row.is_canceled_by_mentor, row.is_canceled_by_student)
           };
-          if (lesson.isRecurrent) {
+          const isLessonRecurrent = helpers.isLessonRecurrent(lesson.dateTime as string, lesson.endRecurrenceDateTime);
+          if (isLessonRecurrent) {
             lesson.endRecurrenceDateTime = moment.utc(row.end_recurrence_date_time).format(constants.DATE_TIME_FORMAT)            
           }
           studentLessons.push(lesson);
@@ -116,7 +118,8 @@ export class AdminAvailableStudents {
 
   getShouldAddLesson(sortedLessons: Array<Lesson>): boolean {
     let shouldAddLesson = true;
-    const lastLessonDateTime = !sortedLessons[0].isRecurrent ? moment.utc(sortedLessons[0].dateTime) : moment.utc(sortedLessons[0].endRecurrenceDateTime);
+    const isLessonRecurrent = helpers.isLessonRecurrent(sortedLessons[0].dateTime as string, sortedLessons[0].endRecurrenceDateTime);
+    const lastLessonDateTime = !isLessonRecurrent ? moment.utc(sortedLessons[0].dateTime) : moment.utc(sortedLessons[0].endRecurrenceDateTime);
     const isLastLessonCanceled = sortedLessons[0].isCanceled;
     if (lastLessonDateTime.isAfter(moment.utc()) && !isLastLessonCanceled) {
       shouldAddLesson = false;
@@ -127,7 +130,8 @@ export class AdminAvailableStudents {
   getSortedLessonsByDateTime(lessons: Array<Lesson>, isAscending: boolean): Array<Lesson> {
     let lessonDates = new Map();
     for (let i = 0; i < lessons.length; i++) {
-      if (!lessons[i].isRecurrent) {
+      const isLessonRecurrent = helpers.isLessonRecurrent(lessons[i].dateTime as string, lessons[i].endRecurrenceDateTime);
+      if (!isLessonRecurrent) {
         lessonDates.set(i, moment.utc(lessons[i].dateTime));
       } else {
         lessonDates.set(i, moment.utc(lessons[i].endRecurrenceDateTime));

@@ -83,7 +83,8 @@ export class UsersWhatsAppMessages {
   }    
 
   sendWMLessonRequestAccepted(lesson: Lesson, whatsAppClient: Client): void {
-    const recurring = lesson.isRecurrent ? 'recurring ' : '';
+    const isLessonRecurrent = helpers.isLessonRecurrent(lesson.dateTime as string, lesson.endRecurrenceDateTime);
+    const recurring = isLessonRecurrent ? 'recurring ' : '';
     const mentorName = lesson.mentor?.name;
     const students = lesson.students;
     const student = students != null ? students[0] : {};
@@ -101,8 +102,9 @@ export class UsersWhatsAppMessages {
   }
   
   sendWMLessonCanceled(lesson: Lesson, isCancelAll: boolean, whatsAppClient: Client): void {
-    let message = '';    
-    if (lesson.isRecurrent && isCancelAll) {
+    let message = '';
+    const isLessonRecurrent = helpers.isLessonRecurrent(lesson.dateTime as string, lesson.endRecurrenceDateTime);
+    if (isLessonRecurrent && isCancelAll) {
       message = `We're sorry but the mentor has canceled the lesson recurrence. Please feel free to use the MWB Connect app in order to find a new mentor.`;
     } else {
       message = `We're sorry but the mentor has canceled the next lesson. If there aren't any other lessons scheduled, please feel free to use the MWB Connect app in order to find a new mentor.`;

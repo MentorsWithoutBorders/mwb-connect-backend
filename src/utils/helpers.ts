@@ -88,4 +88,8 @@ export class Helpers {
     }
     return remainingQuizzes;
   }
+
+  isLessonRecurrent(lessonDateTime: string, endRecurrenceDateTime: string | undefined): boolean {
+    return endRecurrenceDateTime !== undefined && moment.utc(lessonDateTime).format(constants.DATE_TIME_FORMAT) !== moment.utc(endRecurrenceDateTime).format(constants.DATE_TIME_FORMAT);
+  }
 }

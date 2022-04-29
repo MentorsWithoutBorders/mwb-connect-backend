@@ -106,9 +106,10 @@ export class UsersSendEmails {
     const studentFirstName = helpers.getUserFirstName(student);
     const mentorName = lesson.mentor?.name;
     const mentorFirstName = helpers.getUserFirstName(lesson.mentor as User);
-    const fieldName = student.field?.name?.toLowerCase();   
-    const recurring = lesson.isRecurrent ? 'recurring ' : '';
-    const lessonRecurrence = lesson.isRecurrent ? 'lesson recurrence' : 'next lesson';
+    const fieldName = student.field?.name?.toLowerCase();
+    const isLessonRecurrent = helpers.isLessonRecurrent(lesson.dateTime as string, lesson.endRecurrenceDateTime);
+    const recurring = isLessonRecurrent ? 'recurring ' : '';
+    const lessonRecurrence = isLessonRecurrent ? 'lesson recurrence' : 'next lesson';
     // Send email to student
     let body = `You have been added to a ${recurring}${fieldName} lesson with ${mentorName}. Please see the details in the MWB Connect app.`;
     body = this.setEmailBody(studentFirstName, body);
@@ -158,7 +159,8 @@ export class UsersSendEmails {
   }  
   
   sendEmailLessonRequestAccepted(lesson: Lesson): void {
-    const recurring = lesson.isRecurrent ? 'recurring ' : '';
+    const isLessonRecurrent = helpers.isLessonRecurrent(lesson.dateTime as string, lesson.endRecurrenceDateTime);
+    const recurring = isLessonRecurrent ? 'recurring ' : '';
     const mentorName = lesson.mentor?.name;
     const students = lesson.students;
     const student = students != null ? students[0] : {};
@@ -191,8 +193,9 @@ export class UsersSendEmails {
     if (lesson.students != null && lesson.students.length > 0) {
       student = lesson.students[0];
     }
-    const recurring = lesson.isRecurrent ? 'recurring ' : '';
-    const onOrStartingFrom = lesson.isRecurrent ? 'starting from ' : 'on ';
+    const isLessonRecurrent = helpers.isLessonRecurrent(lesson.dateTime as string, lesson.endRecurrenceDateTime);
+    const recurring = isLessonRecurrent ? 'recurring ' : '';
+    const onOrStartingFrom = isLessonRecurrent ? 'starting from ' : 'on ';
     const subfieldName = lesson.subfield != null ? lesson.subfield?.name?.toLowerCase() : '';
     const meetingUrl = lesson.meetingUrl;
     const userTimeZone = await usersTimeZones.getUserTimeZone(mentor.id as string, client);
@@ -230,7 +233,8 @@ export class UsersSendEmails {
   sendEmailLessonCanceledStudents(lesson: Lesson, isCancelAll: boolean): void {
     let subject = '';
     let body = '';
-    if (lesson.isRecurrent && isCancelAll) {
+    const isLessonRecurrent = helpers.isLessonRecurrent(lesson.dateTime as string, lesson.endRecurrenceDateTime);
+    if (isLessonRecurrent && isCancelAll) {
       subject = 'Lesson recurrence canceled';
       body = `We're sorry but the mentor has canceled the lesson recurrence. Please feel free to use the MWB Connect app in order to find a new mentor.`;
     } else {
@@ -254,7 +258,8 @@ export class UsersSendEmails {
     let body = '';
     if (lessonsCanceled == 0) {
       const studentName = student.name;
-      const lessonRecurrence = lesson.isRecurrent && isCancelAll ? 'lesson recurrence' : 'next lesson';
+      const isLessonRecurrent = helpers.isLessonRecurrent(lesson.dateTime as string, lesson.endRecurrenceDateTime);
+      const lessonRecurrence = isLessonRecurrent && isCancelAll ? 'lesson recurrence' : 'next lesson';
       subject = 'Next lesson status';
       body = `${studentName} won't participate in the ${lessonRecurrence}.`;
     } else if (lessonsCanceled == 1) {

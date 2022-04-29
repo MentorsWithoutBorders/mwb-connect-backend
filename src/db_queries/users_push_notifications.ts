@@ -4,6 +4,7 @@ import pg from 'pg';
 import admin from 'firebase-admin';
 import serviceAccount from '../../mwb-connect-firebase-adminsdk.json';
 import { Conn } from '../db/conn';
+import { Helpers } from '../utils/helpers';
 import FCMToken from '../models/fcm_token.model';
 import PushNotification from '../models/push_notification.model';
 import User from '../models/user.model';
@@ -12,6 +13,7 @@ import Lesson from '../models/lesson.model';
 import { PushNotificationType } from '../utils/push_notification_type';
 
 const conn = new Conn();
+const helpers = new Helpers();
 const pool = conn.pool;
 admin.initializeApp({
   credential: admin.credential.cert({
@@ -133,9 +135,10 @@ export class UsersPushNotifications {
 
   sendPNStudentAddedToLesson(student: User, lesson: Lesson): void {
     const mentorName = lesson.mentor?.name;
-    const fieldName = student.field?.name?.toLowerCase();   
-    const recurring = lesson.isRecurrent ? 'recurring ' : '';
-    const lessonRecurrence = lesson.isRecurrent ? 'lesson recurrence' : 'next lesson';
+    const fieldName = student.field?.name?.toLowerCase();
+    const isLessonRecurrent = helpers.isLessonRecurrent(lesson.dateTime as string, lesson.endRecurrenceDateTime);
+    const recurring = isLessonRecurrent ? 'recurring ' : '';
+    const lessonRecurrence = isLessonRecurrent ? 'lesson recurrence' : 'next lesson';
     const pushNotificationStudent: PushNotification = {
       title: 'Lesson scheduled',
       body: `You have been added to a ${recurring}${fieldName} lesson with ${mentorName}`
@@ -160,7 +163,8 @@ export class UsersPushNotifications {
   }
   
   sendPNLessonRequestAccepted(lesson: Lesson): void {
-    const recurring = lesson.isRecurrent ? 'recurring ' : '';
+    const isLessonRecurrent = helpers.isLessonRecurrent(lesson.dateTime as string, lesson.endRecurrenceDateTime);
+    const recurring = isLessonRecurrent ? 'recurring ' : '';
     const mentorName = lesson.mentor?.name;
     const students = lesson.students;
     const student = students != null ? students[0] : {};    
@@ -192,8 +196,9 @@ export class UsersPushNotifications {
   
   sendPNLessonCanceledStudents(lesson: Lesson, isCancelAll: boolean): void {
     let title = '';
-    let body = '';    
-    if (lesson.isRecurrent && isCancelAll) {
+    let body = '';
+    const isLessonRecurrent = helpers.isLessonRecurrent(lesson.dateTime as string, lesson.endRecurrenceDateTime);
+    if (isLessonRecurrent && isCancelAll) {
       title = 'Lessons recurrence canceled';
       body = `We're sorry but the mentor has canceled the lesson recurrence`;
     } else {
@@ -216,7 +221,8 @@ export class UsersPushNotifications {
     let body = '';    
     if (lessonsCanceled == 0) {
       const studentName = student.name;
-      const lessonRecurrence = lesson.isRecurrent && isCancelAll ? 'lesson recurrence' : 'next lesson';
+      const isLessonRecurrent = helpers.isLessonRecurrent(lesson.dateTime as string, lesson.endRecurrenceDateTime);
+      const lessonRecurrence = isLessonRecurrent && isCancelAll ? 'lesson recurrence' : 'next lesson';
       title = 'Next lesson status';
       body = `${studentName} won't participate in the ${lessonRecurrence}`;
     } else if (lessonsCanceled == 1) {

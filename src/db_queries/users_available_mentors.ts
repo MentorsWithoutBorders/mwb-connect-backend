@@ -87,7 +87,7 @@ export class UsersAvailableMentors {
 
 
   async getAvailableMentorsFromDB(field: Field | undefined, availabilities: Array<Availability> | undefined, client: pg.PoolClient): Promise<Array<User>> {
-    let getAvailableMentorsQuery = `SELECT DISTINCT u.id, u.name, u.is_available, u.available_from, ul.date_time, ul.is_recurrent, ul.end_recurrence_date_time, ul.is_canceled
+    let getAvailableMentorsQuery = `SELECT DISTINCT u.id, u.name, u.is_available, u.available_from, ul.date_time, ul.end_recurrence_date_time, ul.is_canceled
       FROM users u
       FULL OUTER JOIN (
         SELECT *,
@@ -108,8 +108,8 @@ export class UsersAvailableMentors {
       WHERE u.is_mentor = true
         AND (u.is_available IS true OR u.available_from <= now())      
         AND us.subfield_id IS NOT NULL
-        AND (ul.row_number_lessons = 1 AND (ul.is_recurrent IS DISTINCT FROM true AND EXTRACT(EPOCH FROM (now() - ul.date_time))/3600 > 336
-            OR ul.is_recurrent IS true AND EXTRACT(EPOCH FROM (now() - ul.end_recurrence_date_time))/3600 > 336 
+        AND (ul.row_number_lessons = 1 AND (ul.end_recurrence_date_time IS NULL AND EXTRACT(EPOCH FROM (now() - ul.date_time))/3600 > 336
+            OR ul.end_recurrence_date_time IS NOT NULL AND EXTRACT(EPOCH FROM (now() - ul.end_recurrence_date_time))/3600 > 336 
             OR ul.is_canceled IS true AND EXTRACT(EPOCH FROM (now() - ul.canceled_date_time))/3600 > 72) 
             OR ul.id IS NULL)
         AND (ulr.row_number_lesson_requests = 1 AND (ulr.is_canceled IS true OR ulr.is_rejected AND EXTRACT(EPOCH FROM (now() - ulr.sent_date_time))/3600 > 168)
@@ -146,15 +146,15 @@ export class UsersAvailableMentors {
   }
 
   async getAvailableLessonsMentorsFromDB(field: Field | undefined, availabilities: Array<Availability> | undefined, client: pg.PoolClient): Promise<Array<User>> {
-    let getLessonsQuery = `SELECT ul.id, ul.mentor_id, ula.max_students, fs.field_id, ul.subfield_id, ul.date_time, ul.is_recurrent, ul.end_recurrence_date_time 
+    let getLessonsQuery = `SELECT ul.id, ul.mentor_id, ula.max_students, fs.field_id, ul.subfield_id, ul.date_time, ul.end_recurrence_date_time 
       FROM users_lessons ul
       JOIN fields_subfields fs
         ON fs.subfield_id = ul.subfield_id
       JOIN users_lessons_availabilities ula
         ON ul.mentor_id = ula.user_id          
       WHERE ul.is_canceled IS DISTINCT FROM true
-        AND (ul.is_recurrent IS DISTINCT FROM true AND ul.date_time > now() 
-            OR ul.is_recurrent IS true AND ul.end_recurrence_date_time > now() AND EXTRACT(EPOCH FROM (now() - ul.date_time))/3600 < 504)`;
+        AND (ul.end_recurrence_date_time IS NULL AND ul.date_time > now() 
+            OR ul.end_recurrence_date_time IS NOT NULL AND ul.end_recurrence_date_time > now() AND EXTRACT(EPOCH FROM (now() - ul.date_time))/3600 < 504)`;
     let values: Array<string> = [];
     if (field && field.id) {
       getLessonsQuery += ` AND fs.field_id = $1`;
@@ -509,8 +509,8 @@ export class UsersAvailableMentors {
   }  
   
   async getAvailableMentorsLessons(fieldId: string | undefined, client: pg.PoolClient): Promise<Array<Lesson>> {
-    let getLessonsQuery = `SELECT l.mentor_id, l.mentor_name, l.available_from, l.lesson_id, l.field_id, f.name AS field_name, l.subfield_name, l.date_time, l.is_recurrent, l.end_recurrence_date_time, l.is_canceled, l.should_contact, l.last_contacted_date_time, l.is_inactive 
-      FROM (SELECT u.id AS mentor_id, u.name AS mentor_name, u.field_id AS user_field_id, u.available_from, ul.id AS lesson_id, fs.field_id, s.name AS subfield_name, ul.date_time, ul.is_recurrent, ul.end_recurrence_date_time, ul.is_canceled, aau.should_contact, aau.last_contacted_date_time, aau.is_inactive 
+    let getLessonsQuery = `SELECT l.mentor_id, l.mentor_name, l.available_from, l.lesson_id, l.field_id, f.name AS field_name, l.subfield_name, l.date_time, l.end_recurrence_date_time, l.is_canceled, l.should_contact, l.last_contacted_date_time, l.is_inactive 
+      FROM (SELECT u.id AS mentor_id, u.name AS mentor_name, u.field_id AS user_field_id, u.available_from, ul.id AS lesson_id, fs.field_id, s.name AS subfield_name, ul.date_time, ul.end_recurrence_date_time, ul.is_canceled, aau.should_contact, aau.last_contacted_date_time, aau.is_inactive 
         FROM users_lessons ul
         JOIN users u
           ON ul.mentor_id = u.id
@@ -560,10 +560,9 @@ export class UsersAvailableMentors {
           mentor: mentor,
           subfield: subfield,
           dateTime: moment.utc(row.date_time).format(constants.DATE_TIME_FORMAT),
-          isRecurrent: row.is_recurrent ?? false,
           isCanceled: row.is_canceled ?? false
         };
-        if (lesson.isRecurrent) {
+        if (helpers.isLessonRecurrent(lesson.dateTime as string, row.end_recurrence_date_time)) {
           lesson.endRecurrenceDateTime = moment.utc(row.end_recurrence_date_time).format(constants.DATE_TIME_FORMAT)            
         }
         mentorLessons.push(lesson);
@@ -589,7 +588,8 @@ export class UsersAvailableMentors {
 
   getShouldAddLesson(sortedLessons: Array<Lesson>): boolean {
     let shouldAddLesson = true;
-    const lastLessonDateTime = !sortedLessons[0].isRecurrent ? moment.utc(sortedLessons[0].dateTime) : moment.utc(sortedLessons[0].endRecurrenceDateTime);
+    const isLessonRecurrent = helpers.isLessonRecurrent(sortedLessons[0].dateTime as string, sortedLessons[0].endRecurrenceDateTime);
+    const lastLessonDateTime = !isLessonRecurrent ? moment.utc(sortedLessons[0].dateTime) : moment.utc(sortedLessons[0].endRecurrenceDateTime);
     const isLastLessonCanceled = sortedLessons[0].isCanceled;
     if (lastLessonDateTime.isAfter(moment.utc()) && !isLastLessonCanceled) {
       shouldAddLesson = false;
@@ -600,7 +600,8 @@ export class UsersAvailableMentors {
   getSortedLessons(lessons: Array<Lesson>, isAscending: boolean): Array<Lesson> {
     let lessonDates = new Map();
     for (let i = 0; i < lessons.length; i++) {
-      if (!lessons[i].isRecurrent) {
+      const isLessonRecurrent = helpers.isLessonRecurrent(lessons[i].dateTime as string, lessons[i].endRecurrenceDateTime);
+      if (!isLessonRecurrent) {
         lessonDates.set(i, moment.utc(lessons[i].dateTime));
       } else {
         lessonDates.set(i, moment.utc(lessons[i].endRecurrenceDateTime));

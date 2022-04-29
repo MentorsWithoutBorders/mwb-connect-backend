@@ -82,14 +82,14 @@ export class UsersLessons {
   async getNextLessonFromDB(userId: string, isMentor: boolean, client: pg.PoolClient): Promise<Lesson> {
     let getNextLessonQuery = '';
     if (isMentor) {
-      getNextLessonQuery = `SELECT ul.id, ul.mentor_id, ul.subfield_id, ul.date_time, s.name AS subfield_name, ul.meeting_url, ul.is_recurrent, ul.end_recurrence_date_time, ul.is_canceled
+      getNextLessonQuery = `SELECT ul.id, ul.mentor_id, ul.subfield_id, ul.date_time, s.name AS subfield_name, ul.meeting_url, ul.end_recurrence_date_time, ul.is_canceled
         FROM users_lessons ul
         JOIN subfields s
           ON ul.subfield_id = s.id
         WHERE ul.mentor_id = $1 AND ul.is_canceled IS DISTINCT FROM true
         ORDER BY ul.date_time DESC LIMIT 1`;
     } else {
-      getNextLessonQuery = `SELECT ul.id, ul.mentor_id, ul.subfield_id, ul.date_time, s.name AS subfield_name, ul.meeting_url, ul.is_recurrent, ul.end_recurrence_date_time, ul.is_canceled
+      getNextLessonQuery = `SELECT ul.id, ul.mentor_id, ul.subfield_id, ul.date_time, s.name AS subfield_name, ul.meeting_url, ul.end_recurrence_date_time, ul.is_canceled
         FROM users_lessons ul
         JOIN users_lessons_students uls
           ON ul.id = uls.lesson_id        
@@ -103,8 +103,7 @@ export class UsersLessons {
     if (lessonRow) {
       const lesson: Lesson = {
         id: lessonRow.id,
-        dateTime: moment.utc(lessonRow.date_time).format(constants.DATE_TIME_FORMAT),
-        isRecurrent: lessonRow.is_recurrent
+        dateTime: moment.utc(lessonRow.date_time).format(constants.DATE_TIME_FORMAT)
       }
       if (lessonRow.end_recurrence_date_time != null) {
         lesson.endRecurrenceDateTime = moment.utc(lessonRow.end_recurrence_date_time).format(constants.DATE_TIME_FORMAT)
@@ -122,7 +121,8 @@ export class UsersLessons {
   async getNextLessonDateTime(lesson: Lesson, userId: string, isMentor: boolean, client: pg.PoolClient): Promise<string | undefined> {
     const endRecurrenceDateTime = moment.utc(lesson.endRecurrenceDateTime);
     const lessonDateTime = moment.utc(lesson.dateTime);
-    if (lesson.isRecurrent) {
+    const isLessonRecurrent = helpers.isLessonRecurrent(lesson.dateTime as string, lesson.endRecurrenceDateTime);
+    if (isLessonRecurrent) {
       return this.getNextLessonRecurrentDateTime(lesson, userId, isMentor, endRecurrenceDateTime, lessonDateTime, client);
     } else {
       return this.getNextLessonSingleDateTime(lesson, userId, isMentor, lessonDateTime, client);
@@ -241,7 +241,6 @@ export class UsersLessons {
         subfield: subfield,
         dateTime: moment.utc(lessonRow.date_time).format(constants.DATE_TIME_FORMAT),
         meetingUrl: lessonRow.meeting_url,
-        isRecurrent: lessonRow.is_recurrent,
         isCanceled: lessonRow.is_canceled
       }
       if (lessonRow.end_recurrence_date_time != null) {
@@ -285,14 +284,14 @@ export class UsersLessons {
     const now = moment.utc();
     let getPreviousLessonQuery = '';
     if (isMentor) {
-      getPreviousLessonQuery = `SELECT ul.id, ul.mentor_id, ul.subfield_id, ul.date_time, s.name AS subfield_name, ul.meeting_url, ul.is_recurrent, ul.end_recurrence_date_time, ul.is_canceled
+      getPreviousLessonQuery = `SELECT ul.id, ul.mentor_id, ul.subfield_id, ul.date_time, s.name AS subfield_name, ul.meeting_url, ul.end_recurrence_date_time, ul.is_canceled
         FROM users_lessons ul
         JOIN subfields s
           ON ul.subfield_id = s.id
         WHERE ul.mentor_id = $1 AND ul.date_time::timestamp < $2
         ORDER BY ul.date_time DESC LIMIT 1`;
     } else {
-      getPreviousLessonQuery = `SELECT ul.id, ul.mentor_id, ul.subfield_id, ul.date_time, s.name AS subfield_name, ul.meeting_url, ul.is_recurrent, ul.end_recurrence_date_time, ul.is_canceled
+      getPreviousLessonQuery = `SELECT ul.id, ul.mentor_id, ul.subfield_id, ul.date_time, s.name AS subfield_name, ul.meeting_url, ul.end_recurrence_date_time, ul.is_canceled
         FROM users_lessons ul
         JOIN users_lessons_students uls
           ON ul.id = uls.lesson_id        
@@ -307,8 +306,7 @@ export class UsersLessons {
     if (lessonRow != null) {
       lesson = {
         id: lessonRow.id,
-        dateTime: moment.utc(lessonRow.date_time).format(constants.DATE_TIME_FORMAT),
-        isRecurrent: lessonRow.is_recurrent
+        dateTime: moment.utc(lessonRow.date_time).format(constants.DATE_TIME_FORMAT)
       }
       if (lessonRow.end_recurrence_date_time != null) {
         lesson.endRecurrenceDateTime = moment.utc(lessonRow.end_recurrence_date_time).format(constants.DATE_TIME_FORMAT);
@@ -325,9 +323,10 @@ export class UsersLessons {
   
   async getPreviousLessonDateTime(lesson: Lesson, userId: string, client: pg.PoolClient): Promise<string | undefined> {
     const now = moment.utc();
-    const endRecurrenceDateTime = moment.utc(lesson.endRecurrenceDateTime);
     let lessonDateTime = moment.utc(lesson.dateTime);
-    if (lesson.isRecurrent) {
+    const isLessonRecurrent = helpers.isLessonRecurrent(lesson.dateTime as string, lesson.endRecurrenceDateTime);
+    if (isLessonRecurrent) {
+      const endRecurrenceDateTime = moment.utc(lesson.endRecurrenceDateTime);
       while (lessonDateTime.isSameOrBefore(endRecurrenceDateTime)) {
         lessonDateTime = lessonDateTime.add(7, 'd');
       }
@@ -452,7 +451,6 @@ export class UsersLessons {
       await client.query(insertLessonCanceledQuery, values);
     }
     if (isMentor) {
-      nextLessonMentor.isRecurrent = false;
       nextLessonMentor.endRecurrenceDateTime = undefined;
       for (const student of students) {
         await this.cancelUserLessons(student.id as string, nextLessonMentor, client);
@@ -492,7 +490,8 @@ export class UsersLessons {
 
   async cancelUserLessons(userId: string, lesson: Lesson, client: pg.PoolClient): Promise<void> {
     let endDateTime = moment.utc(lesson.dateTime);
-    if (lesson.isRecurrent) {
+    const isLessonRecurrent = helpers.isLessonRecurrent(lesson.dateTime as string, lesson.endRecurrenceDateTime);
+    if (isLessonRecurrent) {
       endDateTime = moment.utc(lesson.endRecurrenceDateTime);
     }
     let lessonDateTime = moment.utc(lesson.dateTime).clone();
@@ -525,19 +524,19 @@ export class UsersLessons {
   async setLessonRecurrence(request: Request, response: Response, whatsAppClient: Client): Promise<void> {
     const mentorId = request.user.id as string;
     const lessonId = request.params.id;
-    const { isRecurrent, endRecurrenceDateTime }: Lesson = request.body
+    const { endRecurrenceDateTime }: Lesson = request.body
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
       const nextLesson = await this.getNextLessonFromDB(mentorId, true, client);
-      const updateLessonQuery = 'UPDATE users_lessons SET is_recurrent = $1, end_recurrence_date_time = $2 WHERE mentor_id = $3 AND id = $4';
-      const endRecurrence = isRecurrent && endRecurrenceDateTime != undefined ? moment.utc(endRecurrenceDateTime) : null;
-      await client.query(updateLessonQuery, [isRecurrent, endRecurrence, mentorId, lessonId]);
+      const updateLessonQuery = 'UPDATE users_lessons SET end_recurrence_date_time = $1 WHERE mentor_id = $2 AND id = $3';
+      const endRecurrence = endRecurrenceDateTime != undefined ? moment.utc(endRecurrenceDateTime) : null;
+      await client.query(updateLessonQuery, [endRecurrence, mentorId, lessonId]);
       const lesson: Lesson = {
         id: lessonId
       }      
       const students = await this.getLessonStudents(lesson, false, client);
-      if (nextLesson.isRecurrent != isRecurrent || nextLesson.endRecurrenceDateTime != endRecurrenceDateTime) {
+      if (nextLesson.endRecurrenceDateTime != endRecurrenceDateTime) {
         usersPushNotifications.sendPNLessonRecurrenceUpdated(students);
         usersSendEmails.sendEmailLessonRecurrenceUpdated(students);
         usersWhatsAppMessages.sendWMLessonRecurrenceUpdated(students, whatsAppClient);

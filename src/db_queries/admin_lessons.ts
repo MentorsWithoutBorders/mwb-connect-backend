@@ -5,12 +5,14 @@ import moment from 'moment';
 import 'moment-timezone';
 import { Conn } from '../db/conn';
 import { constants } from '../utils/constants';
+import { Helpers } from '../utils/helpers';
 import User from '../models/user.model';
 import Lesson from '../models/lesson.model';
 import Subfield from '../models/subfield.model';
 
 const conn = new Conn();
 const pool = conn.pool;
+const helpers = new Helpers();
 
 export class AdminLessons {
   constructor() {
@@ -21,8 +23,8 @@ export class AdminLessons {
     const client = await pool.connect();    
     try {
       await client.query('BEGIN');
-      const getLessonsQuery = `SELECT ml.lesson_id, ml.mentor_id, ml.mentor_name, ml.student_id, u.name AS student_name, ml.subfield_name, ml.date_time, ml.meeting_url, ml.is_recurrent, ml.end_recurrence_date_time, ml.is_canceled FROM 
-        (SELECT ul.id AS lesson_id, ul.mentor_id, u.name AS mentor_name, uls.student_id, s.name AS subfield_name, ul.date_time, ul.meeting_url, ul.is_recurrent, ul.end_recurrence_date_time, ul.is_canceled FROM users_lessons ul
+      const getLessonsQuery = `SELECT ml.lesson_id, ml.mentor_id, ml.mentor_name, ml.student_id, u.name AS student_name, ml.subfield_name, ml.date_time, ml.meeting_url, ml.end_recurrence_date_time, ml.is_canceled FROM 
+        (SELECT ul.id AS lesson_id, ul.mentor_id, u.name AS mentor_name, uls.student_id, s.name AS subfield_name, ul.date_time, ul.meeting_url, ul.end_recurrence_date_time, ul.is_canceled FROM users_lessons ul
           JOIN users u
             ON ul.mentor_id = u.id
           JOIN subfields s
@@ -65,10 +67,10 @@ export class AdminLessons {
             subfield: subfield,
             dateTime: moment.utc(lessonItem.date_time).format(constants.DATE_TIME_FORMAT),
             meetingUrl: lessonItem.meeting_url,
-            isRecurrent: lessonItem.is_recurrent ?? false,
             isCanceled: lessonItem.is_canceled ?? false
           };
-          if (lesson.isRecurrent) {
+          const isLessonRecurrent = helpers.isLessonRecurrent(lesson.dateTime as string, lessonItem.end_recurrence_date_time);
+          if (isLessonRecurrent) {
             lesson.endRecurrenceDateTime = moment.utc(lessonItem.end_recurrence_date_time).format(constants.DATE_TIME_FORMAT);            
           }
           j++;

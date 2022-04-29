@@ -9,7 +9,6 @@ export default interface Lesson {
   dateTime?: string;
   meetingUrl?: string;
   isMentorPresent?: boolean;
-  isRecurrent?: boolean;
   endRecurrenceDateTime?: string;
   isCanceled?: boolean;
   shouldStop?: boolean;

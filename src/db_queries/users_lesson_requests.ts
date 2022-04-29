@@ -5,6 +5,7 @@ import pg from 'pg';
 import { Client } from 'whatsapp-web.js';
 import { Conn } from '../db/conn';
 import { constants } from '../utils/constants';
+import { Helpers } from '../utils/helpers';
 import { Users } from './users';
 import { UsersAvailableMentors } from './users_available_mentors';
 import { UsersLessons } from './users_lessons';
@@ -20,6 +21,7 @@ import LessonRequestResult from '../models/lesson_request_result_model';
 
 const conn = new Conn();
 const pool = conn.pool;
+const helpers = new Helpers();
 const users = new Users();
 const usersAvailableMentors = new UsersAvailableMentors();
 const usersLessons = new UsersLessons();
@@ -272,7 +274,7 @@ export class UsersLessonRequests {
   async acceptLessonRequest(request: Request, response: Response, whatsAppClient: Client): Promise<void> {
     const mentorId = request.user.id as string;
     const lessonRequestId = request.params.id;
-    const { meetingUrl, isRecurrent, endRecurrenceDateTime }: Lesson = request.body
+    const { meetingUrl, endRecurrenceDateTime }: Lesson = request.body
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
@@ -299,7 +301,6 @@ export class UsersLessonRequests {
           subfield: subfield,
           dateTime: rows[0].lesson_date_time,
           meetingUrl: meetingUrl,
-          isRecurrent: isRecurrent,
           endRecurrenceDateTime: endRecurrenceDateTime
         }
         lesson = await this.addLesson(lesson, client);
@@ -325,11 +326,12 @@ export class UsersLessonRequests {
   }
   
   async addLesson(lesson: Lesson, client: pg.PoolClient): Promise<Lesson> {
-    const insertLessonQuery = `INSERT INTO users_lessons (mentor_id, subfield_id, date_time, meeting_url, is_recurrent, end_recurrence_date_time)
-      VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`;
+    const insertLessonQuery = `INSERT INTO users_lessons (mentor_id, subfield_id, date_time, meeting_url, end_recurrence_date_time)
+      VALUES ($1, $2, $3, $4, $5) RETURNING *`;
     const dateTime = moment.utc(lesson.dateTime);
-    const endRecurrence = lesson.isRecurrent && lesson.endRecurrenceDateTime != undefined ? moment.utc(lesson.endRecurrenceDateTime) : null;
-    const values = [lesson.mentor?.id, lesson.subfield?.id, dateTime, lesson.meetingUrl, lesson.isRecurrent, endRecurrence];
+    const isLessonRecurrent = helpers.isLessonRecurrent(lesson.dateTime as string, lesson.endRecurrenceDateTime);
+    const endRecurrence = isLessonRecurrent && lesson.endRecurrenceDateTime != undefined ? moment.utc(lesson.endRecurrenceDateTime) : null;
+    const values = [lesson.mentor?.id, lesson.subfield?.id, dateTime, lesson.meetingUrl, endRecurrence];
     const { rows }: pg.QueryResult = await client.query(insertLessonQuery, values);
     const addedLesson = {
       id: rows[0].id
