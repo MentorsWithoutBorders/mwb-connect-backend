@@ -9,6 +9,7 @@ import { Conn } from '../db/conn';
 import { constants } from '../utils/constants';
 import { Helpers } from '../utils/helpers';
 import { Users } from './users';
+import { UsersLessons } from './users_lessons';
 import User from '../models/user.model';
 import Lesson from '../models/lesson.model';
 import Field from '../models/field.model';
@@ -22,6 +23,7 @@ const pool = conn.pool;
 const redisClient = createClient();
 const helpers = new Helpers();
 const users = new Users();
+const usersLessons = new UsersLessons();
 dotenv.config();
 
 export class UsersAvailableMentors {
@@ -168,9 +170,12 @@ export class UsersAvailableMentors {
       const maxStudents = row.max_students;
       const subfieldId = row.subfield_id;
       const lessonDateTime = row.date_time;
-      const lessonStudentsNumber = await this.getLessonStudentsNumber(row.id, client);
+      const lesson: Lesson = {
+        id: row.id
+      }
+      const lessonStudents = await usersLessons.getLessonStudents(lesson, true, client);
       const mentorString = await redisClient.get(`user-${server}-${mentorId}`);
-      if (lessonStudentsNumber < maxStudents) {
+      if (lessonStudents.length < maxStudents) {
         if (!mentorString) {
           let mentor = await users.getUserFromDB(mentorId, client);
           await redisClient.set(`user-${server}-${mentorId}`, JSON.stringify(mentor));
@@ -188,13 +193,6 @@ export class UsersAvailableMentors {
       }
     }
     return mentors;
-  }
-  
-  async getLessonStudentsNumber(lessonId: string, client: pg.PoolClient): Promise<number> {
-    const getLessonStudentsQuery = `SELECT id, is_canceled FROM users_lessons_students
-        WHERE is_canceled IS DISTINCT FROM true AND lesson_id = $1`;
-    const { rows }: pg.QueryResult = await client.query(getLessonStudentsQuery, [lessonId]);
-    return rows.length;
   }
 
   addLessonSubfield(mentor: User, subfieldId: string): User {

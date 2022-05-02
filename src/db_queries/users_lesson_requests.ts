@@ -352,7 +352,7 @@ export class UsersLessonRequests {
       const values = [lessonId, studentId];
       await client.query(insertStudentQuery, values);
     }
-  }  
+  }
 
   async addStudentSubfield(studentId: string, subfieldId: string, client: pg.PoolClient): Promise<void> {
     const getSubfieldQuery = 'SELECT user_id FROM users_subfields WHERE user_id = $1';
