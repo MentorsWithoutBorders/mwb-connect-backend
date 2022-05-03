@@ -537,7 +537,7 @@ export class UsersLessons {
       const studentsRemaining = [];
       for (const student of students) {
         const nextLessonStudent = await this.getNextLessonFromDB(student.id as string, false, client);
-        if (nextLessonStudent.id != undefined) {
+        if (nextLessonStudent.id != undefined && nextLessonStudent.id != lessonId) {
           await this.cancelPreviousLesson(student.id as string, lesson.id as string, client);
         } else {
           studentsRemaining.push(student);
