@@ -537,7 +537,8 @@ export class UsersLessons {
       const studentsRemaining = [];
       for (const student of students) {
         const nextLessonStudent = await this.getNextLessonFromDB(student.id as string, false, client);
-        if (nextLessonStudent.id != undefined && nextLessonStudent.id != lessonId) {
+        const hasLessonRequestStudent = await this.getHasLessonRequestStudent(student.id as string, client);
+        if (nextLessonStudent.id != undefined && nextLessonStudent.id != lessonId || hasLessonRequestStudent) {
           await this.cancelPreviousLesson(student.id as string, lesson.id as string, client);
         } else {
           studentsRemaining.push(student);
@@ -565,12 +566,19 @@ export class UsersLessons {
       client.release();
     }
   }
+
+  async getHasLessonRequestStudent(studentId: string, client: pg.PoolClient ): Promise<boolean> {
+    const getHasLessonRequest = `SELECT id FROM users_lesson_requests
+      WHERE student_id = $1`;
+    const { rows }: pg.QueryResult = await client.query(getHasLessonRequest, [studentId]);
+    return rows && rows.length > 0;   
+  }  
   
   async cancelPreviousLesson(userId: string, lessonId: string, client: pg.PoolClient): Promise<void> {
     const updateStudentLessonQuery = `UPDATE users_lessons_students SET is_canceled = true
       WHERE lesson_id = $1 AND student_id = $2`;
     await client.query(updateStudentLessonQuery, [lessonId, userId]);
-  }  
+  }
   
   async addStudentsSkills(request: Request, response: Response): Promise<void> {
     const lessonId = request.params.id;
