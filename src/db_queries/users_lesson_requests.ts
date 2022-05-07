@@ -51,8 +51,8 @@ export class UsersLessonRequests {
   }
 
   async addLessonRequestFromDB(studentId: string, client: pg.PoolClient): Promise<LessonRequest> {
-    const insertLessonRequestQuery = `INSERT INTO users_lesson_requests (student_id, sent_date_time, is_allowed_last_mentor)
-      VALUES ($1, $2, true) RETURNING *`;
+    const insertLessonRequestQuery = `INSERT INTO users_lesson_requests (student_id, sent_date_time)
+      VALUES ($1, $2) RETURNING *`;
     const sentDateTime = moment.utc();
     const values = [studentId, sentDateTime];
     const { rows }: pg.QueryResult = await client.query(insertLessonRequestQuery, values);
@@ -75,16 +75,17 @@ export class UsersLessonRequests {
           FROM users_lesson_requests ulr
           LEFT OUTER JOIN subfields s
             ON ulr.subfield_id = s.id
-          WHERE ulr.mentor_id = $1 AND ulr.is_rejected IS DISTINCT FROM true
+          WHERE ulr.mentor_id = $1 
+            AND ulr.is_rejected IS DISTINCT FROM true
+            AND ulr.is_previous_mentor IS DISTINCT FROM true
           ORDER BY ulr.sent_date_time DESC LIMIT 1`;
       } else {
-        getLessonRequestQuery = `SELECT ulr.id, ulr.student_id, ulr.subfield_id, ulr.sent_date_time, ulr.lesson_date_time, s.name AS subfield_name, ulr.is_rejected, ulr.is_canceled, ulr.is_obsolete
+        getLessonRequestQuery = `SELECT ulr.id, ulr.student_id, ulr.subfield_id, ulr.sent_date_time, ulr.lesson_date_time, s.name AS subfield_name, ulr.is_rejected, ulr.is_canceled
           FROM users_lesson_requests ulr
           LEFT OUTER JOIN subfields s
             ON ulr.subfield_id = s.id
           WHERE ulr.student_id = $1 
             AND ulr.is_canceled IS DISTINCT FROM true 
-            AND ulr.is_obsolete IS DISTINCT FROM true
           ORDER BY ulr.sent_date_time DESC LIMIT 1`;
       }
       const { rows }: pg.QueryResult = await client.query(getLessonRequestQuery, [userId]);
@@ -182,13 +183,16 @@ export class UsersLessonRequests {
           student: student,
           mentor: mentor,
           subfield: subfield,
-          lessonDateTime: lessonDateTime.format(constants.DATE_TIME_FORMAT)
+          lessonDateTime: lessonDateTime.format(constants.DATE_TIME_FORMAT),
+          isPreviousMentor: isPreviousMentor
         }        
         lessonRequest = await this.addNewLessonRequest(lessonRequest, client);
         lessonRequestResult.id = lessonRequest.id;
         lessonRequestResult.isLessonRequest = true;
-        usersPushNotifications.sendPNLessonRequest(student, lessonRequest);
-        usersSendEmails.sendEmailLessonRequest(student, lessonRequest);
+        if (!isPreviousMentor) {
+          usersPushNotifications.sendPNLessonRequest(student, lessonRequest);
+          usersSendEmails.sendEmailLessonRequest(student, lessonRequest);
+        }
       }
       response.status(200).send(lessonRequestResult);
       await client.query('COMMIT');
@@ -254,7 +258,7 @@ export class UsersLessonRequests {
 
   async addNewLessonRequest(lessonRequest: LessonRequest, client: pg.PoolClient): Promise<LessonRequest> {
     const insertLessonRequestQuery = `INSERT INTO users_lesson_requests 
-      (student_id, mentor_id, subfield_id, lesson_date_time, sent_date_time, is_allowed_last_mentor) 
+      (student_id, mentor_id, subfield_id, lesson_date_time, sent_date_time, is_previous_mentor) 
       VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`;
     const values = [
       lessonRequest.student?.id as string,
@@ -262,7 +266,7 @@ export class UsersLessonRequests {
       lessonRequest.subfield?.id as string,
       lessonRequest.lessonDateTime as string,
       moment.utc().format(constants.DATE_TIME_FORMAT),
-      true
+      lessonRequest.isPreviousMentor
     ];
     const { rows }: pg.QueryResult = await client.query(insertLessonRequestQuery, values);
     if (rows[0]) {
