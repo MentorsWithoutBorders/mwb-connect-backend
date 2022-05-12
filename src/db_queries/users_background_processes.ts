@@ -5,7 +5,6 @@ import 'moment-timezone';
 import pg from 'pg';
 import os from 'os-utils';
 import dotenv from 'dotenv';
-import { Client } from 'whatsapp-web.js';
 import { Conn } from '../db/conn';
 import { Helpers } from '../utils/helpers';
 import { UsersLessons } from './users_lessons';
@@ -41,16 +40,16 @@ export class UsersBackgroundProcesses {
     autoBind(this);
   }
 
-  async sendLessonReminders(request: Request, response: Response, whatsAppClient: Client): Promise<void> {
+  async sendLessonReminders(request: Request, response: Response): Promise<void> {
     try {
-      await this.sendLessonRemindersFromDB(whatsAppClient);
+      await this.sendLessonRemindersFromDB();
       response.status(200).send('Lesson reminders sent');
     } catch (error) {
       response.status(400).send(error);
     }    
   }
   
-  async sendLessonRemindersFromDB(whatsAppClient: Client): Promise<void> {
+  async sendLessonRemindersFromDB(): Promise<void> {
     const getLessonsQuery = `SELECT * FROM
       (SELECT id, mentor_id, is_canceled, EXTRACT(EPOCH FROM (date_trunc('minute', now()) + interval '30 minutes' - date_time)) / 3600 / 24 / 7 AS diff_date_time
           FROM users_lessons) ul
@@ -75,7 +74,7 @@ export class UsersBackgroundProcesses {
           if (students != null && students.length > 0) {
             usersSendEmails.sendEmailLessonReminder(nextLesson, client);
             usersPushNotifications.sendPNLessonReminder(nextLesson);
-            usersWhatsAppMessages.sendWMLessonReminder(nextLesson, whatsAppClient);
+            usersWhatsAppMessages.sendWMLessonReminder(nextLesson);
           }
         }
         await client.query('COMMIT');
@@ -133,17 +132,17 @@ export class UsersBackgroundProcesses {
     }
   }
 
-  async sendTrainingReminders(request: Request, response: Response, whatsAppClient: Client): Promise<void> {
+  async sendTrainingReminders(request: Request, response: Response): Promise<void> {
     try {
-      await this.sendTrainingRemindersFromDB(true, whatsAppClient);
-      await this.sendTrainingRemindersFromDB(false, whatsAppClient);
+      await this.sendTrainingRemindersFromDB(true);
+      await this.sendTrainingRemindersFromDB(false);
       response.status(200).send('Training reminders sent');
     } catch (error) {
       response.status(400).send(error);
     }    
   }
   
-  async sendTrainingRemindersFromDB(isFirst: boolean, whatsAppClient: Client): Promise<void> {
+  async sendTrainingRemindersFromDB(isFirst: boolean): Promise<void> {
     const days = isFirst ? 5 : 0;
     const getUsersForTrainingReminderQuery = `SELECT u.id, u.name, u.email, u.phone_number, u.is_mentor, u.registered_on FROM users AS u
       JOIN users_notifications_settings AS uns
@@ -180,7 +179,7 @@ export class UsersBackgroundProcesses {
           remainingQuizzes = helpers.getRemainingQuizzes(quizzes);
           showQuizReminder = remainingQuizzes > 0 ? true : false;
         }
-        this.sendFirstAndSecondTrainingReminders(isFirst, user, showStepReminder, showQuizReminder, remainingQuizzes, whatsAppClient, client);
+        this.sendFirstAndSecondTrainingReminders(isFirst, user, showStepReminder, showQuizReminder, remainingQuizzes, client);
         await client.query('COMMIT');
       } catch (error) {
         await client.query('ROLLBACK');
@@ -190,19 +189,19 @@ export class UsersBackgroundProcesses {
     }
   }
 
-  sendFirstAndSecondTrainingReminders(isFirst: boolean, user: User, showStepReminder: boolean, showQuizReminder: boolean, remainingQuizzes: number, whatsAppClient: Client, client: pg.PoolClient): void {
+  sendFirstAndSecondTrainingReminders(isFirst: boolean, user: User, showStepReminder: boolean, showQuizReminder: boolean, remainingQuizzes: number, client: pg.PoolClient): void {
     if (showStepReminder || showQuizReminder) {
       if (isFirst) {
         usersPushNotifications.sendPNFirstTrainingReminder(user.id as string, showStepReminder, showQuizReminder, remainingQuizzes);
         usersSendEmails.sendEmailFirstTrainingReminder(user, showStepReminder, showQuizReminder, remainingQuizzes);
         if (!user.isMentor) {
-          usersWhatsAppMessages.sendWMFirstTrainingReminder(user, showStepReminder, showQuizReminder, remainingQuizzes, whatsAppClient);
+          usersWhatsAppMessages.sendWMFirstTrainingReminder(user, showStepReminder, showQuizReminder, remainingQuizzes);
         }
       } else {
         usersPushNotifications.sendPNSecondTrainingReminder(user.id as string, showStepReminder, showQuizReminder, remainingQuizzes);
         usersSendEmails.sendEmailSecondTrainingReminder(user, showStepReminder, showQuizReminder, remainingQuizzes);
         if (!user.isMentor) {
-          usersWhatsAppMessages.sendWMSecondTrainingReminder(user, showStepReminder, showQuizReminder, remainingQuizzes, whatsAppClient);
+          usersWhatsAppMessages.sendWMSecondTrainingReminder(user, showStepReminder, showQuizReminder, remainingQuizzes);
         }        
         adminTrainingReminders.addTrainingReminder(user, !showStepReminder, remainingQuizzes, client);
       }

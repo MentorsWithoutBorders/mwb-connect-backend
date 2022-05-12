@@ -2,8 +2,6 @@ import express from 'express';
 import cron from 'node-cron';
 import dotenv from 'dotenv';
 import cors from 'cors';
-import qrcode from 'qrcode-terminal';
-import { Client, LocalAuth } from 'whatsapp-web.js';
 import { Request, Response, NextFunction } from 'express';
 import { Auth } from './src/db_queries/auth';
 import { ApprovedUsers } from './src/db_queries/approved_users';
@@ -40,51 +38,41 @@ import { AdminAvailableMentors } from './src/db_queries/admin_available_mentors'
 import { AdminAvailableStudents } from './src/db_queries/admin_available_students';
 
 dotenv.config();
-const whatsAppClient = new Client({
-  puppeteer: {
-    headless: true,
-    args: [
-      '--no-sandbox'
-    ]
-  },
-  // authStrategy: new LocalAuth(),
-  authTimeoutMs: 900000
-});
 const port = process.env.PORT;
-const app: express.Express = express();
-const auth: Auth = new Auth();
-const users: Users = new Users();
-const approvedUsers: ApprovedUsers = new ApprovedUsers();
-const usersTimeZones: UsersTimeZones = new UsersTimeZones();
-const usersResetPassword: UsersResetPassword = new UsersResetPassword();
-const usersPushNotifications: UsersPushNotifications = new UsersPushNotifications();
-const usersGoals: UsersGoals = new UsersGoals();
-const usersSteps: UsersSteps = new UsersSteps();
-const usersQuizzes: UsersQuizzes = new UsersQuizzes();
-const usersAvailableMentors: UsersAvailableMentors = new UsersAvailableMentors();
-const usersLessonRequests: UsersLessonRequests = new UsersLessonRequests();
-const usersLessons: UsersLessons = new UsersLessons();
-const usersCertificatesPauses: UsersCertificatesPauses = new UsersCertificatesPauses();
-const usersSkills: UsersSkills = new UsersSkills();
-const usersNotificationsSettings: UsersNotificationsSettings = new UsersNotificationsSettings();
-const usersSupportRequests: UsersSupportRequests = new UsersSupportRequests();
-const usersAppVersions: UsersAppVersions = new UsersAppVersions();
-const usersAppFlags: UsersAppFlags = new UsersAppFlags();
-const usersBackgroundProcesses: UsersBackgroundProcesses = new UsersBackgroundProcesses();
-const organizations: Organizations = new Organizations();
-const fields: Fields = new Fields();
-const subfields: Subfields = new Subfields();
-const skills: Skills = new Skills();
-const fieldsGoals: FieldsGoals = new FieldsGoals();
-const tutorials: Tutorials = new Tutorials();
-const quizzesSettings: QuizzesSettings = new QuizzesSettings();
-const updates: Updates = new Updates();
-const logger: Logger = new Logger();
-const adminStudentsCertificates: AdminStudentsCertificates = new AdminStudentsCertificates();
-const adminTrainingReminders: AdminTrainingReminders = new AdminTrainingReminders();
-const adminLessons: AdminLessons = new AdminLessons();
-const adminAvailableMentors: AdminAvailableMentors = new AdminAvailableMentors();
-const adminAvailableStudents: AdminAvailableStudents = new AdminAvailableStudents();
+const app = express();
+const auth = new Auth();
+const users = new Users();
+const approvedUsers = new ApprovedUsers();
+const usersTimeZones = new UsersTimeZones();
+const usersResetPassword = new UsersResetPassword();
+const usersPushNotifications = new UsersPushNotifications();
+const usersGoals = new UsersGoals();
+const usersSteps = new UsersSteps();
+const usersQuizzes = new UsersQuizzes();
+const usersAvailableMentors = new UsersAvailableMentors();
+const usersLessonRequests = new UsersLessonRequests();
+const usersLessons = new UsersLessons();
+const usersCertificatesPauses = new UsersCertificatesPauses();
+const usersSkills = new UsersSkills();
+const usersNotificationsSettings = new UsersNotificationsSettings();
+const usersSupportRequests = new UsersSupportRequests();
+const usersAppVersions = new UsersAppVersions();
+const usersAppFlags = new UsersAppFlags();
+const usersBackgroundProcesses = new UsersBackgroundProcesses();
+const organizations = new Organizations();
+const fields = new Fields();
+const subfields = new Subfields();
+const skills = new Skills();
+const fieldsGoals = new FieldsGoals();
+const tutorials = new Tutorials();
+const quizzesSettings = new QuizzesSettings();
+const updates = new Updates();
+const logger = new Logger();
+const adminStudentsCertificates = new AdminStudentsCertificates();
+const adminTrainingReminders = new AdminTrainingReminders();
+const adminLessons = new AdminLessons();
+const adminAvailableMentors = new AdminAvailableMentors();
+const adminAvailableStudents = new AdminAvailableStudents();
 
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
@@ -93,16 +81,6 @@ app.use(cors());
 app.get('/', (request: express.Request, response: express.Response): void => {
   response.json({ info: 'Node.js, Express, and Postgres API' })
 })
-
-whatsAppClient.on('qr', (qr) => {
-  qrcode.generate(qr, {small: true});
-});
-
-whatsAppClient.on('ready', () => {
-  console.log('WhatsApp client is ready!');
-});
-
-whatsAppClient.initialize();
 
 const verifyAccessTokenFilter = function(request: Request, response: Response, next: NextFunction): void {
   if (request.originalUrl.includes('/logger')) {
@@ -169,32 +147,20 @@ app.post('/api/v1/available_mentors', usersAvailableMentors.getAvailableMentors)
 app.get('/api/v1/available_mentors/fields', usersAvailableMentors.getAvailableMentorsFields);
 
 // Users lesson requests
-const acceptLessonRequest = (request: Request, response: Response) => {
-  usersLessonRequests.acceptLessonRequest(request, response, whatsAppClient);
-}
-const rejectLessonRequest = (request: Request, response: Response) => {
-  usersLessonRequests.rejectLessonRequest(request, response, whatsAppClient);
-}
 app.post('/api/v1/lesson_requests', usersLessonRequests.addLessonRequest);
 app.get('/api/v1/lesson_request', usersLessonRequests.getLessonRequest);
 app.post('/api/v1/lesson_requests/send_custom_lesson_request', usersLessonRequests.sendCustomLessonRequest);
-app.post('/api/v1/lesson_requests/:id/accept_lesson_request', acceptLessonRequest);
-app.put('/api/v1/lesson_requests/:id/reject_lesson_request', rejectLessonRequest);
+app.post('/api/v1/lesson_requests/:id/accept_lesson_request', usersLessonRequests.acceptLessonRequest);
+app.put('/api/v1/lesson_requests/:id/reject_lesson_request', usersLessonRequests.rejectLessonRequest);
 app.put('/api/v1/lesson_requests/:id/cancel_lesson_request', usersLessonRequests.cancelLessonRequest);
 app.put('/api/v1/lesson_requests/:id/update_lesson_request', usersLessonRequests.updateLessonRequest);
 
 // Users lessons
-const cancelLesson = (request: Request, response: Response) => {
-  usersLessons.cancelLesson(request, response, whatsAppClient);
-}
-const setLessonRecurrence = (request: Request, response: Response) => {
-  usersLessons.setLessonRecurrence(request, response, whatsAppClient);
-}
 app.get('/api/v1/next_lesson', usersLessons.getNextLesson);
 app.get('/api/v1/previous_lesson', usersLessons.getPreviousLesson);
-app.put('/api/v1/lessons/:id/cancel_lesson', cancelLesson);
+app.put('/api/v1/lessons/:id/cancel_lesson', usersLessons.cancelLesson);
 app.put('/api/v1/lessons/:id/meeting_url', usersLessons.setLessonMeetingUrl);
-app.put('/api/v1/lessons/:id/recurrence', setLessonRecurrence);
+app.put('/api/v1/lessons/:id/recurrence', usersLessons.setLessonRecurrence);
 app.put('/api/v1/lessons/:id/skills', usersLessons.addStudentsSkills);
 app.post('/api/v1/lessons/:id/notes', usersLessons.addStudentsLessonNotes);
 app.get('/api/v1/users/:id/lessons_notes', usersLessons.getStudentLessonNotes);
@@ -263,22 +229,16 @@ app.post('/api/v1/logger', logger.addLogEntry);
 
 
 // Users background processes
-const sendTrainingReminders = (request: Request, response: Response) => {
-  usersBackgroundProcesses.sendTrainingReminders(request, response, whatsAppClient);
-}
-const sendLessonReminders = (request: Request, response: Response) => {
-  usersBackgroundProcesses.sendLessonReminders(request, response, whatsAppClient);
-}
-app.post('/api/v1/send_lesson_reminders', sendLessonReminders);
+app.post('/api/v1/send_lesson_reminders', usersBackgroundProcesses.sendLessonReminders);
 app.post('/api/v1/send_after_lessons', usersBackgroundProcesses.sendAfterLesson);
-app.post('/api/v1/send_training_reminders', sendTrainingReminders);
+app.post('/api/v1/send_training_reminders', usersBackgroundProcesses.sendTrainingReminders);
 app.post('/api/v1/available_mentors/fields', usersBackgroundProcesses.setAvailableMentorsFields);
 
 cron.schedule('* * * * *', function() {
-  usersBackgroundProcesses.sendLessonRemindersFromDB(whatsAppClient);
+  usersBackgroundProcesses.sendLessonRemindersFromDB();
   usersBackgroundProcesses.sendAfterLessonFromDB();
-  usersBackgroundProcesses.sendTrainingRemindersFromDB(true, whatsAppClient);
-  usersBackgroundProcesses.sendTrainingRemindersFromDB(false, whatsAppClient);
+  usersBackgroundProcesses.sendTrainingRemindersFromDB(true);
+  usersBackgroundProcesses.sendTrainingRemindersFromDB(false);
   usersBackgroundProcesses.sendCPUUsage();
 });
 

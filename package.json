@@ -22,6 +22,7 @@
     "@types/uuid": "^8.3.0",
     "async-redis": "^2.0.0",
     "auto-bind": "^4.0.0",
+    "axios": "^0.27.2",
     "bcrypt": "^5.0.1",
     "cors": "^2.8.5",
     "dotenv": "^10.0.0",
@@ -34,9 +35,7 @@
     "nodemailer": "^2.7.2",
     "os-utils": "0.0.14",
     "pg": "^8.6.0",
-    "qrcode-terminal": "^0.12.0",
-    "uuid": "^8.3.2",
-    "whatsapp-web.js": "^1.16.5"
+    "uuid": "^8.3.2"
   },
   "devDependencies": {
     "@babel/plugin-proposal-class-properties": "^7.13.0",

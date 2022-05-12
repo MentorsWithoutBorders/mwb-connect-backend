@@ -236,7 +236,7 @@ export class Auth {
       return ;
     }
     try {
-      const decoded: Token = await jwt.verify(token, process.env.JWT_SECRET_KEY as string) as Token;
+      const decoded = await jwt.verify(token, process.env.JWT_SECRET_KEY as string) as Token;
       const getUsersQuery = 'SELECT id FROM users WHERE id = $1';
       const { rows }: pg.QueryResult = await pool.query(getUsersQuery, [decoded.userId]);
       if (!rows[0]) {

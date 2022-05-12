@@ -2,7 +2,6 @@ import { Request, Response } from 'express';
 import autoBind from 'auto-bind';
 import moment from 'moment';
 import pg from 'pg';
-import { Client } from 'whatsapp-web.js';
 import { Conn } from '../db/conn';
 import { constants } from '../utils/constants';
 import { Helpers } from '../utils/helpers';
@@ -359,7 +358,7 @@ export class UsersLessons {
     return updatedLessonDateTime;
   }
 
-  async cancelLesson(request: Request, response: Response, whatsAppClient: Client): Promise<void> {
+  async cancelLesson(request: Request, response: Response): Promise<void> {
     const userId = request.user.id as string;
     const lessonId = request.params.id;
     const lesson: Lesson = request.body
@@ -400,7 +399,7 @@ export class UsersLessons {
       usersPushNotifications.sendPNLessonCanceled(lesson, student, isCancelAll, lessonsCanceled);
       usersSendEmails.sendEmailLessonCanceled(lesson, student, isCancelAll, lessonsCanceled);
       if (isMentor) {
-        usersWhatsAppMessages.sendWMLessonCanceled(lesson, isCancelAll, whatsAppClient);
+        usersWhatsAppMessages.sendWMLessonCanceled(lesson, isCancelAll);
       }
     } catch (error) {
       response.status(400).send(error);
@@ -523,7 +522,7 @@ export class UsersLessons {
     }
   }
   
-  async setLessonRecurrence(request: Request, response: Response, whatsAppClient: Client): Promise<void> {
+  async setLessonRecurrence(request: Request, response: Response): Promise<void> {
     const mentorId = request.user.id as string;
     const lessonId = request.params.id;
     const { endRecurrenceDateTime }: Lesson = request.body
@@ -551,7 +550,7 @@ export class UsersLessons {
         await client.query(updateLessonQuery, [endRecurrence, mentorId, lessonId]);
         usersPushNotifications.sendPNLessonRecurrenceUpdated(studentsRemaining);
         usersSendEmails.sendEmailLessonRecurrenceUpdated(studentsRemaining);
-        usersWhatsAppMessages.sendWMLessonRecurrenceUpdated(studentsRemaining, whatsAppClient);
+        usersWhatsAppMessages.sendWMLessonRecurrenceUpdated(studentsRemaining);
       }
       const lessonRecurrenceResult: LessonRecurrenceResult = {
         id: lessonId,
