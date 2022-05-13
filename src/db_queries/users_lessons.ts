@@ -108,7 +108,7 @@ export class UsersLessons {
       if (lessonRow.end_recurrence_date_time != null) {
         lesson.endRecurrenceDateTime = moment.utc(lessonRow.end_recurrence_date_time).format(constants.DATE_TIME_FORMAT)
       }
-      const lessonDateTime = await this.getNextLessonDateTime(lesson, userId, isMentor, client);
+      const lessonDateTime = await this.getNextLessonDateTime(lesson, userId, client);
       if (lessonDateTime == undefined) {
         lessonRow = null;
       } else {
@@ -118,18 +118,18 @@ export class UsersLessons {
     return this.setLesson(lessonRow, isMentor, client);
   }
 
-  async getNextLessonDateTime(lesson: Lesson, userId: string, isMentor: boolean, client: pg.PoolClient): Promise<string | undefined> {
+  async getNextLessonDateTime(lesson: Lesson, userId: string, client: pg.PoolClient): Promise<string | undefined> {
     const endRecurrenceDateTime = moment.utc(lesson.endRecurrenceDateTime);
     const lessonDateTime = moment.utc(lesson.dateTime);
     const isLessonRecurrent = helpers.isLessonRecurrent(lesson.dateTime as string, lesson.endRecurrenceDateTime);
     if (isLessonRecurrent) {
-      return this.getNextLessonRecurrentDateTime(lesson, userId, isMentor, endRecurrenceDateTime, lessonDateTime, client);
+      return this.getNextLessonRecurrentDateTime(lesson, userId, endRecurrenceDateTime, lessonDateTime, client);
     } else {
-      return this.getNextLessonSingleDateTime(lesson, userId, isMentor, lessonDateTime, client);
+      return this.getNextLessonSingleDateTime(lesson, userId, lessonDateTime, client);
     }
   }
 
-  async getNextLessonRecurrentDateTime(lesson: Lesson, userId: string, isMentor: boolean, endRecurrenceDateTime: moment.Moment, lessonDateTime: moment.Moment, client: pg.PoolClient): Promise<string | undefined> {
+  async getNextLessonRecurrentDateTime(lesson: Lesson, userId: string, endRecurrenceDateTime: moment.Moment, lessonDateTime: moment.Moment, client: pg.PoolClient): Promise<string | undefined> {
     const now = moment.utc();
     if (endRecurrenceDateTime.isBefore(now)) {
       return undefined;
@@ -146,7 +146,7 @@ export class UsersLessons {
     }
   }
 
-  async getNextLessonSingleDateTime(lesson: Lesson, userId: string, isMentor: boolean, lessonDateTime: moment.Moment, client: pg.PoolClient): Promise<string | undefined> {
+  async getNextLessonSingleDateTime(lesson: Lesson, userId: string, lessonDateTime: moment.Moment, client: pg.PoolClient): Promise<string | undefined> {
     const now = moment.utc();
     if (lessonDateTime.isBefore(now)) {
       return undefined;

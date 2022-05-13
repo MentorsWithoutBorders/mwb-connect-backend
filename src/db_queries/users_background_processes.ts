@@ -98,11 +98,11 @@ export class UsersBackgroundProcesses {
   async sendAfterLessonFromDB(): Promise<void> {
     try {
       const getAfterLessonQuery = `SELECT * FROM
-        (SELECT id, mentor_id, end_recurrence_date_time, EXTRACT(EPOCH FROM (now() - interval '3 hours' - end_recurrence_date_time)) AS diff_end_recurrence_date_time, ROUND(EXTRACT(EPOCH FROM (now() - interval '3 hours' - date_time))/60)/60/24/7 AS diff_date_time
+        (SELECT id, mentor_id, end_recurrence_date_time, EXTRACT(EPOCH FROM (date_trunc('minute', now()) - interval '3 hours' - end_recurrence_date_time)) AS diff_end_recurrence_date_time, ROUND(EXTRACT(EPOCH FROM (date_trunc('minute', now()) - interval '3 hours' - date_time))) / 3600 / 24 / 7 AS diff_date_time
             FROM users_lessons
             GROUP BY id) ul
         WHERE end_recurrence_date_time IS NULL AND diff_date_time = 0
-           OR end_recurrence_date_time IS NOT NULL AND diff_end_recurrence_date_time < 60 AND diff_date_time = FLOOR(diff_date_time)`;
+          OR end_recurrence_date_time IS NOT NULL AND diff_end_recurrence_date_time < 60 AND diff_date_time = FLOOR(diff_date_time)`;
       const { rows }: pg.QueryResult = await pool.query(getAfterLessonQuery);
       for (const row of rows) {
         const mentor: User = {
