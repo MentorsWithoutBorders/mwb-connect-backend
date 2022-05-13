@@ -147,12 +147,7 @@ export class UsersLessons {
   }
 
   async getNextLessonSingleDateTime(lesson: Lesson, userId: string, isMentor: boolean, lessonDateTime: moment.Moment, client: pg.PoolClient): Promise<string | undefined> {
-    let now = moment.utc();
-    if (isMentor) {
-      now = now.subtract(3, 'h');
-    } else {
-      now = now.subtract(2, 'h');      
-    }
+    const now = moment.utc();
     if (lessonDateTime.isBefore(now)) {
       return undefined;
     } else {
