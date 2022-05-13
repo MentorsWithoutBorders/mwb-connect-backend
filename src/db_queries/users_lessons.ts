@@ -130,15 +130,7 @@ export class UsersLessons {
   }
 
   async getNextLessonRecurrentDateTime(lesson: Lesson, userId: string, isMentor: boolean, endRecurrenceDateTime: moment.Moment, lessonDateTime: moment.Moment, client: pg.PoolClient): Promise<string | undefined> {
-    let now = moment.utc();
-    let endRecurrence = endRecurrenceDateTime.clone();
-    if (isMentor) {
-      now = now.subtract(3, 'h');
-      endRecurrence = endRecurrence.add(3, 'h');
-    } else {
-      now = now.subtract(2, 'h');
-      endRecurrence = endRecurrence.add(2, 'h');      
-    }
+    const now = moment.utc();
     if (endRecurrenceDateTime.isBefore(now)) {
       return undefined;
     } else {
@@ -146,7 +138,7 @@ export class UsersLessons {
         lessonDateTime = lessonDateTime.add(7, 'd');
       }
       const nextValidLessonDateTime = await this.getNextValidLessonDateTime(lesson, userId, lessonDateTime, client);
-      if (nextValidLessonDateTime.isAfter(endRecurrence) || nextValidLessonDateTime.isBefore(now)) {
+      if (nextValidLessonDateTime.isAfter(endRecurrenceDateTime) || nextValidLessonDateTime.isBefore(now)) {
         return undefined;
       } else {
         return moment.utc(nextValidLessonDateTime).format(constants.DATE_TIME_FORMAT);
