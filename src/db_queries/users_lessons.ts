@@ -399,7 +399,7 @@ export class UsersLessons {
       usersPushNotifications.sendPNLessonCanceled(lesson, student, isCancelAll, lessonsCanceled);
       usersSendEmails.sendEmailLessonCanceled(lesson, student, isCancelAll, lessonsCanceled);
       if (isMentor) {
-        usersWhatsAppMessages.sendWMLessonCanceled(lesson, isCancelAll);
+        await usersWhatsAppMessages.sendWMLessonCanceled(lesson, isCancelAll);
       }
     } catch (error) {
       response.status(400).send(error);
@@ -550,7 +550,7 @@ export class UsersLessons {
         await client.query(updateLessonQuery, [endRecurrence, mentorId, lessonId]);
         usersPushNotifications.sendPNLessonRecurrenceUpdated(studentsRemaining);
         usersSendEmails.sendEmailLessonRecurrenceUpdated(studentsRemaining);
-        usersWhatsAppMessages.sendWMLessonRecurrenceUpdated(studentsRemaining);
+        await usersWhatsAppMessages.sendWMLessonRecurrenceUpdated(studentsRemaining);
       }
       const lessonRecurrenceResult: LessonRecurrenceResult = {
         id: lessonId,

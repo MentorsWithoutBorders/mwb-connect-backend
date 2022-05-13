@@ -317,7 +317,7 @@ export class UsersLessonRequests {
         lesson.mentor = mentor;
         usersPushNotifications.sendPNLessonRequestAccepted(lesson);
         usersSendEmails.sendEmailLessonRequestAccepted(lesson);
-        usersWhatsAppMessages.sendWMLessonRequestAccepted(lesson);
+        await usersWhatsAppMessages.sendWMLessonRequestAccepted(lesson);
         usersSendEmails.sendEmailLessonScheduled(mentor, lesson, client);
       }
     } catch (error) {
@@ -390,7 +390,7 @@ export class UsersLessonRequests {
         const mentor = await users.getUserFromDB(mentorId, client);
         usersPushNotifications.sendPNLessonRequestRejected(student, mentor);
         usersSendEmails.sendEmailLessonRequestRejected(student, mentor);
-        usersWhatsAppMessages.sendWMLessonRequestRejected(student, mentor);
+        await usersWhatsAppMessages.sendWMLessonRequestRejected(student, mentor);
       }
       response.status(200).send(`Lesson request modified with ID: ${lessonRequestId}`);
       await client.query('COMMIT');

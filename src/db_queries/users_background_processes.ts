@@ -74,7 +74,7 @@ export class UsersBackgroundProcesses {
           if (students != null && students.length > 0) {
             usersSendEmails.sendEmailLessonReminder(nextLesson, client);
             usersPushNotifications.sendPNLessonReminder(nextLesson);
-            usersWhatsAppMessages.sendWMLessonReminder(nextLesson);
+            await usersWhatsAppMessages.sendWMLessonReminder(nextLesson);
           }
         }
         await client.query('COMMIT');
@@ -179,7 +179,7 @@ export class UsersBackgroundProcesses {
           remainingQuizzes = helpers.getRemainingQuizzes(quizzes);
           showQuizReminder = remainingQuizzes > 0 ? true : false;
         }
-        this.sendFirstAndSecondTrainingReminders(isFirst, user, showStepReminder, showQuizReminder, remainingQuizzes, client);
+        await this.sendFirstAndSecondTrainingReminders(isFirst, user, showStepReminder, showQuizReminder, remainingQuizzes, client);
         await client.query('COMMIT');
       } catch (error) {
         await client.query('ROLLBACK');
@@ -189,19 +189,19 @@ export class UsersBackgroundProcesses {
     }
   }
 
-  sendFirstAndSecondTrainingReminders(isFirst: boolean, user: User, showStepReminder: boolean, showQuizReminder: boolean, remainingQuizzes: number, client: pg.PoolClient): void {
+  async sendFirstAndSecondTrainingReminders(isFirst: boolean, user: User, showStepReminder: boolean, showQuizReminder: boolean, remainingQuizzes: number, client: pg.PoolClient): Promise<void> {
     if (showStepReminder || showQuizReminder) {
       if (isFirst) {
         usersPushNotifications.sendPNFirstTrainingReminder(user.id as string, showStepReminder, showQuizReminder, remainingQuizzes);
         usersSendEmails.sendEmailFirstTrainingReminder(user, showStepReminder, showQuizReminder, remainingQuizzes);
         if (!user.isMentor) {
-          usersWhatsAppMessages.sendWMFirstTrainingReminder(user, showStepReminder, showQuizReminder, remainingQuizzes);
+          await usersWhatsAppMessages.sendWMFirstTrainingReminder(user, showStepReminder, showQuizReminder, remainingQuizzes);
         }
       } else {
         usersPushNotifications.sendPNSecondTrainingReminder(user.id as string, showStepReminder, showQuizReminder, remainingQuizzes);
         usersSendEmails.sendEmailSecondTrainingReminder(user, showStepReminder, showQuizReminder, remainingQuizzes);
         if (!user.isMentor) {
-          usersWhatsAppMessages.sendWMSecondTrainingReminder(user, showStepReminder, showQuizReminder, remainingQuizzes);
+          await usersWhatsAppMessages.sendWMSecondTrainingReminder(user, showStepReminder, showQuizReminder, remainingQuizzes);
         }        
         adminTrainingReminders.addTrainingReminder(user, !showStepReminder, remainingQuizzes, client);
       }
