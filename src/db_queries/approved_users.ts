@@ -61,13 +61,12 @@ export class ApprovedUsers {
         }
         let insertApprovedUserQuery;
         let values;
+        const fieldId = process.env.OTHER_FIELD_ID;
         if (isMentor) {
-          const fieldId = process.env.PROGRAMMING_ID;
           insertApprovedUserQuery = `INSERT INTO approved_users (email, field_id, organization_id, is_mentor)
           VALUES ($1, $2, $3, $4)`;
           values = [email, fieldId, organization?.id, isMentor];
         } else {
-          const fieldId = process.env.OTHER_FIELD_ID;
           const goal = 'I want to have an income of at least $1000 USD per month';
           insertApprovedUserQuery = `INSERT INTO approved_users (email, phone_number, field_id, organization_id, is_mentor, goal)
             VALUES ($1, $2, $3, $4, $5, $6)`;
