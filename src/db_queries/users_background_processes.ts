@@ -102,8 +102,9 @@ export class UsersBackgroundProcesses {
             FROM users_lessons
             GROUP BY id) ul
         WHERE end_recurrence_date_time IS NULL AND diff_date_time = 0
-          OR end_recurrence_date_time IS NOT NULL AND diff_end_recurrence_date_time < 60 AND diff_date_time = FLOOR(diff_date_time)`;
+           OR end_recurrence_date_time IS NOT NULL AND diff_end_recurrence_date_time < 60 AND diff_date_time = FLOOR(diff_date_time)`;
       const { rows }: pg.QueryResult = await pool.query(getAfterLessonQuery);
+      console.log('rows length: ' + rows.length);
       for (const row of rows) {
         const mentor: User = {
           id: row.mentor_id
@@ -116,6 +117,7 @@ export class UsersBackgroundProcesses {
           if (moment.utc(previousLesson.dateTime).isBefore(moment.utc().subtract(3, 'h'))) {
             difference = moment.duration(moment.utc().subtract(3, 'h').diff(moment.utc(previousLesson.dateTime)));
           }
+          console.log('difference: ' + difference.asSeconds());
           if (difference.asSeconds() < 60) {
             previousLesson.mentor = mentor;
             usersPushNotifications.sendPNAfterLesson(previousLesson);
