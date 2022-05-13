@@ -104,7 +104,6 @@ export class UsersBackgroundProcesses {
         WHERE end_recurrence_date_time IS NULL AND diff_date_time = 0
            OR end_recurrence_date_time IS NOT NULL AND diff_end_recurrence_date_time < 60 AND diff_date_time = FLOOR(diff_date_time)`;
       const { rows }: pg.QueryResult = await pool.query(getAfterLessonQuery);
-      console.log('rows length: ' + rows.length);
       for (const row of rows) {
         const mentor: User = {
           id: row.mentor_id
@@ -113,15 +112,8 @@ export class UsersBackgroundProcesses {
         try {
           await client.query('BEGIN');
           const previousLesson = await usersLessons.getPreviousLessonFromDB(mentor.id as string, client);
-          let difference = moment.duration(moment.utc(previousLesson.dateTime).diff(moment.utc().subtract(3, 'h')));
-          if (moment.utc(previousLesson.dateTime).isBefore(moment.utc().subtract(3, 'h'))) {
-            difference = moment.duration(moment.utc().subtract(3, 'h').diff(moment.utc(previousLesson.dateTime)));
-          }
-          console.log('difference: ' + difference.asSeconds());
-          if (difference.asSeconds() < 60) {
-            previousLesson.mentor = mentor;
-            usersPushNotifications.sendPNAfterLesson(previousLesson);
-          }
+          previousLesson.mentor = mentor;
+          usersPushNotifications.sendPNAfterLesson(previousLesson);
           await client.query('COMMIT');
         } catch (error) {
           await client.query('ROLLBACK');
