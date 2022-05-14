@@ -130,7 +130,10 @@ export class UsersLessons {
   }
 
   async getNextLessonRecurrentDateTime(lesson: Lesson, userId: string, endRecurrenceDateTime: moment.Moment, lessonDateTime: moment.Moment, client: pg.PoolClient): Promise<string | undefined> {
-    const now = moment.utc();
+    let now = moment.utc();
+    let endRecurrence = endRecurrenceDateTime.clone();
+    now = now.subtract(2, 'h');
+    endRecurrence = endRecurrence.add(2, 'h');      
     if (endRecurrenceDateTime.isBefore(now)) {
       return undefined;
     } else {
@@ -138,7 +141,7 @@ export class UsersLessons {
         lessonDateTime = lessonDateTime.add(7, 'd');
       }
       const nextValidLessonDateTime = await this.getNextValidLessonDateTime(lesson, userId, lessonDateTime, client);
-      if (nextValidLessonDateTime.isAfter(endRecurrenceDateTime) || nextValidLessonDateTime.isBefore(now)) {
+      if (nextValidLessonDateTime.isAfter(endRecurrence) || nextValidLessonDateTime.isBefore(now)) {
         return undefined;
       } else {
         return moment.utc(nextValidLessonDateTime).format(constants.DATE_TIME_FORMAT);
@@ -147,7 +150,8 @@ export class UsersLessons {
   }
 
   async getNextLessonSingleDateTime(lesson: Lesson, userId: string, lessonDateTime: moment.Moment, client: pg.PoolClient): Promise<string | undefined> {
-    const now = moment.utc();
+    let now = moment.utc();
+    now = now.subtract(2, 'h');      
     if (lessonDateTime.isBefore(now)) {
       return undefined;
     } else {
