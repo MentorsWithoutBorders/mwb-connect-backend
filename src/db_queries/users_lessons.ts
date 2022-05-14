@@ -527,7 +527,7 @@ export class UsersLessons {
       const studentsRemaining = [];
       for (const student of students) {
         const nextLessonStudent = await this.getNextLessonFromDB(student.id as string, false, client);
-        const hasLessonRequestStudent = await this.getHasLessonRequestStudent(student.id as string, client);
+        const hasLessonRequestStudent = await this.getHasLessonRequestStudent(student.id as string, mentorId as string, client);
         if (nextLessonStudent.id != undefined && nextLessonStudent.id != lessonId || hasLessonRequestStudent) {
           await this.cancelPreviousLesson(student.id as string, lesson.id as string, client);
         } else {
@@ -557,10 +557,10 @@ export class UsersLessons {
     }
   }
 
-  async getHasLessonRequestStudent(studentId: string, client: pg.PoolClient ): Promise<boolean> {
+  async getHasLessonRequestStudent(studentId: string, mentorId: string, client: pg.PoolClient ): Promise<boolean> {
     const getHasLessonRequest = `SELECT id FROM users_lesson_requests
-      WHERE student_id = $1`;
-    const { rows }: pg.QueryResult = await client.query(getHasLessonRequest, [studentId]);
+      WHERE student_id = $1 AND mentor_id IS DISTINCT FROM $2`;
+    const { rows }: pg.QueryResult = await client.query(getHasLessonRequest, [studentId, mentorId]);
     return rows && rows.length > 0;   
   }  
   
