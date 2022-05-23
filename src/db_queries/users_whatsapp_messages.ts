@@ -44,7 +44,7 @@ export class UsersWhatsAppMessages {
 
   async sendWMFirstTrainingReminder(user: User, showStepReminder: boolean, showQuizReminder: boolean, remainingQuizzes: number): Promise<void> {
     const userFirstName = helpers.getUserFirstName(user);
-    let message = `Hi ${userFirstName},\r\n`;
+    let message = `Hi ${userFirstName},\n`;
     const quizzes = this.getRemainingQuizzesText(remainingQuizzes);
     if (showStepReminder && !showQuizReminder) {
       message += 'Kindly remember to add a new step to your plan in the MWB Connect app.';
@@ -53,9 +53,14 @@ export class UsersWhatsAppMessages {
     } else if (!showStepReminder && showQuizReminder) {
       message += `Kindly remember to solve the ${quizzes} in the MWB Connect app.`;
     }
+    message = this.getNotReplyMessage(message);
     if (showStepReminder || showQuizReminder) {    
       await this.sendWhatsAppMessage(user.phoneNumber, message);
     }
+  }
+
+  getNotReplyMessage(message: string): string {
+    return `${message}\n\n_*(this is an automated message, please don't reply)*_`;
   }
   
   getRemainingQuizzesText(remainingQuizzes: number): string {
@@ -75,7 +80,7 @@ export class UsersWhatsAppMessages {
 
   async sendWMSecondTrainingReminder(user: User, showStepReminder: boolean, showQuizReminder: boolean, remainingQuizzes: number): Promise<void> {
     const userFirstName = helpers.getUserFirstName(user);
-    let message = `Hi ${userFirstName},\r\n`;
+    let message = `Hi ${userFirstName},\n`;
     const quizzes = this.getRemainingQuizzesText(remainingQuizzes);
     if (showStepReminder && !showQuizReminder) {
       message += 'This is a gentle reminder that today is the last day for adding a new step to your plan in the MWB Connect app.';
@@ -84,6 +89,7 @@ export class UsersWhatsAppMessages {
     } else if (!showStepReminder && showQuizReminder) {
       message += `This is a gentle reminder that today is the last day for solving the ${quizzes} in the MWB Connect app.`;
     }
+    message = this.getNotReplyMessage(message);
     if (showStepReminder || showQuizReminder) { 
       await this.sendWhatsAppMessage(user.phoneNumber, message);
     }
@@ -97,14 +103,16 @@ export class UsersWhatsAppMessages {
     const student = students != null ? students[0] : {};
     const studentFirstName = helpers.getUserFirstName(student);
     const fieldName = student.field?.name?.toLowerCase();
-    const message = `Hi ${studentFirstName},\r\n${mentorName} has scheduled a ${recurring}${fieldName} lesson with you. Please see the details in the MWB Connect app.`
+    let message = `Hi ${studentFirstName},\n${mentorName} has scheduled a ${recurring}${fieldName} lesson with you. Please see the details in the MWB Connect app.`
+    message = this.getNotReplyMessage(message);
     await this.sendWhatsAppMessage(student.phoneNumber, message);
   }
 
   async sendWMLessonRequestRejected(student: User, mentor: User): Promise<void> {
     const mentorName = mentor?.name;
     const studentFirstName = helpers.getUserFirstName(student);
-    const message = `Hi ${studentFirstName},\r\nWe're sorry but ${mentorName} has rejected your lesson request. Please find a new mentor in the MWB Connect app.`;
+    let message = `Hi ${studentFirstName},\nWe're sorry but ${mentorName} has rejected your lesson request. Please find a new mentor in the MWB Connect app.`;
+    message = this.getNotReplyMessage(message);
     await this.sendWhatsAppMessage(student.phoneNumber, message);
   }
   
@@ -116,10 +124,11 @@ export class UsersWhatsAppMessages {
     } else {
       message = `We're sorry but the mentor has canceled the next lesson. If there aren't any other lessons scheduled, please feel free to use the MWB Connect app in order to find a new mentor.`;
     } 
+    message = this.getNotReplyMessage(message);
     if (lesson.students != null) {
       for (const student of lesson.students) {
         const studentFirstName = helpers.getUserFirstName(student);
-        const messageToSend = `Hi ${studentFirstName},\r\n${message}`;
+        const messageToSend = `Hi ${studentFirstName},\n${message}`;
         await this.sendWhatsAppMessage(student.phoneNumber, messageToSend);
       }
     }
@@ -129,7 +138,8 @@ export class UsersWhatsAppMessages {
     if (students != null && students.length > 0) {
       for (const student of students) {
         const studentFirstName = helpers.getUserFirstName(student);
-        const message = `Hi ${studentFirstName},\r\nThe mentor has updated the lesson recurrence. Please see the new details in the MWB Connect app.`;
+        let message = `Hi ${studentFirstName},\nThe mentor has updated the lesson recurrence. Please see the new details in the MWB Connect app.`;
+        message = this.getNotReplyMessage(message);
         await this.sendWhatsAppMessage(student.phoneNumber, message);
       }
     }
@@ -140,7 +150,8 @@ export class UsersWhatsAppMessages {
     if (students != null && students.length > 0) {
       for (const student of students) {
         const studentFirstName = helpers.getUserFirstName(student);
-        const message = `Hi ${studentFirstName},\r\nKindly remember to attend the lesson in 30 mins from now.`;
+        let message = `Hi ${studentFirstName},\nKindly remember to attend the lesson in 30 mins from now.`;
+        message = this.getNotReplyMessage(message);
         await this.sendWhatsAppMessage(student.phoneNumber, message);
       }
     }
