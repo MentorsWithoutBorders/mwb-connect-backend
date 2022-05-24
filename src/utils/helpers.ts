@@ -55,7 +55,14 @@ export class Helpers {
   }
 
   getUserFirstName(user: User): string {
-    return user.name != null ? user?.name?.substring(0, user?.name?.indexOf(' ')) : '';
+    if (user.name != null) {
+      if (user?.name?.indexOf(' ') > 0) {
+        return user?.name?.substring(0, user?.name?.indexOf(' '))
+      } else {
+        return user?.name;
+      }
+    }
+    return '';
   }
   
   getDSTAdjustedDifferenceInDays(differenceInMilliseconds: number): number {
