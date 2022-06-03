@@ -3,7 +3,7 @@ export const constants = {
   DATE_TIME_FORMAT: 'yyyy-MM-DD HH:mm:ssZ',
   SHORT_DATE_FORMAT: 'MMM D',
   TIME_FORMAT_LESSON: 'h:mm A',
-  DATE_FORMAT_LESSON: 'dddd, MMM DD',
+  DATE_FORMAT_LESSON: 'dddd, MMM D',
   DAYS_OF_WEEK: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
   READ_ONLY_TRANSACTION: 'SET TRANSACTION READ ONLY',
   WEEKS_PER_MONTH: 4,

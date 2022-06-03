@@ -171,7 +171,7 @@ export class UsersLessonRequests {
         lessonRequestResult.id = availableLesson.id;
         lessonRequestResult.isLessonRequest = false;
       } else if (this.getIsInAvailableMentors(mentorId, availableMentors) || isPreviousMentor) {
-        let lessonDateTime = moment.utc().add(1, 'd');
+        let lessonDateTime = moment.utc().add(2, 'd');
         while (lessonDateTime.format('dddd') != availability?.dayOfWeek) {
           lessonDateTime = lessonDateTime.add(1, 'd');
         }
@@ -190,7 +190,7 @@ export class UsersLessonRequests {
         lessonRequestResult.isLessonRequest = true;
         if (!isPreviousMentor) {
           usersPushNotifications.sendPNLessonRequest(student, lessonRequest);
-          usersSendEmails.sendEmailLessonRequest(student, lessonRequest);
+          usersSendEmails.sendEmailLessonRequest(student, lessonRequest, client);
         }
       }
       response.status(200).send(lessonRequestResult);

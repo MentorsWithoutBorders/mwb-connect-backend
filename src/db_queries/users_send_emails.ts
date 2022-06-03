@@ -140,16 +140,19 @@ export class UsersSendEmails {
   }
 
   setEmailBody(userName: string, body: string): string {
-    return `Hi ${userName},<br><br>` + body + '<br><br>Regards,<br>MWB Support Team';
+    return `Hi ${userName},<br><br>${body}<br><br>Regards,<br>MWB Support Team`;
   }
 
-  sendEmailLessonRequest(student: User, lessonRequest: LessonRequest): void {
+  async sendEmailLessonRequest(student: User, lessonRequest: LessonRequest, client: pg.PoolClient): Promise<void> {
     const mentor = lessonRequest.mentor;
     const subfield = lessonRequest.subfield;
     const mentorFirstName = helpers.getUserFirstName(mentor as User);
     const mentorEmailAddress = mentor?.email;
     const subfieldName = subfield?.name?.toLowerCase();
-    let body = `${student.name} from ${student.organization?.name} is requesting a ${subfieldName} lesson with you. Kindly see the details in the MWB Connect app.`;
+    const userTimeZone = await usersTimeZones.getUserTimeZone(mentor?.id as string, client);
+    const now = moment.utc().tz(userTimeZone.name);
+    const deadline = now.add(1, 'd').format(constants.DATE_FORMAT_LESSON);
+    let body = `${student.name} from ${student.organization?.name} is requesting a ${subfieldName} lesson with you.<br><br>You can find the details of the lesson request in the MWB Connect app and we will kindly ask you to accept or reject the request until the end of the day on ${deadline} so that the student can connect with another mentor if needed.`;
     body = this.setEmailBody(mentorFirstName, body);
     const email: Email = {
       subject: 'New lesson request',
