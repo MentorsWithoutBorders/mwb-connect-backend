@@ -143,8 +143,9 @@ export class UsersSendEmails {
     return `Hi ${userName},<br><br>${body}<br><br>Regards,<br>MWB Support Team`;
   }
 
-  async sendEmailLessonRequest(student: User, lessonRequest: LessonRequest, client: pg.PoolClient): Promise<void> {
+  async sendEmailLessonRequest(lessonRequest: LessonRequest, client: pg.PoolClient): Promise<void> {
     const mentor = lessonRequest.mentor;
+    const student = lessonRequest.student;
     const subfield = lessonRequest.subfield;
     const mentorFirstName = helpers.getUserFirstName(mentor as User);
     const mentorEmailAddress = mentor?.email;
@@ -152,10 +153,25 @@ export class UsersSendEmails {
     const userTimeZone = await usersTimeZones.getUserTimeZone(mentor?.id as string, client);
     const now = moment.utc().tz(userTimeZone.name);
     const deadline = now.add(1, 'd').format(constants.DATE_FORMAT_LESSON);
-    let body = `${student.name} from ${student.organization?.name} is requesting a ${subfieldName} lesson with you.<br><br>You can find the details of the lesson request in the MWB Connect app and we will kindly ask you to accept or reject the request until the end of the day on ${deadline} so that the student can connect with another mentor if needed.`;
+    let body = `${student?.name} from ${student?.organization?.name} is requesting a ${subfieldName} lesson with you.<br><br>You can find the details of the lesson request in the MWB Connect app and we will kindly ask you to accept or reject the request until the end of the day on ${deadline} so that the student can connect with another mentor if needed.`;
     body = this.setEmailBody(mentorFirstName, body);
     const email: Email = {
       subject: 'New lesson request',
+      body: body
+    }
+    this.sendEmail(mentorEmailAddress as string, email);
+  }
+  
+  async sendEmailLessonRequestReminder(lessonRequest: LessonRequest): Promise<void> {
+    const mentor = lessonRequest.mentor;
+    const student = lessonRequest.student;
+    const mentorFirstName = helpers.getUserFirstName(mentor as User);
+    const studentFirstName = helpers.getUserFirstName(student as User);
+    const mentorEmailAddress = mentor?.email;
+    let body = `Kindly remember to accept or reject ${studentFirstName}'s lesson request until the end of the day today so that the student can connect with another mentor if needed.`;
+    body = this.setEmailBody(mentorFirstName, body);
+    const email: Email = {
+      subject: 'Lesson request reminder',
       body: body
     }
     this.sendEmail(mentorEmailAddress as string, email);

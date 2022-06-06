@@ -189,8 +189,8 @@ export class UsersLessonRequests {
         lessonRequestResult.id = lessonRequest.id;
         lessonRequestResult.isLessonRequest = true;
         if (!isPreviousMentor) {
-          usersPushNotifications.sendPNLessonRequest(student, lessonRequest);
-          usersSendEmails.sendEmailLessonRequest(student, lessonRequest, client);
+          usersPushNotifications.sendPNLessonRequest(lessonRequest);
+          usersSendEmails.sendEmailLessonRequest(lessonRequest, client);
         }
       }
       response.status(200).send(lessonRequestResult);

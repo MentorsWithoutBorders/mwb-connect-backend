@@ -7,6 +7,7 @@ import os from 'os-utils';
 import dotenv from 'dotenv';
 import { Conn } from '../db/conn';
 import { Helpers } from '../utils/helpers';
+import { Users } from './users';
 import { UsersLessons } from './users_lessons';
 import { UsersAvailableMentors } from './users_available_mentors';
 import { UsersSteps } from './users_steps';
@@ -19,10 +20,12 @@ import { UsersWhatsAppMessages } from './users_whatsapp_messages';
 import { AdminTrainingReminders } from './admin_training_reminders';
 import User from '../models/user.model';
 import Email from '../models/email.model';
+import LessonRequest from '../models/lesson_request.model';
 
 const conn = new Conn();
 const pool = conn.pool;
 const helpers = new Helpers();
+const users = new Users();
 const usersLessons = new UsersLessons();
 const usersAvailableMentors = new UsersAvailableMentors();
 const usersSteps = new UsersSteps();
@@ -39,6 +42,46 @@ export class UsersBackgroundProcesses {
   constructor() {
     autoBind(this);
   }
+
+  async sendLessonRequestReminders(request: Request, response: Response): Promise<void> {
+    try {
+      await this.sendLessonRequestRemindersMentors();
+      response.status(200).send('Lesson request reminders sent');
+    } catch (error) {
+      response.status(400).send(error);
+    }    
+  }
+  
+  async sendLessonRequestRemindersMentors(): Promise<void> {
+    const getMentorsForLessonRequestReminderQuery = `SELECT ulr.mentor_id, ulr.student_id, u.email FROM users AS u
+      JOIN users_lesson_requests AS ulr
+        ON u.id = ulr.mentor_id
+      JOIN users_timezones AS ut
+        ON u.id = ut.user_id
+      WHERE date_trunc('day', now() AT TIME ZONE ut.name)::date - date_trunc('day', ulr.sent_date_time AT TIME ZONE ut.name)::date = 1
+        AND extract(hour from now() AT TIME ZONE ut.name) = 12
+        AND extract(minute from now() AT TIME ZONE ut.name) = 0;`;
+    const { rows }: pg.QueryResult = await pool.query(getMentorsForLessonRequestReminderQuery);
+    for (const row of rows) {
+      const client = await pool.connect();
+      try {
+        await client.query('BEGIN');
+        const mentor = await users.getUserFromDB(row.mentor_id, client);
+        const student = await users.getUserFromDB(row.student_id, client);
+        const lessonRequest: LessonRequest = {
+          mentor: mentor,
+          student: student
+        }        
+        usersPushNotifications.sendPNLessonRequestReminder(lessonRequest);
+        usersSendEmails.sendEmailLessonRequestReminder(lessonRequest);        
+        await client.query('COMMIT');
+      } catch (error) {
+        await client.query('ROLLBACK');
+      } finally {
+        client.release();
+      }        
+    }
+  }  
 
   async sendLessonReminders(request: Request, response: Response): Promise<void> {
     try {

@@ -131,7 +131,7 @@ export class UsersPushNotifications {
     if (showStepReminder || showQuizReminder) { 
       this.sendPushNotification(userId, pushNotification);
     }
-  }    
+  }
 
   sendPNStudentAddedToLesson(student: User, lesson: Lesson): void {
     const mentorName = lesson.mentor?.name;
@@ -151,16 +151,29 @@ export class UsersPushNotifications {
     this.sendPushNotification(lesson.mentor?.id as string, pushNotificationMentor);
   }    
 
-  sendPNLessonRequest(student: User, lessonRequest: LessonRequest): void {
+  sendPNLessonRequest(lessonRequest: LessonRequest): void {
     const mentorId = lessonRequest.mentor?.id;
+    const student = lessonRequest.student;
     const subfieldName = lessonRequest.subfield?.name?.toLowerCase();
     const pushNotification: PushNotification = {
       title: 'New lesson request',
-      body: `${student.name} from ${student.organization?.name} is requesting a ${subfieldName} lesson with you`,
+      body: `${student?.name} from ${student?.organization?.name} is requesting a ${subfieldName} lesson with you`,
       type: PushNotificationType.LessonRequest
     }
     this.sendPushNotification(mentorId as string, pushNotification);
   }
+
+  sendPNLessonRequestReminder(lessonRequest: LessonRequest): void {
+    const mentorId = lessonRequest.mentor?.id as string;
+    const student = lessonRequest.student as User;    
+    const studentFirstName = helpers.getUserFirstName(student);
+    const pushNotification: PushNotification = {
+      title: 'Lesson request reminder',
+      body: `Last day for accepting or rejecting ${studentFirstName}'s lesson request`,
+      type: PushNotificationType.LessonRequest
+    }
+    this.sendPushNotification(mentorId, pushNotification);
+  }  
   
   sendPNLessonRequestAccepted(lesson: Lesson): void {
     const isLessonRecurrent = helpers.isLessonRecurrent(lesson.dateTime as string, lesson.endRecurrenceDateTime);
