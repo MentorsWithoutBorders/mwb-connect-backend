@@ -388,9 +388,13 @@ export class UsersLessonRequests {
         await this.cancelLessons(mentorId, studentId, client);
         const student = await users.getUserFromDB(studentId, client);
         const mentor = await users.getUserFromDB(mentorId, client);
-        usersPushNotifications.sendPNLessonRequestRejected(student, mentor);
-        usersSendEmails.sendEmailLessonRequestRejected(student, mentor);
-        await usersWhatsAppMessages.sendWMLessonRequestRejected(student, mentor);
+        const lessonRequest: LessonRequest = {
+          mentor: mentor,
+          student: student
+        }        
+        usersPushNotifications.sendPNLessonRequestRejected(lessonRequest);
+        usersSendEmails.sendEmailLessonRequestRejected(lessonRequest);
+        await usersWhatsAppMessages.sendWMLessonRequestRejected(lessonRequest);
       }
       response.status(200).send(`Lesson request modified with ID: ${lessonRequestId}`);
       await client.query('COMMIT');

@@ -194,13 +194,29 @@ export class UsersSendEmails {
     this.sendEmail(student?.email as string, email);
   }
 
-  sendEmailLessonRequestRejected(student: User, mentor: User): void {
+  sendEmailLessonRequestRejected(lessonRequest: LessonRequest): void {
+    const mentor = lessonRequest.mentor as User;
+    const student = lessonRequest.student as User;    
     const mentorName = mentor?.name;
     const studentFirstName = helpers.getUserFirstName(student);
     let body = `We're sorry but ${mentorName} has rejected your lesson request. Please find a new mentor in the MWB Connect app.`;
     body = this.setEmailBody(studentFirstName, body);
     const email: Email = {
       subject: 'Lesson request rejected',
+      body: body
+    }
+    this.sendEmail(student?.email as string, email);
+  }
+  
+  sendEmailLessonRequestExpired(lessonRequest: LessonRequest): void {
+    const mentor = lessonRequest.mentor as User;
+    const student = lessonRequest.student as User;
+    const mentorFirstName = helpers.getUserFirstName(mentor);
+    const studentFirstName = helpers.getUserFirstName(student);
+    let body = `We're sorry but your lesson request has expired due to ${mentorFirstName}'s unavailability. Please find a new mentor in the MWB Connect app.`;
+    body = this.setEmailBody(studentFirstName, body);
+    const email: Email = {
+      subject: 'Lesson request expired',
       body: body
     }
     this.sendEmail(student?.email as string, email);

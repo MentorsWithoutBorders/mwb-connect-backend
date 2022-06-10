@@ -173,7 +173,7 @@ export class UsersPushNotifications {
       type: PushNotificationType.LessonRequest
     }
     this.sendPushNotification(mentorId, pushNotification);
-  }  
+  }
   
   sendPNLessonRequestAccepted(lesson: Lesson): void {
     const isLessonRecurrent = helpers.isLessonRecurrent(lesson.dateTime as string, lesson.endRecurrenceDateTime);
@@ -189,14 +189,28 @@ export class UsersPushNotifications {
     this.sendPushNotification(student.id as string, pushNotification);
   }
 
-  sendPNLessonRequestRejected(student: User, mentor: User): void {
+  sendPNLessonRequestRejected(lessonRequest: LessonRequest): void {
+    const mentor = lessonRequest.mentor as User;
+    const studentId = lessonRequest.student?.id;    
     const mentorName = mentor?.name;
     const pushNotification: PushNotification = {
       title: 'Lesson request rejected',
       body: `We're sorry but ${mentorName} has rejected your lesson request`
     }
-    this.sendPushNotification(student.id as string, pushNotification);
+    this.sendPushNotification(studentId as string, pushNotification);
   }
+
+  sendPNLessonRequestExpired(lessonRequest: LessonRequest): void {
+    const mentor = lessonRequest.mentor as User;
+    const studentId = lessonRequest.student?.id;
+    const mentorFirstName = helpers.getUserFirstName(mentor);
+    const pushNotification: PushNotification = {
+      title: 'Lesson request expired',
+      body: `We're sorry but your lesson request has expired due to ${mentorFirstName}'s unavailability. Please find a new mentor.`,
+      type: PushNotificationType.LessonRequest
+    }
+    this.sendPushNotification(studentId as string, pushNotification);
+  }  
   
   sendPNLessonCanceled(lesson: Lesson, student: User, isCancelAll: boolean, lessonsCanceled: number): void {
     const isMentor = lesson.mentor == null ? true : false;

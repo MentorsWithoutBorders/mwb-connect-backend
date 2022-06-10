@@ -235,12 +235,12 @@ app.post('/api/v1/send_after_lessons', usersBackgroundProcesses.sendAfterLesson)
 app.post('/api/v1/send_training_reminders', usersBackgroundProcesses.sendTrainingReminders);
 app.post('/api/v1/available_mentors/fields', usersBackgroundProcesses.setAvailableMentorsFields);
 
-cron.schedule('* * * * *', function() {
-  usersBackgroundProcesses.sendLessonRequestRemindersMentors();
-  usersBackgroundProcesses.sendLessonRemindersFromDB();
-  usersBackgroundProcesses.sendAfterLessonFromDB();
-  usersBackgroundProcesses.sendTrainingRemindersFromDB(true);
-  usersBackgroundProcesses.sendTrainingRemindersFromDB(false);
+cron.schedule('* * * * *', async() => {
+  await usersBackgroundProcesses.sendLessonRequestRemindersFromDB();
+  await usersBackgroundProcesses.sendLessonRemindersFromDB();
+  await usersBackgroundProcesses.sendAfterLessonFromDB();
+  await usersBackgroundProcesses.sendTrainingRemindersFromDB(true);
+  await usersBackgroundProcesses.sendTrainingRemindersFromDB(false);
   usersBackgroundProcesses.sendCPUUsage();
 });
 

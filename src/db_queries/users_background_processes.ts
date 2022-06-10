@@ -45,22 +45,26 @@ export class UsersBackgroundProcesses {
 
   async sendLessonRequestReminders(request: Request, response: Response): Promise<void> {
     try {
-      await this.sendLessonRequestRemindersMentors();
+      await this.sendLessonRequestRemindersFromDB();
       response.status(200).send('Lesson request reminders sent');
     } catch (error) {
       response.status(400).send(error);
     }    
   }
+
+  async sendLessonRequestRemindersFromDB(): Promise<void> {
+    await this.sendLessonRequestRemindersMentors();
+    await this.setLessonRequestsExpired();
+    await this.sendLessonRequestExpiredStudents();
+  }
   
   async sendLessonRequestRemindersMentors(): Promise<void> {
-    const getMentorsForLessonRequestReminderQuery = `SELECT ulr.mentor_id, ulr.student_id, u.email FROM users AS u
-      JOIN users_lesson_requests AS ulr
-        ON u.id = ulr.mentor_id
-      JOIN users_timezones AS ut
-        ON u.id = ut.user_id
+    const getMentorsForLessonRequestReminderQuery = `SELECT ulr.mentor_id, ulr.student_id FROM users_lesson_requests ulr
+      JOIN users_timezones ut
+        ON ulr.mentor_id = ut.user_id
       WHERE date_trunc('day', now() AT TIME ZONE ut.name)::date - date_trunc('day', ulr.sent_date_time AT TIME ZONE ut.name)::date = 1
         AND extract(hour from now() AT TIME ZONE ut.name) = 12
-        AND extract(minute from now() AT TIME ZONE ut.name) = 0;`;
+        AND extract(minute from now() AT TIME ZONE ut.name) = 0`;
     const { rows }: pg.QueryResult = await pool.query(getMentorsForLessonRequestReminderQuery);
     for (const row of rows) {
       const client = await pool.connect();
@@ -81,7 +85,68 @@ export class UsersBackgroundProcesses {
         client.release();
       }        
     }
+  }
+
+  async setLessonRequestsExpired(): Promise<void> {
+    const getLessonRequestsExpiredQuery = `SELECT ulr.id FROM users_lesson_requests ulr
+      JOIN users_timezones ut
+        ON ulr.mentor_id = ut.user_id
+      WHERE date_trunc('day', now() AT TIME ZONE ut.name)::date - date_trunc('day', ulr.sent_date_time AT TIME ZONE ut.name)::date = 2
+        AND extract(hour from now() AT TIME ZONE ut.name) = 0
+        AND extract(minute from now() AT TIME ZONE ut.name) = 0`;
+    const { rows }: pg.QueryResult = await pool.query(getLessonRequestsExpiredQuery);
+    for (const row of rows) {
+      const client = await pool.connect();
+      try {
+        await client.query('BEGIN');
+        await this.setLessonRequestExpired(row.id, client);
+        await client.query('COMMIT');
+      } catch (error) {
+        await client.query('ROLLBACK');
+      } finally {
+        client.release();
+      }        
+    }
+  }
+
+  async sendLessonRequestExpiredStudents(): Promise<void> {
+    const getMentorsForLessonRequestReminderQuery = `SELECT l.student_id, l.mentor_id FROM
+      (SELECT ulr.id, ulr.mentor_id, ulr.student_id FROM users_lesson_requests ulr
+          JOIN users_timezones ut
+            ON ulr.mentor_id = ut.user_id
+          WHERE date_trunc('day', now() AT TIME ZONE ut.name)::date - date_trunc('day', ulr.sent_date_time AT TIME ZONE ut.name)::date = 2
+            AND ulr.is_expired IS true) l
+      JOIN users_timezones ut
+        ON l.student_id = ut.user_id
+      WHERE extract(hour from now() AT TIME ZONE ut.name) = 9
+        AND extract(minute from now() AT TIME ZONE ut.name) = 0`;
+    const { rows }: pg.QueryResult = await pool.query(getMentorsForLessonRequestReminderQuery);
+    for (const row of rows) {
+      const client = await pool.connect();
+      try {
+        await client.query('BEGIN');
+        const mentor = await users.getUserFromDB(row.mentor_id, client);
+        const student = await users.getUserFromDB(row.student_id, client);
+        const lessonRequest: LessonRequest = {
+          mentor: mentor,
+          student: student
+        }
+        usersPushNotifications.sendPNLessonRequestExpired(lessonRequest);
+        usersSendEmails.sendEmailLessonRequestExpired(lessonRequest);
+        await usersWhatsAppMessages.sendWMLessonRequestExpired(lessonRequest);
+        await client.query('COMMIT');
+      } catch (error) {
+        await client.query('ROLLBACK');
+      } finally {
+        client.release();
+      }        
+    }
   }  
+  
+  async setLessonRequestExpired(lessonRequestId: string, client: pg.PoolClient): Promise<void> {
+    const setLessonRequestExpiredQuery = 'UPDATE users_lesson_requests SET is_expired = true WHERE id = $1';
+    await client.query(setLessonRequestExpiredQuery, [lessonRequestId]);
+  }
 
   async sendLessonReminders(request: Request, response: Response): Promise<void> {
     try {
