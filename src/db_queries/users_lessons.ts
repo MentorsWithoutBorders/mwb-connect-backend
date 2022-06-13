@@ -238,17 +238,10 @@ export class UsersLessons {
       if (lessonRow.end_recurrence_date_time != null) {
         lesson.endRecurrenceDateTime = moment.utc(lessonRow.end_recurrence_date_time).format(constants.DATE_TIME_FORMAT)
       }
+      const mentor = await users.getUserFromDB(lessonRow.mentor_id, client);
+      lesson.mentor = mentor;      
       if (isMentor) {
         lesson.students = await this.getLessonStudents(lesson, false, client);
-      } else {
-        const user = await users.getUserFromDB(lessonRow.mentor_id, client);
-        const mentor: User = {
-          id: user.id as string,
-          name: user.name as string,
-          field: user.field,
-          organization: user.organization
-        }
-        lesson.mentor = mentor;
       }
     }
     return lesson;

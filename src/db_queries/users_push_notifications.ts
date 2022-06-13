@@ -113,7 +113,7 @@ export class UsersPushNotifications {
     return quizzes;    
   }
 
-  sendPNSecondTrainingReminder(userId: string, showStepReminder: boolean, showQuizReminder: boolean, remainingQuizzes: number): void {
+  sendPNLastTrainingReminder(userId: string, showStepReminder: boolean, showQuizReminder: boolean, remainingQuizzes: number): void {
     let body = '';
     const quizzes = this.getRemainingQuizzesText(remainingQuizzes);
     if (showStepReminder && !showQuizReminder) {
@@ -297,7 +297,38 @@ export class UsersPushNotifications {
         this.sendPushNotification(student.id as string, pushNotificationStudent);
       }
     }
-  }  
+  }
+  
+  sendPNFirstAddLessonsReminder(lesson: Lesson): void {
+    const students = lesson?.students;
+    const studentsText = students?.length == 1 ? 'student' : 'students';
+    const pushNotification: PushNotification = {
+      title: 'Add more lessons',
+      body: `Kindly remember to add more lessons with your previous ${studentsText} if possible`
+    }
+    const mentor = lesson.mentor;
+    this.sendPushNotification(mentor?.id as string, pushNotification);
+  }
+
+  sendPNLastAddLessonsReminder(lesson: Lesson): void {
+    const students = lesson?.students;
+    const studentsText = students?.length == 1 ? 'student' : 'students';
+    const pushNotification: PushNotification = {
+      title: 'Add more lessons',
+      body: `Last day for adding more lessons with your previous ${studentsText}`
+    }
+    const mentor = lesson.mentor;
+    this.sendPushNotification(mentor?.id as string, pushNotification);
+  }
+  
+  sendPNNoMoreLessonsAdded(mentor: User, student: User): void {
+    const mentorFirstName = helpers.getUserFirstName(mentor);
+    const pushNotification: PushNotification = {
+      title: 'No more lessons added',
+      body: `We're sorry but ${mentorFirstName} couldn't schedule more lessons. Please find a new mentor.`
+    }
+    this.sendPushNotification(student.id as string, pushNotification);
+  }   
   
   sendPNAfterLesson(lesson: Lesson): void {
     const pushNotification: PushNotification = {

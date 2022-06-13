@@ -79,7 +79,7 @@ export class UsersWhatsAppMessages {
     return quizzes;    
   }
 
-  async sendWMSecondTrainingReminder(user: User, showStepReminder: boolean, showQuizReminder: boolean, remainingQuizzes: number): Promise<void> {
+  async sendWMLastTrainingReminder(user: User, showStepReminder: boolean, showQuizReminder: boolean, remainingQuizzes: number): Promise<void> {
     const userFirstName = helpers.getUserFirstName(user);
     let message = '';
     const quizzes = this.getRemainingQuizzesText(remainingQuizzes);
@@ -167,6 +167,14 @@ export class UsersWhatsAppMessages {
         await this.sendWhatsAppMessage(student.phoneNumber, message);
       }
     }
-  }  
+  }
+  
+  async sendWMNoMoreLessonsAdded(mentor: User, student: User): Promise<void> {
+    const mentorFirstName = helpers.getUserFirstName(mentor);
+    const studentFirstName = helpers.getUserFirstName(student);
+    let message = `We're sorry but ${mentorFirstName} couldn't schedule more lessons. Please find a new mentor in the MWB Connect app.`;
+    message = this.getNotReplyMessage(studentFirstName, message);
+    await this.sendWhatsAppMessage(student.phoneNumber, message);
+  }   
 }
 

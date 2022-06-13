@@ -21,6 +21,7 @@ import { AdminTrainingReminders } from './admin_training_reminders';
 import User from '../models/user.model';
 import Email from '../models/email.model';
 import LessonRequest from '../models/lesson_request.model';
+import { TrainingReminderType } from '../utils/training_reminder_type';
 
 const conn = new Conn();
 const pool = conn.pool;
@@ -43,16 +44,16 @@ export class UsersBackgroundProcesses {
     autoBind(this);
   }
 
-  async sendLessonRequestReminders(request: Request, response: Response): Promise<void> {
+  async sendAllLessonRequestReminders(request: Request, response: Response): Promise<void> {
     try {
-      await this.sendLessonRequestRemindersFromDB();
+      await this.sendAllLessonRequestRemindersFromDB();
       response.status(200).send('Lesson request reminders sent');
     } catch (error) {
       response.status(400).send(error);
     }    
   }
 
-  async sendLessonRequestRemindersFromDB(): Promise<void> {
+  async sendAllLessonRequestRemindersFromDB(): Promise<void> {
     await this.sendLessonRequestRemindersMentors();
     await this.setLessonRequestsExpired();
     await this.sendLessonRequestExpiredStudents();
@@ -108,6 +109,11 @@ export class UsersBackgroundProcesses {
       }        
     }
   }
+  
+  async setLessonRequestExpired(lessonRequestId: string, client: pg.PoolClient): Promise<void> {
+    const setLessonRequestExpiredQuery = 'UPDATE users_lesson_requests SET is_expired = true WHERE id = $1';
+    await client.query(setLessonRequestExpiredQuery, [lessonRequestId]);
+  }  
 
   async sendLessonRequestExpiredStudents(): Promise<void> {
     const getMentorsForLessonRequestReminderQuery = `SELECT l.student_id, l.mentor_id FROM
@@ -141,23 +147,27 @@ export class UsersBackgroundProcesses {
         client.release();
       }        
     }
-  }  
-  
-  async setLessonRequestExpired(lessonRequestId: string, client: pg.PoolClient): Promise<void> {
-    const setLessonRequestExpiredQuery = 'UPDATE users_lesson_requests SET is_expired = true WHERE id = $1';
-    await client.query(setLessonRequestExpiredQuery, [lessonRequestId]);
   }
 
-  async sendLessonReminders(request: Request, response: Response): Promise<void> {
+  async sendAllLessonReminders(request: Request, response: Response): Promise<void> {
     try {
-      await this.sendLessonRemindersFromDB();
+      await this.sendAllLessonRemindersFromDB();
       response.status(200).send('Lesson reminders sent');
     } catch (error) {
       response.status(400).send(error);
     }    
   }
+
+  async sendAllLessonRemindersFromDB(): Promise<void> {
+    await this.sendBeforeLessonRemindersFromDB();
+    await this.sendFirstAddLessonsRemindersMentors();
+    await this.sendLastAddLessonsRemindersMentors();
+    await this.setLessonsCanceled();
+    await this.sendNoMoreLessonsAddedStudents();
+    await this.sendAfterLessonFromDB();
+  }  
   
-  async sendLessonRemindersFromDB(): Promise<void> {
+  async sendBeforeLessonRemindersFromDB(): Promise<void> {
     const getLessonsQuery = `SELECT * FROM
       (SELECT id, mentor_id, is_canceled, EXTRACT(EPOCH FROM (date_trunc('minute', now()) + interval '30 minutes' - date_time)) / 3600 / 24 / 7 AS diff_date_time
           FROM users_lessons) ul
@@ -192,15 +202,98 @@ export class UsersBackgroundProcesses {
         client.release();
       }        
     }
-  }  
+  }
+  
+  async sendFirstAddLessonsRemindersMentors(): Promise<void> {
+    const rows = await this.getLessonRowsForReminders(1, 12);
+    for (const row of rows) {
+      const client = await pool.connect();
+      try {
+        await client.query('BEGIN');
+        const lesson = await usersLessons.getPreviousLessonFromDB(row.mentor_id, client);
+        usersPushNotifications.sendPNFirstAddLessonsReminder(lesson);
+        usersSendEmails.sendEmailFirstAddLessonsReminder(lesson, client);        
+        await client.query('COMMIT');
+      } catch (error) {
+        await client.query('ROLLBACK');
+      } finally {
+        client.release();
+      }        
+    }
+  }
 
-  async sendAfterLesson(request: Request, response: Response): Promise<void> {
-    try {
-      await this.sendAfterLessonFromDB();
-      response.status(200).send('After lesson sent');
-    } catch (error) {
-      response.status(400).send(error);
-    }    
+  async getLessonRowsForReminders(days: number, hour: number): Promise<pg.QueryResultRow[]> {
+    const getAddLessonsRemindersQuery = `SELECT ul.id, ul.mentor_id FROM users_lessons ul
+      JOIN users_timezones ut
+        ON ul.mentor_id = ut.user_id
+      WHERE (ul.end_recurrence_date_time IS NULL AND date_trunc('day', now() AT TIME ZONE ut.name)::date - date_trunc('day', ul.date_time AT TIME ZONE ut.name)::date = $1
+          OR date_trunc('day', now() AT TIME ZONE ut.name)::date - date_trunc('day', ul.end_recurrence_date_time AT TIME ZONE ut.name)::date = $1)
+        AND ul.is_canceled IS DISTINCT FROM true  
+        AND extract(hour from now() AT TIME ZONE ut.name) = $2
+        AND extract(minute from now() AT TIME ZONE ut.name) = 10`;
+    const { rows }: pg.QueryResult = await pool.query(getAddLessonsRemindersQuery, [days, hour]);
+    return rows;
+  }
+  
+  async sendLastAddLessonsRemindersMentors(): Promise<void> {
+    const lessonRows = await this.getLessonRowsForReminders(2, 12);
+    for (const lessonRow of lessonRows) {
+      const client = await pool.connect();
+      try {
+        await client.query('BEGIN');
+        const lesson = await usersLessons.getPreviousLessonFromDB(lessonRow.mentor_id, client);
+        usersPushNotifications.sendPNLastAddLessonsReminder(lesson);
+        usersSendEmails.sendEmailLastAddLessonsReminder(lesson);        
+        await client.query('COMMIT');
+      } catch (error) {
+        await client.query('ROLLBACK');
+      } finally {
+        client.release();
+      }        
+    }
+  }
+
+  async setLessonsCanceled(): Promise<void> {
+    const lessonRows = await this.getLessonRowsForReminders(3, 0);
+    for (const lessonRow of lessonRows) {
+      const client = await pool.connect();
+      try {
+        await client.query('BEGIN');
+        await this.setLessonCanceled(lessonRow.id, client);
+        await client.query('COMMIT');
+      } catch (error) {
+        await client.query('ROLLBACK');
+      } finally {
+        client.release();
+      }        
+    }
+  }
+
+  async sendNoMoreLessonsAddedStudents(): Promise<void> {
+    const lessonRows = await this.getLessonRowsForReminders(3, 13);
+    for (const lessonRow of lessonRows) {
+      const client = await pool.connect();
+      try {
+        await client.query('BEGIN');
+        const lesson = await usersLessons.getPreviousLessonFromDB(lessonRow.mentor_id, client);
+        const students = lesson.students as Array<User>;
+        for (const student of students) {
+          usersPushNotifications.sendPNNoMoreLessonsAdded(lesson.mentor as User, student);
+          usersSendEmails.sendEmailNoMoreLessonsAdded(lesson.mentor as User, student);
+          await usersWhatsAppMessages.sendWMNoMoreLessonsAdded(lesson.mentor as User, student);  
+        }
+        await client.query('COMMIT');
+      } catch (error) {
+        await client.query('ROLLBACK');
+      } finally {
+        client.release();
+      }        
+    }
+  }  
+  
+  async setLessonCanceled(lessonId: string, client: pg.PoolClient): Promise<void> {
+    const setLessonCanceledQuery = 'UPDATE users_lessons SET is_canceled = true WHERE id = $1';
+    await client.query(setLessonCanceledQuery, [lessonId]);
   }
   
   async sendAfterLessonFromDB(): Promise<void> {
@@ -234,17 +327,22 @@ export class UsersBackgroundProcesses {
     }
   }
 
-  async sendTrainingReminders(request: Request, response: Response): Promise<void> {
+  async sendAllTrainingReminders(request: Request, response: Response): Promise<void> {
     try {
-      await this.sendTrainingRemindersFromDB(true);
-      await this.sendTrainingRemindersFromDB(false);
+      await this.sendAllTrainingRemindersFromDB();
       response.status(200).send('Training reminders sent');
     } catch (error) {
       response.status(400).send(error);
     }    
   }
+
+  async sendAllTrainingRemindersFromDB(): Promise<void> {
+    await this.sendTrainingRemindersFromDB(TrainingReminderType.First);
+    await this.sendTrainingRemindersFromDB(TrainingReminderType.Last);
+  }   
   
-  async sendTrainingRemindersFromDB(isFirst: boolean): Promise<void> {
+  async sendTrainingRemindersFromDB(type: TrainingReminderType): Promise<void> {
+    const isFirst = type == TrainingReminderType.First;
     const days = isFirst ? 5 : 0;
     const getUsersForTrainingReminderQuery = `SELECT u.id, u.name, u.email, u.phone_number, u.is_mentor, u.registered_on FROM users AS u
       JOIN users_notifications_settings AS uns
@@ -281,7 +379,7 @@ export class UsersBackgroundProcesses {
           remainingQuizzes = helpers.getRemainingQuizzes(quizzes);
           showQuizReminder = remainingQuizzes > 0 ? true : false;
         }
-        await this.sendFirstAndSecondTrainingReminders(isFirst, user, showStepReminder, showQuizReminder, remainingQuizzes, client);
+        await this.sendTrainingReminders(type, user, showStepReminder, showQuizReminder, remainingQuizzes, client);
         await client.query('COMMIT');
       } catch (error) {
         await client.query('ROLLBACK');
@@ -289,10 +387,11 @@ export class UsersBackgroundProcesses {
         client.release();
       }        
     }
-  }
+  } 
 
-  async sendFirstAndSecondTrainingReminders(isFirst: boolean, user: User, showStepReminder: boolean, showQuizReminder: boolean, remainingQuizzes: number, client: pg.PoolClient): Promise<void> {
+  async sendTrainingReminders(type: TrainingReminderType, user: User, showStepReminder: boolean, showQuizReminder: boolean, remainingQuizzes: number, client: pg.PoolClient): Promise<void> {
     if (showStepReminder || showQuizReminder) {
+      const isFirst = type == TrainingReminderType.First;
       if (isFirst) {
         usersPushNotifications.sendPNFirstTrainingReminder(user.id as string, showStepReminder, showQuizReminder, remainingQuizzes);
         usersSendEmails.sendEmailFirstTrainingReminder(user, showStepReminder, showQuizReminder, remainingQuizzes);
@@ -300,10 +399,10 @@ export class UsersBackgroundProcesses {
           await usersWhatsAppMessages.sendWMFirstTrainingReminder(user, showStepReminder, showQuizReminder, remainingQuizzes);
         }
       } else {
-        usersPushNotifications.sendPNSecondTrainingReminder(user.id as string, showStepReminder, showQuizReminder, remainingQuizzes);
-        usersSendEmails.sendEmailSecondTrainingReminder(user, showStepReminder, showQuizReminder, remainingQuizzes);
+        usersPushNotifications.sendPNLastTrainingReminder(user.id as string, showStepReminder, showQuizReminder, remainingQuizzes);
+        usersSendEmails.sendEmailLastTrainingReminder(user, showStepReminder, showQuizReminder, remainingQuizzes);
         if (!user.isMentor) {
-          await usersWhatsAppMessages.sendWMSecondTrainingReminder(user, showStepReminder, showQuizReminder, remainingQuizzes);
+          await usersWhatsAppMessages.sendWMLastTrainingReminder(user, showStepReminder, showQuizReminder, remainingQuizzes);
         }        
         adminTrainingReminders.addTrainingReminder(user, !showStepReminder, remainingQuizzes, client);
       }

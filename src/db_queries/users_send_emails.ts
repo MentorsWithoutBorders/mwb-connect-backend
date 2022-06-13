@@ -81,7 +81,7 @@ export class UsersSendEmails {
     return quizzes;    
   }
 
-  sendEmailSecondTrainingReminder(user: User, showStepReminder: boolean, showQuizReminder: boolean, remainingQuizzes: number): void {
+  sendEmailLastTrainingReminder(user: User, showStepReminder: boolean, showQuizReminder: boolean, remainingQuizzes: number): void {
     const userFirstName = helpers.getUserFirstName(user);
     let body = '';
     const quizzes = this.getRemainingQuizzesText(remainingQuizzes);
@@ -175,7 +175,7 @@ export class UsersSendEmails {
       body: body
     }
     this.sendEmail(mentorEmailAddress as string, email);
-  }  
+  }
   
   sendEmailLessonRequestAccepted(lesson: Lesson): void {
     const isLessonRecurrent = helpers.isLessonRecurrent(lesson.dateTime as string, lesson.endRecurrenceDateTime);
@@ -384,6 +384,70 @@ export class UsersSendEmails {
     body = this.setEmailBody(studentFirstName, body);
     const email: Email = {
       subject: 'Next lesson in 30 mins',
+      body: body
+    }
+    this.sendEmail(student?.email as string, email);  
+  }
+  
+  async sendEmailFirstAddLessonsReminder(lesson: Lesson, client: pg.PoolClient): Promise<void> {
+    const mentor = lesson?.mentor as User;
+    const students = lesson?.students as Array<User>;
+    const mentorFirstName = helpers.getUserFirstName(mentor);
+    const mentorEmailAddress = mentor?.email;
+    const userTimeZone = await usersTimeZones.getUserTimeZone(mentor?.id as string, client);
+    const now = moment.utc().tz(userTimeZone.name);
+    let lessonsText = '1 lesson';
+    if (helpers.isLessonRecurrent(lesson.dateTime as string, lesson?.endRecurrenceDateTime)) {
+      const lessonDateTime = moment.utc(lesson.dateTime);
+      const endRecurrenceDateTime = moment.utc(lesson?.endRecurrenceDateTime);
+      const lessonsNumber = endRecurrenceDateTime.diff(lessonDateTime, 'weeks');
+      lessonsText = `${lessonsNumber} lessons`;
+    }
+    let studentsFirstNames = '';
+    if (students.length == 1) {
+      studentsFirstNames = helpers.getUserFirstName(students[0]);
+    } else if (students.length == 2) {
+      studentsFirstNames = helpers.getUserFirstName(students[0]) + ' and ' + helpers.getUserFirstName(students[1]);
+    } else {
+      for (let i = 0; i < students.length - 1; i++) {
+        studentsFirstNames += helpers.getUserFirstName(students[i]) + ', ';
+      }
+      studentsFirstNames = studentsFirstNames.slice(0, -2);
+      studentsFirstNames += ', and ' + helpers.getUserFirstName(students[students.length-1]);
+    }
+    const himHerThem = students.length == 1 ? 'him/her' : 'them';
+    const deadline = now.add(1, 'd').format(constants.DATE_FORMAT_LESSON);    
+    let body = `Thank you for having done ${lessonsText} with ${studentsFirstNames}.<br><br>If you can add more lessons with ${himHerThem}, kindly remember to do that in the MWB Connect app until the end of the day on ${deadline}.`;
+    body = this.setEmailBody(mentorFirstName, body);
+    const email: Email = {
+      subject: 'Add more lessons',
+      body: body
+    }
+    this.sendEmail(mentorEmailAddress as string, email);
+  }
+
+  async sendEmailLastAddLessonsReminder(lesson: Lesson): Promise<void> {
+    const mentor = lesson?.mentor as User;
+    const students = lesson?.students as Array<User>;
+    const studentsText = students?.length == 1 ? 'student' : 'students';
+    const mentorFirstName = helpers.getUserFirstName(mentor);
+    const mentorEmailAddress = mentor?.email;
+    let body = `Kindly remember to add more lessons with your previous ${studentsText} in the MWB Connect app until the end of the day today.`;
+    body = this.setEmailBody(mentorFirstName, body);
+    const email: Email = {
+      subject: 'Add more lessons - last day reminder',
+      body: body
+    }
+    this.sendEmail(mentorEmailAddress as string, email);
+  }
+
+  sendEmailNoMoreLessonsAdded(mentor: User, student: User): void {
+    const studentFirstName = helpers.getUserFirstName(student);
+    const mentorFirstName = helpers.getUserFirstName(mentor);
+    let body = `We're sorry but ${mentorFirstName} couldn't schedule more lessons. Please find a new mentor in the MWB Connect app.`;
+    body = this.setEmailBody(studentFirstName, body);
+    const email: Email = {
+      subject: 'No more lessons added',
       body: body
     }
     this.sendEmail(student?.email as string, email);  

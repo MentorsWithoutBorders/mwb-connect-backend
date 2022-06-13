@@ -229,18 +229,15 @@ app.post('/api/v1/logger', logger.addLogEntry);
 
 
 // Users background processes
-app.post('/api/v1/send_lesson_request_reminders', usersBackgroundProcesses.sendLessonRequestReminders);
-app.post('/api/v1/send_lesson_reminders', usersBackgroundProcesses.sendLessonReminders);
-app.post('/api/v1/send_after_lessons', usersBackgroundProcesses.sendAfterLesson);
-app.post('/api/v1/send_training_reminders', usersBackgroundProcesses.sendTrainingReminders);
+app.post('/api/v1/send_lesson_request_reminders', usersBackgroundProcesses.sendAllLessonRequestReminders);
+app.post('/api/v1/send_lesson_reminders', usersBackgroundProcesses.sendAllLessonReminders);
+app.post('/api/v1/send_training_reminders', usersBackgroundProcesses.sendAllTrainingReminders);
 app.post('/api/v1/available_mentors/fields', usersBackgroundProcesses.setAvailableMentorsFields);
 
 cron.schedule('* * * * *', async() => {
-  await usersBackgroundProcesses.sendLessonRequestRemindersFromDB();
-  await usersBackgroundProcesses.sendLessonRemindersFromDB();
-  await usersBackgroundProcesses.sendAfterLessonFromDB();
-  await usersBackgroundProcesses.sendTrainingRemindersFromDB(true);
-  await usersBackgroundProcesses.sendTrainingRemindersFromDB(false);
+  await usersBackgroundProcesses.sendAllLessonRequestRemindersFromDB();
+  await usersBackgroundProcesses.sendAllLessonRemindersFromDB();
+  await usersBackgroundProcesses.sendAllTrainingRemindersFromDB();
   usersBackgroundProcesses.sendCPUUsage();
 });
 
