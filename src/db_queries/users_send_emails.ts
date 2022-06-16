@@ -332,18 +332,20 @@ export class UsersSendEmails {
   async sendEmailLessonReminder(nextLesson: Lesson, client: pg.PoolClient): Promise<void> {
     const nextLessonStudents = nextLesson.students;
     if (nextLessonStudents != null && nextLessonStudents.length > 0) {
-      const mentor = await users.getUserFromDB(nextLesson.mentor?.id as string, client);
       const students: Array<User> = [];
       for (const nextLessonStudent of nextLessonStudents) {
         const student = await users.getUserFromDB(nextLessonStudent.id as string, client);
         students.push(student);
-        this.sendEmailLessonReminderStudent(student, mentor, nextLesson, client);
-      }     
-      await this.sendEmailLessonReminderMentor(mentor, students, nextLesson, client);
+        this.sendEmailLessonReminderStudent(nextLesson, student, client);
+      }
+      nextLesson.students = students;
+      await this.sendEmailLessonReminderMentor(nextLesson, client);
     }
   }
 
-  async sendEmailLessonReminderMentor(mentor: User, students: Array<User>, nextLesson: Lesson, client: pg.PoolClient): Promise<void> {
+  async sendEmailLessonReminderMentor(nextLesson: Lesson, client: pg.PoolClient): Promise<void> {
+    const mentor = nextLesson.mentor as User;
+    const students = nextLesson.students as Array<User>;
     const mentorFirstName = helpers.getUserFirstName(mentor);
     const studentOrStudents = students.length > 1 ? 'students' : 'student';
     const isOrAre = students.length > 1 ? 'are' : 'is';
@@ -373,14 +375,15 @@ export class UsersSendEmails {
     this.sendEmail(mentor?.email as string, email);   
   }
 
-  async sendEmailLessonReminderStudent(student: User, mentor: User, nextLesson: Lesson, client: pg.PoolClient): Promise<void> {
+  async sendEmailLessonReminderStudent(nextLesson: Lesson, student: User, client: pg.PoolClient): Promise<void> {
+    const mentor = nextLesson.mentor;
     const studentFirstName = helpers.getUserFirstName(student);
     const meetingUrl = nextLesson.meetingUrl;
     const userTimeZone = await usersTimeZones.getUserTimeZone(student.id as string, client);
     const lessonTime = moment.utc(nextLesson.dateTime).tz(userTimeZone.name).format(constants.TIME_FORMAT_LESSON) + ' ' + userTimeZone.abbreviation;
     let body = `This is a gentle reminder to participate in the next lesson at ${lessonTime}.<br><br>`;
     body += `The meeting link is: <a href="${meetingUrl}" target="_blank">${meetingUrl}</a><br><br>`;
-    body += `If you aren't able to join the session, please notify your mentor, ${mentor.name}, at: ${mentor.email}`;
+    body += `If you aren't able to join the session, please notify your mentor, ${mentor?.name}, at: ${mentor?.email}`;
     body = this.setEmailBody(studentFirstName, body);
     const email: Email = {
       subject: 'Next lesson in 30 mins',

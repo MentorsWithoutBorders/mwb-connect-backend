@@ -176,24 +176,22 @@ export class UsersBackgroundProcesses {
           AND ul.diff_date_time = FLOOR(ul.diff_date_time)`;
     const { rows }: pg.QueryResult = await pool.query(getLessonsQuery);
     for (const row of rows) {
-      const mentor: User = {
-        id: row.mentor_id
-      }
       const client = await pool.connect();
+      const mentor = await users.getUserFromDB(row.mentor_id, client);
       try {
         await client.query('BEGIN');
         const nextLesson = await usersLessons.getNextLessonFromDB(mentor.id as string, true, client);
+        nextLesson.mentor = mentor;
         let difference = moment.duration(moment.utc(nextLesson.dateTime).diff(moment.utc().add(30, 'm')));
         if (moment.utc(nextLesson.dateTime).isBefore(moment.utc().add(30, 'm'))) {
           difference = moment.duration(moment.utc().add(30, 'm').diff(moment.utc(nextLesson.dateTime)));
         }
         if (difference.asSeconds() < 60) {
-          nextLesson.mentor = mentor;
           const students = nextLesson.students;
           if (students != null && students.length > 0) {
             usersSendEmails.sendEmailLessonReminder(nextLesson, client);
             usersPushNotifications.sendPNLessonReminder(nextLesson);
-            await usersWhatsAppMessages.sendWMLessonReminder(nextLesson);
+            await usersWhatsAppMessages.sendWMLessonReminder(nextLesson, client);
           }
         }
         await client.query('COMMIT');

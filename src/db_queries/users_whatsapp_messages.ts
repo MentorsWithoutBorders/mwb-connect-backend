@@ -1,14 +1,17 @@
 import autoBind from 'auto-bind';
 import moment from 'moment';
+import pg from 'pg';
 import dotenv from 'dotenv';
 import axios from 'axios';
 import { createClient } from 'async-redis';
+import { UsersTimeZones } from './users_timezones';
 import { Helpers } from '../utils/helpers';
 import { constants } from '../utils/constants';
 import User from '../models/user.model';
 import Lesson from '../models/lesson.model';
 import LessonRequest from '../models/lesson_request.model';
 
+const usersTimeZones = new UsersTimeZones();
 const helpers = new Helpers();
 const redisClient = createClient();
 dotenv.config();
@@ -157,12 +160,18 @@ export class UsersWhatsAppMessages {
     }
   }
 
-  async sendWMLessonReminder(nextLesson: Lesson): Promise<void> {
+  async sendWMLessonReminder(nextLesson: Lesson, client: pg.PoolClient): Promise<void> {
+    const mentor = nextLesson.mentor;
     const students = nextLesson.students;
+    const meetingUrl = nextLesson.meetingUrl;
     if (students != null && students.length > 0) {
       for (const student of students) {
         const studentFirstName = helpers.getUserFirstName(student);
-        let message = `Kindly remember to attend the lesson in 30 mins from now.`;
+        const userTimeZone = await usersTimeZones.getUserTimeZone(student.id as string, client);
+        const lessonTime = moment.utc(nextLesson.dateTime).tz(userTimeZone.name).format(constants.TIME_FORMAT_LESSON) + ' ' + userTimeZone.abbreviation;
+        let message = `Kindly remember to attend the lesson at ${lessonTime}.\n\n`;
+        message += `The meeting link is: ${meetingUrl}\n\n`;
+        message += `If you aren't able to join the session, please notify your mentor, ${mentor?.name}, at: ${mentor?.email}`;        
         message = this.getNotReplyMessage(studentFirstName, message);
         await this.sendWhatsAppMessage(student.phoneNumber, message);
       }
