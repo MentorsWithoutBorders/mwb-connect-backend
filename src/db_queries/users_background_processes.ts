@@ -92,7 +92,8 @@ export class UsersBackgroundProcesses {
     const getLessonRequestsExpiredQuery = `SELECT ulr.id FROM users_lesson_requests ulr
       JOIN users_timezones ut
         ON ulr.mentor_id = ut.user_id
-      WHERE date_trunc('day', now() AT TIME ZONE ut.name)::date - date_trunc('day', ulr.sent_date_time AT TIME ZONE ut.name)::date = 2
+      WHERE ulr.is_canceled IS DISTINCT FROM true
+        AND date_trunc('day', now() AT TIME ZONE ut.name)::date - date_trunc('day', ulr.sent_date_time AT TIME ZONE ut.name)::date = 2
         AND extract(hour from now() AT TIME ZONE ut.name) = 0
         AND extract(minute from now() AT TIME ZONE ut.name) = 0`;
     const { rows }: pg.QueryResult = await pool.query(getLessonRequestsExpiredQuery);
@@ -111,7 +112,7 @@ export class UsersBackgroundProcesses {
   }
   
   async setLessonRequestExpired(lessonRequestId: string, client: pg.PoolClient): Promise<void> {
-    const setLessonRequestExpiredQuery = 'UPDATE users_lesson_requests SET is_expired = true WHERE id = $1';
+    const setLessonRequestExpiredQuery = 'UPDATE users_lesson_requests SET is_expired = true, is_canceled = true WHERE id = $1';
     await client.query(setLessonRequestExpiredQuery, [lessonRequestId]);
   }  
 
@@ -230,7 +231,7 @@ export class UsersBackgroundProcesses {
           OR date_trunc('day', now() AT TIME ZONE ut.name)::date - date_trunc('day', ul.end_recurrence_date_time AT TIME ZONE ut.name)::date = $1)
         AND ul.is_canceled IS DISTINCT FROM true  
         AND extract(hour from now() AT TIME ZONE ut.name) = $2
-        AND extract(minute from now() AT TIME ZONE ut.name) = 10`;
+        AND extract(minute from now() AT TIME ZONE ut.name) = 0`;
     const { rows }: pg.QueryResult = await pool.query(getAddLessonsRemindersQuery, [days, hour]);
     return rows;
   }
