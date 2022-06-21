@@ -95,7 +95,7 @@ export class UsersBackgroundProcesses {
       WHERE ulr.is_canceled IS DISTINCT FROM true
         AND date_trunc('day', now() AT TIME ZONE ut.name)::date - date_trunc('day', ulr.sent_date_time AT TIME ZONE ut.name)::date = 2
         AND extract(hour from now() AT TIME ZONE ut.name) = 19
-        AND extract(minute from now() AT TIME ZONE ut.name) = 45`;
+        AND extract(minute from now() AT TIME ZONE ut.name) = 47`;
     const { rows }: pg.QueryResult = await pool.query(getLessonRequestsExpiredQuery);
     for (const row of rows) {
       const client = await pool.connect();
@@ -126,7 +126,7 @@ export class UsersBackgroundProcesses {
       JOIN users_timezones ut
         ON l.student_id = ut.user_id
       WHERE extract(hour from now() AT TIME ZONE ut.name) = 19
-        AND extract(minute from now() AT TIME ZONE ut.name) = 45`;
+        AND extract(minute from now() AT TIME ZONE ut.name) = 47`;
     const { rows }: pg.QueryResult = await pool.query(getMentorsForLessonRequestReminderQuery);
     for (const row of rows) {
       const client = await pool.connect();
