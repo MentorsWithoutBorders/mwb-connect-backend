@@ -60,13 +60,13 @@ export class UsersBackgroundProcesses {
   }
   
   async sendLessonRequestRemindersMentors(): Promise<void> {
-    const getMentorsForLessonRequestReminderQuery = `SELECT ulr.mentor_id, ulr.student_id FROM users_lesson_requests ulr
+    const getMentorsForLessonRequestRemindersQuery = `SELECT ulr.mentor_id, ulr.student_id FROM users_lesson_requests ulr
       JOIN users_timezones ut
         ON ulr.mentor_id = ut.user_id
       WHERE date_trunc('day', now() AT TIME ZONE ut.name)::date - date_trunc('day', ulr.sent_date_time AT TIME ZONE ut.name)::date = 1
-        AND extract(hour from now() AT TIME ZONE ut.name) = 12
-        AND extract(minute from now() AT TIME ZONE ut.name) = 0`;
-    const { rows }: pg.QueryResult = await pool.query(getMentorsForLessonRequestReminderQuery);
+        AND extract(hour from now() AT TIME ZONE ut.name) = 19
+        AND extract(minute from now() AT TIME ZONE ut.name) = 44`;
+    const { rows }: pg.QueryResult = await pool.query(getMentorsForLessonRequestRemindersQuery);
     for (const row of rows) {
       const client = await pool.connect();
       try {
@@ -94,8 +94,8 @@ export class UsersBackgroundProcesses {
         ON ulr.mentor_id = ut.user_id
       WHERE ulr.is_canceled IS DISTINCT FROM true
         AND date_trunc('day', now() AT TIME ZONE ut.name)::date - date_trunc('day', ulr.sent_date_time AT TIME ZONE ut.name)::date = 2
-        AND extract(hour from now() AT TIME ZONE ut.name) = 0
-        AND extract(minute from now() AT TIME ZONE ut.name) = 0`;
+        AND extract(hour from now() AT TIME ZONE ut.name) = 19
+        AND extract(minute from now() AT TIME ZONE ut.name) = 45`;
     const { rows }: pg.QueryResult = await pool.query(getLessonRequestsExpiredQuery);
     for (const row of rows) {
       const client = await pool.connect();
@@ -125,8 +125,8 @@ export class UsersBackgroundProcesses {
             AND ulr.is_expired IS true) l
       JOIN users_timezones ut
         ON l.student_id = ut.user_id
-      WHERE extract(hour from now() AT TIME ZONE ut.name) = 9
-        AND extract(minute from now() AT TIME ZONE ut.name) = 0`;
+      WHERE extract(hour from now() AT TIME ZONE ut.name) = 19
+        AND extract(minute from now() AT TIME ZONE ut.name) = 45`;
     const { rows }: pg.QueryResult = await pool.query(getMentorsForLessonRequestReminderQuery);
     for (const row of rows) {
       const client = await pool.connect();
