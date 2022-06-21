@@ -204,7 +204,7 @@ export class UsersBackgroundProcesses {
   }
   
   async sendFirstAddLessonsRemindersMentors(): Promise<void> {
-    const rows = await this.getLessonRowsForReminders(1, 18);
+    const rows = await this.getLessonRowsForReminders(1, 18, false);
     for (const row of rows) {
       const client = await pool.connect();
       try {
@@ -221,21 +221,25 @@ export class UsersBackgroundProcesses {
     }
   }
 
-  async getLessonRowsForReminders(days: number, hour: number): Promise<pg.QueryResultRow[]> {
-    const getAddLessonsRemindersQuery = `SELECT ul.id, ul.mentor_id FROM users_lessons ul
+  async getLessonRowsForReminders(days: number, hour: number, isCanceled: boolean): Promise<pg.QueryResultRow[]> {
+    let getAddLessonsRemindersQuery = `SELECT ul.id, ul.mentor_id FROM users_lessons ul
       JOIN users_timezones ut
         ON ul.mentor_id = ut.user_id
       WHERE (ul.end_recurrence_date_time IS NULL AND date_trunc('day', now() AT TIME ZONE ut.name)::date - date_trunc('day', ul.date_time AT TIME ZONE ut.name)::date = $1
-          OR date_trunc('day', now() AT TIME ZONE ut.name)::date - date_trunc('day', ul.end_recurrence_date_time AT TIME ZONE ut.name)::date = $1)
-        AND ul.is_canceled IS DISTINCT FROM true  
+          OR date_trunc('day', now() AT TIME ZONE ut.name)::date - date_trunc('day', ul.end_recurrence_date_time AT TIME ZONE ut.name)::date = $1)  
         AND extract(hour from now() AT TIME ZONE ut.name) = $2
-        AND extract(minute from now() AT TIME ZONE ut.name) = 41`;
+        AND extract(minute from now() AT TIME ZONE ut.name) = 49 `;
+    if (isCanceled) {
+      getAddLessonsRemindersQuery += 'AND ul.is_canceled IS true';
+    } else {
+      getAddLessonsRemindersQuery += 'AND ul.is_canceled IS DISTINCT FROM true';
+    }
     const { rows }: pg.QueryResult = await pool.query(getAddLessonsRemindersQuery, [days, hour]);
     return rows;
   }
   
   async sendLastAddLessonsRemindersMentors(): Promise<void> {
-    const lessonRows = await this.getLessonRowsForReminders(2, 18);
+    const lessonRows = await this.getLessonRowsForReminders(2, 18, false);
     for (const lessonRow of lessonRows) {
       const client = await pool.connect();
       try {
@@ -253,7 +257,7 @@ export class UsersBackgroundProcesses {
   }
 
   async setLessonsCanceled(): Promise<void> {
-    const lessonRows = await this.getLessonRowsForReminders(3, 18);
+    const lessonRows = await this.getLessonRowsForReminders(3, 18, false);
     for (const lessonRow of lessonRows) {
       const client = await pool.connect();
       try {
@@ -269,7 +273,7 @@ export class UsersBackgroundProcesses {
   }
 
   async sendNoMoreLessonsAddedStudents(): Promise<void> {
-    const lessonRows = await this.getLessonRowsForReminders(3, 18);
+    const lessonRows = await this.getLessonRowsForReminders(3, 18, true);
     for (const lessonRow of lessonRows) {
       const client = await pool.connect();
       try {
