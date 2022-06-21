@@ -263,6 +263,7 @@ export class UsersBackgroundProcesses {
       try {
         await client.query('BEGIN');
         await this.setLessonCanceled(lessonRow.id, client);
+        await this.deleteMentorLessonRequests(lessonRow.mentor_id, client);
         await client.query('COMMIT');
       } catch (error) {
         await client.query('ROLLBACK');
@@ -298,6 +299,11 @@ export class UsersBackgroundProcesses {
     const setLessonCanceledQuery = 'UPDATE users_lessons SET is_canceled = true WHERE id = $1';
     await client.query(setLessonCanceledQuery, [lessonId]);
   }
+
+  async deleteMentorLessonRequests(mentorId: string, client: pg.PoolClient): Promise<void> {
+    const deleteMentorLessonRequestsQuery = 'DELETE FROM users_lesson_requests WHERE is_previous_mentor IS true AND mentor_id = $1';
+    await client.query(deleteMentorLessonRequestsQuery, [mentorId]);
+  }  
   
   async sendAfterLessonFromDB(): Promise<void> {
     try {
