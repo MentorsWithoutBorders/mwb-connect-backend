@@ -153,7 +153,7 @@ export class UsersSendEmails {
     const userTimeZone = await usersTimeZones.getUserTimeZone(mentor?.id as string, client);
     const now = moment.utc().tz(userTimeZone.name);
     const deadline = now.add(1, 'd').format(constants.DATE_FORMAT_LESSON);
-    let body = `${student?.name} from ${student?.organization?.name} is requesting a ${subfieldName} lesson with you.<br><br>You can find the details of the lesson request in the MWB Connect app and we will kindly ask you to accept or reject the request until the end of the day on ${deadline} so that the student can connect with another mentor if needed.`;
+    let body = `${student?.name} from ${student?.organization?.name} is requesting a ${subfieldName} lesson with you.<br><br>You can find the details of the lesson request in the MWB Connect app and we will kindly ask you to accept or reject the request until the end of the day on <b>${deadline}</b> so that the student can connect with another mentor if needed.`;
     body = this.setEmailBody(mentorFirstName, body);
     const email: Email = {
       subject: 'New lesson request',
@@ -420,7 +420,7 @@ export class UsersSendEmails {
     }
     const himHerThem = students.length == 1 ? 'him/her' : 'them';
     const deadline = now.add(1, 'd').format(constants.DATE_FORMAT_LESSON);    
-    let body = `Thank you for having done ${lessonsText} with ${studentsFirstNames}.<br><br>If you can add more lessons with ${himHerThem}, kindly remember to do that in the MWB Connect app until the end of the day on ${deadline}.`;
+    let body = `Thank you for having done ${lessonsText} with ${studentsFirstNames}.<br><br>If you can add more lessons with ${himHerThem}, kindly remember to do that in the MWB Connect app until the end of the day on <b>${deadline}</b>.`;
     body = this.setEmailBody(mentorFirstName, body);
     const email: Email = {
       subject: 'Add more lessons',
