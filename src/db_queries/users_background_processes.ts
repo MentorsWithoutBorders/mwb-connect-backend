@@ -86,7 +86,8 @@ export class UsersBackgroundProcesses {
     const getLessonRequestRemindersQuery = `SELECT ulr.id, ulr.mentor_id, ulr.student_id FROM users_lesson_requests ulr
     JOIN users_timezones ut
       ON ulr.mentor_id = ut.user_id
-    WHERE date_trunc('day', now() AT TIME ZONE ut.name)::date - date_trunc('day', ulr.sent_date_time AT TIME ZONE ut.name)::date = $1
+    WHERE ulr.is_previous_mentor IS DISTINCT FROM true
+      AND date_trunc('day', now() AT TIME ZONE ut.name)::date - date_trunc('day', ulr.sent_date_time AT TIME ZONE ut.name)::date = $1
       AND extract(hour from now() AT TIME ZONE ut.name) = $2
       AND extract(minute from now() AT TIME ZONE ut.name) = 5`;
     const { rows }: pg.QueryResult = await pool.query(getLessonRequestRemindersQuery, [days, hour]);
@@ -119,7 +120,8 @@ export class UsersBackgroundProcesses {
       (SELECT ulr.id, ulr.mentor_id, ulr.student_id FROM users_lesson_requests ulr
           JOIN users_timezones ut
             ON ulr.mentor_id = ut.user_id
-          WHERE date_trunc('day', now() AT TIME ZONE ut.name)::date - date_trunc('day', ulr.sent_date_time AT TIME ZONE ut.name)::date = 2
+          WHERE ulr.is_previous_mentor IS DISTINCT FROM true
+            AND date_trunc('day', now() AT TIME ZONE ut.name)::date - date_trunc('day', ulr.sent_date_time AT TIME ZONE ut.name)::date = 2
             AND ulr.is_expired IS true) l
       JOIN users_timezones ut
         ON l.student_id = ut.user_id
