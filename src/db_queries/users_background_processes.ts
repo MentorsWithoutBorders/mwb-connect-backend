@@ -229,7 +229,7 @@ export class UsersBackgroundProcesses {
           OR date_trunc('day', now() AT TIME ZONE ut.name)::date - date_trunc('day', ul.end_recurrence_date_time AT TIME ZONE ut.name)::date = $1)
         AND ul.is_canceled IS DISTINCT FROM true  
         AND extract(hour from now() AT TIME ZONE ut.name) = $2
-        AND extract(minute from now() AT TIME ZONE ut.name) = 38`;
+        AND extract(minute from now() AT TIME ZONE ut.name) = 41`;
     const { rows }: pg.QueryResult = await pool.query(getAddLessonsRemindersQuery, [days, hour]);
     return rows;
   }
