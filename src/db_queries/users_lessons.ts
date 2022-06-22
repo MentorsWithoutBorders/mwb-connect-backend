@@ -520,7 +520,7 @@ export class UsersLessons {
       const studentsRemaining = [];
       for (const student of students) {
         const nextLessonStudent = await this.getNextLessonFromDB(student.id as string, false, client);
-        const hasLessonRequestStudent = await this.getHasLessonRequestStudent(student.id as string, mentorId as string, client);
+        const hasLessonRequestStudent = await this.getHasLessonRequestStudent(student.id as string, mentorId, client);
         if (nextLessonStudent.id != undefined && nextLessonStudent.id != lessonId || hasLessonRequestStudent) {
           await this.cancelPreviousLesson(student.id as string, lesson.id as string, client);
         } else {
@@ -536,6 +536,7 @@ export class UsersLessons {
         usersSendEmails.sendEmailLessonRecurrenceUpdated(studentsRemaining);
         await usersWhatsAppMessages.sendWMLessonRecurrenceUpdated(studentsRemaining);
       }
+      await this.deleteMentorLessonRequests(mentorId, client);
       const lessonRecurrenceResult: LessonRecurrenceResult = {
         id: lessonId,
         studentsRemaining: studentsRemaining.length
@@ -562,6 +563,11 @@ export class UsersLessons {
       WHERE lesson_id = $1 AND student_id = $2`;
     await client.query(updateStudentLessonQuery, [lessonId, userId]);
   }
+
+  async deleteMentorLessonRequests(mentorId: string, client: pg.PoolClient): Promise<void> {
+    const deleteMentorLessonRequestsQuery = 'DELETE FROM users_lesson_requests WHERE is_previous_mentor IS true AND mentor_id = $1';
+    await client.query(deleteMentorLessonRequestsQuery, [mentorId]);
+  }  
   
   async addStudentsSkills(request: Request, response: Response): Promise<void> {
     const lessonId = request.params.id;
