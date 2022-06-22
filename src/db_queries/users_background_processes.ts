@@ -228,7 +228,7 @@ export class UsersBackgroundProcesses {
       WHERE (ul.end_recurrence_date_time IS NULL AND date_trunc('day', now() AT TIME ZONE ut.name)::date - date_trunc('day', ul.date_time AT TIME ZONE ut.name)::date = $1
           OR date_trunc('day', now() AT TIME ZONE ut.name)::date - date_trunc('day', ul.end_recurrence_date_time AT TIME ZONE ut.name)::date = $1)  
         AND extract(hour from now() AT TIME ZONE ut.name) = $2
-        AND extract(minute from now() AT TIME ZONE ut.name) = 30 `;
+        AND extract(minute from now() AT TIME ZONE ut.name) = 34 `;
     if (isCanceled) {
       getAddLessonsRemindersQuery += 'AND ul.is_canceled IS true';
     } else {
