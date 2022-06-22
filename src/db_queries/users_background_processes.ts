@@ -89,13 +89,13 @@ export class UsersBackgroundProcesses {
     WHERE ulr.is_previous_mentor IS DISTINCT FROM true
       AND date_trunc('day', now() AT TIME ZONE ut.name)::date - date_trunc('day', ulr.sent_date_time AT TIME ZONE ut.name)::date = $1
       AND extract(hour from now() AT TIME ZONE ut.name) = $2
-      AND extract(minute from now() AT TIME ZONE ut.name) = 5`;
+      AND extract(minute from now() AT TIME ZONE ut.name) = 12`;
     const { rows }: pg.QueryResult = await pool.query(getLessonRequestRemindersQuery, [days, hour]);
     return rows;
   }  
 
   async setLessonRequestsExpired(): Promise<void> {
-    const rows = await this.getLessonRequestRowsForReminders(2, 20);
+    const rows = await this.getLessonRequestRowsForReminders(2, 18);
     for (const row of rows) {
       const client = await pool.connect();
       try {
@@ -125,8 +125,8 @@ export class UsersBackgroundProcesses {
             AND ulr.is_expired IS true) l
       JOIN users_timezones ut
         ON l.student_id = ut.user_id
-      WHERE extract(hour from now() AT TIME ZONE ut.name) = 20
-        AND extract(minute from now() AT TIME ZONE ut.name) = 5`;
+      WHERE extract(hour from now() AT TIME ZONE ut.name) = 18
+        AND extract(minute from now() AT TIME ZONE ut.name) = 12`;
     const { rows }: pg.QueryResult = await pool.query(getMentorsForLessonRequestReminderQuery);
     for (const row of rows) {
       const client = await pool.connect();
