@@ -435,7 +435,7 @@ export class UsersSendEmails {
     const studentsText = students?.length == 1 ? 'student' : 'students';
     const mentorFirstName = helpers.getUserFirstName(mentor);
     const mentorEmailAddress = mentor?.email;
-    let body = `Kindly remember to add more lessons with your previous ${studentsText} in the MWB Connect app until the end of the day today.`;
+    let body = `Kindly remember to add more lessons (if possible) with your previous ${studentsText} in the MWB Connect app until the end of the day today.`;
     body = this.setEmailBody(mentorFirstName, body);
     const email: Email = {
       subject: 'Add more lessons - last day reminder',
