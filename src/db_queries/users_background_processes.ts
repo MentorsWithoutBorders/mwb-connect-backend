@@ -230,7 +230,7 @@ export class UsersBackgroundProcesses {
         AND extract(hour from now() AT TIME ZONE ut.name) = $2
         AND extract(minute from now() AT TIME ZONE ut.name) = 0 `;
     if (isCanceled) {
-      getAddLessonsRemindersQuery += 'AND ul.is_canceled IS true';
+      getAddLessonsRemindersQuery += 'AND ul.is_canceled IS true AND ul.canceled_date_time IS NULL';
     } else {
       getAddLessonsRemindersQuery += 'AND ul.is_canceled IS DISTINCT FROM true';
     }
