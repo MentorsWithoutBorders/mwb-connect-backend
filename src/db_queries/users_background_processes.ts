@@ -125,7 +125,7 @@ export class UsersBackgroundProcesses {
             AND ulr.is_expired IS true) l
       JOIN users_timezones ut
         ON l.student_id = ut.user_id
-      WHERE extract(hour from now() AT TIME ZONE ut.name) = 10
+      WHERE extract(hour from now() AT TIME ZONE ut.name) = 0
         AND extract(minute from now() AT TIME ZONE ut.name) = 0`;
     const { rows }: pg.QueryResult = await pool.query(getMentorsForLessonRequestReminderQuery);
     for (const row of rows) {
@@ -282,9 +282,12 @@ export class UsersBackgroundProcesses {
         const lesson = await usersLessons.getPreviousLessonFromDB(lessonRow.mentor_id, client);
         const students = lesson.students as Array<User>;
         for (const student of students) {
-          usersPushNotifications.sendPNNoMoreLessonsAdded(lesson.mentor as User, student);
-          usersSendEmails.sendEmailNoMoreLessonsAdded(lesson.mentor as User, student);
-          await usersWhatsAppMessages.sendWMNoMoreLessonsAdded(lesson.mentor as User, student);  
+          const studentNextLesson = await usersLessons.getNextLessonFromDB(student.id as string, false, client);
+          if (Object.keys(studentNextLesson).length == 0) {
+            usersPushNotifications.sendPNNoMoreLessonsAdded(lesson.mentor as User, student);
+            usersSendEmails.sendEmailNoMoreLessonsAdded(lesson.mentor as User, student);
+            await usersWhatsAppMessages.sendWMNoMoreLessonsAdded(lesson.mentor as User, student);
+          } 
         }
         await client.query('COMMIT');
       } catch (error) {
