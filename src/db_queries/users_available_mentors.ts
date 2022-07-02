@@ -110,11 +110,13 @@ export class UsersAvailableMentors {
       WHERE u.is_mentor = true
         AND (u.is_available IS true OR u.available_from <= now())      
         AND us.subfield_id IS NOT NULL
-        AND (ul.row_number_lessons = 1 AND (ul.end_recurrence_date_time IS NULL AND EXTRACT(EPOCH FROM (now() - ul.date_time))/3600 > 336
-            OR ul.end_recurrence_date_time IS NOT NULL AND EXTRACT(EPOCH FROM (now() - ul.end_recurrence_date_time))/3600 > 336 
-            OR ul.is_canceled IS true AND EXTRACT(EPOCH FROM (now() - ul.canceled_date_time))/3600 > 72) 
+        AND (ul.row_number_lessons = 1 AND (ul.end_recurrence_date_time IS NULL AND ul.canceled_date_time IS NULL AND EXTRACT(EPOCH FROM (now() - ul.date_time))/3600 > 336
+            OR ul.end_recurrence_date_time IS NOT NULL AND ul.canceled_date_time IS NULL AND EXTRACT(EPOCH FROM (now() - ul.end_recurrence_date_time))/3600 > 336 
+            OR ul.is_canceled IS true AND ul.canceled_date_time IS NOT NULL AND EXTRACT(EPOCH FROM (now() - ul.canceled_date_time))/3600 > 336) 
             OR ul.id IS NULL)
-        AND (ulr.row_number_lesson_requests = 1 AND (ulr.is_canceled IS true OR ulr.is_rejected AND EXTRACT(EPOCH FROM (now() - ulr.sent_date_time))/3600 > 168)
+        AND (ulr.row_number_lesson_requests = 1 AND (ulr.is_canceled IS true AND ulr.is_expired IS DISTINCT FROM true 
+          OR ulr.is_canceled IS true AND ulr.is_expired IS true AND EXTRACT(EPOCH FROM (now() - ulr.sent_date_time))/3600 > 168
+          OR ulr.is_rejected AND EXTRACT(EPOCH FROM (now() - ulr.sent_date_time))/3600 > 168)
             OR ulr.id IS NULL)
         AND aau.is_inactive IS DISTINCT FROM true`;
     let values: Array<string> = [];
