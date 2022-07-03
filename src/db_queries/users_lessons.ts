@@ -350,14 +350,16 @@ export class UsersLessons {
     try {
       await client.query('BEGIN');
       lesson.id = lessonId;
+      let nextLesson = await this.getNextLessonFromDB(userId, true, client);
+      const isLessonRecurrent = nextLesson.endRecurrenceDateTime != undefined;
       await this.cancelLessonFromDB(userId, lesson, client);
       let isCancelAll = false;
       let lessonsCanceled = 0;
       const isMentor = lesson.mentor == null ? true : false;
       if (isMentor) {
         if (lesson.dateTime) {
-          const nextLesson = await this.getNextLessonFromDB(userId, true, client);
-          if (Object.keys(nextLesson).length == 0) {
+          nextLesson = await this.getNextLessonFromDB(userId, true, client);
+          if (this.isNextSingleLessonCanceled(nextLesson, isLessonRecurrent)) {
             lesson.dateTime = '';
             await this.cancelLessonFromDB(userId, lesson, client);
           }
@@ -391,6 +393,10 @@ export class UsersLessons {
     } finally {
       client.release();
     }
+  }
+
+  isNextSingleLessonCanceled(nextLesson: Lesson, isLessonRecurrent: boolean): boolean {
+    return Object.keys(nextLesson).length == 0 && !isLessonRecurrent;
   }
 
   async cancelNextLessonNoStudents(lesson: Lesson, client: pg.PoolClient): Promise<number> {
