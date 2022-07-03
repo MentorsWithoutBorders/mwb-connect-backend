@@ -559,7 +559,7 @@ export class UsersLessons {
 
   async getHasLessonRequestStudent(studentId: string, mentorId: string, client: pg.PoolClient ): Promise<boolean> {
     const getHasLessonRequest = `SELECT id FROM users_lesson_requests
-      WHERE student_id = $1 AND mentor_id IS DISTINCT FROM $2`;
+      WHERE student_id = $1 AND mentor_id IS DISTINCT FROM $2 AND is_canceled IS DISTINCT FROM true`;
     const { rows }: pg.QueryResult = await client.query(getHasLessonRequest, [studentId, mentorId]);
     return rows && rows.length > 0;   
   }  
