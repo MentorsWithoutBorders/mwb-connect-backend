@@ -339,6 +339,10 @@ export class Users {
   async deleteUser(request: Request, response: Response): Promise<void> {
     const id = request.user.id as string;
     const client = await pool.connect();
+    const user = await this.getUserFromDB(id, client);
+    if (user.isMentor) {
+      await this.deleteMentorLessonsDependencies(id, client);
+    }
     try {
       await client.query('BEGIN');
       const deleteTimeZoneQuery = 'DELETE FROM users_timezones WHERE user_id = $1';
@@ -367,8 +371,10 @@ export class Users {
       await client.query(deleteLessonsCanceledQuery, [id]);
       const deleteLessonsAvailabilitiesQuery = 'DELETE FROM users_lessons_availabilities WHERE user_id = $1';
       await client.query(deleteLessonsAvailabilitiesQuery, [id]);
-      const deleteLessonsQuery = 'DELETE FROM users_lessons WHERE mentor_id = $1';
-      await client.query(deleteLessonsQuery, [id]);
+      if (user.isMentor) {
+        const deleteLessonsQuery = 'DELETE FROM users_lessons WHERE mentor_id = $1';
+        await client.query(deleteLessonsQuery, [id]);
+      }
       const deleteLessonRequestsQuery = 'DELETE FROM users_lesson_requests WHERE mentor_id = $1 OR student_id = $1';
       await client.query(deleteLessonRequestsQuery, [id]);
       const deleteGoalQuery = 'DELETE FROM users_goals WHERE user_id = $1';
@@ -391,6 +397,8 @@ export class Users {
       await client.query(deleteAdminConversationsQuery, [id]);
       const deleteAdminPermissionsQuery = 'DELETE FROM admin_permissions WHERE user_id = $1';
       await client.query(deleteAdminPermissionsQuery, [id]);
+      const deleteAdminStudentsCertificatesQuery = 'DELETE FROM admin_students_certificates WHERE user_id = $1';
+      await client.query(deleteAdminStudentsCertificatesQuery, [id]);
       const deleteAdminTrainingRemindersQuery = 'DELETE FROM admin_training_reminders WHERE user_id = $1';
       await client.query(deleteAdminTrainingRemindersQuery, [id]);
       const deleteUserQuery = 'DELETE FROM users WHERE id = $1';
@@ -403,6 +411,17 @@ export class Users {
       await client.query('ROLLBACK');
     } finally {
       client.release();
+    }
+  }
+
+  async deleteMentorLessonsDependencies(mentorId: string, client: pg.PoolClient): Promise<void> {
+    const getLessonsQuery = `SELECT id FROM users_lessons WHERE mentor_id = $1`;
+    const { rows }: pg.QueryResult = await client.query(getLessonsQuery, [mentorId]);
+    for (const row of rows) {
+      const deleteLessonStudentsQuery = 'DELETE FROM users_lessons_students WHERE lesson_id = $1';
+      await client.query(deleteLessonStudentsQuery, [row.id]);
+      const deleteLessonCanceledQuery = 'DELETE FROM users_lessons_canceled WHERE lesson_id = $1';
+      await client.query(deleteLessonCanceledQuery, [row.id]);      
     }
   }
 }
