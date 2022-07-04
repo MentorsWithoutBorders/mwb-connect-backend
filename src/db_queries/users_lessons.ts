@@ -411,7 +411,7 @@ export class UsersLessons {
         lessonsCanceled++;
       }
     }
-    if (Object.keys(nextLessonMentor).length == 0) {
+    if (Object.keys(nextLessonMentor).length == 0 && !lesson.dateTime) {
       lesson.dateTime = '';
       await this.cancelLessonFromDB(lesson.mentor?.id as string, lesson, client);
     }
