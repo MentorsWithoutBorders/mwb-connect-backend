@@ -7,9 +7,10 @@ export default interface Lesson {
   students?: Array<User>;
   subfield?: Subfield;
   dateTime?: string;
+  endRecurrenceDateTime?: string;
+  daysSinceStart?: number;
   meetingUrl?: string;
   isMentorPresent?: boolean;
-  endRecurrenceDateTime?: string;
   isCanceled?: boolean;
   shouldStop?: boolean;
 }

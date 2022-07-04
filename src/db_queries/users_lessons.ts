@@ -108,6 +108,7 @@ export class UsersLessons {
       if (lessonRow.end_recurrence_date_time != null) {
         lesson.endRecurrenceDateTime = moment.utc(lessonRow.end_recurrence_date_time).format(constants.DATE_TIME_FORMAT)
       }
+      lessonRow.days_since_start = moment.utc().diff(moment.utc(lessonRow.date_time), 'days');
       const lessonDateTime = await this.getNextLessonDateTime(lesson, userId, client);
       if (lessonDateTime == undefined) {
         lessonRow = null;
@@ -232,6 +233,7 @@ export class UsersLessons {
         id: lessonRow.id,
         subfield: subfield,
         dateTime: moment.utc(lessonRow.date_time).format(constants.DATE_TIME_FORMAT),
+        daysSinceStart: lessonRow.days_since_start,
         meetingUrl: lessonRow.meeting_url,
         isCanceled: lessonRow.is_canceled
       }
