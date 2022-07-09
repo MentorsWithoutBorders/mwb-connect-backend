@@ -35,14 +35,14 @@ export class UsersWhatsAppMessages {
       } else {
         await redisClient.set('lastWMDateTime', moment.utc().format(constants.DATE_TIME_FORMAT));
       }
-      setTimeout(() => {
-        const payload = {
-          phoneNumber: phoneNumber,
-          message: message,
-          accessToken: process.env.ACCESS_TOKEN_WHATSAPP
-        };
-        axios.post('https://mwbtraining.co/whatsapp/send_message', payload).then(({data}) => console.log(data));
-      }, delay);
+      // setTimeout(() => {
+      //   const payload = {
+      //     phoneNumber: phoneNumber,
+      //     message: message,
+      //     accessToken: process.env.ACCESS_TOKEN_WHATSAPP
+      //   };
+      //   axios.post('https://mwbtraining.co/whatsapp/send_message', payload).then(({data}) => console.log(data));
+      // }, delay);
     }
   }
 
