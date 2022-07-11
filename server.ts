@@ -19,6 +19,7 @@ import { UsersSkills } from './src/db_queries/users_skills';
 import { UsersNotificationsSettings } from './src/db_queries/users_notifications_settings';
 import { UsersSupportRequests } from './src/db_queries/users_support_requests';
 import { UsersPushNotifications } from './src/db_queries/users_push_notifications';
+import { UsersSendEmails } from './src/db_queries/users_send_emails';
 import { UsersAppVersions } from './src/db_queries/users_app_versions';
 import { UsersAppFlags } from './src/db_queries/users_app_flags';
 import { UsersBackgroundProcesses } from './src/db_queries/users_background_processes';
@@ -46,6 +47,7 @@ const approvedUsers = new ApprovedUsers();
 const usersTimeZones = new UsersTimeZones();
 const usersResetPassword = new UsersResetPassword();
 const usersPushNotifications = new UsersPushNotifications();
+const usersSendEmails = new UsersSendEmails();
 const usersGoals = new UsersGoals();
 const usersSteps = new UsersSteps();
 const usersQuizzes = new UsersQuizzes();
@@ -271,6 +273,9 @@ app.put('/api/v1/admin/available_mentors/:mentor_id/should_contact', adminAvaila
 app.get('/api/v1/admin/available_students_lessons', adminAvailableStudents.getAvailableStudentsLessons);
 app.put('/api/v1/admin/available_students/:student_id/should_contact', adminAvailableStudents.updateShouldContact);
 
+// Tests notifications
+app.post('/api/v1/test/:user_id/send_push_notification', usersPushNotifications.sendPNTest);
+app.post('/api/v1/test/:user_id/send_email', usersSendEmails.sendEmailTest);
 
 app.listen(port, () => {
   console.log(`App running on port ${port}.`);

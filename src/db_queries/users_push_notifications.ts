@@ -339,5 +339,19 @@ export class UsersPushNotifications {
     const mentor = lesson.mentor;
     this.sendPushNotification(mentor?.id as string, pushNotification);
   }
+
+  async sendPNTest(request: Request, response: Response): Promise<void> {
+    try {
+      const userId = request.params.user_id;
+      const pushNotification: PushNotification = {
+        title: 'Training reminder',
+        body: 'Kindly remember to add a new step and solve the quizzes',
+      }
+      this.sendPushNotification(userId, pushNotification);
+      response.status(200).json('Push notification was sent successfully');
+    } catch (error) {
+      response.status(400).send(error);
+    }
+  }
 }
 

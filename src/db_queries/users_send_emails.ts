@@ -1,9 +1,11 @@
+import { Request, Response } from 'express';
 import nodemailer from 'nodemailer';
 import autoBind from 'auto-bind';
 import moment from 'moment';
 import 'moment-timezone';
 import pg from 'pg';
 import dotenv from 'dotenv';
+import { Conn } from '../db/conn';
 import { Users } from './users';
 import { UsersTimeZones } from './users_timezones';
 import { constants } from '../utils/constants';
@@ -13,6 +15,8 @@ import User from '../models/user.model';
 import Email from '../models/email.model';
 import LessonRequest from '../models/lesson_request.model';
 
+const conn = new Conn();
+const pool = conn.pool;
 const users = new Users();
 const usersTimeZones = new UsersTimeZones();
 const helpers = new Helpers();
@@ -473,6 +477,30 @@ export class UsersSendEmails {
       body: body
     }
     this.sendEmail('edmond@mentorswithoutborders.net', email);  
-  }   
+  }
+  
+  async sendEmailTest(request: Request, response: Response): Promise<void> {
+    const userId = request.params.user_id;
+    const client = await pool.connect();   
+    try {
+      await client.query('BEGIN');
+      const user = await users.getUserFromDB(userId, client);
+      const userFirstName = helpers.getUserFirstName(user);
+      let body = 'This is a gentle reminder to add a new step to your plan and to solve the quizzes in the MWB Connect app.';
+      body = this.setEmailBody(userFirstName, body);
+      const email: Email = {
+        subject: 'Training reminder',
+        body: body
+      }
+      this.sendEmail(user?.email as string, email);
+      response.status(200).json('Email was sent successfully');
+      await client.query('COMMIT');      
+    } catch (error) {
+      response.status(400).send(error);
+      await client.query('ROLLBACK');      
+    } finally {
+      client.release();
+    }
+  }  
 }
 
