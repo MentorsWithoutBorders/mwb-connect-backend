@@ -486,10 +486,10 @@ export class UsersSendEmails {
       await client.query('BEGIN');
       const user = await users.getUserFromDB(userId, client);
       const userFirstName = helpers.getUserFirstName(user);
-      let body = 'This is a gentle reminder to add a new step to your plan and to solve the quizzes in the MWB Connect app.';
+      let body = 'Test email';
       body = this.setEmailBody(userFirstName, body);
       const email: Email = {
-        subject: 'Training reminder',
+        subject: 'Test',
         body: body
       }
       this.sendEmail(user?.email as string, email);

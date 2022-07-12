@@ -344,8 +344,8 @@ export class UsersPushNotifications {
     try {
       const userId = request.params.user_id;
       const pushNotification: PushNotification = {
-        title: 'Training reminder',
-        body: 'Kindly remember to add a new step and solve the quizzes',
+        title: 'Test',
+        body: 'Test push notification',
       }
       this.sendPushNotification(userId, pushNotification);
       response.status(200).json('Push notification was sent successfully');
