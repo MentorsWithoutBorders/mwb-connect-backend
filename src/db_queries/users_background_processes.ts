@@ -111,7 +111,7 @@ export class UsersBackgroundProcesses {
   }
   
   async setLessonRequestExpired(lessonRequestId: string, client: pg.PoolClient): Promise<void> {
-    const setLessonRequestExpiredQuery = 'UPDATE users_lesson_requests SET is_expired = true, is_canceled = true WHERE id = $1';
+    const setLessonRequestExpiredQuery = 'UPDATE users_lesson_requests SET is_expired = true, is_canceled = true WHERE id = $1 AND is_rejected IS DISTINCT FROM true';
     await client.query(setLessonRequestExpiredQuery, [lessonRequestId]);
   }  
 
