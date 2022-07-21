@@ -11,6 +11,7 @@ import { Skills } from './skills';
 import { UsersPushNotifications } from './users_push_notifications';
 import { UsersSendEmails } from './users_send_emails';
 import { UsersWhatsAppMessages } from './users_whatsapp_messages';
+import { UsersInAppMessages } from './users_in_app_messages';
 import User from '../models/user.model';
 import Field from '../models/field.model';
 import Subfield from '../models/subfield.model';
@@ -31,6 +32,7 @@ const skillsQueries = new Skills();
 const usersPushNotifications = new UsersPushNotifications();
 const usersSendEmails = new UsersSendEmails();
 const usersWhatsAppMessages = new UsersWhatsAppMessages();
+const usersInAppMessages = new UsersInAppMessages();
 
 export class UsersLessons {
   constructor() {
@@ -389,6 +391,7 @@ export class UsersLessons {
       if (isMentor) {
         await usersWhatsAppMessages.sendWMLessonCanceled(lesson, isCancelAll);
       }
+      usersInAppMessages.addUAIMLessonCanceled(lesson, student, isCancelAll, lessonsCanceled);
     } catch (error) {
       response.status(400).send(error);
       await client.query('ROLLBACK');

@@ -12,5 +12,6 @@ export default interface Lesson {
   meetingUrl?: string;
   isMentorPresent?: boolean;
   isCanceled?: boolean;
+  reasonCanceled?: string;
   shouldStop?: boolean;
 }

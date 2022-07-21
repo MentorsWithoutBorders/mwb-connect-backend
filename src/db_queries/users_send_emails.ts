@@ -198,12 +198,16 @@ export class UsersSendEmails {
     this.sendEmail(student?.email as string, email);
   }
 
-  sendEmailLessonRequestRejected(lessonRequest: LessonRequest): void {
+  sendEmailLessonRequestRejected(lessonRequest: LessonRequest, text: string): void {
     const mentor = lessonRequest.mentor as User;
     const student = lessonRequest.student as User;    
     const mentorName = mentor?.name;
     const studentFirstName = helpers.getUserFirstName(student);
-    let body = `We're sorry but ${mentorName} has rejected your lesson request. Please find a new mentor in the MWB Connect app.`;
+    let mentorMessage = '';
+    if (text) {
+      mentorMessage = ` with the following message: "${text}"`;
+    }    
+    let body = `We're sorry but ${mentorName} has rejected your lesson request${mentorMessage}. Please find a new mentor in the MWB Connect app.`;
     body = this.setEmailBody(studentFirstName, body);
     const email: Email = {
       subject: 'Lesson request rejected',
@@ -273,12 +277,16 @@ export class UsersSendEmails {
     let subject = '';
     let body = '';
     const isLessonRecurrent = helpers.isLessonRecurrent(lesson.dateTime as string, lesson.endRecurrenceDateTime);
+    let message = '';
+    if (lesson.reasonCanceled) {
+      message = ` with the following message: "${lesson.reasonCanceled}"`;
+    }
     if (isLessonRecurrent && isCancelAll) {
       subject = 'Lesson recurrence canceled';
-      body = `We're sorry but the mentor has canceled the lesson recurrence. Please feel free to use the MWB Connect app in order to find a new mentor.`;
+      body = `We're sorry but the mentor has canceled the lesson recurrence${message}. Please feel free to use the MWB Connect app in order to find a new mentor.`;
     } else {
       subject = 'Next lesson canceled';
-      body = `We're sorry but the mentor has canceled the next lesson. If there aren't any other lessons scheduled, please feel free to use the MWB Connect app in order to find a new mentor.`;
+      body = `We're sorry but the mentor has canceled the next lesson${message}. If there aren't any other lessons scheduled, please feel free to use the MWB Connect app in order to find a new mentor.`;
     }    
     if (lesson.students != null) {
       for (const student of lesson.students) {
@@ -295,18 +303,24 @@ export class UsersSendEmails {
   sendEmailLessonCanceledMentor(lesson: Lesson, student: User, isCancelAll: boolean, lessonsCanceled: number): void {
     let subject = '';
     let body = '';
+    let message = '';
+    let reason = '';
+    if (lesson.reasonCanceled) {
+      message = ` with the following message: "${lesson.reasonCanceled}"`;
+      reason = ` for the following reason: "${lesson.reasonCanceled}"`;
+    }     
     if (lessonsCanceled == 0) {
       const studentName = student.name;
       const isLessonRecurrent = helpers.isLessonRecurrent(lesson.dateTime as string, lesson.endRecurrenceDateTime);
       const lessonRecurrence = isLessonRecurrent && isCancelAll ? 'lesson recurrence' : 'next lesson';
       subject = 'Next lesson status';
-      body = `${studentName} won't participate in the ${lessonRecurrence}.`;
+      body = `${studentName} won't participate in the ${lessonRecurrence}${reason}.`;
     } else if (lessonsCanceled == 1) {
       subject = 'Next lesson canceled';
-      body = `The next lesson has been canceled by the only participant.`;
+      body = `The next lesson has been canceled by the only participant${message}.`;
     } else {
       subject = 'Next lessons canceled';
-      body = `The next ${lessonsCanceled} lessons have been canceled by the only participant`;
+      body = `The next ${lessonsCanceled} lessons have been canceled by the only participant${message}.`;
     }  
     if (lesson.mentor != null) {
       const mentorFirstName = helpers.getUserFirstName(lesson.mentor);

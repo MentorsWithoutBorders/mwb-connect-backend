@@ -11,12 +11,14 @@ import { UsersLessons } from './users_lessons';
 import { UsersPushNotifications } from './users_push_notifications';
 import { UsersSendEmails } from './users_send_emails';
 import { UsersWhatsAppMessages } from './users_whatsapp_messages';
+import { UsersInAppMessages } from './users_in_app_messages';
 import User from '../models/user.model';
 import Subfield from '../models/subfield.model';
 import Organization from '../models/organization.model';
 import LessonRequest from '../models/lesson_request.model';
 import Lesson from '../models/lesson.model';
 import LessonRequestResult from '../models/lesson_request_result_model';
+import InAppMessage from '../models/in_app_message';
 
 const conn = new Conn();
 const pool = conn.pool;
@@ -27,6 +29,7 @@ const usersLessons = new UsersLessons();
 const usersPushNotifications = new UsersPushNotifications();
 const usersSendEmails = new UsersSendEmails();
 const usersWhatsAppMessages = new UsersWhatsAppMessages();
+const usersInAppMessages = new UsersInAppMessages();
 
 export class UsersLessonRequests {
   constructor() {
@@ -376,6 +379,7 @@ export class UsersLessonRequests {
   async rejectLessonRequest(request: Request, response: Response): Promise<void> {
     const mentorId = request.user.id as string;
     const lessonRequestId = request.params.id;
+    const { text }: InAppMessage = request.body;
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
@@ -392,9 +396,10 @@ export class UsersLessonRequests {
           mentor: mentor,
           student: student
         }        
-        usersPushNotifications.sendPNLessonRequestRejected(lessonRequest);
-        usersSendEmails.sendEmailLessonRequestRejected(lessonRequest);
-        await usersWhatsAppMessages.sendWMLessonRequestRejected(lessonRequest);
+        usersPushNotifications.sendPNLessonRequestRejected(lessonRequest, text);
+        usersSendEmails.sendEmailLessonRequestRejected(lessonRequest, text);
+        await usersWhatsAppMessages.sendWMLessonRequestRejected(lessonRequest, text);
+        usersInAppMessages.addUIAMLessonRequestRejected(lessonRequest, text);
       }
       response.status(200).send(`Lesson request modified with ID: ${lessonRequestId}`);
       await client.query('COMMIT');

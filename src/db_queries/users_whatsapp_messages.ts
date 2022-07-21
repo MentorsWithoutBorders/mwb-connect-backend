@@ -112,12 +112,16 @@ export class UsersWhatsAppMessages {
     await this.sendWhatsAppMessage(student.phoneNumber, message);
   }
 
-  async sendWMLessonRequestRejected(lessonRequest: LessonRequest): Promise<void> {
+  async sendWMLessonRequestRejected(lessonRequest: LessonRequest, text: string): Promise<void> {
     const mentor = lessonRequest.mentor as User;
     const student = lessonRequest.student as User;    
     const mentorName = mentor?.name;
     const studentFirstName = helpers.getUserFirstName(student);
-    let message = `We're sorry but ${mentorName} has rejected your lesson request. Please find a new mentor in the MWB Connect app.`;
+    let mentorMessage = '';
+    if (text) {
+      mentorMessage = ` with the following message: "${text}"`;
+    }    
+    let message = `We're sorry but ${mentorName} has rejected your lesson request${mentorMessage}. Please find a new mentor in the MWB Connect app.`;
     message = this.getNotReplyMessage(studentFirstName, message);
     await this.sendWhatsAppMessage(student.phoneNumber, message);
   }
@@ -135,10 +139,14 @@ export class UsersWhatsAppMessages {
   async sendWMLessonCanceled(lesson: Lesson, isCancelAll: boolean): Promise<void> {
     let message = '';
     const isLessonRecurrent = helpers.isLessonRecurrent(lesson.dateTime as string, lesson.endRecurrenceDateTime);
+    let mentorMessage = '';
+    if (lesson.reasonCanceled) {
+      mentorMessage = ` with the following message: "${lesson.reasonCanceled}"`;
+    }    
     if (isLessonRecurrent && isCancelAll) {
-      message = `We're sorry but the mentor has canceled the lesson recurrence. Please feel free to use the MWB Connect app in order to find a new mentor.`;
+      message = `We're sorry but the mentor has canceled the lesson recurrence${mentorMessage}. Please feel free to use the MWB Connect app in order to find a new mentor.`;
     } else {
-      message = `We're sorry but the mentor has canceled the next lesson. If there aren't any other lessons scheduled, please feel free to use the MWB Connect app in order to find a new mentor.`;
+      message = `We're sorry but the mentor has canceled the next lesson${mentorMessage}. If there aren't any other lessons scheduled, please feel free to use the MWB Connect app in order to find a new mentor.`;
     } 
     if (lesson.students != null) {
       for (const student of lesson.students) {

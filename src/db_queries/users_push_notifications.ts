@@ -189,13 +189,17 @@ export class UsersPushNotifications {
     this.sendPushNotification(student.id as string, pushNotification);
   }
 
-  sendPNLessonRequestRejected(lessonRequest: LessonRequest): void {
+  sendPNLessonRequestRejected(lessonRequest: LessonRequest, text: string): void {
     const mentor = lessonRequest.mentor as User;
     const studentId = lessonRequest.student?.id;    
     const mentorName = mentor?.name;
+    let mentorMessage = '';
+    if (text) {
+      mentorMessage = ` with the following message: "${text}"`;
+    }
     const pushNotification: PushNotification = {
       title: 'Lesson request rejected',
-      body: `We're sorry but ${mentorName} has rejected your lesson request`
+      body: `We're sorry but ${mentorName} has rejected your lesson request${mentorMessage}`
     }
     this.sendPushNotification(studentId as string, pushNotification);
   }
@@ -225,13 +229,17 @@ export class UsersPushNotifications {
     let title = '';
     let body = '';
     const isLessonRecurrent = helpers.isLessonRecurrent(lesson.dateTime as string, lesson.endRecurrenceDateTime);
+    let message = '';
+    if (lesson.reasonCanceled) {
+      message = ` with the following message: "${lesson.reasonCanceled}"`;
+    }
     if (isLessonRecurrent && isCancelAll) {
       title = 'Lessons recurrence canceled';
-      body = `We're sorry but the mentor has canceled the lesson recurrence`;
+      body = `We're sorry but the mentor has canceled the lesson recurrence${message}`;
     } else {
       title = 'Next lesson canceled';
-      body = `We're sorry but the mentor has canceled the next lesson`;
-    }
+      body = `We're sorry but the mentor has canceled the next lesson${message}`;
+    }  
     const pushNotification: PushNotification = {
       title: title,
       body: body
@@ -245,19 +253,25 @@ export class UsersPushNotifications {
 
   sendPNLessonCanceledMentor(lesson: Lesson, student: User, isCancelAll: boolean, lessonsCanceled: number): void {
     let title = '';
-    let body = '';    
+    let body = '';
+    let message = '';
+    let reason = '';
+    if (lesson.reasonCanceled) {
+      message = ` with the following message: "${lesson.reasonCanceled}"`;
+      reason = ` for the following reason: "${lesson.reasonCanceled}"`;
+    }    
     if (lessonsCanceled == 0) {
       const studentName = student.name;
       const isLessonRecurrent = helpers.isLessonRecurrent(lesson.dateTime as string, lesson.endRecurrenceDateTime);
       const lessonRecurrence = isLessonRecurrent && isCancelAll ? 'lesson recurrence' : 'next lesson';
       title = 'Next lesson status';
-      body = `${studentName} won't participate in the ${lessonRecurrence}`;
+      body = `${studentName} won't participate in the ${lessonRecurrence}${reason}`;
     } else if (lessonsCanceled == 1) {
       title = 'Next lesson canceled';
-      body = `The next lesson has been canceled by the only participant`;
+      body = `The next lesson has been canceled by the only participant${message}`;
     } else {
       title = 'Next lessons canceled';
-      body = `The next ${lessonsCanceled} lessons have been canceled by the only participant`;
+      body = `The next ${lessonsCanceled} lessons have been canceled by the only participant${message}`;
     }
     const pushNotification: PushNotification = {
       title: title,

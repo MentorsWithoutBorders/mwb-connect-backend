@@ -14,6 +14,7 @@ import { UsersQuizzes } from './src/db_queries/users_quizzes';
 import { UsersAvailableMentors } from './src/db_queries/users_available_mentors';
 import { UsersLessonRequests } from './src/db_queries/users_lesson_requests';
 import { UsersLessons } from './src/db_queries/users_lessons';
+import { UsersInAppMessages } from './src/db_queries/users_in_app_messages';
 import { UsersCertificatesPauses } from './src/db_queries/users_certificates_pauses';
 import { UsersSkills } from './src/db_queries/users_skills';
 import { UsersNotificationsSettings } from './src/db_queries/users_notifications_settings';
@@ -54,6 +55,7 @@ const usersQuizzes = new UsersQuizzes();
 const usersAvailableMentors = new UsersAvailableMentors();
 const usersLessonRequests = new UsersLessonRequests();
 const usersLessons = new UsersLessons();
+const usersInAppMessages = new UsersInAppMessages();
 const usersCertificatesPauses = new UsersCertificatesPauses();
 const usersSkills = new UsersSkills();
 const usersNotificationsSettings = new UsersNotificationsSettings();
@@ -173,6 +175,9 @@ app.put('/api/v1/lessons/:id/mentor_presence', usersLessons.setLessonPresenceMen
 // Users certificates pauses
 app.get('/api/v1/certificate_pause', usersCertificatesPauses.getUserCertificatePause);
 app.post('/api/v1/certificate_pause', usersCertificatesPauses.addUserCertificatePause);
+
+// Users in-app messages
+app.post('/api/v1/in_app_messages', usersInAppMessages.addUserInAppMessage);
 
 // Users skills
 app.get('/api/v1/users/:user_id/subfields/:subfield_id/skills', usersSkills.getUserSkills);
