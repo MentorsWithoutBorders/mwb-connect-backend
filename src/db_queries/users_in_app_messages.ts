@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import autoBind from 'auto-bind';
+import pg from 'pg';
 import { Conn } from '../db/conn';
 import { Helpers } from '../utils/helpers';
 import InAppMessage from '../models/in_app_message';
@@ -15,6 +16,26 @@ export class UsersInAppMessages {
   constructor() {
     autoBind(this);
   }
+
+  async getUserInAppMessage(request: Request, response: Response): Promise<void> {
+    const userId = request.user.id as string;
+    try {
+      const inAppMessage = await this.getUserInAppMessageFromDB(userId);
+      response.status(200).json(inAppMessage);
+    } catch (error) {
+      response.status(400).send(error);
+    } 
+  }
+  
+  async getUserInAppMessageFromDB(userId: string): Promise<InAppMessage> {
+    const getUserInAppMessageQuery = 'SELECT text FROM users_in_app_messages WHERE user_id = $1';
+    const { rows }: pg.QueryResult = await pool.query(getUserInAppMessageQuery, [userId]);
+    const inAppMessage: InAppMessage = {
+      userId: userId,
+      text: rows[0].text
+    }
+    return inAppMessage;
+  }  
 
   async addUserInAppMessage(request: Request, response: Response): Promise<void> {
     const userId = request.user.id as string;
@@ -33,6 +54,21 @@ export class UsersInAppMessages {
     const values = [userId, text];
     await pool.query(insertInAppMessageQuery, values);    
   }
+
+  async deleteUserInAppMessage(request: Request, response: Response): Promise<void> {
+    const userId = request.user.id as string;
+    try {
+      await this.deleteUserInAppMessageFromDB(userId);
+      response.status(200).json('In-app message has been deleted successfully');
+    } catch (error) {
+      response.status(400).send(error);
+    } 
+  }
+  
+  async deleteUserInAppMessageFromDB(userId: string): Promise<void> {
+    const deleteUserInAppMessageQuery = 'DELETE FROM users_in_app_messages WHERE user_id = $1';
+    await pool.query(deleteUserInAppMessageQuery, [userId]);
+  }  
 
   addUIAMLessonRequestRejected(lessonRequest: LessonRequest, text: string): void {
     const mentor = lessonRequest.mentor as User;
@@ -63,9 +99,9 @@ export class UsersInAppMessages {
       mentorMessage = ` with the following message: "${lesson.reasonCanceled}"`;
     }
     if (isLessonRecurrent && isCancelAll) {
-      message = `We're sorry but the mentor has canceled the lesson recurrence${mentorMessage}`;
+      message = `We're sorry but the mentor has canceled the lesson recurrence${mentorMessage}.`;
     } else {
-      message = `We're sorry but the mentor has canceled the next lesson${mentorMessage}`;
+      message = `We're sorry but the mentor has canceled the next lesson${mentorMessage}.`;
     } 
     if (lesson.students != null) {
       for (const student of lesson.students) {
@@ -86,11 +122,11 @@ export class UsersInAppMessages {
       const studentName = student.name;
       const isLessonRecurrent = helpers.isLessonRecurrent(lesson.dateTime as string, lesson.endRecurrenceDateTime);
       const lessonRecurrence = isLessonRecurrent && isCancelAll ? 'lesson recurrence' : 'next lesson';
-      message = `${studentName} won't participate in the ${lessonRecurrence}${studentReason}`;
+      message = `${studentName} won't participate in the ${lessonRecurrence}${studentReason}.`;
     } else if (lessonsCanceled == 1) {
-      message = `The next lesson has been canceled by the only participant${studentMessage}`;
+      message = `The next lesson has been canceled by the only participant${studentMessage}.`;
     } else {
-      message = `The next ${lessonsCanceled} lessons have been canceled by the only participant${studentMessage}`;
+      message = `The next ${lessonsCanceled} lessons have been canceled by the only participant${studentMessage}.`;
     }
     if (lesson.mentor != null) {    
       this.addUserInAppMessageFromDB(lesson.mentor.id as string, message);

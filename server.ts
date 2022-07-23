@@ -177,7 +177,9 @@ app.get('/api/v1/certificate_pause', usersCertificatesPauses.getUserCertificateP
 app.post('/api/v1/certificate_pause', usersCertificatesPauses.addUserCertificatePause);
 
 // Users in-app messages
+app.get('/api/v1/in_app_messages', usersInAppMessages.getUserInAppMessage);
 app.post('/api/v1/in_app_messages', usersInAppMessages.addUserInAppMessage);
+app.delete('/api/v1/in_app_messages', usersInAppMessages.deleteUserInAppMessage);
 
 // Users skills
 app.get('/api/v1/users/:user_id/subfields/:subfield_id/skills', usersSkills.getUserSkills);
