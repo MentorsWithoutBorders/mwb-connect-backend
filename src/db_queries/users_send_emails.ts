@@ -198,7 +198,7 @@ export class UsersSendEmails {
     this.sendEmail(student?.email as string, email);
   }
 
-  sendEmailLessonRequestRejected(lessonRequest: LessonRequest, text: string): void {
+  sendEmailLessonRequestRejected(lessonRequest: LessonRequest, text: string | undefined): void {
     const mentor = lessonRequest.mentor as User;
     const student = lessonRequest.student as User;    
     const mentorName = mentor?.name;

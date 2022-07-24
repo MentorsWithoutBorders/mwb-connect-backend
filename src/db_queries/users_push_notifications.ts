@@ -189,7 +189,7 @@ export class UsersPushNotifications {
     this.sendPushNotification(student.id as string, pushNotification);
   }
 
-  sendPNLessonRequestRejected(lessonRequest: LessonRequest, text: string): void {
+  sendPNLessonRequestRejected(lessonRequest: LessonRequest, text: string | undefined): void {
     const mentor = lessonRequest.mentor as User;
     const studentId = lessonRequest.student?.id;    
     const mentorName = mentor?.name;

@@ -30,9 +30,12 @@ export class UsersInAppMessages {
   async getUserInAppMessageFromDB(userId: string): Promise<InAppMessage> {
     const getUserInAppMessageQuery = 'SELECT text FROM users_in_app_messages WHERE user_id = $1';
     const { rows }: pg.QueryResult = await pool.query(getUserInAppMessageQuery, [userId]);
-    const inAppMessage: InAppMessage = {
-      userId: userId,
-      text: rows[0].text
+    let inAppMessage: InAppMessage = {};
+    if (rows[0]) {
+      inAppMessage = {
+        userId: userId,
+        text: rows[0].text
+      }
     }
     return inAppMessage;
   }  
@@ -48,7 +51,7 @@ export class UsersInAppMessages {
     }
   }
   
-  async addUserInAppMessageFromDB(userId: string, text: string): Promise<void> {
+  async addUserInAppMessageFromDB(userId: string, text: string | undefined): Promise<void> {
     const insertInAppMessageQuery = `INSERT INTO users_in_app_messages (user_id, text)
       VALUES ($1, $2)`;
     const values = [userId, text];
@@ -70,7 +73,7 @@ export class UsersInAppMessages {
     await pool.query(deleteUserInAppMessageQuery, [userId]);
   }  
 
-  addUIAMLessonRequestRejected(lessonRequest: LessonRequest, text: string): void {
+  addUIAMLessonRequestRejected(lessonRequest: LessonRequest, text: string | undefined): void {
     const mentor = lessonRequest.mentor as User;
     const studentId = lessonRequest.student?.id;    
     const mentorName = mentor?.name;

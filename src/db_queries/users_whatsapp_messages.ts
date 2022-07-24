@@ -112,7 +112,7 @@ export class UsersWhatsAppMessages {
     await this.sendWhatsAppMessage(student.phoneNumber, message);
   }
 
-  async sendWMLessonRequestRejected(lessonRequest: LessonRequest, text: string): Promise<void> {
+  async sendWMLessonRequestRejected(lessonRequest: LessonRequest, text: string | undefined): Promise<void> {
     const mentor = lessonRequest.mentor as User;
     const student = lessonRequest.student as User;    
     const mentorName = mentor?.name;
