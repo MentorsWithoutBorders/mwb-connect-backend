@@ -17,6 +17,7 @@ import { UsersAppVersions } from './users_app_versions';
 import { UsersPushNotifications } from './users_push_notifications';
 import { UsersSendEmails } from './users_send_emails';
 import { UsersWhatsAppMessages } from './users_whatsapp_messages';
+import { UsersInAppMessages } from './users_in_app_messages';
 import { AdminTrainingReminders } from './admin_training_reminders';
 import User from '../models/user.model';
 import Email from '../models/email.model';
@@ -36,6 +37,7 @@ const usersTimeZones = new UsersTimeZones();
 const usersPushNotifications = new UsersPushNotifications();
 const usersSendEmails = new UsersSendEmails();
 const usersWhatsAppMessages = new UsersWhatsAppMessages();
+const usersInAppMessages = new UsersInAppMessages();
 const adminTrainingReminders = new AdminTrainingReminders();
 dotenv.config();
 
@@ -72,7 +74,8 @@ export class UsersBackgroundProcesses {
           student: student
         }        
         usersPushNotifications.sendPNLessonRequestReminder(lessonRequest);
-        usersSendEmails.sendEmailLessonRequestReminder(lessonRequest);        
+        usersSendEmails.sendEmailLessonRequestReminder(lessonRequest);
+        usersInAppMessages.addUIAMLessonRequestReminder(lessonRequest);
         await client.query('COMMIT');
       } catch (error) {
         await client.query('ROLLBACK');
@@ -141,6 +144,7 @@ export class UsersBackgroundProcesses {
         usersPushNotifications.sendPNLessonRequestExpired(lessonRequest);
         usersSendEmails.sendEmailLessonRequestExpired(lessonRequest);
         await usersWhatsAppMessages.sendWMLessonRequestExpired(lessonRequest);
+        usersInAppMessages.addUIAMLessonRequestExpired(lessonRequest);
         await client.query('COMMIT');
       } catch (error) {
         await client.query('ROLLBACK');
@@ -212,6 +216,7 @@ export class UsersBackgroundProcesses {
         const lesson = await usersLessons.getPreviousLessonFromDB(row.mentor_id, client);
         usersPushNotifications.sendPNFirstAddLessonsReminder(lesson);
         usersSendEmails.sendEmailFirstAddLessonsReminder(lesson, client);        
+        usersInAppMessages.addUIAMFirstAddLessonsReminder(lesson);
         await client.query('COMMIT');
       } catch (error) {
         await client.query('ROLLBACK');
@@ -246,7 +251,8 @@ export class UsersBackgroundProcesses {
         await client.query('BEGIN');
         const lesson = await usersLessons.getPreviousLessonFromDB(lessonRow.mentor_id, client);
         usersPushNotifications.sendPNLastAddLessonsReminder(lesson);
-        usersSendEmails.sendEmailLastAddLessonsReminder(lesson);        
+        usersSendEmails.sendEmailLastAddLessonsReminder(lesson);
+        usersInAppMessages.addUIAMLastAddLessonsReminder(lesson);
         await client.query('COMMIT');
       } catch (error) {
         await client.query('ROLLBACK');
@@ -287,6 +293,7 @@ export class UsersBackgroundProcesses {
             usersPushNotifications.sendPNNoMoreLessonsAdded(lesson.mentor as User, student);
             usersSendEmails.sendEmailNoMoreLessonsAdded(lesson.mentor as User, student);
             await usersWhatsAppMessages.sendWMNoMoreLessonsAdded(lesson.mentor as User, student);
+            usersInAppMessages.addUIAMNoMoreLessonsAdded(lesson.mentor as User, student);
           } 
         }
         await client.query('COMMIT');
@@ -410,12 +417,14 @@ export class UsersBackgroundProcesses {
         if (!user.isMentor) {
           await usersWhatsAppMessages.sendWMFirstTrainingReminder(user, showStepReminder, showQuizReminder, remainingQuizzes);
         }
+        usersInAppMessages.addUIAMFirstTrainingReminder(user.id as string, showStepReminder, showQuizReminder, remainingQuizzes);
       } else {
         usersPushNotifications.sendPNLastTrainingReminder(user.id as string, showStepReminder, showQuizReminder, remainingQuizzes);
         usersSendEmails.sendEmailLastTrainingReminder(user, showStepReminder, showQuizReminder, remainingQuizzes);
         if (!user.isMentor) {
           await usersWhatsAppMessages.sendWMLastTrainingReminder(user, showStepReminder, showQuizReminder, remainingQuizzes);
-        }        
+        }
+        usersInAppMessages.addUIAMLastTrainingReminder(user.id as string, showStepReminder, showQuizReminder, remainingQuizzes);
         adminTrainingReminders.addTrainingReminder(user, !showStepReminder, remainingQuizzes, client);
       }
     }
