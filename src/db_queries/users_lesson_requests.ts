@@ -159,6 +159,7 @@ export class UsersLessonRequests {
         const timeTo = moment(availability.time.from, 'h:ma').add(2, 'h').format('h:ma');
         availability.time.to = timeTo;
       }
+      await this.cancelPreviousLessonRequests(studentId, client);
       const mentorId = id as string;
       const availableMentors = await usersAvailableMentors.getAvailableMentorsFromDB(undefined, undefined, client);
       const availableLessonsMentors = await usersAvailableMentors.getAvailableLessonsMentorsFromDB(undefined, undefined, client);
@@ -234,6 +235,11 @@ export class UsersLessonRequests {
     const insertSubfieldQuery = `INSERT INTO users_subfields (user_id, subfield_id)
       VALUES ($1, $2)`;
     await client.query(insertSubfieldQuery, [studentId, subfieldId]); 
+  }
+
+  async cancelPreviousLessonRequests(studentId: string, client: pg.PoolClient): Promise<void> {
+    const updateLessonRequestsQuery = 'UPDATE users_lesson_requests SET is_canceled = true WHERE student_id = $1';
+    await client.query(updateLessonRequestsQuery, [studentId]);    
   }
 
   getIsInAvailableMentors(mentorId: string, availableMentors: Array<User>): boolean {
