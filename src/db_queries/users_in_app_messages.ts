@@ -44,6 +44,7 @@ export class UsersInAppMessages {
     const userId = request.user.id as string;
     const { text }: InAppMessage = request.body
     try {
+      await this.deleteUserInAppMessageFromDB(userId);
       await this.addUserInAppMessageFromDB(userId, text);
       response.status(200).send('In app message has been added');
     } catch (error) {
