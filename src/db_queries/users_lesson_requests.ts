@@ -82,7 +82,7 @@ export class UsersLessonRequests {
             AND ulr.is_previous_mentor IS DISTINCT FROM true
           ORDER BY ulr.sent_date_time DESC LIMIT 1`;
       } else {
-        getLessonRequestQuery = `SELECT ulr.id, ulr.student_id, ulr.subfield_id, ulr.sent_date_time, ulr.lesson_date_time, s.name AS subfield_name, ulr.is_rejected, ulr.is_canceled
+        getLessonRequestQuery = `SELECT ulr.id, ulr.student_id, ulr.mentor_id, ulr.subfield_id, ulr.sent_date_time, ulr.lesson_date_time, s.name AS subfield_name, ulr.is_rejected, ulr.is_canceled
           FROM users_lesson_requests ulr
           LEFT OUTER JOIN subfields s
             ON ulr.subfield_id = s.id
@@ -120,7 +120,14 @@ export class UsersLessonRequests {
             organization: user.organization as Organization
           }
           lessonRequest.student = student;
-        } 
+        } else {
+          const user = await users.getUserFromDB(rows[0].mentor_id, client);
+          const mentor: User = {
+            id: user.id as string,
+            name: user.name as string
+          }
+          lessonRequest.mentor = mentor;          
+        }
       }   
       response.status(200).json(lessonRequest);
       await client.query('COMMIT');
