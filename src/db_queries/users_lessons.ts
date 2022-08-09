@@ -391,7 +391,6 @@ export class UsersLessons {
       if (isMentor) {
         await usersWhatsAppMessages.sendWMLessonCanceled(lesson, isCancelAll);
       }
-      usersInAppMessages.addUAIMLessonCanceled(lesson, student, isCancelAll, lessonsCanceled);
     } catch (error) {
       response.status(400).send(error);
       await client.query('ROLLBACK');

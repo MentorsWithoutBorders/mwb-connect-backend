@@ -75,7 +75,6 @@ export class UsersBackgroundProcesses {
         }        
         usersPushNotifications.sendPNLessonRequestReminder(lessonRequest);
         usersSendEmails.sendEmailLessonRequestReminder(lessonRequest);
-        usersInAppMessages.addUIAMLessonRequestReminder(lessonRequest);
         await client.query('COMMIT');
       } catch (error) {
         await client.query('ROLLBACK');
@@ -144,7 +143,6 @@ export class UsersBackgroundProcesses {
         usersPushNotifications.sendPNLessonRequestExpired(lessonRequest);
         usersSendEmails.sendEmailLessonRequestExpired(lessonRequest);
         await usersWhatsAppMessages.sendWMLessonRequestExpired(lessonRequest);
-        usersInAppMessages.addUIAMLessonRequestExpired(lessonRequest);
         await client.query('COMMIT');
       } catch (error) {
         await client.query('ROLLBACK');
@@ -216,7 +214,6 @@ export class UsersBackgroundProcesses {
         const lesson = await usersLessons.getPreviousLessonFromDB(row.mentor_id, client);
         usersPushNotifications.sendPNFirstAddLessonsReminder(lesson);
         usersSendEmails.sendEmailFirstAddLessonsReminder(lesson, client);        
-        usersInAppMessages.addUIAMFirstAddLessonsReminder(lesson);
         await client.query('COMMIT');
       } catch (error) {
         await client.query('ROLLBACK');
@@ -252,7 +249,6 @@ export class UsersBackgroundProcesses {
         const lesson = await usersLessons.getPreviousLessonFromDB(lessonRow.mentor_id, client);
         usersPushNotifications.sendPNLastAddLessonsReminder(lesson);
         usersSendEmails.sendEmailLastAddLessonsReminder(lesson);
-        usersInAppMessages.addUIAMLastAddLessonsReminder(lesson);
         await client.query('COMMIT');
       } catch (error) {
         await client.query('ROLLBACK');
@@ -293,7 +289,6 @@ export class UsersBackgroundProcesses {
             usersPushNotifications.sendPNNoMoreLessonsAdded(lesson.mentor as User, student);
             usersSendEmails.sendEmailNoMoreLessonsAdded(lesson.mentor as User, student);
             await usersWhatsAppMessages.sendWMNoMoreLessonsAdded(lesson.mentor as User, student);
-            usersInAppMessages.addUIAMNoMoreLessonsAdded(lesson.mentor as User, student);
           } 
         }
         await client.query('COMMIT');
@@ -417,14 +412,12 @@ export class UsersBackgroundProcesses {
         if (!user.isMentor) {
           await usersWhatsAppMessages.sendWMFirstTrainingReminder(user, showStepReminder, showQuizReminder, remainingQuizzes);
         }
-        usersInAppMessages.addUIAMFirstTrainingReminder(user.id as string, showStepReminder, showQuizReminder, remainingQuizzes);
       } else {
         usersPushNotifications.sendPNLastTrainingReminder(user.id as string, showStepReminder, showQuizReminder, remainingQuizzes);
         usersSendEmails.sendEmailLastTrainingReminder(user, showStepReminder, showQuizReminder, remainingQuizzes);
         if (!user.isMentor) {
           await usersWhatsAppMessages.sendWMLastTrainingReminder(user, showStepReminder, showQuizReminder, remainingQuizzes);
         }
-        usersInAppMessages.addUIAMLastTrainingReminder(user.id as string, showStepReminder, showQuizReminder, remainingQuizzes);
         adminTrainingReminders.addTrainingReminder(user, !showStepReminder, remainingQuizzes, client);
       }
     }

@@ -412,7 +412,6 @@ export class UsersLessonRequests {
         usersPushNotifications.sendPNLessonRequestRejected(lessonRequest, text);
         usersSendEmails.sendEmailLessonRequestRejected(lessonRequest, text);
         await usersWhatsAppMessages.sendWMLessonRequestRejected(lessonRequest, text);
-        usersInAppMessages.addUIAMLessonRequestRejected(lessonRequest, text);
       }
       response.status(200).send(`Lesson request modified with ID: ${lessonRequestId}`);
       await client.query('COMMIT');
