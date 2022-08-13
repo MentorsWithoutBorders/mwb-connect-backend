@@ -163,7 +163,7 @@ app.put('/api/v1/lesson_requests/:id/update_lesson_request', usersLessonRequests
 app.get('/api/v1/next_lesson', usersLessons.getNextLesson);
 app.get('/api/v1/previous_lesson', usersLessons.getPreviousLesson);
 app.put('/api/v1/lessons/:id/cancel_lesson', usersLessons.cancelLesson);
-app.put('/api/v1/lessons/:id/meeting_url', usersLessons.setLessonMeetingUrl);
+app.put('/api/v1/lessons/:id/meeting_url', usersLessons.setLessonUrl);
 app.put('/api/v1/lessons/:id/recurrence', usersLessons.setLessonRecurrence);
 app.put('/api/v1/lessons/:id/skills', usersLessons.addStudentsSkills);
 app.post('/api/v1/lessons/:id/notes', usersLessons.addStudentsLessonNotes);

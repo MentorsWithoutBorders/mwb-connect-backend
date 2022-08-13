@@ -156,6 +156,17 @@ export class UsersWhatsAppMessages {
       }
     }
   }
+
+  async sendWMLessonUrlUpdated(students: Array<User>): Promise<void> {  
+    if (students != null && students.length > 0) {
+      for (const student of students) {
+        const studentFirstName = helpers.getUserFirstName(student);
+        let message = `The mentor has updated the lesson link. Please see the new link in the MWB Connect app.`;
+        message = this.getNotReplyMessage(studentFirstName, message);
+        await this.sendWhatsAppMessage(student.phoneNumber, message);
+      }
+    }
+  }  
   
   async sendWMLessonRecurrenceUpdated(students: Array<User>): Promise<void> {  
     if (students != null && students.length > 0) {

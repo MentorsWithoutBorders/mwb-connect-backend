@@ -11,7 +11,6 @@ import { Skills } from './skills';
 import { UsersPushNotifications } from './users_push_notifications';
 import { UsersSendEmails } from './users_send_emails';
 import { UsersWhatsAppMessages } from './users_whatsapp_messages';
-import { UsersInAppMessages } from './users_in_app_messages';
 import User from '../models/user.model';
 import Field from '../models/field.model';
 import Subfield from '../models/subfield.model';
@@ -32,7 +31,6 @@ const skillsQueries = new Skills();
 const usersPushNotifications = new UsersPushNotifications();
 const usersSendEmails = new UsersSendEmails();
 const usersWhatsAppMessages = new UsersWhatsAppMessages();
-const usersInAppMessages = new UsersInAppMessages();
 
 export class UsersLessons {
   constructor() {
@@ -503,17 +501,30 @@ export class UsersLessons {
     }
   }
 
-  async setLessonMeetingUrl(request: Request, response: Response): Promise<void> {
+  async setLessonUrl(request: Request, response: Response): Promise<void> {
     const mentorId = request.user.id as string;
     const lessonId = request.params.id;
     const { meetingUrl }: Lesson = request.body;
+    const client = await pool.connect();
     try {
+      await client.query('BEGIN');
+      const lesson: Lesson = {
+        id: lessonId
+      }      
+      const students = await this.getLessonStudents(lesson, false, client);
       const updateLessonQuery = 'UPDATE users_lessons SET meeting_url = $1 WHERE mentor_id = $2 AND id = $3';
-      await pool.query(updateLessonQuery, [meetingUrl, mentorId, lessonId]);
+      await client.query(updateLessonQuery, [meetingUrl, mentorId, lessonId]);
+      usersPushNotifications.sendPNLessonUrlUpdated(students);
+      usersSendEmails.sendEmailLessonUrlUpdated(students);
+      await usersWhatsAppMessages.sendWMLessonUrlUpdated(students);
       response.status(200).send(`Lesson modified with ID: ${lessonId}`);
+      await client.query('COMMIT');
     } catch (error) {
       response.status(400).send(error);
-    }
+      await client.query('ROLLBACK');
+    } finally {
+      client.release();
+    }    
   }
   
   async setLessonRecurrence(request: Request, response: Response): Promise<void> {

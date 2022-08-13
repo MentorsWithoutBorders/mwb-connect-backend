@@ -331,6 +331,21 @@ export class UsersSendEmails {
       this.sendEmail(lesson.mentor.email as string, email);
     }
   }
+
+  sendEmailLessonUrlUpdated(students: Array<User>): void {  
+    if (students != null && students.length > 0) {
+      for (const student of students) {
+        const studentFirstName = helpers.getUserFirstName(student);
+        let body = 'The mentor has updated the lesson link. Please see the new link in the MWB Connect app.';
+        body = this.setEmailBody(studentFirstName, body);
+        const email: Email = {
+          subject: 'Lesson link updated',
+          body: body
+        }          
+        this.sendEmail(student.email as string, email);
+      }
+    }
+  }  
   
   sendEmailLessonRecurrenceUpdated(students: Array<User>): void {  
     if (students != null && students.length > 0) {
@@ -345,7 +360,7 @@ export class UsersSendEmails {
         this.sendEmail(student.email as string, email);
       }
     }
-  }  
+  }
 
   async sendEmailLessonReminder(nextLesson: Lesson, client: pg.PoolClient): Promise<void> {
     const nextLessonStudents = nextLesson.students;

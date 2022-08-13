@@ -17,7 +17,6 @@ import { UsersAppVersions } from './users_app_versions';
 import { UsersPushNotifications } from './users_push_notifications';
 import { UsersSendEmails } from './users_send_emails';
 import { UsersWhatsAppMessages } from './users_whatsapp_messages';
-import { UsersInAppMessages } from './users_in_app_messages';
 import { AdminTrainingReminders } from './admin_training_reminders';
 import User from '../models/user.model';
 import Email from '../models/email.model';
@@ -37,7 +36,6 @@ const usersTimeZones = new UsersTimeZones();
 const usersPushNotifications = new UsersPushNotifications();
 const usersSendEmails = new UsersSendEmails();
 const usersWhatsAppMessages = new UsersWhatsAppMessages();
-const usersInAppMessages = new UsersInAppMessages();
 const adminTrainingReminders = new AdminTrainingReminders();
 dotenv.config();
 

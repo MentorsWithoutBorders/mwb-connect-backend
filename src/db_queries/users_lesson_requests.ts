@@ -11,7 +11,6 @@ import { UsersLessons } from './users_lessons';
 import { UsersPushNotifications } from './users_push_notifications';
 import { UsersSendEmails } from './users_send_emails';
 import { UsersWhatsAppMessages } from './users_whatsapp_messages';
-import { UsersInAppMessages } from './users_in_app_messages';
 import User from '../models/user.model';
 import Subfield from '../models/subfield.model';
 import Organization from '../models/organization.model';
@@ -29,7 +28,6 @@ const usersLessons = new UsersLessons();
 const usersPushNotifications = new UsersPushNotifications();
 const usersSendEmails = new UsersSendEmails();
 const usersWhatsAppMessages = new UsersWhatsAppMessages();
-const usersInAppMessages = new UsersInAppMessages();
 
 export class UsersLessonRequests {
   constructor() {
