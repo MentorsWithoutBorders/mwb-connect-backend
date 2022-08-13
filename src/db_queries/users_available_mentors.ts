@@ -209,7 +209,9 @@ export class UsersAvailableMentors {
       }
     }
     mentor.field?.subfields?.splice(0, subfields?.length);
-    mentor.field?.subfields?.push(lessonSubfield as Subfield);
+    if (lessonSubfield) {
+      mentor.field?.subfields?.push(lessonSubfield);
+    }
     return mentor;
   }  
   
@@ -573,8 +575,8 @@ export class UsersAvailableMentors {
       }
     }
     lessons = this.getSortedLessons(lessons, true);
-    const mentorsWihoutLessons = await this.getMentorsWithoutLessons(fieldId, client);
-    lessons = mentorsWihoutLessons.concat(lessons);
+    const mentorsWithoutLessons = await this.getMentorsWithoutLessons(fieldId, client);
+    lessons = mentorsWithoutLessons.concat(lessons);
     return lessons.sort((a, b) => moment.utc(a.mentor?.availableFrom).diff(moment.utc(b.mentor?.availableFrom)));
   }
 
