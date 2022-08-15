@@ -385,6 +385,8 @@ export class Users {
       await client.query(deleteCertificatePauseQuery, [id]);
       const deleteAvailabilitiesQuery = 'DELETE FROM users_availabilities WHERE user_id = $1';
       await client.query(deleteAvailabilitiesQuery, [id]);
+      const deleteInAppMessagesQuery = 'DELETE FROM users_in_app_messages WHERE user_id = $1';
+      await client.query(deleteInAppMessagesQuery, [id]);      
       const deleteAppVersionQuery = 'DELETE FROM users_app_versions WHERE user_id = $1';
       await client.query(deleteAppVersionQuery, [id]);
       const deleteLoggerQuery = 'DELETE FROM logger WHERE user_id = $1';
