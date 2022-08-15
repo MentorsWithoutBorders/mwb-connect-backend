@@ -89,7 +89,7 @@ export class UsersBackgroundProcesses {
     WHERE ulr.is_previous_mentor IS DISTINCT FROM true
       AND date_trunc('day', now() AT TIME ZONE ut.name)::date - date_trunc('day', ulr.sent_date_time AT TIME ZONE ut.name)::date = $1
       AND extract(hour from now() AT TIME ZONE ut.name) = $2
-      AND extract(minute from now() AT TIME ZONE ut.name) = 14`;
+      AND extract(minute from now() AT TIME ZONE ut.name) = 17`;
     const { rows }: pg.QueryResult = await pool.query(getLessonRequestRemindersQuery, [days, hour]);
     return rows;
   }  
