@@ -60,7 +60,7 @@ export class UsersBackgroundProcesses {
   }
   
   async sendLessonRequestRemindersMentors(): Promise<void> {
-    const rows = await this.getLessonRequestRowsForReminders(1, 12);
+    const rows = await this.getLessonRequestRowsForReminders(1, 22);
     for (const row of rows) {
       const client = await pool.connect();
       try {
@@ -89,13 +89,13 @@ export class UsersBackgroundProcesses {
     WHERE ulr.is_previous_mentor IS DISTINCT FROM true
       AND date_trunc('day', now() AT TIME ZONE ut.name)::date - date_trunc('day', ulr.sent_date_time AT TIME ZONE ut.name)::date = $1
       AND extract(hour from now() AT TIME ZONE ut.name) = $2
-      AND extract(minute from now() AT TIME ZONE ut.name) = 0`;
+      AND extract(minute from now() AT TIME ZONE ut.name) = 14`;
     const { rows }: pg.QueryResult = await pool.query(getLessonRequestRemindersQuery, [days, hour]);
     return rows;
   }  
 
   async setLessonRequestsExpired(): Promise<void> {
-    const rows = await this.getLessonRequestRowsForReminders(2, 0);
+    const rows = await this.getLessonRequestRowsForReminders(2, 22);
     for (const row of rows) {
       const client = await pool.connect();
       try {
@@ -125,8 +125,8 @@ export class UsersBackgroundProcesses {
             AND ulr.is_expired IS true) l
       JOIN users_timezones ut
         ON l.student_id = ut.user_id
-      WHERE extract(hour from now() AT TIME ZONE ut.name) = 0
-        AND extract(minute from now() AT TIME ZONE ut.name) = 0`;
+      WHERE extract(hour from now() AT TIME ZONE ut.name) = 22
+        AND extract(minute from now() AT TIME ZONE ut.name) = 14`;
     const { rows }: pg.QueryResult = await pool.query(getMentorsForLessonRequestReminderQuery);
     for (const row of rows) {
       const client = await pool.connect();
@@ -204,7 +204,7 @@ export class UsersBackgroundProcesses {
   }
   
   async sendFirstAddLessonsRemindersMentors(): Promise<void> {
-    const rows = await this.getLessonRowsForReminders(1, 12, false);
+    const rows = await this.getLessonRowsForReminders(1, 22, false);
     for (const row of rows) {
       const client = await pool.connect();
       try {
@@ -239,7 +239,7 @@ export class UsersBackgroundProcesses {
   }
   
   async sendLastAddLessonsRemindersMentors(): Promise<void> {
-    const lessonRows = await this.getLessonRowsForReminders(2, 12, false);
+    const lessonRows = await this.getLessonRowsForReminders(2, 22, false);
     for (const lessonRow of lessonRows) {
       const client = await pool.connect();
       try {
@@ -274,7 +274,7 @@ export class UsersBackgroundProcesses {
   }
 
   async sendNoMoreLessonsAddedStudents(): Promise<void> {
-    const lessonRows = await this.getLessonRowsForReminders(3, 14, true);
+    const lessonRows = await this.getLessonRowsForReminders(3, 22, true);
     for (const lessonRow of lessonRows) {
       const client = await pool.connect();
       try {
