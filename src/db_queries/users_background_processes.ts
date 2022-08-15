@@ -126,7 +126,7 @@ export class UsersBackgroundProcesses {
       JOIN users_timezones ut
         ON l.student_id = ut.user_id
       WHERE extract(hour from now() AT TIME ZONE ut.name) = 22
-        AND extract(minute from now() AT TIME ZONE ut.name) = 18`;
+        AND extract(minute from now() AT TIME ZONE ut.name) = 20`;
     const { rows }: pg.QueryResult = await pool.query(getMentorsForLessonRequestReminderQuery);
     for (const row of rows) {
       const client = await pool.connect();
