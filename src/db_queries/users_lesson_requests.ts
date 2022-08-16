@@ -486,7 +486,8 @@ export class UsersLessonRequests {
   async addStudentToAvailableLesson(student: User, availableLesson: Lesson, client: pg.PoolClient): Promise<void> {
     const lessonId = availableLesson.id as string;
     await this.addStudent(lessonId, student.id as string, client);
-    await this.addStudentSubfield(student.id as string, availableLesson.subfield?.id as string, client);    
+    await this.addStudentSubfield(student.id as string, availableLesson.subfield?.id as string, client);
+    await this.addStudentToLessonsCanceled(student.id as string, lessonId, availableLesson.mentor?.id as string, client);
     const mentor = await users.getUserFromDB(availableLesson.mentor?.id as string, client);
     availableLesson.mentor = mentor;
     const mentorSubfields = mentor.field?.subfields;
@@ -500,6 +501,19 @@ export class UsersLessonRequests {
     }
     usersPushNotifications.sendPNStudentAddedToLesson(student, availableLesson);
     usersSendEmails.sendEmailStudentAddedToLesson(student, availableLesson);
+  }
+  
+  async addStudentToLessonsCanceled(studentId: string, lessonId: string, mentorId: string, client: pg.PoolClient): Promise<void> {
+    const getLessonsCanceledQuery = `SELECT lesson_date_time, canceled_date_time FROM users_lessons_canceled
+      WHERE lesson_id = $1
+        AND user_id = $2`;
+    const { rows }: pg.QueryResult = await client.query(getLessonsCanceledQuery, [lessonId, mentorId]);
+    for (const row of rows) {
+      const insertLessonCanceledQuery = `INSERT INTO users_lessons_canceled (user_id, lesson_id, lesson_date_time, canceled_date_time)
+        VALUES ($1, $2, $3, $4)`;
+      const values = [studentId, lessonId, row.lesson_date_time, row.canceled_date_time];
+      await client.query(insertLessonCanceledQuery, values);          
+    }
   }  
 }
 
