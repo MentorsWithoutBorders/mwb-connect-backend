@@ -24,14 +24,15 @@ export class UsersSteps {
     const userId = request.user.id as string;
     const goalId = request.params.id;
     try {
-      const getStepsQuery = 'SELECT id, text, index, level, parent_id FROM users_steps WHERE user_id = $1 AND goal_id = $2';
+      const getStepsQuery = 'SELECT id, text, position, level, parent_id FROM users_steps WHERE user_id = $1 AND goal_id = $2';
       const { rows }: pg.QueryResult = await pool.query(getStepsQuery, [userId, goalId]);
       const steps: Array<Step> = [];
       for (const row of rows) {
         const step: Step = {
           id: row.id,
           text: row.text,
-          index: row.index,
+          position: row.position,
+          index: row.position,
           level: row.level,
           parentId: row.parent_id
         };
@@ -62,14 +63,15 @@ export class UsersSteps {
   }
 
   async getStepByIdFromDB(userId: string, stepId: string, client: pg.PoolClient): Promise<Step> {
-    const getStepQuery = `SELECT id, text, index, level, parent_id, date_time FROM users_steps WHERE user_id = $1 AND id = $2`;
+    const getStepQuery = `SELECT id, text, position, level, parent_id, date_time FROM users_steps WHERE user_id = $1 AND id = $2`;
     const { rows }: pg.QueryResult = await client.query(getStepQuery, [userId, stepId]);
     let step: Step = {};
     if (rows[0]) {    
       step = {
         id: rows[0].id,
         text: rows[0].text,
-        index: rows[0].index,
+        position: rows[0].position,
+        index: rows[0].position,
         level: rows[0].level,
         parentId: rows[0].parent_id,
         dateTime: moment.utc(rows[0].date_time).format(constants.DATE_TIME_FORMAT)
@@ -96,7 +98,7 @@ export class UsersSteps {
   }
   
   async getLastStepAddedFromDB(userId: string, client: pg.PoolClient): Promise<Step> {
-    const getStepQuery = `SELECT id, text, index, level, parent_id, date_time FROM users_steps 
+    const getStepQuery = `SELECT id, text, position, level, parent_id, date_time FROM users_steps 
       WHERE user_id = $1
       ORDER BY date_time DESC LIMIT 1`;
     const { rows }: pg.QueryResult = await client.query(getStepQuery, [userId]);
@@ -105,7 +107,8 @@ export class UsersSteps {
       step = {
         id: rows[0].id,
         text: rows[0].text,
-        index: rows[0].index,
+        position: rows[0].position,
+        index: rows[0].position,
         level: rows[0].level,
         parentId: rows[0].parent_id,
         dateTime: moment.utc(rows[0].date_time).format(constants.DATE_TIME_FORMAT)
@@ -125,19 +128,21 @@ export class UsersSteps {
   async addStep(request: Request, response: Response): Promise<void> {
     const userId = request.user.id as string;
     const goalId = request.params.id;
-    const { text, index, level, parentId }: Step = request.body;
+    const { text, index, position, level, parentId }: Step = request.body;
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
-      const insertStepQuery = `INSERT INTO users_steps (user_id, goal_id, text, index, level, parent_id, date_time)
+      const insertStepQuery = `INSERT INTO users_steps (user_id, goal_id, text, position, level, parent_id, date_time)
         VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`;
       const dateTime = moment.utc();
-      const values = [userId, goalId, text, index, level, parentId, dateTime];        
+      const positionOrIndex = position ? position : index;
+      const values = [userId, goalId, text, positionOrIndex, level, parentId, dateTime];        
       const { rows }: pg.QueryResult = await pool.query(insertStepQuery, values);
       const step: Step = {
         id: rows[0].id,
         text: rows[0].text,
-        index: rows[0].index,
+        position: rows[0].position,
+        index: rows[0].position,
         level: rows[0].level,
         parentId: rows[0].parent_id
       };
@@ -155,14 +160,15 @@ export class UsersSteps {
   async updateStep(request: Request, response: Response): Promise<void> {
     const userId = request.user.id as string;
     const stepId = request.params.id;
-    const { text, index, level, parentId }: Step = request.body
+    const { text, position, index, level, parentId }: Step = request.body
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
       const dateTime = moment.utc().format(constants.DATE_TIME_FORMAT);
       const step: Step = {
         id: stepId, 
-        text: text, 
+        text: text,
+        position: position,
         index: index, 
         level: level, 
         parentId: parentId, 
@@ -180,8 +186,9 @@ export class UsersSteps {
   }
 
   async updateStepInDB(userId: string, step: Step, client: pg.PoolClient): Promise<void> {
-    const updateStepQuery = 'UPDATE users_steps SET text = $1, index = $2, level = $3, parent_id = $4, date_time = $5 WHERE user_id = $6 AND id = $7';
-    await client.query(updateStepQuery, [step.text, step.index, step.level, step.parentId, step.dateTime, userId, step.id]);
+    const updateStepQuery = 'UPDATE users_steps SET text = $1, position = $2, level = $3, parent_id = $4, date_time = $5 WHERE user_id = $6 AND id = $7';
+    const positionOrIndex = step.position ? step.position : step.index;
+    await client.query(updateStepQuery, [step.text, positionOrIndex, step.level, step.parentId, step.dateTime, userId, step.id]);
   }
   
   async deleteStep(request: Request, response: Response): Promise<void> {
@@ -197,11 +204,12 @@ export class UsersSteps {
       await client.query(deleteStepQuery, [userId, stepId]);
       if (lastStepAddedBeforeDelete.id == stepId) {
         const lastStepAdded = await this.getLastStepAddedFromDB(userId, client);
-        const { id, text, index, level, parentId }: Step = lastStepAdded;
+        const { id, text, position, level, parentId }: Step = lastStepAdded;
         const step: Step = {
           id: id, 
-          text: text, 
-          index: index, 
+          text: text,
+          position: position,
+          index: position, 
           level: level, 
           parentId: parentId, 
           dateTime: dateTime
