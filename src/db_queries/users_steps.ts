@@ -135,7 +135,7 @@ export class UsersSteps {
       const insertStepQuery = `INSERT INTO users_steps (user_id, goal_id, text, position, level, parent_id, date_time)
         VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`;
       const dateTime = moment.utc();
-      const positionOrIndex = position ? position : index;
+      const positionOrIndex = position != null ? position : index;
       const values = [userId, goalId, text, positionOrIndex, level, parentId, dateTime];        
       const { rows }: pg.QueryResult = await pool.query(insertStepQuery, values);
       const step: Step = {
@@ -187,7 +187,7 @@ export class UsersSteps {
 
   async updateStepInDB(userId: string, step: Step, client: pg.PoolClient): Promise<void> {
     const updateStepQuery = 'UPDATE users_steps SET text = $1, position = $2, level = $3, parent_id = $4, date_time = $5 WHERE user_id = $6 AND id = $7';
-    const positionOrIndex = step.position ? step.position : step.index;
+    const positionOrIndex = step.position != null ? step.position : step.index;
     await client.query(updateStepQuery, [step.text, positionOrIndex, step.level, step.parentId, step.dateTime, userId, step.id]);
   }
   
