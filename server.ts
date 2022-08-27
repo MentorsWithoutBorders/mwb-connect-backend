@@ -137,6 +137,7 @@ app.delete('/api/v1/goals/:id', usersGoals.deleteGoal);
 app.get('/api/v1/goals/:id/steps', usersSteps.getSteps);
 app.get('/api/v1/steps/:id', usersSteps.getStepById);
 app.post('/api/v1/goals/:id/steps', usersSteps.addStep);
+app.post('/api/v1/goals/:id/steps/replace', usersSteps.replaceSteps);
 app.put('/api/v1/steps/:id', usersSteps.updateStep);
 app.delete('/api/v1/steps/:id', usersSteps.deleteStep);
 app.get('/api/v1/last_step_added', usersSteps.getLastStepAdded);

@@ -226,6 +226,32 @@ export class UsersSteps {
     }    
   }
 
+  async replaceSteps(request: Request, response: Response): Promise<void> {
+    const userId = request.user.id as string;
+    const goalId = request.params.id;
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+      const deleteStepQuery = 'DELETE FROM users_steps WHERE user_id = $1 AND goal_id = $2';
+      await client.query(deleteStepQuery, [userId, goalId]);      
+      const steps = request.body;
+      for (const step of steps) {
+        const { id, text, position, level, parentId, dateTime } = step;          
+        const insertStepQuery = `INSERT INTO users_steps (id, user_id, goal_id, text, position, level, parent_id, date_time)
+          VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`;
+        const values = [id, userId, goalId, text, position, level, parentId, dateTime];        
+        await pool.query(insertStepQuery, values);
+      }
+      response.status(200).send('Steps have been replaced');
+      await client.query('COMMIT');
+    } catch (error) {
+      response.status(400).send(error);
+      await client.query('ROLLBACK');
+    } finally {
+      client.release();
+    }
+  }  
+
   async updateTrainingReminderStepAdded(userId: string, client: pg.PoolClient): Promise<void> {
     const updateStepAddedQuery = `UPDATE admin_training_reminders
       SET is_step_added = true WHERE user_id = $1`;
