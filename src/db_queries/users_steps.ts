@@ -226,7 +226,7 @@ export class UsersSteps {
     }    
   }
 
-  async deleteAllSteps(request: Request, response: Response): Promise<void> {
+  async deleteGoalSteps(request: Request, response: Response): Promise<void> {
     const userId = request.user.id as string;
     const goalId = request.params.id;
     const client = await pool.connect();
