@@ -139,7 +139,7 @@ app.get('/api/v1/steps/:id', usersSteps.getStepById);
 app.post('/api/v1/goals/:id/steps', usersSteps.addStep);
 app.put('/api/v1/steps/:id', usersSteps.updateStep);
 app.delete('/api/v1/steps/:id', usersSteps.deleteStep);
-app.delete('/api/v1/goals/:id/steps/all', usersSteps.deleteGoalSteps);
+app.delete('/api/v1/goals/:id/steps', usersSteps.deleteGoalSteps);
 app.get('/api/v1/last_step_added', usersSteps.getLastStepAdded);
 
 // Users quizzes
