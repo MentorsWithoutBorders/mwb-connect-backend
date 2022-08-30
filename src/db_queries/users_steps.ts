@@ -35,7 +35,7 @@ export class UsersSteps {
           index: row.position,
           level: row.level,
           parentId: row.parent_id,
-          dateTime: row.date_time
+          dateTime: moment.utc(row.date_time).format(constants.DATE_TIME_FORMAT)
         };
         steps.push(step);
       }
@@ -60,7 +60,7 @@ export class UsersSteps {
           index: row.position,
           level: row.level,
           parentId: row.parent_id,
-          dateTime: row.date_time
+          dateTime: moment.utc(row.date_time).format(constants.DATE_TIME_FORMAT)
         };
         steps.push(step);
       }
