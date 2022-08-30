@@ -135,6 +135,7 @@ app.delete('/api/v1/goals/:id', usersGoals.deleteGoal);
 
 // Users steps
 app.get('/api/v1/goals/:id/steps', usersSteps.getSteps);
+app.get('/api/v1/steps/all', usersSteps.getAllSteps);
 app.get('/api/v1/steps/:id', usersSteps.getStepById);
 app.post('/api/v1/goals/:id/steps', usersSteps.addStep);
 app.put('/api/v1/steps/:id', usersSteps.updateStep);
