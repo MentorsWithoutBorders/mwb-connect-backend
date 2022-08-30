@@ -128,15 +128,20 @@ export class UsersSteps {
   async addStep(request: Request, response: Response): Promise<void> {
     const userId = request.user.id as string;
     const goalId = request.params.id;
-    const { text, index, position, level, parentId, dateTime }: Step = request.body;
+    const { id, text, index, position, level, parentId, dateTime }: Step = request.body;
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
-      const insertStepQuery = `INSERT INTO users_steps (user_id, goal_id, text, position, level, parent_id, date_time)
-        VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`;
       const stepDateTime = dateTime ? dateTime : moment.utc();
       const positionOrIndex = position != null ? position : index;
-      const values = [userId, goalId, text, positionOrIndex, level, parentId, stepDateTime];        
+      let insertStepQuery = `INSERT INTO users_steps (user_id, goal_id, text, position, level, parent_id, date_time)
+      VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`;
+      let values = [userId, goalId, text, positionOrIndex, level, parentId, stepDateTime];       
+      if (id) {
+        insertStepQuery = `INSERT INTO users_steps (id, user_id, goal_id, text, position, level, parent_id, date_time)
+          VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`;
+        values = [id, userId, goalId, text, positionOrIndex, level, parentId, stepDateTime];        
+      }
       const { rows }: pg.QueryResult = await pool.query(insertStepQuery, values);
       const step: Step = {
         id: rows[0].id,
