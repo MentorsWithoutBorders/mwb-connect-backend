@@ -24,7 +24,7 @@ export class UsersSteps {
     const userId = request.user.id as string;
     const goalId = request.params.id;
     try {
-      const getStepsQuery = 'SELECT id, text, position, level, parent_id FROM users_steps WHERE user_id = $1 AND goal_id = $2';
+      const getStepsQuery = 'SELECT id, text, position, level, parent_id, date_time FROM users_steps WHERE user_id = $1 AND goal_id = $2';
       const { rows }: pg.QueryResult = await pool.query(getStepsQuery, [userId, goalId]);
       const steps: Array<Step> = [];
       for (const row of rows) {
@@ -34,7 +34,8 @@ export class UsersSteps {
           position: row.position,
           index: row.position,
           level: row.level,
-          parentId: row.parent_id
+          parentId: row.parent_id,
+          dateTime: row.date_time
         };
         steps.push(step);
       }
@@ -47,7 +48,7 @@ export class UsersSteps {
   async getAllSteps(request: Request, response: Response): Promise<void> {
     const userId = request.user.id as string;
     try {
-      const getStepsQuery = 'SELECT id, goal_id, text, position, level, parent_id FROM users_steps WHERE user_id = $1';
+      const getStepsQuery = 'SELECT id, goal_id, text, position, level, parent_id, date_time FROM users_steps WHERE user_id = $1';
       const { rows }: pg.QueryResult = await pool.query(getStepsQuery, [userId]);
       const steps: Array<Step> = [];
       for (const row of rows) {
@@ -58,7 +59,8 @@ export class UsersSteps {
           position: row.position,
           index: row.position,
           level: row.level,
-          parentId: row.parent_id
+          parentId: row.parent_id,
+          dateTime: row.date_time
         };
         steps.push(step);
       }
