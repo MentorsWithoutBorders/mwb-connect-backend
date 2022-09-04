@@ -137,5 +137,22 @@ export class UsersGoals {
   async deleteSteps(userId: string, goalId: string, client: pg.PoolClient): Promise<void> {
     const deleteStepsQuery = 'DELETE FROM users_steps WHERE user_id = $1 AND goal_id = $2';
     await client.query(deleteStepsQuery, [userId, goalId]);
-  }  
+  }   
+
+  async deleteGoals(request: Request, response: Response): Promise<void> {
+    const userId = request.user.id as string;
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+      const deleteGoalsQuery = 'DELETE FROM users_goals WHERE user_id = $1';
+      await client.query(deleteGoalsQuery, [userId]);      
+      response.status(200).send(`All goals have been deleted for user ${userId}`);
+      await client.query('COMMIT');
+    } catch (error) {
+      response.status(400).send(error);
+      await client.query('ROLLBACK');
+    } finally {
+      client.release();
+    }
+  }
 }

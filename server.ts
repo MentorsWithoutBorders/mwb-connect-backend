@@ -132,6 +132,7 @@ app.get('/api/v1/goals/:id', usersGoals.getGoalById);
 app.post('/api/v1/goals', usersGoals.addGoal);
 app.put('/api/v1/goals/:id', usersGoals.updateGoal);
 app.delete('/api/v1/goals/:id', usersGoals.deleteGoal);
+app.delete('/api/v1/goals', usersGoals.deleteGoals);
 
 // Users steps
 app.get('/api/v1/goals/:id/steps', usersSteps.getSteps);
@@ -140,7 +141,7 @@ app.get('/api/v1/steps/:id', usersSteps.getStepById);
 app.post('/api/v1/goals/:id/steps', usersSteps.addStep);
 app.put('/api/v1/steps/:id', usersSteps.updateStep);
 app.delete('/api/v1/steps/:id', usersSteps.deleteStep);
-app.delete('/api/v1/goals/:id/steps', usersSteps.deleteGoalSteps);
+app.delete('/api/v1/goals/:id/steps', usersSteps.deleteSteps);
 app.get('/api/v1/last_step_added', usersSteps.getLastStepAdded);
 
 // Users quizzes

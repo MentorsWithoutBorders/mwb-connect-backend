@@ -257,14 +257,14 @@ export class UsersSteps {
     }    
   }
 
-  async deleteGoalSteps(request: Request, response: Response): Promise<void> {
+  async deleteSteps(request: Request, response: Response): Promise<void> {
     const userId = request.user.id as string;
     const goalId = request.params.id;
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
       const deleteStepsQuery = 'DELETE FROM users_steps WHERE user_id = $1 AND goal_id = $2';
-      await client.query(deleteStepsQuery, [userId, goalId]);      
+      await client.query(deleteStepsQuery, [userId, goalId]);
       response.status(200).send(`All steps have been deleted for goal ${goalId}`);
       await client.query('COMMIT');
     } catch (error) {
@@ -273,7 +273,7 @@ export class UsersSteps {
     } finally {
       client.release();
     }
-  }  
+  }
 
   async updateTrainingReminderStepAdded(userId: string, client: pg.PoolClient): Promise<void> {
     const updateStepAddedQuery = `UPDATE admin_training_reminders
