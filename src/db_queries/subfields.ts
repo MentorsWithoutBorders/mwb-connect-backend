@@ -105,7 +105,7 @@ export class Subfields {
 
   async updateSubfield(request: Request, response: Response): Promise<void> {
     const subfieldId = request.params.id;
-    const { name, index }: Subfield = request.body
+    const { name, index }: Subfield = request.body;
     const client = await pool.connect();
     try {
       await client.query('BEGIN');

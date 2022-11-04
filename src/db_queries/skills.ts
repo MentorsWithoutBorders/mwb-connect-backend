@@ -105,7 +105,7 @@ export class Skills {
 
   async updateSkill(request: Request, response: Response): Promise<void> {
     const skillId = request.params.id;
-    const { name, index }: Skill = request.body
+    const { name, index }: Skill = request.body;
     const client = await pool.connect();
     try {
       await client.query('BEGIN');

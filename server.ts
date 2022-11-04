@@ -29,6 +29,10 @@ import { Fields } from './src/db_queries/fields';
 import { Subfields } from './src/db_queries/subfields';
 import { Skills } from './src/db_queries/skills';
 import { FieldsGoals } from './src/db_queries/fields_goals';
+import { FieldsTutorials } from './src/db_queries/fields_tutorials';
+import { SubfieldsTutorials } from './src/db_queries/subfields_tutorials';
+import { SkillsTutorials } from './src/db_queries/skills_tutorials';
+import { TutorialsLessons } from './src/db_queries/tutorials_lessons';
 import { Tutorials } from './src/db_queries/tutorials';
 import { QuizzesSettings } from './src/db_queries/quizzes_settings';
 import { Updates } from './src/db_queries/updates';
@@ -68,6 +72,10 @@ const fields = new Fields();
 const subfields = new Subfields();
 const skills = new Skills();
 const fieldsGoals = new FieldsGoals();
+const fieldsTutorials = new FieldsTutorials();
+const subfieldsTutorials = new SubfieldsTutorials();
+const skillsTutorials = new SkillsTutorials();
+const tutorialsLessons = new TutorialsLessons();
 const tutorials = new Tutorials();
 const quizzesSettings = new QuizzesSettings();
 const updates = new Updates();
@@ -223,6 +231,30 @@ app.get('/api/v1/skills/:id', skills.getSkillById);
 app.post('/api/v1/subfields/:id/skills', skills.addSkill);
 app.put('/api/v1/skills/:id', skills.updateSkill);
 app.delete('/api/v1/skills/:id', skills.deleteSkill);
+
+// Fields tutorials
+app.get('/api/v1/fields_tutorials', fieldsTutorials.getFieldsTutorials);
+app.get('/api/v1/fields_tutorials/:id', fieldsTutorials.getFieldTutorialById);
+app.post('/api/v1/fields_tutorials', fieldsTutorials.addFieldTutorial);
+app.put('/api/v1/fields_tutorials/:id', fieldsTutorials.updateFieldTutorial);
+app.delete('/api/v1/fields_tutorials/:id', fieldsTutorials.deleteFieldTutorial);
+
+// Subfields tutorials
+app.get('/api/v1/subfields_tutorials', subfieldsTutorials.getSubfieldsTutorials);
+app.get('/api/v1/subfields_tutorials/:id', subfieldsTutorials.getSubfieldTutorialById);
+app.post('/api/v1/subfields_tutorials', subfieldsTutorials.addSubfieldTutorial);
+app.put('/api/v1/subfields_tutorials/:id', subfieldsTutorials.updateSubfieldTutorial);
+app.delete('/api/v1/subfields_tutorials/:id', subfieldsTutorials.deleteSubfieldTutorial);
+
+// Skills tutorials
+app.get('/api/v1/skills_tutorials', skillsTutorials.getSkillsTutorials);
+app.get('/api/v1/skills_tutorials/:id', skillsTutorials.getSkillTutorialById);
+app.post('/api/v1/skills_tutorials', skillsTutorials.addSkillTutorial);
+app.put('/api/v1/skills_tutorials/:id', skillsTutorials.updateSkillTutorial);
+app.delete('/api/v1/skills_tutorials/:id', skillsTutorials.deleteSkillTutorial);
+
+// Tutorials lessons
+app.get('/api/v1/tutorials_lessons', tutorialsLessons.getTutorialsLessons);
 
 // Tutorials
 app.get('/api/v1/tutorials', tutorials.getTutorials);

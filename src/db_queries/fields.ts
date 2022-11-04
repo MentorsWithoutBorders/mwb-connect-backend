@@ -133,7 +133,7 @@ export class Fields {
 
   async updateField(request: Request, response: Response): Promise<void> {
     const fieldId = request.params.id;
-    const { name, index }: Field = request.body
+    const { name, index }: Field = request.body;
     try {
       const updateFieldQuery = 'UPDATE fields SET name = $1, index = $2 WHERE id = $3';
       await pool.query(updateFieldQuery, [name, index, fieldId]);
