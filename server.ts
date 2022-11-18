@@ -11,6 +11,7 @@ import { UsersTimeZones } from './src/db_queries/users_timezones';
 import { UsersGoals } from './src/db_queries/users_goals';
 import { UsersSteps } from './src/db_queries/users_steps';
 import { UsersQuizzes } from './src/db_queries/users_quizzes';
+import { UsersCourses } from './src/db_queries/users_courses';
 import { UsersAvailableMentors } from './src/db_queries/users_available_mentors';
 import { UsersLessonRequests } from './src/db_queries/users_lesson_requests';
 import { UsersLessons } from './src/db_queries/users_lessons';
@@ -24,6 +25,8 @@ import { UsersSendEmails } from './src/db_queries/users_send_emails';
 import { UsersAppVersions } from './src/db_queries/users_app_versions';
 import { UsersAppFlags } from './src/db_queries/users_app_flags';
 import { UsersBackgroundProcesses } from './src/db_queries/users_background_processes';
+import { MentorsWaitingRequests } from './src/db_queries/mentors_waiting_requests';
+import { MentorsPartnershipRequests } from './src/db_queries/mentors_partnership_requests';
 import { Organizations } from './src/db_queries/organizations';
 import { Fields } from './src/db_queries/fields';
 import { Subfields } from './src/db_queries/subfields';
@@ -35,6 +38,7 @@ import { SkillsTutorials } from './src/db_queries/skills_tutorials';
 import { TutorialsLessons } from './src/db_queries/tutorials_lessons';
 import { Tutorials } from './src/db_queries/tutorials';
 import { QuizzesSettings } from './src/db_queries/quizzes_settings';
+import { CoursesTypes } from './src/db_queries/courses_types';
 import { Updates } from './src/db_queries/updates';
 import { Logger } from './src/db_queries/logger';
 import { AdminStudentsCertificates } from './src/db_queries/admin_students_certificates';
@@ -57,6 +61,7 @@ const usersGoals = new UsersGoals();
 const usersSteps = new UsersSteps();
 const usersQuizzes = new UsersQuizzes();
 const usersAvailableMentors = new UsersAvailableMentors();
+const usersCourses = new UsersCourses();
 const usersLessonRequests = new UsersLessonRequests();
 const usersLessons = new UsersLessons();
 const usersInAppMessages = new UsersInAppMessages();
@@ -67,6 +72,8 @@ const usersSupportRequests = new UsersSupportRequests();
 const usersAppVersions = new UsersAppVersions();
 const usersAppFlags = new UsersAppFlags();
 const usersBackgroundProcesses = new UsersBackgroundProcesses();
+const mentorsWaitingRequests = new MentorsWaitingRequests();
+const mentorsPartnershipRequests = new MentorsPartnershipRequests();
 const organizations = new Organizations();
 const fields = new Fields();
 const subfields = new Subfields();
@@ -78,6 +85,7 @@ const skillsTutorials = new SkillsTutorials();
 const tutorialsLessons = new TutorialsLessons();
 const tutorials = new Tutorials();
 const quizzesSettings = new QuizzesSettings();
+const coursesTypes = new CoursesTypes();
 const updates = new Updates();
 const logger = new Logger();
 const adminStudentsCertificates = new AdminStudentsCertificates();
@@ -157,6 +165,13 @@ app.get('/api/v1/quizzes', usersQuizzes.getQuizzes);
 app.get('/api/v1/quiz_number', usersQuizzes.getQuizNumber);
 app.post('/api/v1/quizzes', usersQuizzes.addQuiz);
 
+// Users courses
+app.get('/api/v1/courses', usersCourses.getAvailableCourses);
+app.get('/api/v1/courses/current', usersCourses.getCurrentCourse);
+app.post('/api/v1/courses', usersCourses.addCourse);
+app.put('/api/v1/courses/:id/cancel', usersCourses.cancelCourse);
+app.put('/api/v1/courses/:id/join', usersCourses.joinCourse);
+
 // Users available mentors
 app.post('/api/v1/available_mentors', usersAvailableMentors.getAvailableMentors);
 app.get('/api/v1/available_mentors/fields', usersAvailableMentors.getAvailableMentorsFields);
@@ -205,6 +220,19 @@ app.post('/api/v1/support_requests', usersSupportRequests.addSupportRequest);
 
 // Users app flags
 app.get('/api/v1/app_flags', usersAppFlags.getAppFlags);
+
+// Mentors waiting requests
+app.get('/api/v1/mentors_waiting_requests', mentorsWaitingRequests.getMentorsWaitingRequests);
+app.get('/api/v1/mentors_waiting_requests/current', mentorsWaitingRequests.getMentorWaitingRequest);
+app.post('/api/v1/mentors_waiting_requests', mentorsWaitingRequests.addMentorWaitingRequest);
+app.put('/api/v1/mentors_waiting_requests/:id/cancel', mentorsWaitingRequests.cancelMentorWaitingRequest);
+
+// Mentors partnership requests
+app.get('/api/v1/mentors_partnership_requests/current', mentorsPartnershipRequests.getMentorPartnershipRequest);
+app.post('/api/v1/mentors_partnership_requests', mentorsPartnershipRequests.sendMentorPartnershipRequest);
+app.post('/api/v1/mentors_partnership_requests/:id/accept', mentorsPartnershipRequests.acceptMentorPartnershipRequest);
+app.put('/api/v1/mentors_partnership_requests/:id/reject', mentorsPartnershipRequests.rejectMentorPartnershipRequest);
+app.put('/api/v1/mentors_partnership_requests/:id/cancel', mentorsPartnershipRequests.cancelMentorPartnershipRequest);
 
 // Organizations
 app.get('/api/v1/organizations/id/:id', organizations.getOrganizationById);
@@ -261,6 +289,9 @@ app.get('/api/v1/tutorials', tutorials.getTutorials);
 
 // Quizzes settings
 app.get('/api/v1/quizzes_settings', quizzesSettings.getQuizzesSettings);
+
+// Courses types
+app.get('/api/v1/courses_types', coursesTypes.getCoursesTypes);
 
 // Updates
 app.get('/api/v1/updates', updates.getUpdates);

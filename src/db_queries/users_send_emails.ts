@@ -522,7 +522,7 @@ export class UsersSendEmails {
         body: body
       }
       this.sendEmail(user?.email as string, email);
-      response.status(200).json('Email was sent successfully');
+      response.status(200).json(`Email was sent successfully`);
       await client.query('COMMIT');      
     } catch (error) {
       response.status(400).send(error);

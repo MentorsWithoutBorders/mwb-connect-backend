@@ -58,7 +58,7 @@ export class UsersInAppMessages {
     const userId = request.user.id as string;
     try {
       await this.deleteUserInAppMessageFromDB(userId);
-      response.status(200).json('In-app message has been deleted successfully');
+      response.status(200).json(`In-app message has been deleted successfully`);
     } catch (error) {
       response.status(400).send(error);
     } 

@@ -170,7 +170,7 @@ export class UsersBackgroundProcesses {
   
   async sendBeforeLessonRemindersFromDB(): Promise<void> {
     const getLessonsQuery = `SELECT * FROM
-      (SELECT id, mentor_id, is_canceled, EXTRACT(EPOCH FROM (date_trunc('minute', now()) + interval '30 minutes' - date_time)) / 3600 / 24 / 7 AS diff_date_time
+      (SELECT id, mentor_id, is_canceled, EXTRACT(EPOCH FROM (date_trunc('minute', now()) + INTERVAL '30 minutes' - date_time)) / 3600 / 24 / 7 AS diff_date_time
           FROM users_lessons) ul
       WHERE ul.is_canceled IS DISTINCT FROM true
           AND ul.diff_date_time = FLOOR(ul.diff_date_time)`;
@@ -311,7 +311,7 @@ export class UsersBackgroundProcesses {
   async sendAfterLessonFromDB(): Promise<void> {
     try {
       const getAfterLessonQuery = `SELECT * FROM
-        (SELECT id, mentor_id, end_recurrence_date_time, EXTRACT(EPOCH FROM (date_trunc('minute', now()) - interval '3 hours' - end_recurrence_date_time)) AS diff_end_recurrence_date_time, ROUND(EXTRACT(EPOCH FROM (date_trunc('minute', now()) - interval '3 hours' - date_time))) / 3600 / 24 / 7 AS diff_date_time
+        (SELECT id, mentor_id, end_recurrence_date_time, EXTRACT(EPOCH FROM (date_trunc('minute', now()) - INTERVAL '3 hours' - end_recurrence_date_time)) AS diff_end_recurrence_date_time, ROUND(EXTRACT(EPOCH FROM (date_trunc('minute', now()) - INTERVAL '3 hours' - date_time))) / 3600 / 24 / 7 AS diff_date_time
             FROM users_lessons
             GROUP BY id) ul
         WHERE end_recurrence_date_time IS NULL AND diff_date_time = 0

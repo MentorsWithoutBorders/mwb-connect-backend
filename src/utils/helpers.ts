@@ -2,10 +2,10 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import dotenv from 'dotenv';
 import moment from 'moment';
+import { v4 as uuidv4 } from 'uuid';
+import { constants } from '../utils/constants';
 import User from '../models/user.model';
 import Quiz from '../models/quiz.model';
-import { constants } from '../utils/constants';
-import { v4 as uuidv4 } from 'uuid';
 
 dotenv.config();
 

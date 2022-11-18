@@ -374,7 +374,7 @@ export class UsersPushNotifications {
         body: 'Test push notification',
       }
       this.sendPushNotification(userId, pushNotification);
-      response.status(200).json('Push notification was sent successfully');
+      response.status(200).json(`Push notification was sent successfully`);
     } catch (error) {
       response.status(400).send(error);
     }
