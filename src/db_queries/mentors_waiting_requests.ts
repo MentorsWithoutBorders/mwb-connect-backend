@@ -54,7 +54,7 @@ export class MentorsWaitingRequests {
     }  
   }
 
-  async getMentorWaitingRequest(request: Request, response: Response): Promise<void> {
+  async getCurrentMentorWaitingRequest(request: Request, response: Response): Promise<void> {
     const mentorId = request.user.id as string;
     const client = await pool.connect();
     try {

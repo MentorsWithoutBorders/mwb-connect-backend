@@ -28,13 +28,13 @@ export class MentorsPartnershipRequests {
     autoBind(this);
   }
 
-  async getMentorPartnershipRequest(request: Request, response: Response): Promise<void> {
+  async getCurrentMentorPartnershipRequest(request: Request, response: Response): Promise<void> {
     const userId = request.user.id as string;
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
       await client.query(constants.READ_ONLY_TRANSACTION);
-      const mentorPartnershipRequest = await this.getMentorPartnershipRequestFromDB(userId, undefined, client);
+      const mentorPartnershipRequest = await this.getCurrentMentorPartnershipRequestFromDB(userId, undefined, client);
       response.status(200).json(mentorPartnershipRequest);
       await client.query('COMMIT');
     } catch (error) {
@@ -45,7 +45,7 @@ export class MentorsPartnershipRequests {
     }
   }
 
-  async getMentorPartnershipRequestFromDB(userId: string | undefined, mentorPartnershipRequestId: string | undefined, client: pg.PoolClient): Promise<MentorPartnershipRequest> {
+  async getCurrentMentorPartnershipRequestFromDB(userId: string | undefined, mentorPartnershipRequestId: string | undefined, client: pg.PoolClient): Promise<MentorPartnershipRequest> {
     const getMentorPartnershipRequestQuery = `SELECT mpr.id, mpr.mentor_id, mpr.partner_mentor_id, mpr.subfield_id, mpr.partner_subfield_id, mpr.course_type_id, ct.duration AS course_duration, ct.is_with_partner, mpr.course_utc_day_of_week, mpr.course_utc_start_time, mpr.is_canceled, mpr.is_rejected, mpr.is_expired, mpr.was_canceled_shown, mpr.was_expired_shown
       FROM mentors_partnership_requests mpr
       JOIN courses_types ct
@@ -133,7 +133,7 @@ export class MentorsPartnershipRequests {
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
-      const mentorPartnershipRequest = await this.getMentorPartnershipRequestFromDB(undefined, mentorPartnershipRequestId, client);
+      const mentorPartnershipRequest = await this.getCurrentMentorPartnershipRequestFromDB(undefined, mentorPartnershipRequestId, client);
       const courseType = mentorPartnershipRequest?.courseType;
       const partnerMentor = mentorPartnershipRequest?.partnerMentor as CourseMentor;
       partnerMentor.meetingUrl = meetingUrl;
@@ -175,7 +175,7 @@ export class MentorsPartnershipRequests {
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
-      const mentorPartnershipRequest = await this.getMentorPartnershipRequestFromDB(undefined, mentorPartnershipRequestId, client);
+      const mentorPartnershipRequest = await this.getCurrentMentorPartnershipRequestFromDB(undefined, mentorPartnershipRequestId, client);
       if (!mentorPartnershipRequest.isCanceled) {
         const updateMentorPartnershipRequestQuery = 'UPDATE mentors_partnership_requests SET is_rejected = true WHERE id = $1';
         await client.query(updateMentorPartnershipRequestQuery, [mentorPartnershipRequestId]);

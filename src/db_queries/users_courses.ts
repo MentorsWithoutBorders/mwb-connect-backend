@@ -10,6 +10,7 @@ import Course from '../models/course.model';
 import CourseMentor from '../models/course_mentor.model';
 import CourseStudent from '../models/course_student.model';
 import CourseType from '../models/course_type.model';
+import InAppMessage from '../models/in_app_message';
 
 const conn = new Conn();
 const pool = conn.pool;
@@ -159,7 +160,7 @@ export class UsersCourses {
   
   async addCourse(request: Request, response: Response): Promise<void> {
     const mentorId = request.user.id as string;
-    const { type, mentors }: Course = request.body;
+    const { type, mentors, startDateTime }: Course = request.body;
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
@@ -170,7 +171,7 @@ export class UsersCourses {
       const course = {
         type: type,
         mentors: [mentor],
-        startDateTime: moment.utc().format(constants.DATE_TIME_FORMAT)
+        startDateTime: startDateTime
       }
       await this.addCourseFromDB(course, client);
       response.status(200).json(`Course was added successfully`);
@@ -247,6 +248,7 @@ export class UsersCourses {
   async cancelCourse(request: Request, response: Response): Promise<void> {
     const userId = request.user.id as string;
     const courseId = request.params.id;
+    const { text }: InAppMessage = request.body;    
     const client = await pool.connect();
     try {
       await client.query('BEGIN');

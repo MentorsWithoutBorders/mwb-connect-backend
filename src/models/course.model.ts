@@ -8,4 +8,5 @@ export default interface Course {
   mentors?: Array<CourseMentor>;
   students?: Array<CourseStudent>;
   startDateTime?: string;
+  isCanceled?: boolean;
 }

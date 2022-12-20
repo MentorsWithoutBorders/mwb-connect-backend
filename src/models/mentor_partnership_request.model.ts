@@ -3,9 +3,9 @@ import User from "./user.model";
 
 export default interface MentorPartnershipRequest {
   id?: string;
+  courseType?: CourseType;
   mentor?: User;
   partnerMentor?: User;
-  courseType?: CourseType;
   courseDayOfWeek?: string;
   courseStartTime?: string;
   sentDateTime?: string;

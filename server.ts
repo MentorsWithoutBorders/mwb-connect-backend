@@ -169,8 +169,8 @@ app.post('/api/v1/quizzes', usersQuizzes.addQuiz);
 app.get('/api/v1/courses', usersCourses.getAvailableCourses);
 app.get('/api/v1/courses/current', usersCourses.getCurrentCourse);
 app.post('/api/v1/courses', usersCourses.addCourse);
-app.put('/api/v1/courses/:id/cancel', usersCourses.cancelCourse);
 app.put('/api/v1/courses/:id/join', usersCourses.joinCourse);
+app.put('/api/v1/courses/:id/cancel', usersCourses.cancelCourse);
 
 // Users available mentors
 app.post('/api/v1/available_mentors', usersAvailableMentors.getAvailableMentors);
@@ -223,16 +223,17 @@ app.get('/api/v1/app_flags', usersAppFlags.getAppFlags);
 
 // Mentors waiting requests
 app.get('/api/v1/mentors_waiting_requests', mentorsWaitingRequests.getMentorsWaitingRequests);
-app.get('/api/v1/mentors_waiting_requests/current', mentorsWaitingRequests.getMentorWaitingRequest);
+app.get('/api/v1/mentors_waiting_requests/current', mentorsWaitingRequests.getCurrentMentorWaitingRequest);
 app.post('/api/v1/mentors_waiting_requests', mentorsWaitingRequests.addMentorWaitingRequest);
 app.put('/api/v1/mentors_waiting_requests/:id/cancel', mentorsWaitingRequests.cancelMentorWaitingRequest);
 
 // Mentors partnership requests
-app.get('/api/v1/mentors_partnership_requests/current', mentorsPartnershipRequests.getMentorPartnershipRequest);
+app.get('/api/v1/mentors_partnership_requests/current', mentorsPartnershipRequests.getCurrentMentorPartnershipRequest);
 app.post('/api/v1/mentors_partnership_requests', mentorsPartnershipRequests.sendMentorPartnershipRequest);
 app.post('/api/v1/mentors_partnership_requests/:id/accept', mentorsPartnershipRequests.acceptMentorPartnershipRequest);
 app.put('/api/v1/mentors_partnership_requests/:id/reject', mentorsPartnershipRequests.rejectMentorPartnershipRequest);
 app.put('/api/v1/mentors_partnership_requests/:id/cancel', mentorsPartnershipRequests.cancelMentorPartnershipRequest);
+app.put('/api/v1/mentors_partnership_requests/:id/update', mentorsPartnershipRequests.updateMentorPartnershipRequest);
 
 // Organizations
 app.get('/api/v1/organizations/id/:id', organizations.getOrganizationById);
