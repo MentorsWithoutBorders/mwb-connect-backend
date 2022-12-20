@@ -145,14 +145,14 @@ export class MentorsPartnershipRequests {
       const hours = moment(mentorPartnershipRequest.courseStartTime, ['h:mma']).format("HH");
       const minutes = moment(mentorPartnershipRequest.courseStartTime, ['h:mma']).format("mm");
       courseStartDateTime = courseStartDateTime.set('hour', parseInt(hours)).set('minute', parseInt(minutes)).set('second', 0);      
-      const course: Course = {
+      let course: Course = {
         type: courseType,
         mentors: mentors,
         startDateTime: courseStartDateTime.format(constants.DATE_TIME_FORMAT)
       }
-      await usersCourses.addCourseFromDB(course, client);
+      course = await usersCourses.addCourseFromDB(course, client);
       await this.deleteMentorPartnershipRequest(mentorPartnershipRequestId, client);
-      response.status(200).send(course);
+      response.status(200).json(course);
       await client.query('COMMIT');
       // usersPushNotifications.sendPNMentorPartnershipRequestAccepted(course);
       // usersSendEmails.sendEmailCourseScheduled(course, client);

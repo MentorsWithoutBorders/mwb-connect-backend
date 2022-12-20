@@ -84,7 +84,7 @@ export class UsersCourses {
             break;
           }
         }
-      }      
+      }
       response.status(200).json(course);
       await client.query('COMMIT');
     } catch (error) {
@@ -168,13 +168,13 @@ export class UsersCourses {
       if (mentors) {
         mentor.meetingUrl = mentors[0].meetingUrl;
       }
-      const course = {
+      let course: Course = {
         type: type,
         mentors: [mentor],
         startDateTime: startDateTime
       }
-      await this.addCourseFromDB(course, client);
-      response.status(200).json(`Course was added successfully`);
+      course = await this.addCourseFromDB(course, client);
+      response.status(200).json(course);
       await client.query('COMMIT');
     } catch (error) {
       response.status(400).send(error);
@@ -184,7 +184,7 @@ export class UsersCourses {
     }
   }  
 
-  async addCourseFromDB(course: Course, client: pg.PoolClient): Promise<void> {
+  async addCourseFromDB(course: Course, client: pg.PoolClient): Promise<Course> {
     const insertCourseQuery = 'INSERT INTO users_courses (start_date_time, course_type_id) VALUES ($1, $2) RETURNING *';
     const values = [course.startDateTime, course.type?.id]; 
     const { rows }: pg.QueryResult = await client.query(insertCourseQuery, values);
@@ -194,11 +194,7 @@ export class UsersCourses {
         await this.addCourseMentor(course.id as string, mentor, client);
       }
     }
-    if (course.students && course.students.length > 0) {
-      for (const student of course.students) {
-        await this.addCourseStudent(course.id as string, student, client);
-      }
-    }
+    return course;
   }
   
   async addCourseMentor(courseId: string, mentor: CourseMentor, client: pg.PoolClient): Promise<void> {
@@ -208,21 +204,6 @@ export class UsersCourses {
     const mentorSubfield = mentorSubfields && mentorSubfields.length > 0 ? mentorSubfields[0] : {};
     const values = [courseId, mentor.id, mentorSubfield.id, mentor.meetingUrl];
     await client.query(insertMentorQuery, values);
-  }
-
-  async addCourseStudent(courseId: string, student: CourseStudent, client: pg.PoolClient): Promise<void> {
-    const getCourseStudentQuery = `SELECT student_id
-      FROM users_courses_students
-      WHERE course_id = $1
-        AND student_id = $2
-        AND is_canceled IS DISTINCT FROM true`;
-    const { rows }: pg.QueryResult = await client.query(getCourseStudentQuery, [courseId, student.id]);
-    if (rows.length == 0) {
-      const insertStudentQuery = `INSERT INTO users_courses_students (course_id, student_id)
-        VALUES ($1, $2)`;
-      const values = [courseId, student.id];
-      await client.query(insertStudentQuery, values);
-    }
   }
   
   async joinCourse(request: Request, response: Response): Promise<void> {
@@ -244,6 +225,21 @@ export class UsersCourses {
       client.release();
     }
   }
+
+  async addCourseStudent(courseId: string, student: CourseStudent, client: pg.PoolClient): Promise<void> {
+    const getCourseStudentQuery = `SELECT student_id
+      FROM users_courses_students
+      WHERE course_id = $1
+        AND student_id = $2
+        AND is_canceled IS DISTINCT FROM true`;
+    const { rows }: pg.QueryResult = await client.query(getCourseStudentQuery, [courseId, student.id]);
+    if (rows.length == 0) {
+      const insertStudentQuery = `INSERT INTO users_courses_students (course_id, student_id)
+        VALUES ($1, $2)`;
+      const values = [courseId, student.id];
+      await client.query(insertStudentQuery, values);
+    }
+  }  
   
   async cancelCourse(request: Request, response: Response): Promise<void> {
     const userId = request.user.id as string;
