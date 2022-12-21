@@ -134,7 +134,7 @@ export class UsersCourses {
         const mentor = await users.getUserFromDB(row.mentor_id, client);
         const mentorSubfields = mentor?.field?.subfields;
         if (mentor && mentor.field && mentorSubfields && mentorSubfields.length > 0) {
-          mentor.field.subfields = mentorSubfields.filter(subfield => subfield.id == rows[0].subfield_id);
+          mentor.field.subfields = mentorSubfields.filter(subfield => subfield.id == row.subfield_id);
         }        
         mentors.push(mentor as CourseMentor);
       }
