@@ -171,6 +171,7 @@ app.get('/api/v1/courses/current', usersCourses.getCurrentCourse);
 app.post('/api/v1/courses', usersCourses.addCourse);
 app.put('/api/v1/courses/:id/join', usersCourses.joinCourse);
 app.put('/api/v1/courses/:id/cancel', usersCourses.cancelCourse);
+app.put('/api/v1/courses/:id/meeting_url', usersCourses.updateMeetingUrl);
 
 // Users available mentors
 app.post('/api/v1/available_mentors', usersAvailableMentors.getAvailableMentors);

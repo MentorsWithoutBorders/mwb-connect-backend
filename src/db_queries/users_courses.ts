@@ -273,5 +273,24 @@ export class UsersCourses {
       client.release();
     }
   }
+
+  async updateMeetingUrl(request: Request, response: Response): Promise<void> {
+    const userId = request.user.id as string;
+    const courseId = request.params.id;
+    const { meetingUrl }: CourseMentor = request.body;
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+      const updateMeetingUrlQuery = 'UPDATE users_courses_mentors SET meeting_url = $1 WHERE mentor_id = $2 AND course_id = $3';
+      await client.query(updateMeetingUrlQuery, [meetingUrl, userId, courseId]);
+      response.status(200).send(`Meeting URL ${meetingUrl} was updated successfully for course ${courseId}`);
+      await client.query('COMMIT');
+    } catch (error) {
+      response.status(400).send(error);
+      await client.query('ROLLBACK');
+    } finally {
+      client.release();
+    }
+  }
 }
 
