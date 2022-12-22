@@ -26,7 +26,7 @@ export class UsersCourses {
     try {
       await client.query('BEGIN');
       const courses: Array<Course> = [];
-      const getCoursesQuery = `SELECT uc.id, uc.start_date_time, ct.duration, ct.is_with_partner
+      const getCoursesQuery = `SELECT uc.id, uc.start_date_time, ct.duration, ct.is_with_partner, ct.index
         FROM users_courses uc 
         JOIN courses_types ct
           ON uc.course_type_id = ct.id
@@ -37,7 +37,8 @@ export class UsersCourses {
         for (const row of rows) {
           const courseType: CourseType = {
             duration: rows[0].duration,
-            isWithPartner: rows[0].is_with_partner
+            isWithPartner: rows[0].is_with_partner,
+            index: rows[0].index
           }
           const mentors = await this.getCourseMentors(row.id, client);
           const students = await this.getCourseStudents(row.id, client);
@@ -96,7 +97,7 @@ export class UsersCourses {
   }
 
   async getCourseById(courseId: string, client: pg.PoolClient): Promise<Course> {
-    const getCourseQuery = `SELECT uc.id, uc.start_date_time, ct.duration, ct.is_with_partner
+    const getCourseQuery = `SELECT uc.id, uc.start_date_time, ct.duration, ct.is_with_partner, ct.index
       FROM users_courses uc 
       JOIN courses_types ct
         ON uc.course_type_id = ct.id
@@ -107,7 +108,8 @@ export class UsersCourses {
     if (rows[0]) {
       const courseType: CourseType = {
         duration: rows[0].duration,
-        isWithPartner: rows[0].is_with_partner
+        isWithPartner: rows[0].is_with_partner,
+        index: rows[0].index
       }
       const mentors = await this.getCourseMentors(courseId, client);
       const students = await this.getCourseStudents(courseId, client);
@@ -240,6 +242,25 @@ export class UsersCourses {
       const values = [courseId, student.id];
       await client.query(insertStudentQuery, values);
     }
+  }
+  
+  async updateMeetingUrl(request: Request, response: Response): Promise<void> {
+    const userId = request.user.id as string;
+    const courseId = request.params.id;
+    const { meetingUrl }: CourseMentor = request.body;
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+      const updateMeetingUrlQuery = 'UPDATE users_courses_mentors SET meeting_url = $1 WHERE mentor_id = $2 AND course_id = $3';
+      await client.query(updateMeetingUrlQuery, [meetingUrl, userId, courseId]);
+      response.status(200).send(`Meeting URL ${meetingUrl} was updated successfully for course ${courseId}`);
+      await client.query('COMMIT');
+    } catch (error) {
+      response.status(400).send(error);
+      await client.query('ROLLBACK');
+    } finally {
+      client.release();
+    }
   }  
   
   async cancelCourse(request: Request, response: Response): Promise<void> {
@@ -265,25 +286,6 @@ export class UsersCourses {
         await client.query(cancelCourseQuery, [canceledDateTime, courseId]);
       }
       response.status(200).send(`Course ${courseId} was canceled successfully for user ${userId}`);
-      await client.query('COMMIT');
-    } catch (error) {
-      response.status(400).send(error);
-      await client.query('ROLLBACK');
-    } finally {
-      client.release();
-    }
-  }
-
-  async updateMeetingUrl(request: Request, response: Response): Promise<void> {
-    const userId = request.user.id as string;
-    const courseId = request.params.id;
-    const { meetingUrl }: CourseMentor = request.body;
-    const client = await pool.connect();
-    try {
-      await client.query('BEGIN');
-      const updateMeetingUrlQuery = 'UPDATE users_courses_mentors SET meeting_url = $1 WHERE mentor_id = $2 AND course_id = $3';
-      await client.query(updateMeetingUrlQuery, [meetingUrl, userId, courseId]);
-      response.status(200).send(`Meeting URL ${meetingUrl} was updated successfully for course ${courseId}`);
       await client.query('COMMIT');
     } catch (error) {
       response.status(400).send(error);

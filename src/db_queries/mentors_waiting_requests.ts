@@ -23,7 +23,7 @@ export class MentorsWaitingRequests {
     try {
       await client.query('BEGIN');
       await client.query(constants.READ_ONLY_TRANSACTION);
-      const getMentorsWaitingRequestsQuery = `SELECT mwr.id, mwr.mentor_id, mwr.course_type_id, ct.duration AS course_duration, ct.is_with_partner 
+      const getMentorsWaitingRequestsQuery = `SELECT mwr.id, mwr.mentor_id, mwr.course_type_id, ct.duration AS course_duration, ct.is_with_partner, ct.index 
         FROM mentors_waiting_requests mwr
         JOIN courses_types ct
           ON mwr.course_type_id = ct.id
@@ -35,7 +35,8 @@ export class MentorsWaitingRequests {
         const courseType: CourseType = {
           id: rows[0].course_type_id,
           duration: rows[0].course_duration,
-          isWithPartner: rows[0].is_with_partner
+          isWithPartner: rows[0].is_with_partner,
+          index: rows[0].index
         };      
         const mentorWaitingRequest: MentorWaitingRequest = {
           id: row.id,
@@ -60,7 +61,7 @@ export class MentorsWaitingRequests {
     try {
       await client.query('BEGIN');
       await client.query(constants.READ_ONLY_TRANSACTION);
-      const getMentorWaitingRequestQuery = `SELECT mwr.id, mwr.course_type_id, ct.duration AS course_duration, ct.is_with_partner 
+      const getMentorWaitingRequestQuery = `SELECT mwr.id, mwr.course_type_id, ct.duration AS course_duration, ct.is_with_partner, ct.index
         FROM mentors_waiting_requests mwr
         JOIN courses_types ct
           ON mwr.course_type_id = ct.id
@@ -72,7 +73,8 @@ export class MentorsWaitingRequests {
         const courseType: CourseType = {
           id: rows[0].course_type_id,
           duration: rows[0].course_duration,
-          isWithPartner: rows[0].is_with_partner
+          isWithPartner: rows[0].is_with_partner,
+          index: rows[0].index
         };      
         mentorWaitingRequest = {
           id: rows[0].id,

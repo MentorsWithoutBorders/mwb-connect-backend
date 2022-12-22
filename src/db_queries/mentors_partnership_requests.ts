@@ -46,7 +46,7 @@ export class MentorsPartnershipRequests {
   }
 
   async getCurrentMentorPartnershipRequestFromDB(userId: string | undefined, mentorPartnershipRequestId: string | undefined, client: pg.PoolClient): Promise<MentorPartnershipRequest> {
-    const getMentorPartnershipRequestQuery = `SELECT mpr.id, mpr.mentor_id, mpr.partner_mentor_id, mpr.subfield_id, mpr.partner_subfield_id, mpr.course_type_id, ct.duration AS course_duration, ct.is_with_partner, mpr.course_utc_day_of_week, mpr.course_utc_start_time, mpr.is_canceled, mpr.is_rejected, mpr.is_expired, mpr.was_canceled_shown, mpr.was_expired_shown
+    const getMentorPartnershipRequestQuery = `SELECT mpr.id, mpr.mentor_id, mpr.partner_mentor_id, mpr.subfield_id, mpr.partner_subfield_id, mpr.course_type_id, ct.duration AS course_duration, ct.is_with_partner, ct.index, mpr.course_utc_day_of_week, mpr.course_utc_start_time, mpr.is_canceled, mpr.is_rejected, mpr.is_expired, mpr.was_canceled_shown, mpr.was_expired_shown
       FROM mentors_partnership_requests mpr
       JOIN courses_types ct
         ON mpr.course_type_id = ct.id
@@ -70,7 +70,8 @@ export class MentorsPartnershipRequests {
       const courseType: CourseType = {
         id: rows[0].course_type_id,
         duration: rows[0].course_duration,
-        isWithPartner: rows[0].is_with_partner
+        isWithPartner: rows[0].is_with_partner,
+        index: rows[0].index
       };
       mentorPartnershipRequest = {
         id: rows[0].id,

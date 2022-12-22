@@ -18,14 +18,15 @@ export class CoursesTypes {
     try {
       await client.query('BEGIN');
       await client.query(constants.READ_ONLY_TRANSACTION);
-      const getCoursesTypesQuery = 'SELECT id, duration, is_with_partner FROM courses_types';
+      const getCoursesTypesQuery = 'SELECT id, duration, is_with_partner, index FROM courses_types';
       const { rows }: pg.QueryResult = await client.query(getCoursesTypesQuery);
       const coursesTypes: Array<CourseType> = [];
       for (const row of rows) {
         const courseType: CourseType = {
           id: row.id,
           duration: row.duration,
-          isWithPartner: row.is_with_partner
+          isWithPartner: row.is_with_partner,
+          index: row.index
         };
         coursesTypes.push(courseType);
       }
