@@ -18,7 +18,7 @@ export class CoursesTypes {
     try {
       await client.query('BEGIN');
       await client.query(constants.READ_ONLY_TRANSACTION);
-      const getCoursesTypesQuery = 'SELECT id, duration, is_with_partner, index FROM courses_types';
+      const getCoursesTypesQuery = 'SELECT id, duration, is_with_partner, index FROM courses_types ORDER BY index';
       const { rows }: pg.QueryResult = await client.query(getCoursesTypesQuery);
       const coursesTypes: Array<CourseType> = [];
       for (const row of rows) {
