@@ -131,11 +131,12 @@ export class UsersCourses {
     const mentors: Array<CourseMentor> = [];
     if (rows && rows.length > 0) {
       for (const row of rows) {
-        const mentor = await users.getUserFromDB(row.mentor_id, client);
+        const mentor = (await users.getUserFromDB(row.mentor_id, client)) as CourseMentor;
         const mentorSubfields = mentor?.field?.subfields;
         if (mentor && mentor.field && mentorSubfields && mentorSubfields.length > 0) {
           mentor.field.subfields = mentorSubfields.filter(subfield => subfield.id == row.subfield_id);
-        }        
+        }
+        mentor.meetingUrl = row.meeting_url;
         mentors.push(mentor as CourseMentor);
       }
     }
