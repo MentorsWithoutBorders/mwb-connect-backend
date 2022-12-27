@@ -31,12 +31,12 @@ export class MentorsWaitingRequests {
       const { rows }: pg.QueryResult = await client.query(getMentorsWaitingRequestsQuery);
       const mentorsWaitingRequests: Array<MentorWaitingRequest> = [];
       for (const row of rows) {
-        const mentor = await users.getUserFromDB(rows[0].mentor_id, client);
+        const mentor = await users.getUserFromDB(row.mentor_id, client);
         const courseType: CourseType = {
-          id: rows[0].course_type_id,
-          duration: rows[0].course_duration,
-          isWithPartner: rows[0].is_with_partner,
-          index: rows[0].index
+          id: row.course_type_id,
+          duration: row.course_duration,
+          isWithPartner: row.is_with_partner,
+          index: row.index
         };      
         const mentorWaitingRequest: MentorWaitingRequest = {
           id: row.id,
