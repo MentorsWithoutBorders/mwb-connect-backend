@@ -28,8 +28,9 @@ export class MentorsWaitingRequests {
         FROM mentors_waiting_requests mwr
         JOIN courses_types ct
           ON mwr.course_type_id = ct.id
-        WHERE mwr.is_canceled IS DISTINCT FROM true`;
-      const { rows }: pg.QueryResult = await client.query(getMentorsWaitingRequestsQuery);
+        WHERE mwr.course_type_id = $1
+          AND mwr.is_canceled IS DISTINCT FROM true`;
+      const { rows }: pg.QueryResult = await client.query(getMentorsWaitingRequestsQuery, [courseType?.id]);
       const mentorsWaitingRequests: Array<MentorWaitingRequest> = [];
       for (const row of rows) {
         const mentor = await users.getUserFromDB(row.mentor_id, client);
