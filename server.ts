@@ -223,9 +223,9 @@ app.post('/api/v1/support_requests', usersSupportRequests.addSupportRequest);
 app.get('/api/v1/app_flags', usersAppFlags.getAppFlags);
 
 // Mentors waiting requests
-app.get('/api/v1/mentors_waiting_requests', mentorsWaitingRequests.getMentorsWaitingRequests);
+app.post('/api/v1/mentors_waiting_requests', mentorsWaitingRequests.getMentorsWaitingRequests);
 app.get('/api/v1/mentors_waiting_requests/current', mentorsWaitingRequests.getCurrentMentorWaitingRequest);
-app.post('/api/v1/mentors_waiting_requests', mentorsWaitingRequests.addMentorWaitingRequest);
+app.post('/api/v1/mentors_waiting_requests/add', mentorsWaitingRequests.addMentorWaitingRequest);
 app.put('/api/v1/mentors_waiting_requests/:id/cancel', mentorsWaitingRequests.cancelMentorWaitingRequest);
 
 // Mentors partnership requests
