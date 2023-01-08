@@ -143,6 +143,7 @@ export class MentorsPartnershipRequests {
     ];
     const { rows }: pg.QueryResult = await client.query(insertMentorPartnershipRequestQuery, values);
     mentorPartnershipRequest.id = rows[0].id;
+    mentorPartnershipRequest.sentDateTime = moment.utc(rows[0].sent_date_time).format(constants.DATE_TIME_FORMAT);
     return mentorPartnershipRequest;
   }
 
