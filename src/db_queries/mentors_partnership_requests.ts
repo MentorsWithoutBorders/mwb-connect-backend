@@ -142,6 +142,8 @@ export class MentorsPartnershipRequests {
       moment.utc().format(constants.DATE_TIME_FORMAT)
     ];
     const { rows }: pg.QueryResult = await client.query(insertMentorPartnershipRequestQuery, values);
+    mentorPartnershipRequest.mentor = await users.getUserFromDB(rows[0].mentor_id, client);
+    mentorPartnershipRequest.partnerMentor = await users.getUserFromDB(rows[0].partner_mentor_id, client);
     mentorPartnershipRequest.id = rows[0].id;
     mentorPartnershipRequest.sentDateTime = moment.utc(rows[0].sent_date_time).format(constants.DATE_TIME_FORMAT);
     return mentorPartnershipRequest;
