@@ -65,7 +65,7 @@ export class MentorsPartnershipRequests {
       const partnerMentor = await users.getUserFromDB(rows[0].partner_mentor_id, client);
       const partnerMentorSubfields = partnerMentor?.field?.subfields;
       if (partnerMentor && partnerMentor.field && partnerMentorSubfields && partnerMentorSubfields.length > 0) {
-        partnerMentor.field.subfields = partnerMentorSubfields.filter(subfield => subfield.id == rows[0].subfield_id);
+        partnerMentor.field.subfields = partnerMentorSubfields.filter(subfield => subfield.id == rows[0].partner_subfield_id);
       }          
       const courseType: CourseType = {
         id: rows[0].course_type_id,
