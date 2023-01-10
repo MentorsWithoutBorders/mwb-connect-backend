@@ -139,7 +139,7 @@ export class UsersCourses {
           mentor.field.subfields = mentorSubfields.filter(subfield => subfield.id == row.subfield_id);
         }
         mentor.meetingUrl = row.meeting_url;
-        mentors.push(mentor as CourseMentor);
+        mentors.push(mentor);
       }
     }
     return mentors;

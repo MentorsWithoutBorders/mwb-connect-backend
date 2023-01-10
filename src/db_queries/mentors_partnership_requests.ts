@@ -79,7 +79,7 @@ export class MentorsPartnershipRequests {
         partnerMentor: partnerMentor,
         courseType: courseType,
         courseDayOfWeek: rows[0].course_utc_day_of_week,
-        courseStartTime: rows[0].course_utc_start_time,
+        courseStartTime: moment(rows[0].course_utc_start_time, 'HH:mm').format('h:mma'),
         sentDateTime: moment.utc(rows[0].sent_date_time).format(constants.DATE_TIME_FORMAT),
         isRejected: rows[0].is_rejected,
         isCanceled: rows[0].is_canceled,
@@ -138,7 +138,7 @@ export class MentorsPartnershipRequests {
       partnerMentorSubfield.id,
       courseType?.id,
       courseDayOfWeek,
-      moment(courseStartTime, 'h:ma').format('HH:mm'),
+      moment(courseStartTime, 'h:mma').format('HH:mm'),
       moment.utc().format(constants.DATE_TIME_FORMAT)
     ];
     const { rows }: pg.QueryResult = await client.query(insertMentorPartnershipRequestQuery, values);
