@@ -118,14 +118,14 @@ export class MentorsWaitingRequests {
   }
 
   async cancelMentorWaitingRequest(request: Request, response: Response): Promise<void> {
-    const mentorWaitingRequestId = request.params.id;
+    const mentorId = request.user.id as string;
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
-      const updateMentorWaitingRequestQuery = 'UPDATE mentors_waiting_requests SET is_canceled = true, canceled_date_time = $1 WHERE id = $2';
+      const updateMentorWaitingRequestQuery = 'UPDATE mentors_waiting_requests SET is_canceled = true, canceled_date_time = $1 WHERE mentor_id = $2';
       const canceledDateTime = moment.utc().format(constants.DATE_TIME_FORMAT);      
-      await client.query(updateMentorWaitingRequestQuery, [canceledDateTime, mentorWaitingRequestId]);
-      response.status(200).send(`Mentor waiting request canceled with ID: ${mentorWaitingRequestId}`);
+      await client.query(updateMentorWaitingRequestQuery, [canceledDateTime, mentorId]);
+      response.status(200).send(`Mentor waiting requests canceled for mentor: ${mentorId}`);
       await client.query('COMMIT');
     } catch (error) {
       response.status(400).send(error);
