@@ -19,6 +19,7 @@ export class MentorsWaitingRequests {
   }
 
   async getMentorsWaitingRequests(request: Request, response: Response): Promise<void> {
+    const mentorId = request.user.id as string;
     const { courseType }: MentorWaitingRequest = request.body;
     const client = await pool.connect();
     try {
@@ -29,8 +30,9 @@ export class MentorsWaitingRequests {
         JOIN courses_types ct
           ON mwr.course_type_id = ct.id
         WHERE mwr.course_type_id = $1
+          AND mwr.mentor_id <> $2
           AND mwr.is_canceled IS DISTINCT FROM true`;
-      const { rows }: pg.QueryResult = await client.query(getMentorsWaitingRequestsQuery, [courseType?.id]);
+      const { rows }: pg.QueryResult = await client.query(getMentorsWaitingRequestsQuery, [courseType?.id, mentorId]);
       const mentorsWaitingRequests: Array<MentorWaitingRequest> = [];
       for (const row of rows) {
         const mentor = await users.getUserFromDB(row.mentor_id, client);
