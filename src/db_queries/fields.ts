@@ -49,18 +49,31 @@ export class Fields {
 
   async getFieldById(request: Request, response: Response): Promise<void> {
     const fieldId = request.params.id;
+    const client = await pool.connect();
     try {
-      const getFieldQuery = 'SELECT name, index FROM fields WHERE id = $1';
-      const { rows }: pg.QueryResult = await pool.query(getFieldQuery, [fieldId]);
-      const field: Field = {
-        id: fieldId,
-        name: rows[0].name,
-        index: rows[0].index
-      };
+      await client.query('BEGIN');
+      await client.query(constants.READ_ONLY_TRANSACTION);      
+      const field = await this.getFieldByIdFromDB(fieldId, client);
       response.status(200).json(field);
+      await client.query('COMMIT');
     } catch (error) {
       response.status(400).send(error);
+      await client.query('ROLLBACK');
+    } finally {
+      client.release();
     }
+  }
+
+  async getFieldByIdFromDB(fieldId: string, client: pg.PoolClient): Promise<Field> {
+    const getFieldQuery = 'SELECT id, name, index FROM fields WHERE id = $1';
+    const { rows }: pg.QueryResult = await client.query(getFieldQuery, [fieldId]);
+    const field: Field = {
+      id: rows[0].id,
+      name: rows[0].name,
+      index: rows[0].index,
+      subfields: await this.getSubfields(rows[0].id, client)
+    };
+    return field;   
   }
 
   async getSubfields(fieldId: string, client: pg.PoolClient): Promise<Array<Subfield>> {
