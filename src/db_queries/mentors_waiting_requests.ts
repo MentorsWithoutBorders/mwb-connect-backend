@@ -24,6 +24,7 @@ export class MentorsWaitingRequests {
 
   async getMentorsWaitingRequests(request: Request, response: Response): Promise<void> {
     const mentorId = request.user.id as string;
+    const page = request.query.page as string;
     const { courseType, mentor }: MentorWaitingRequest = request.body;
     const client = await pool.connect();
     try {
@@ -37,7 +38,7 @@ export class MentorsWaitingRequests {
           AND mwr.mentor_id <> $2
           AND mwr.is_canceled IS DISTINCT FROM true`;
       const { rows }: pg.QueryResult = await client.query(getMentorsWaitingRequestsQuery, [courseType?.id, mentorId]);
-      const mentorsWaitingRequests: Array<MentorWaitingRequest> = [];
+      let mentorsWaitingRequests: Array<MentorWaitingRequest> = [];
       const server = process.env.SERVER as string;
       for (const row of rows) {
         const mentorId = row.mentor_id;
@@ -63,7 +64,8 @@ export class MentorsWaitingRequests {
         if (usersAvailableMentors.isValidMentor(mentorFromDB, mentor?.field, mentor?.availabilities)) {
           mentorsWaitingRequests.push(mentorWaitingRequest);
         }
-      }      
+      }
+      mentorsWaitingRequests = this.getPaginatedMentorsWaitingRequests(mentorsWaitingRequests, page);
       response.status(200).json(mentorsWaitingRequests);
       await client.query('COMMIT');
     } catch (error) {
@@ -73,6 +75,19 @@ export class MentorsWaitingRequests {
       client.release();
     }  
   }
+
+  getPaginatedMentorsWaitingRequests(mentorsWaitingRequests: Array<MentorWaitingRequest>, page: string | undefined): Array<MentorWaitingRequest> {
+    const paginatedMentorsWaitingRequests: Array<MentorWaitingRequest> = [];
+    if (!page) {
+      return mentorsWaitingRequests;
+    }
+    for (let i = constants.AVAILABLE_MENTORS_RESULTS_PER_PAGE * (parseInt(page) - 1); i < constants.AVAILABLE_MENTORS_RESULTS_PER_PAGE * parseInt(page); i++) {
+      if (mentorsWaitingRequests[i]) {
+        paginatedMentorsWaitingRequests.push(mentorsWaitingRequests[i]);
+      }
+    }
+    return paginatedMentorsWaitingRequests;
+  }  
 
   async getCurrentMentorWaitingRequest(request: Request, response: Response): Promise<void> {
     const mentorId = request.user.id as string;
