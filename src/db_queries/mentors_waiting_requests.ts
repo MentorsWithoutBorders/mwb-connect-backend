@@ -1,17 +1,21 @@
 import { Request, Response } from 'express';
 import pg from 'pg';
+import { createClient } from 'async-redis';
 import autoBind from 'auto-bind';
 import moment from 'moment';
 import 'moment-timezone';
 import { Conn } from '../db/conn';
 import { constants } from '../utils/constants';
 import { Users } from './users';
+import { UsersAvailableMentors } from './users_available_mentors';
 import MentorWaitingRequest from '../models/mentor_waiting_request.model';
 import CourseType from '../models/course_type.model';
 
 const conn = new Conn();
 const pool = conn.pool;
+const redisClient = createClient();
 const users = new Users();
+const usersAvailableMentors = new UsersAvailableMentors();
 
 export class MentorsWaitingRequests {
   constructor() {
@@ -20,7 +24,7 @@ export class MentorsWaitingRequests {
 
   async getMentorsWaitingRequests(request: Request, response: Response): Promise<void> {
     const mentorId = request.user.id as string;
-    const { courseType }: MentorWaitingRequest = request.body;
+    const { courseType, mentor }: MentorWaitingRequest = request.body;
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
@@ -34,20 +38,31 @@ export class MentorsWaitingRequests {
           AND mwr.is_canceled IS DISTINCT FROM true`;
       const { rows }: pg.QueryResult = await client.query(getMentorsWaitingRequestsQuery, [courseType?.id, mentorId]);
       const mentorsWaitingRequests: Array<MentorWaitingRequest> = [];
+      const server = process.env.SERVER as string;
       for (const row of rows) {
-        const mentor = await users.getUserFromDB(row.mentor_id, client);
+        const mentorId = row.mentor_id;
+        const mentorString = await redisClient.get(`user-${server}-${mentorId}`);
+        let mentorFromDB;
+        if (!mentorString) {
+          mentorFromDB = await users.getUserFromDB(mentorId, client);
+          await redisClient.set(`user-${server}-${mentorId}`, JSON.stringify(mentorFromDB));
+        } else {
+          mentorFromDB = JSON.parse(mentorString);
+        }
         const courseType: CourseType = {
           id: row.course_type_id,
           duration: row.course_duration,
           isWithPartner: row.is_with_partner,
           index: row.index
-        };      
+        };
         const mentorWaitingRequest: MentorWaitingRequest = {
           id: row.id,
-          mentor: mentor,
+          mentor: mentorFromDB,
           courseType: courseType
         };
-        mentorsWaitingRequests.push(mentorWaitingRequest);
+        if (usersAvailableMentors.isValidMentor(mentorFromDB, mentor?.field, mentor?.availabilities)) {
+          mentorsWaitingRequests.push(mentorWaitingRequest);
+        }
       }      
       response.status(200).json(mentorsWaitingRequests);
       await client.query('COMMIT');
