@@ -342,7 +342,6 @@ export class Users {
     const user = await this.getUserFromDB(id, client);
     if (user.isMentor) {
       await this.deleteMentorLessonsDependencies(id, client);
-      await this.deleteMentorCoursesDependencies(id, client);
     }
     try {
       await client.query('BEGIN');
@@ -376,9 +375,7 @@ export class Users {
         const deleteLessonsQuery = 'DELETE FROM users_lessons WHERE mentor_id = $1';
         await client.query(deleteLessonsQuery, [id]);
         const deleteCoursesMentorsQuery = 'DELETE FROM users_courses_mentors WHERE mentor_id = $1';
-        await client.query(deleteCoursesMentorsQuery, [id]);
-        const deleteCoursesQuery = 'DELETE FROM users_courses WHERE mentor_id = $1';
-        await client.query(deleteCoursesQuery, [id]);
+        await client.query(deleteCoursesMentorsQuery, [id]);         
         const deleteMentorsWaitingRequestsQuery = 'DELETE FROM mentors_waiting_requests WHERE mentor_id = $1';
         await client.query(deleteMentorsWaitingRequestsQuery, [id]);
         const deleteMentorsPartnershipRequestsQuery = 'DELETE FROM mentors_partnership_requests WHERE mentor_id = $1';
@@ -433,15 +430,6 @@ export class Users {
       await client.query(deleteLessonStudentsQuery, [row.id]);
       const deleteLessonCanceledQuery = 'DELETE FROM users_lessons_canceled WHERE lesson_id = $1';
       await client.query(deleteLessonCanceledQuery, [row.id]);      
-    }
-  }
-
-  async deleteMentorCoursesDependencies(mentorId: string, client: pg.PoolClient): Promise<void> {
-    const getCoursesQuery = `SELECT id FROM users_courses WHERE mentor_id = $1`;
-    const { rows }: pg.QueryResult = await client.query(getCoursesQuery, [mentorId]);
-    for (const row of rows) {
-      const deleteCourseStudentsQuery = 'DELETE FROM users_courses_students WHERE course_id = $1';
-      await client.query(deleteCourseStudentsQuery, [row.id]);
     }
   }
 }
