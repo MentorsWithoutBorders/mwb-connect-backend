@@ -131,8 +131,8 @@ export class MentorsWaitingRequests {
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
-      await this.addMentorWaitingRequestFromDB(mentorId, courseType, client);
-      response.status(200).send('Mentor waiting request was added successfully');
+      const mentorWaitingRequest = await this.addMentorWaitingRequestFromDB(mentorId, courseType, client);
+      response.status(200).send(mentorWaitingRequest);
       await client.query('COMMIT');
     } catch (error) {
       response.status(400).send(error);
@@ -142,11 +142,19 @@ export class MentorsWaitingRequests {
     }
   }
 
-  async addMentorWaitingRequestFromDB(mentorId: string, courseType: CourseType | undefined, client: pg.PoolClient): Promise<void> {
+  async addMentorWaitingRequestFromDB(mentorId: string, courseType: CourseType | undefined, client: pg.PoolClient): Promise<MentorWaitingRequest> {
     const insertMentorWaitingRequestQuery = `INSERT INTO mentors_waiting_requests (mentor_id, course_type_id)
-      VALUES ($1, $2)`;
+      VALUES ($1, $2) RETURNING *`;
     const values = [mentorId, courseType?.id];        
-    await client.query(insertMentorWaitingRequestQuery, values);
+    const { rows }: pg.QueryResult = await client.query(insertMentorWaitingRequestQuery, values);
+    const mentorWaitingRequest: MentorWaitingRequest = {
+      id: rows[0].id,
+      mentor: {
+        id: mentorId
+      },
+      courseType: courseType
+    };
+    return mentorWaitingRequest;
   }
 
   async cancelMentorWaitingRequest(request: Request, response: Response): Promise<void> {
