@@ -131,6 +131,7 @@ export class MentorsWaitingRequests {
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
+      await this.deleteMentorWaitingRequest(mentorId, client);
       const mentorWaitingRequest = await this.addMentorWaitingRequestFromDB(mentorId, courseType, client);
       response.status(200).send(mentorWaitingRequest);
       await client.query('COMMIT');
@@ -176,7 +177,7 @@ export class MentorsWaitingRequests {
   }
   
   async deleteMentorWaitingRequest(mentorId: string, client: pg.PoolClient): Promise<void> {
-    const deleteMentorWaitingRequestQuery = 'DELETE FROM mentors_waiting_requests WHERE id = $1 AND is_canceled IS DISTINCT FROM true';
+    const deleteMentorWaitingRequestQuery = 'DELETE FROM mentors_waiting_requests WHERE mentor_id = $1 AND is_canceled IS DISTINCT FROM true';
     await client.query(deleteMentorWaitingRequestQuery, [mentorId]);
   }    
 }

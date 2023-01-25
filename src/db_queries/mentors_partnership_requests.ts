@@ -201,8 +201,6 @@ export class MentorsPartnershipRequests {
       if (!mentorPartnershipRequest.isCanceled) {
         const updateMentorPartnershipRequestQuery = 'UPDATE mentors_partnership_requests SET is_rejected = true WHERE id = $1';
         await client.query(updateMentorPartnershipRequestQuery, [mentorPartnershipRequestId]);
-        await mentorsWaitingRequests.addMentorWaitingRequestFromDB(mentorPartnershipRequest.mentor?.id as string, mentorPartnershipRequest.courseType, client);
-        await mentorsWaitingRequests.addMentorWaitingRequestFromDB(mentorPartnershipRequest.partnerMentor?.id as string, mentorPartnershipRequest.courseType, client);
         // usersPushNotifications.sendPNMentorPartnershipRequestRejected(mentorPartnershipRequest, text);
         // usersSendEmails.sendEmailMentorPartnershipRequestRejected(mentorPartnershipRequest, text);
       }
