@@ -9,6 +9,7 @@ import { Conn } from '../db/conn';
 import { Helpers } from '../utils/helpers';
 import { Users } from './users';
 import { UsersLessons } from './users_lessons';
+import { UsersCourses } from './users_courses';
 import { UsersAvailableMentors } from './users_available_mentors';
 import { UsersSteps } from './users_steps';
 import { UsersQuizzes } from './users_quizzes';
@@ -28,6 +29,7 @@ const pool = conn.pool;
 const helpers = new Helpers();
 const users = new Users();
 const usersLessons = new UsersLessons();
+const usersCourses = new UsersCourses();
 const usersAvailableMentors = new UsersAvailableMentors();
 const usersSteps = new UsersSteps();
 const usersQuizzes = new UsersQuizzes();
@@ -445,6 +447,15 @@ export class UsersBackgroundProcesses {
     return showStepReminder;
   }
 
+  async setAvailableCoursesFields(request: Request, response: Response): Promise<void> {
+    try {
+      await usersCourses.setAvailableCoursesFieldsFromDB();
+      response.status(200).send('Available courses fields are set');
+    } catch (error) {
+      response.status(400).send(error);
+    } 
+  }
+
   async setAvailableMentorsFields(request: Request, response: Response): Promise<void> {
     try {
       await usersAvailableMentors.setAvailableMentorsFieldsFromDB();
@@ -452,7 +463,7 @@ export class UsersBackgroundProcesses {
     } catch (error) {
       response.status(400).send(error);
     } 
-  }
+  }  
 
   sendCPUUsage(): void {
     os.cpuUsage(function(v) {

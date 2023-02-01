@@ -167,6 +167,7 @@ app.post('/api/v1/quizzes', usersQuizzes.addQuiz);
 
 // Users courses
 app.get('/api/v1/courses', usersCourses.getAvailableCourses);
+app.get('/api/v1/courses/fields', usersCourses.getAvailableCoursesFields);
 app.get('/api/v1/courses/current', usersCourses.getCurrentCourse);
 app.post('/api/v1/courses', usersCourses.addCourse);
 app.put('/api/v1/courses/:id/join', usersCourses.joinCourse);
@@ -309,6 +310,7 @@ app.post('/api/v1/logger', logger.addLogEntry);
 app.post('/api/v1/send_lesson_request_reminders', usersBackgroundProcesses.sendAllLessonRequestReminders);
 app.post('/api/v1/send_lesson_reminders', usersBackgroundProcesses.sendAllLessonReminders);
 app.post('/api/v1/send_training_reminders', usersBackgroundProcesses.sendAllTrainingReminders);
+app.post('/api/v1/available_courses/fields', usersBackgroundProcesses.setAvailableMentorsFields);
 app.post('/api/v1/available_mentors/fields', usersBackgroundProcesses.setAvailableMentorsFields);
 
 cron.schedule('* * * * *', async() => {
