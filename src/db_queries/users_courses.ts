@@ -229,7 +229,8 @@ export class UsersCourses {
         id: studentId
       }
       await this.addCourseStudent(courseId, student, client);
-      response.status(200).send(`Student has been added successfully to course ${courseId}`);
+      const course = await this.getCourseById(courseId, client);
+      response.status(200).json(course);
       await client.query('COMMIT');
     } catch (error) {
       response.status(400).send(error);
