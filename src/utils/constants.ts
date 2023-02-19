@@ -1,6 +1,7 @@
 export const constants = {
   DATE_FORMAT: 'yyyy-MM-DD',
   DATE_TIME_FORMAT: 'yyyy-MM-DD HH:mm:ssZ',
+  DAY_OF_WEEK_FORMAT: 'dddd',
   SHORT_DATE_FORMAT: 'MMM D',
   TIME_FORMAT_LESSON: 'h:mm A',
   DATE_FORMAT_LESSON: 'dddd, MMM D',
@@ -12,5 +13,6 @@ export const constants = {
   STUDENT_WEEKS_TRAINING: 13,
   MENTOR_WEEKS_TRAINING: 4,
   TRAINING_COMPLETED_ID: 'trainingCompletedId',
+  AVAILABLE_COURSES_RESULTS_PER_PAGE: 2,
   AVAILABLE_MENTORS_RESULTS_PER_PAGE: 20
 };

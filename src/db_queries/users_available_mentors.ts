@@ -221,7 +221,7 @@ export class UsersAvailableMentors {
       to: moment.utc(lessonDateTime).add(1, 'h').format('h:mma')
     };    
     const availability: Availability = {
-      dayOfWeek: moment.utc(lessonDateTime).format('dddd'),
+      dayOfWeek: moment.utc(lessonDateTime).format(constants.DAY_OF_WEEK_FORMAT),
       time: availabilityTime
     };
     mentor.availabilities = [availability];

@@ -161,7 +161,7 @@ export class MentorsPartnershipRequests {
       partnerMentor.meetingUrl = meetingUrl;
       const mentors = [mentorPartnershipRequest?.mentor as CourseMentor, partnerMentor];
       let courseStartDateTime = moment.utc().add(2, 'd');
-      while (courseStartDateTime.format('dddd') != mentorPartnershipRequest.courseDayOfWeek) {
+      while (courseStartDateTime.format(constants.DAY_OF_WEEK_FORMAT) != mentorPartnershipRequest.courseDayOfWeek) {
         courseStartDateTime = courseStartDateTime.add(1, 'd');
       }
       const hours = moment(mentorPartnershipRequest.courseStartTime, ['h:mma']).format("HH");

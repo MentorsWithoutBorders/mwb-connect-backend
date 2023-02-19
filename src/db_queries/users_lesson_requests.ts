@@ -181,7 +181,7 @@ export class UsersLessonRequests {
         lessonRequestResult.isLessonRequest = false;
       } else if (this.getIsInAvailableMentors(mentorId, availableMentors) || isPreviousMentor) {
         let lessonDateTime = moment.utc().add(2, 'd');
-        while (lessonDateTime.format('dddd') != availability?.dayOfWeek) {
+        while (lessonDateTime.format(constants.DAY_OF_WEEK_FORMAT) != availability?.dayOfWeek) {
           lessonDateTime = lessonDateTime.add(1, 'd');
         }
         const hours = moment(availability.time.from, ['h:mma']).format("HH");

@@ -166,10 +166,10 @@ app.get('/api/v1/quiz_number', usersQuizzes.getQuizNumber);
 app.post('/api/v1/quizzes', usersQuizzes.addQuiz);
 
 // Users courses
-app.get('/api/v1/courses', usersCourses.getAvailableCourses);
+app.post('/api/v1/courses', usersCourses.getAvailableCourses);
 app.get('/api/v1/courses/fields', usersCourses.getAvailableCoursesFields);
 app.get('/api/v1/courses/current', usersCourses.getCurrentCourse);
-app.post('/api/v1/courses', usersCourses.addCourse);
+app.post('/api/v1/courses/add', usersCourses.addCourse);
 app.put('/api/v1/courses/:id/join', usersCourses.joinCourse);
 app.put('/api/v1/courses/:id/meeting_url', usersCourses.updateMeetingUrl);
 app.put('/api/v1/courses/:id/cancel', usersCourses.cancelCourse);

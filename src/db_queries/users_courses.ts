@@ -7,6 +7,7 @@ import 'moment-timezone';
 import { Conn } from '../db/conn';
 import { constants } from '../utils/constants';
 import { Users } from './users';
+import { UsersAvailableMentors } from './users_available_mentors';
 import Course from '../models/course.model';
 import CourseMentor from '../models/course_mentor.model';
 import CourseStudent from '../models/course_student.model';
@@ -14,12 +15,16 @@ import CourseType from '../models/course_type.model';
 import Field from '../models/field.model';
 import Subfield from '../models/subfield.model';
 import Skill from '../models/skill.model';
+import Availability from '../models/availability.model';
+import AvailabilityTime from '../models/availability_time.model';
+import CourseFilter from '../models/course_filter.model';
 import InAppMessage from '../models/in_app_message';
 
 const conn = new Conn();
 const pool = conn.pool;
 const redisClient = createClient();
 const users = new Users();
+const usersAvailableMentors = new UsersAvailableMentors();
 
 export class UsersCourses {
   constructor() {
@@ -27,10 +32,13 @@ export class UsersCourses {
   }
 
   async getAvailableCourses(request: Request, response: Response): Promise<void> {
+    const page = request.query.page as string;
+    const courseFilter: CourseFilter = request.body;    
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
-      const courses = await this.getAvailableCoursesFromDB(client);
+      let courses = await this.getAvailableCoursesFromDB(courseFilter, client);
+      courses = this.getPaginatedCourses(courses, page);
       response.status(200).json(courses);
       await client.query('COMMIT');
     } catch (error) {
@@ -41,15 +49,21 @@ export class UsersCourses {
     }
   }
   
-  async getAvailableCoursesFromDB(client: pg.PoolClient): Promise<Array<Course>> {
+  async getAvailableCoursesFromDB(courseFilter: CourseFilter, client: pg.PoolClient): Promise<Array<Course>> {
     const courses: Array<Course> = [];
-    const getCoursesQuery = `SELECT uc.id, uc.start_date_time, ct.duration, ct.is_with_partner, ct.index
+    let getCoursesQuery = `SELECT uc.id, uc.start_date_time, ct.duration, ct.is_with_partner, ct.index
       FROM users_courses uc 
       JOIN courses_types ct
         ON uc.course_type_id = ct.id
       WHERE is_canceled IS DISTINCT FROM true
         AND now() < (uc.start_date_time + (INTERVAL '1 month' * ct.duration))`;
-    const { rows }: pg.QueryResult = await client.query(getCoursesQuery);
+    const courseTypeId = courseFilter?.courseType?.id;
+    let values: Array<string> = [];
+    if (courseTypeId) {
+      getCoursesQuery += ` AND uc.course_type_id = $1`;
+      values.push(courseTypeId);
+    }
+    const { rows }: pg.QueryResult = await client.query(getCoursesQuery, values);
     if (rows && rows.length > 0) {
       for (const row of rows) {
         const courseType: CourseType = {
@@ -65,12 +79,62 @@ export class UsersCourses {
           startDateTime: moment.utc(rows[0].start_date_time).format(constants.DATE_TIME_FORMAT),
           mentors: mentors,
           students: students
-        }          
-        courses.push(course);
+        }
+        const courseCombinedMentor = this.getCourseCombinedMentor(mentors, course.startDateTime);
+        if (usersAvailableMentors.isValidMentor(courseCombinedMentor, courseFilter?.field, courseFilter?.availabilities)) {
+          courses.push(course);
+        }        
       }
     }
     return courses;
   }
+
+  getCourseCombinedMentor(mentors: Array<CourseMentor>, courseStartDateTime: string): CourseMentor {
+    const courseCombinedMentor: CourseMentor = {};
+    mentors = JSON.parse(JSON.stringify(mentors));
+    if (mentors && mentors.length > 0) {
+      let mentor = mentors[0];
+      mentor = JSON.parse(JSON.stringify(mentor));
+      courseCombinedMentor.field = mentor.field || {};
+      courseCombinedMentor!.field.subfields = [];
+      for (const mentor of mentors) {
+        if (mentor.field?.subfields && mentor.field.subfields.length > 0) {
+          for (const subfield of mentor.field.subfields) {
+            courseCombinedMentor.field.subfields.push(subfield);
+          }
+        }
+      }
+      courseCombinedMentor.field.subfields = courseCombinedMentor.field.subfields.filter((subfield, index, self) =>
+        index === self.findIndex((t) => (
+          t.id === subfield.id
+        ))
+      );
+      courseCombinedMentor.availabilities = [];
+      const availabilityTime: AvailabilityTime = {
+        from: moment.utc(courseStartDateTime).format('h:mma'),
+        to: moment.utc(courseStartDateTime).add(1, 'h').format('h:mma')
+      };    
+      const availability: Availability = {
+        dayOfWeek: moment.utc(courseStartDateTime).format(constants.DAY_OF_WEEK_FORMAT),
+        time: availabilityTime
+      };
+      courseCombinedMentor.availabilities.push(availability);
+    }
+    return courseCombinedMentor;
+  }
+
+  getPaginatedCourses(courses: Array<Course>, page: string | undefined): Array<Course> {
+    const paginatedCourses: Array<Course> = [];
+    if (!page) {
+      return courses;
+    }
+    for (let i = constants.AVAILABLE_COURSES_RESULTS_PER_PAGE * (parseInt(page) - 1); i < constants.AVAILABLE_COURSES_RESULTS_PER_PAGE * parseInt(page); i++) {
+      if (courses[i]) {
+        paginatedCourses.push(courses[i]);
+      }
+    }
+    return paginatedCourses;
+  }    
 
   async getCurrentCourse(request: Request, response: Response): Promise<void> {
     const userId = request.user.id as string;
@@ -337,7 +401,8 @@ export class UsersCourses {
   }  
   
   async getAvailableCoursesFieldsFromDB(client: pg.PoolClient): Promise<Array<Field>> {
-    const availableCourses = await this.getAvailableCoursesFromDB(client);
+    const courseFilter: CourseFilter = {};
+    const availableCourses = await this.getAvailableCoursesFromDB(courseFilter, client);
     let fields = this.getFields(availableCourses);
     fields = this.getSubfields(fields, availableCourses);
     fields = this.getSkills(fields, availableCourses);
