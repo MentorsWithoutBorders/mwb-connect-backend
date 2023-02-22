@@ -241,14 +241,15 @@ export class UsersAvailableMentors {
     return paginatedMentors;
   }
 
-  isValidMentor(mentor: User, field: Field | undefined, filterAvailabilities: Array<Availability> | undefined): boolean {
-    if (!mentor?.field?.subfields || mentor?.field?.subfields.length == 0 ||
-          !mentor?.availabilities || mentor?.availabilities.length == 0) {
+  isValidMentor(mentor: User, filterField: Field | undefined, filterAvailabilities: Array<Availability> | undefined): boolean {
+    if (mentor?.field?.id != filterField?.id ||
+        !mentor?.field?.subfields || mentor?.field?.subfields.length == 0 ||
+        !mentor?.availabilities || mentor?.availabilities.length == 0) {
       return false;
     }
     let subfields;
-    if (field) {
-      subfields = field.subfields;
+    if (filterField) {
+      subfields = filterField.subfields;
     }
     const mentorString = JSON.stringify(mentor);
     if (this.isValidSubfieldsAndSkills(mentorString, subfields)) {
