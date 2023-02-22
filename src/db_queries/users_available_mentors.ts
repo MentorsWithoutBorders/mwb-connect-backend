@@ -242,7 +242,7 @@ export class UsersAvailableMentors {
   }
 
   isValidMentor(mentor: User, filterField: Field | undefined, filterAvailabilities: Array<Availability> | undefined): boolean {
-    if (mentor?.field?.id != filterField?.id ||
+    if (filterField?.id && (mentor?.field?.id != filterField?.id) ||
         !mentor?.field?.subfields || mentor?.field?.subfields.length == 0 ||
         !mentor?.availabilities || mentor?.availabilities.length == 0) {
       return false;
