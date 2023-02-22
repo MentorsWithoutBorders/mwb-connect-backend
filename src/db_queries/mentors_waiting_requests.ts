@@ -32,7 +32,7 @@ export class MentorsWaitingRequests {
       await client.query(constants.READ_ONLY_TRANSACTION);
       const getMentorsWaitingRequestsQuery = `SELECT mwr.id, mwr.mentor_id, mwr.course_type_id, ct.duration AS course_duration, ct.is_with_partner, ct.index 
         FROM mentors_waiting_requests mwr
-        JOIN courses_types ct
+        JOIN course_types ct
           ON mwr.course_type_id = ct.id
         WHERE mwr.course_type_id = $1
           AND mwr.mentor_id <> $2
@@ -97,7 +97,7 @@ export class MentorsWaitingRequests {
       await client.query(constants.READ_ONLY_TRANSACTION);
       const getMentorWaitingRequestQuery = `SELECT mwr.id, mwr.course_type_id, ct.duration AS course_duration, ct.is_with_partner, ct.index
         FROM mentors_waiting_requests mwr
-        JOIN courses_types ct
+        JOIN course_types ct
           ON mwr.course_type_id = ct.id
         WHERE mwr.mentor_id = $1
           AND mwr.is_canceled IS DISTINCT FROM true`;

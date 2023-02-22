@@ -8,19 +8,19 @@ import CourseType from '../models/course_type.model';
 const conn = new Conn();
 const pool = conn.pool;
 
-export class CoursesTypes {
+export class CourseTypes {
   constructor() {
     autoBind(this);
   }
 
-  async getCoursesTypes(request: Request, response: Response): Promise<void> {
+  async getCourseTypes(request: Request, response: Response): Promise<void> {
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
       await client.query(constants.READ_ONLY_TRANSACTION);
-      const getCoursesTypesQuery = 'SELECT id, duration, is_with_partner, index FROM courses_types ORDER BY index';
-      const { rows }: pg.QueryResult = await client.query(getCoursesTypesQuery);
-      const coursesTypes: Array<CourseType> = [];
+      const getCourseTypesQuery = 'SELECT id, duration, is_with_partner, index FROM course_types ORDER BY index';
+      const { rows }: pg.QueryResult = await client.query(getCourseTypesQuery);
+      const courseTypes: Array<CourseType> = [];
       for (const row of rows) {
         const courseType: CourseType = {
           id: row.id,
@@ -28,9 +28,9 @@ export class CoursesTypes {
           isWithPartner: row.is_with_partner,
           index: row.index
         };
-        coursesTypes.push(courseType);
+        courseTypes.push(courseType);
       }
-      response.status(200).json(coursesTypes);
+      response.status(200).json(courseTypes);
       await client.query('COMMIT');
     } catch (error) {
       response.status(400).send(error);

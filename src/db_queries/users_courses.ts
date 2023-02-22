@@ -53,7 +53,7 @@ export class UsersCourses {
     const courses: Array<Course> = [];
     let getCoursesQuery = `SELECT uc.id, uc.start_date_time, ct.duration, ct.is_with_partner, ct.index
       FROM users_courses uc 
-      JOIN courses_types ct
+      JOIN course_types ct
         ON uc.course_type_id = ct.id
       WHERE is_canceled IS DISTINCT FROM true
         AND now() < (uc.start_date_time + (INTERVAL '1 month' * ct.duration))`;
@@ -173,7 +173,7 @@ export class UsersCourses {
   async getCourseById(courseId: string, client: pg.PoolClient): Promise<Course> {
     const getCourseQuery = `SELECT uc.id, uc.start_date_time, ct.duration, ct.is_with_partner, ct.index
       FROM users_courses uc 
-      JOIN courses_types ct
+      JOIN course_types ct
         ON uc.course_type_id = ct.id
       WHERE uc.id = $1
         AND now() < (uc.start_date_time + (INTERVAL '1 month' * ct.duration))`;

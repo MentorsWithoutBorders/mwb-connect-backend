@@ -38,7 +38,7 @@ import { SkillsTutorials } from './src/db_queries/skills_tutorials';
 import { TutorialsLessons } from './src/db_queries/tutorials_lessons';
 import { Tutorials } from './src/db_queries/tutorials';
 import { QuizzesSettings } from './src/db_queries/quizzes_settings';
-import { CoursesTypes } from './src/db_queries/courses_types';
+import { CourseTypes } from './src/db_queries/course_types';
 import { Updates } from './src/db_queries/updates';
 import { Logger } from './src/db_queries/logger';
 import { AdminStudentsCertificates } from './src/db_queries/admin_students_certificates';
@@ -85,7 +85,7 @@ const skillsTutorials = new SkillsTutorials();
 const tutorialsLessons = new TutorialsLessons();
 const tutorials = new Tutorials();
 const quizzesSettings = new QuizzesSettings();
-const coursesTypes = new CoursesTypes();
+const courseTypes = new CourseTypes();
 const updates = new Updates();
 const logger = new Logger();
 const adminStudentsCertificates = new AdminStudentsCertificates();
@@ -294,7 +294,7 @@ app.get('/api/v1/tutorials', tutorials.getTutorials);
 app.get('/api/v1/quizzes_settings', quizzesSettings.getQuizzesSettings);
 
 // Courses types
-app.get('/api/v1/courses_types', coursesTypes.getCoursesTypes);
+app.get('/api/v1/course_types', courseTypes.getCourseTypes);
 
 // Updates
 app.get('/api/v1/updates', updates.getUpdates);
