@@ -18,18 +18,7 @@ export class CourseTypes {
     try {
       await client.query('BEGIN');
       await client.query(constants.READ_ONLY_TRANSACTION);
-      const getCourseTypesQuery = 'SELECT id, duration, is_with_partner, index FROM course_types ORDER BY index';
-      const { rows }: pg.QueryResult = await client.query(getCourseTypesQuery);
-      const courseTypes: Array<CourseType> = [];
-      for (const row of rows) {
-        const courseType: CourseType = {
-          id: row.id,
-          duration: row.duration,
-          isWithPartner: row.is_with_partner,
-          index: row.index
-        };
-        courseTypes.push(courseType);
-      }
+      const courseTypes = await this.getCourseTypesFromDB(client);
       response.status(200).json(courseTypes);
       await client.query('COMMIT');
     } catch (error) {
@@ -38,6 +27,22 @@ export class CourseTypes {
     } finally {
       client.release();
     }  
+  }
+
+  async getCourseTypesFromDB(client: pg.PoolClient): Promise<CourseType[]> {
+    const getCourseTypesQuery = 'SELECT id, duration, is_with_partner, index FROM course_types ORDER BY index';
+    const { rows }: pg.QueryResult = await client.query(getCourseTypesQuery);
+    const courseTypes: Array<CourseType> = [];
+    for (const row of rows) {
+      const courseType: CourseType = {
+        id: row.id,
+        duration: row.duration,
+        isWithPartner: row.is_with_partner,
+        index: row.index
+      };
+      courseTypes.push(courseType);
+    }
+    return courseTypes;
   }
 }
 

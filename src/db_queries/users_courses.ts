@@ -57,26 +57,26 @@ export class UsersCourses {
         ON uc.course_type_id = ct.id
       WHERE is_canceled IS DISTINCT FROM true
         AND now() < (uc.start_date_time + (INTERVAL '1 month' * ct.duration))`;
-    const courseTypeId = courseFilter?.courseType?.id;
+    const courseDuration = courseFilter?.courseType?.duration;
     let values: Array<string> = [];
-    if (courseTypeId) {
-      getCoursesQuery += ` AND uc.course_type_id = $1`;
-      values.push(courseTypeId);
+    if (courseDuration) {
+      getCoursesQuery += ` AND ct.duration = $1`;
+      values.push(courseDuration.toString());
     }
     const { rows }: pg.QueryResult = await client.query(getCoursesQuery, values);
     if (rows && rows.length > 0) {
       for (const row of rows) {
         const courseType: CourseType = {
-          duration: rows[0].duration,
-          isWithPartner: rows[0].is_with_partner,
-          index: rows[0].index
+          duration: row.duration,
+          isWithPartner: row.is_with_partner,
+          index: row.index
         }
         const mentors = await this.getCourseMentors(row.id, client);
         const students = await this.getCourseStudents(row.id, client);
         const course = {
-          id: rows[0].id,
+          id: row.id,
           type: courseType,
-          startDateTime: moment.utc(rows[0].start_date_time).format(constants.DATE_TIME_FORMAT),
+          startDateTime: moment.utc(row.start_date_time).format(constants.DATE_TIME_FORMAT),
           mentors: mentors,
           students: students
         }
