@@ -30,14 +30,20 @@ export class MentorsWaitingRequests {
     try {
       await client.query('BEGIN');
       await client.query(constants.READ_ONLY_TRANSACTION);
-      const getMentorsWaitingRequestsQuery = `SELECT mwr.id, mwr.mentor_id, mwr.course_type_id, ct.duration AS course_duration, ct.is_with_partner, ct.index 
+      let getMentorsWaitingRequestsQuery = `SELECT mwr.id, mwr.mentor_id, mwr.course_type_id, ct.duration AS course_duration, ct.is_with_partner, ct.index 
         FROM mentors_waiting_requests mwr
         JOIN course_types ct
           ON mwr.course_type_id = ct.id
-        WHERE mwr.course_type_id = $1
-          AND mwr.mentor_id <> $2
+        WHERE ct.is_with_partner IS true
+          AND mwr.mentor_id <> $1
           AND mwr.is_canceled IS DISTINCT FROM true`;
-      const { rows }: pg.QueryResult = await client.query(getMentorsWaitingRequestsQuery, [courseType?.id, mentorId]);
+      const courseDuration = courseType?.duration;
+      let values: Array<string> = [mentorId];
+      if (courseDuration) {
+        getMentorsWaitingRequestsQuery += ` AND ct.duration = $2`;
+        values.push(courseDuration.toString());
+      }          
+      const { rows }: pg.QueryResult = await client.query(getMentorsWaitingRequestsQuery, values);
       let mentorsWaitingRequests: Array<MentorWaitingRequest> = [];
       const server = process.env.SERVER as string;
       for (const row of rows) {
