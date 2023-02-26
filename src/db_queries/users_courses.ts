@@ -171,7 +171,7 @@ export class UsersCourses {
   }
 
   async getCourseById(courseId: string, client: pg.PoolClient): Promise<Course> {
-    const getCourseQuery = `SELECT uc.id, uc.start_date_time, uc.whatsapp_group, uc.notes, ct.duration, ct.is_with_partner, ct.index
+    const getCourseQuery = `SELECT uc.id, uc.start_date_time, uc.whatsapp_group_url, uc.notes, ct.duration, ct.is_with_partner, ct.index
       FROM users_courses uc 
       JOIN course_types ct
         ON uc.course_type_id = ct.id
@@ -193,7 +193,7 @@ export class UsersCourses {
         startDateTime: moment.utc(rows[0].start_date_time).format(constants.DATE_TIME_FORMAT),
         mentors: mentors,
         students: students,
-        whatsAppGroup: rows[0].whatsapp_group,
+        whatsAppGroupUrl: rows[0].whatsapp_group_url,
         notes: rows[0].notes
       }
     }
@@ -321,15 +321,15 @@ export class UsersCourses {
     }
   }
 
-  async setWhatsAppGroup(request: Request, response: Response): Promise<void> {
+  async setWhatsAppGroupUrl(request: Request, response: Response): Promise<void> {
     const courseId = request.params.id;
-    const { whatsAppGroup }: Course = request.body;
+    const { whatsAppGroupUrl }: Course = request.body;
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
-      const setWhatsAppGroupQuery = 'UPDATE users_courses SET whatsapp_group = $1 WHERE id = $2';
-      await client.query(setWhatsAppGroupQuery, [whatsAppGroup, courseId]);
-      response.status(200).send(`WhatsApp group for course ${courseId} was set successfully`);
+      const setWhatsAppGroupUrlQuery = 'UPDATE users_courses SET whatsapp_group_url = $1 WHERE id = $2';
+      await client.query(setWhatsAppGroupUrlQuery, [whatsAppGroupUrl, courseId]);
+      response.status(200).send(`WhatsApp group url for course ${courseId} was set successfully`);
       await client.query('COMMIT');
     } catch (error) {
       response.status(400).send(error);
@@ -345,8 +345,8 @@ export class UsersCourses {
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
-      const setWhatsAppGroupQuery = 'UPDATE users_courses SET notes = $1 WHERE id = $2';
-      await client.query(setWhatsAppGroupQuery, [notes, courseId]);
+      const setNotesQuery = 'UPDATE users_courses SET notes = $1 WHERE id = $2';
+      await client.query(setNotesQuery, [notes, courseId]);
       response.status(200).send(`Notes for course ${courseId} were set successfully`);
       await client.query('COMMIT');
     } catch (error) {
