@@ -7,6 +7,8 @@ export default interface Course {
   type?: CourseType;
   mentors?: Array<CourseMentor>;
   students?: Array<CourseStudent>;
+  whatsAppGroup?: string;
+  notes?: string;
   startDateTime?: string;
   isCanceled?: boolean;
 }

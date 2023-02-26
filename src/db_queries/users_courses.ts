@@ -171,7 +171,7 @@ export class UsersCourses {
   }
 
   async getCourseById(courseId: string, client: pg.PoolClient): Promise<Course> {
-    const getCourseQuery = `SELECT uc.id, uc.start_date_time, ct.duration, ct.is_with_partner, ct.index
+    const getCourseQuery = `SELECT uc.id, uc.start_date_time, uc.whatsapp_group, uc.notes, ct.duration, ct.is_with_partner, ct.index
       FROM users_courses uc 
       JOIN course_types ct
         ON uc.course_type_id = ct.id
@@ -192,7 +192,9 @@ export class UsersCourses {
         type: courseType,
         startDateTime: moment.utc(rows[0].start_date_time).format(constants.DATE_TIME_FORMAT),
         mentors: mentors,
-        students: students
+        students: students,
+        whatsAppGroup: rows[0].whatsapp_group,
+        notes: rows[0].notes
       }
     }
     return course;
@@ -318,7 +320,43 @@ export class UsersCourses {
       await client.query(insertStudentQuery, values);
     }
   }
+
+  async setWhatsAppGroup(request: Request, response: Response): Promise<void> {
+    const courseId = request.params.id;
+    const { whatsAppGroup }: Course = request.body;
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+      const setWhatsAppGroupQuery = 'UPDATE users_courses SET whatsapp_group = $1 WHERE id = $2';
+      await client.query(setWhatsAppGroupQuery, [whatsAppGroup, courseId]);
+      response.status(200).send(`WhatsApp group for course ${courseId} was set successfully`);
+      await client.query('COMMIT');
+    } catch (error) {
+      response.status(400).send(error);
+      await client.query('ROLLBACK');
+    } finally {
+      client.release();
+    }
+  }
   
+  async setNotes(request: Request, response: Response): Promise<void> {
+    const courseId = request.params.id;
+    const { notes }: Course = request.body;
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+      const setWhatsAppGroupQuery = 'UPDATE users_courses SET notes = $1 WHERE id = $2';
+      await client.query(setWhatsAppGroupQuery, [notes, courseId]);
+      response.status(200).send(`Notes for course ${courseId} were set successfully`);
+      await client.query('COMMIT');
+    } catch (error) {
+      response.status(400).send(error);
+      await client.query('ROLLBACK');
+    } finally {
+      client.release();
+    }    
+  }
+
   async cancelCourse(request: Request, response: Response): Promise<void> {
     const userId = request.user.id as string;
     const courseId = request.params.id;
@@ -351,15 +389,15 @@ export class UsersCourses {
     }
   }
 
-  async updateMeetingUrl(request: Request, response: Response): Promise<void> {
+  async setMeetingUrl(request: Request, response: Response): Promise<void> {
     const userId = request.user.id as string;
     const courseId = request.params.id;
     const { meetingUrl }: CourseMentor = request.body;
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
-      const updateMeetingUrlQuery = 'UPDATE users_courses_mentors SET meeting_url = $1 WHERE mentor_id = $2 AND course_id = $3';
-      await client.query(updateMeetingUrlQuery, [meetingUrl, userId, courseId]);
+      const setMeetingUrlQuery = 'UPDATE users_courses_mentors SET meeting_url = $1 WHERE mentor_id = $2 AND course_id = $3';
+      await client.query(setMeetingUrlQuery, [meetingUrl, userId, courseId]);
       response.status(200).send(`Meeting url for course ${courseId} was updated successfully for user ${userId}`);
       await client.query('COMMIT');
     } catch (error) {
