@@ -173,7 +173,7 @@ app.post('/api/v1/courses/add', usersCourses.addCourse);
 app.put('/api/v1/courses/:id/join', usersCourses.joinCourse);
 app.put('/api/v1/courses/:id/meeting_url', usersCourses.setMeetingUrl);
 app.put('/api/v1/courses/:id/whatsapp_group_url', usersCourses.setWhatsAppGroupUrl);
-app.put('/api/v1/courses/:id/notes', usersCourses.setNotes);
+app.put('/api/v1/courses/:id/notes', usersCourses.updateNotes);
 app.put('/api/v1/courses/:id/cancel', usersCourses.cancelCourse);
 
 // Users available mentors

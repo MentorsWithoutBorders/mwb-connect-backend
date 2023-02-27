@@ -339,15 +339,15 @@ export class UsersCourses {
     }
   }
   
-  async setNotes(request: Request, response: Response): Promise<void> {
+  async updateNotes(request: Request, response: Response): Promise<void> {
     const courseId = request.params.id;
     const { notes }: Course = request.body;
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
-      const setNotesQuery = 'UPDATE users_courses SET notes = $1 WHERE id = $2';
-      await client.query(setNotesQuery, [notes, courseId]);
-      response.status(200).send(`Notes for course ${courseId} were set successfully`);
+      const updateNotesQuery = 'UPDATE users_courses SET notes = $1 WHERE id = $2';
+      await client.query(updateNotesQuery, [notes, courseId]);
+      response.status(200).send(`Notes for course ${courseId} were updated successfully`);
       await client.query('COMMIT');
     } catch (error) {
       response.status(400).send(error);
