@@ -169,6 +169,7 @@ app.post('/api/v1/quizzes', usersQuizzes.addQuiz);
 app.post('/api/v1/courses', usersCourses.getAvailableCourses);
 app.get('/api/v1/courses/fields', usersCourses.getAvailableCoursesFields);
 app.get('/api/v1/courses/current', usersCourses.getCurrentCourse);
+app.get('/api/v1/courses/:id/notes', usersCourses.getNotes);
 app.post('/api/v1/courses/add', usersCourses.addCourse);
 app.put('/api/v1/courses/:id/join', usersCourses.joinCourse);
 app.put('/api/v1/courses/:id/meeting_url', usersCourses.setMeetingUrl);

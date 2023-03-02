@@ -338,6 +338,28 @@ export class UsersCourses {
       client.release();
     }
   }
+
+  async getNotes(request: Request, response: Response): Promise<void> {
+    const courseId = request.params.id as string;
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+      await client.query(constants.READ_ONLY_TRANSACTION);
+      let getNotesQuery = `SELECT notes FROM users_courses WHERE id = $1`;
+      const { rows }: pg.QueryResult = await client.query(getNotesQuery, [courseId]);
+      const course: Course = {};
+      if (rows && rows[0]) {
+        course.notes = rows[0].notes;
+      }
+      response.status(200).json(course);
+      await client.query('COMMIT');
+    } catch (error) {
+      response.status(400).send(error);
+      await client.query('ROLLBACK');
+    } finally {
+      client.release();
+    }
+  }  
   
   async updateNotes(request: Request, response: Response): Promise<void> {
     const courseId = request.params.id;
