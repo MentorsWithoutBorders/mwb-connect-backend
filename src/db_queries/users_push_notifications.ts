@@ -65,16 +65,27 @@ export class UsersPushNotifications {
   async addFCMToken(request: Request, response: Response): Promise<void> {
     const userId = request.user.id as string;
     const { token }: FCMToken = request.body
+    const client = await pool.connect();      
     try {
-      const insertFCMTokenQuery = `INSERT INTO users_fcm_tokens (user_id, fcm_token) 
-        VALUES ($1, $2)
-        ON CONFLICT (user_id) DO 
-          UPDATE SET fcm_token = EXCLUDED.fcm_token`;
-      const values = [userId, token];        
-      await pool.query(insertFCMTokenQuery, values);
-      response.status(200).send('FCM token has been added');
+      await client.query('BEGIN');
+      let getFCMTokenQuery = `SELECT user_id FROM users_fcm_tokens WHERE user_id = $1;`;
+      const { rows }: pg.QueryResult = await client.query(getFCMTokenQuery, [userId]);
+      if (rows && rows.length > 0) {
+        const updateFCMTokenQuery = `UPDATE users_fcm_tokens SET fcm_token = $1 WHERE user_id = $2;`;
+        const values = [token, userId];
+        await client.query(updateFCMTokenQuery, values);
+      } else {
+        const insertFCMTokenQuery = `INSERT INTO users_fcm_tokens (user_id, fcm_token) VALUES ($1, $2);`;
+        const values = [userId, token];
+        await client.query(insertFCMTokenQuery, values);
+      }
+      response.status(200).send('FCM token has been added/updated successfully');
+      await client.query('COMMIT');
     } catch (error) {
       response.status(400).send(error);
+      await client.query('ROLLBACK');
+    } finally {
+      client.release();
     }
   }
 
