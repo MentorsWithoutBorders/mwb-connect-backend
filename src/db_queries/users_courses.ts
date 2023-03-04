@@ -294,8 +294,15 @@ export class UsersCourses {
       const student: CourseStudent = {
         id: studentId
       }
-      await this.addCourseStudent(courseId, student, client);
-      const course = await this.getCourseById(courseId, client);
+      let course = await this.getCourseById(courseId, client);
+      const maxStudentsCourse = constants.MAX_STUDENTS_COURSE;
+      if (course.students && course.students.length >= maxStudentsCourse) {
+        response.status(400).send({'message': `We're sorry, but there are already ${maxStudentsCourse} students in this course. Please join another course.`});
+        return ;
+      } else {
+        await this.addCourseStudent(courseId, student, client);
+        course = await this.getCourseById(courseId, client);
+      }
       response.status(200).json(course);
       await client.query('COMMIT');
     } catch (error) {
