@@ -81,7 +81,7 @@ export class UsersCourses {
           students: students
         }
         const courseCombinedMentor = this.getCourseCombinedMentor(mentors, course.startDateTime);
-        if (usersAvailableMentors.isValidMentor(courseCombinedMentor, courseFilter?.field, courseFilter?.availabilities)) {
+        if (usersAvailableMentors.isValidMentor(courseCombinedMentor, courseFilter?.field, courseFilter?.availabilities) && students.length < constants.MAX_STUDENTS_COURSE) {
           courses.push(course);
         }        
       }
