@@ -8,6 +8,7 @@ import { Helpers } from '../utils/helpers';
 import FCMToken from '../models/fcm_token.model';
 import PushNotification from '../models/push_notification.model';
 import User from '../models/user.model';
+import Course from '../models/course.model';
 import LessonRequest from '../models/lesson_request.model';
 import Lesson from '../models/lesson.model';
 import { PushNotificationType } from '../utils/push_notification_type';
@@ -143,6 +144,23 @@ export class UsersPushNotifications {
       this.sendPushNotification(userId, pushNotification);
     }
   }
+
+  sendPNStudentAddedToCourse(student: User, course: Course): void {
+    const mentorsSubfields = helpers.getMentorsSubfieldsNames(course.mentors);
+    const mentorsNames = helpers.getMentorsNames(course.mentors);
+    const pushNotificationStudent: PushNotification = {
+      title: 'Added to course',
+      body: `You have been added to a ${mentorsSubfields} course with ${mentorsNames}`
+    }
+    const pushNotificationMentor: PushNotification = {
+      title: 'Student added to course',
+      body: `${student.name} from ${student.organization?.name} has joined the course`
+    }    
+    this.sendPushNotification(student.id as string, pushNotificationStudent);
+    course?.mentors?.forEach(mentor => {
+      this.sendPushNotification(mentor?.id as string, pushNotificationMentor);
+    });
+  }  
 
   sendPNStudentAddedToLesson(student: User, lesson: Lesson): void {
     const mentorName = lesson.mentor?.name;

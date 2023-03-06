@@ -6,6 +6,8 @@ import { v4 as uuidv4 } from 'uuid';
 import { constants } from '../utils/constants';
 import User from '../models/user.model';
 import Quiz from '../models/quiz.model';
+import Course from '../models/course.model';
+import CourseMentor from '../models/course_mentor.model';
 
 dotenv.config();
 
@@ -94,6 +96,36 @@ export class Helpers {
       }
     }
     return remainingQuizzes;
+  }
+
+  getMentorsNames(mentors: Array<CourseMentor> | undefined): string {
+    if (!mentors || mentors.length === 0) {
+      return '';
+    }
+    const mentor = mentors[0] as CourseMentor;
+    const partnerMentor = mentors.length > 1 ? mentors[1] : null;
+    let mentorsNames = '';
+    if (partnerMentor != null) {
+      mentorsNames = `${mentor.name} and ${partnerMentor.name}`;
+    } else {
+      mentorsNames = mentor.name!;
+    }
+    return mentorsNames;
+  }
+  
+  getMentorsSubfieldsNames(mentors: Array<CourseMentor> | undefined): string {
+    if (!mentors || mentors.length === 0) {
+      return '';
+    }
+    const mentor = mentors[0] as CourseMentor;
+    const partnerMentor = mentors.length > 1 ? mentors[1] : null;
+    let mentorsSubfields = '';
+    if (partnerMentor != null) {
+      mentorsSubfields = `${mentor.field!.subfields![0].name} and ${partnerMentor.field!.subfields![0].name}`;
+    } else {
+      mentorsSubfields = mentor.field!.subfields![0].name!;
+    }
+    return mentorsSubfields;
   }
 
   isLessonRecurrent(lessonDateTime: string, endRecurrenceDateTime: string | undefined): boolean {

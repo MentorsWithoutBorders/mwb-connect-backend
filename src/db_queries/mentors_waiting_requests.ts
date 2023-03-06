@@ -34,9 +34,19 @@ export class MentorsWaitingRequests {
         FROM mentors_waiting_requests mwr
         JOIN course_types ct
           ON mwr.course_type_id = ct.id
+        FULL OUTER JOIN (
+          SELECT *,
+            row_number() over (PARTITION BY partner_mentor_id ORDER BY sent_date_time DESC) AS row_number_mentors_partnership_requests
+            FROM mentors_partnership_requests 
+        ) mpr
+        ON mwr.mentor_id = mpr.partner_mentor_id               
         WHERE ct.is_with_partner IS true
           AND mwr.mentor_id <> $1
-          AND mwr.is_canceled IS DISTINCT FROM true`;
+          AND mwr.is_canceled IS DISTINCT FROM true
+          AND (mpr.row_number_mentors_partnership_requests = 1 AND (mpr.is_canceled IS true AND (EXTRACT(EPOCH FROM (now() - mpr.sent_date_time))/3600 > 168 OR mpr.mentor_id <> $1)
+            OR mpr.is_expired IS true AND EXTRACT(EPOCH FROM (now() - mpr.sent_date_time))/3600 > 168
+            OR mpr.is_rejected IS true AND EXTRACT(EPOCH FROM (now() - mpr.sent_date_time))/3600 > 168)
+              OR mpr.id IS NULL)`;
       const courseDuration = courseType?.duration;
       let values: Array<string> = [mentorId];
       if (courseDuration) {
@@ -138,7 +148,7 @@ export class MentorsWaitingRequests {
     try {
       await client.query('BEGIN');
       await this.deleteMentorWaitingRequest(mentorId, client);
-      const mentorWaitingRequest = await this.addMentorWaitingRequestFromDB(mentorId, courseType, client);
+      const mentorWaitingRequest = await this.addMentorWaitingRequestFromDB(mentorId, courseType?.id as string, client);
       response.status(200).send(mentorWaitingRequest);
       await client.query('COMMIT');
     } catch (error) {
@@ -149,17 +159,19 @@ export class MentorsWaitingRequests {
     }
   }
 
-  async addMentorWaitingRequestFromDB(mentorId: string, courseType: CourseType | undefined, client: pg.PoolClient): Promise<MentorWaitingRequest> {
+  async addMentorWaitingRequestFromDB(mentorId: string, courseTypeId: string, client: pg.PoolClient): Promise<MentorWaitingRequest> {
     const insertMentorWaitingRequestQuery = `INSERT INTO mentors_waiting_requests (mentor_id, course_type_id)
       VALUES ($1, $2) RETURNING *`;
-    const values = [mentorId, courseType?.id];        
+    const values = [mentorId, courseTypeId];        
     const { rows }: pg.QueryResult = await client.query(insertMentorWaitingRequestQuery, values);
     const mentorWaitingRequest: MentorWaitingRequest = {
       id: rows[0].id,
       mentor: {
         id: mentorId
       },
-      courseType: courseType
+      courseType: {
+        id: courseTypeId
+      }
     };
     return mentorWaitingRequest;
   }

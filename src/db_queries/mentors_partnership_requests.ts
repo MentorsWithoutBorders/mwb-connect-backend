@@ -13,6 +13,7 @@ import MentorPartnershipRequest from '../models/mentor_partnership_request.model
 import CourseType from '../models/course_type.model';
 import Course from '../models/course.model';
 import CourseMentor from '../models/course_mentor.model';
+import MentorWaitingRequest from '../models/mentor_waiting_request.model';
 import InAppMessage from '../models/in_app_message';
 
 const conn = new Conn();
@@ -201,6 +202,7 @@ export class MentorsPartnershipRequests {
       if (!mentorPartnershipRequest.isCanceled) {
         const updateMentorPartnershipRequestQuery = 'UPDATE mentors_partnership_requests SET is_rejected = true WHERE id = $1';
         await client.query(updateMentorPartnershipRequestQuery, [mentorPartnershipRequestId]);
+        await mentorsWaitingRequests.addMentorWaitingRequestFromDB(mentorPartnershipRequest.partnerMentor?.id as string, mentorPartnershipRequest.courseType?.id as string, client);
         // usersPushNotifications.sendPNMentorPartnershipRequestRejected(mentorPartnershipRequest, text);
         // usersSendEmails.sendEmailMentorPartnershipRequestRejected(mentorPartnershipRequest, text);
       }
@@ -216,12 +218,20 @@ export class MentorsPartnershipRequests {
 
   async cancelMentorPartnershipRequest(request: Request, response: Response): Promise<void> {
     const mentorPartnershipRequestId = request.params.id;
+    const client = await pool.connect();
     try {
+      await client.query('BEGIN');
+      const mentorPartnershipRequest = await this.getCurrentMentorPartnershipRequestFromDB(undefined, mentorPartnershipRequestId, client);
       const updateMentorPartnershipRequestQuery = 'UPDATE mentors_partnership_requests SET is_canceled = true WHERE id = $1';
-      await pool.query(updateMentorPartnershipRequestQuery, [mentorPartnershipRequestId]);
+      await client.query(updateMentorPartnershipRequestQuery, [mentorPartnershipRequestId]);
+      await mentorsWaitingRequests.addMentorWaitingRequestFromDB(mentorPartnershipRequest.partnerMentor?.id as string, mentorPartnershipRequest.courseType?.id as string, client);
       response.status(200).send(`Mentor partnership request modified with ID: ${mentorPartnershipRequestId}`);
+      await client.query('COMMIT');
     } catch (error) {
       response.status(400).send(error);
+      await client.query('ROLLBACK');
+    } finally {
+      client.release();
     }
   }
 
