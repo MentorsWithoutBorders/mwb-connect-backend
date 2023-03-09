@@ -157,24 +157,27 @@ export class MentorsPartnershipRequests {
     try {
       await client.query('BEGIN');
       const mentorPartnershipRequest = await this.getCurrentMentorPartnershipRequestFromDB(undefined, mentorPartnershipRequestId, client);
-      const courseType = mentorPartnershipRequest?.courseType;
-      const partnerMentor = mentorPartnershipRequest?.partnerMentor as CourseMentor;
-      partnerMentor.meetingUrl = meetingUrl;
-      const mentors = [mentorPartnershipRequest?.mentor as CourseMentor, partnerMentor];
-      let courseStartDateTime = moment.utc().add(2, 'd');
-      while (courseStartDateTime.format(constants.DAY_OF_WEEK_FORMAT) != mentorPartnershipRequest.courseDayOfWeek) {
-        courseStartDateTime = courseStartDateTime.add(1, 'd');
+      let course: Course = {};
+      if (!mentorPartnershipRequest.isCanceled && !mentorPartnershipRequest.isExpired) {
+        const courseType = mentorPartnershipRequest?.courseType;
+        const partnerMentor = mentorPartnershipRequest?.partnerMentor as CourseMentor;
+        partnerMentor.meetingUrl = meetingUrl;
+        const mentors = [mentorPartnershipRequest?.mentor as CourseMentor, partnerMentor];
+        let courseStartDateTime = moment.utc().add(2, 'd');
+        while (courseStartDateTime.format(constants.DAY_OF_WEEK_FORMAT) != mentorPartnershipRequest.courseDayOfWeek) {
+          courseStartDateTime = courseStartDateTime.add(1, 'd');
+        }
+        const hours = moment(mentorPartnershipRequest.courseStartTime, ['h:mma']).format("HH");
+        const minutes = moment(mentorPartnershipRequest.courseStartTime, ['h:mma']).format("mm");
+        courseStartDateTime = courseStartDateTime.set('hour', parseInt(hours)).set('minute', parseInt(minutes)).set('second', 0);      
+        course = {
+          type: courseType,
+          mentors: mentors,
+          startDateTime: courseStartDateTime.format(constants.DATE_TIME_FORMAT)
+        }
+        course = await usersCourses.addCourseFromDB(course, client);
+        await this.deleteMentorPartnershipRequest(mentorPartnershipRequestId, client);
       }
-      const hours = moment(mentorPartnershipRequest.courseStartTime, ['h:mma']).format("HH");
-      const minutes = moment(mentorPartnershipRequest.courseStartTime, ['h:mma']).format("mm");
-      courseStartDateTime = courseStartDateTime.set('hour', parseInt(hours)).set('minute', parseInt(minutes)).set('second', 0);      
-      let course: Course = {
-        type: courseType,
-        mentors: mentors,
-        startDateTime: courseStartDateTime.format(constants.DATE_TIME_FORMAT)
-      }
-      course = await usersCourses.addCourseFromDB(course, client);
-      await this.deleteMentorPartnershipRequest(mentorPartnershipRequestId, client);
       response.status(200).json(course);
       await client.query('COMMIT');
       // usersPushNotifications.sendPNMentorPartnershipRequestAccepted(course);
