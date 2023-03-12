@@ -18,6 +18,7 @@ import Skill from '../models/skill.model';
 import Availability from '../models/availability.model';
 import AvailabilityTime from '../models/availability_time.model';
 import CourseFilter from '../models/course_filter.model';
+import MentorPartnershipScheduleItem from '../models/mentor_partnership_schedule_item.model';
 import InAppMessage from '../models/in_app_message';
 
 const conn = new Conn();
@@ -236,6 +237,42 @@ export class UsersCourses {
     }
     return students;
   }
+
+  async getMentorPartnershipSchedule(request: Request, response: Response): Promise<void> {
+    const courseId = request.params.id;  
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+      let getMentorPartnershipScheduleQuery = `SELECT id, mentor_id, lesson_date_time
+        FROM users_courses_partnership_schedule  
+        WHERE course_id = $1`;
+      const { rows }: pg.QueryResult = await client.query(getMentorPartnershipScheduleQuery, [courseId]);
+      const mentorPartnershipSchedule: Array<MentorPartnershipScheduleItem> = [];
+      if (rows && rows.length > 0) {
+        for (const row of rows) {
+          let mentor = await users.getUserFromDB(row.mentor_id, client);
+          mentor = {
+            id: mentor.id,
+            name: mentor.name
+          }
+          const mentorPartnershipScheduleItem: MentorPartnershipScheduleItem = {
+            id: row.id,
+            courseId: courseId,
+            mentor: mentor,
+            lessonDateTime: moment.utc(row.lesson_date_time).format(constants.DATE_TIME_FORMAT)
+          }
+          mentorPartnershipSchedule.push(mentorPartnershipScheduleItem);       
+        }
+      }
+      response.status(200).json(mentorPartnershipSchedule);
+      await client.query('COMMIT');
+    } catch (error) {
+      response.status(400).send(error);
+      await client.query('ROLLBACK');
+    } finally {
+      client.release();
+    }
+  }   
   
   async addCourse(request: Request, response: Response): Promise<void> {
     const mentorId = request.user.id as string;
@@ -360,7 +397,24 @@ export class UsersCourses {
         lessonDateTime.add(1, 'week');
       }
     }
-  }    
+  }
+  
+  async updateMentorPartnershipSchedule(request: Request, response: Response): Promise<void> {
+    const mentorPartnershipScheduleItem: MentorPartnershipScheduleItem = request.body;
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+      const updateMentorPartnershipScheduleQuery = 'UPDATE users_courses_partnership_schedule SET mentor_id = $1 WHERE id = $2';
+      await client.query(updateMentorPartnershipScheduleQuery, [mentorPartnershipScheduleItem.mentor.id, mentorPartnershipScheduleItem.id]);
+      response.status(200).send(`Mentor partnership schedule item ${mentorPartnershipScheduleItem.id} was update successfully`);
+      await client.query('COMMIT');
+    } catch (error) {
+      response.status(400).send(error);
+      await client.query('ROLLBACK');
+    } finally {
+      client.release();
+    }
+  }  
 
   async setWhatsAppGroupUrl(request: Request, response: Response): Promise<void> {
     const courseId = request.params.id;
