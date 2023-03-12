@@ -338,15 +338,19 @@ export class UsersCourses {
     while (courseStartDateTime.isBefore(moment.utc())) {
       courseStartDateTime = courseStartDateTime.add(1, 'week');
     }
-    const updateCourseStartDateTimeQuery = 'UPDATE users_courses SET start_date_time = $1 WHERE id = $2';
-    await client.query(updateCourseStartDateTimeQuery, [courseStartDateTime, course.id]);
+    if (moment.utc(courseStartDateTime) !== moment.utc(course.startDateTime)) {
+      const updateCourseStartDateTimeQuery = 'UPDATE users_courses SET start_date_time = $1 WHERE id = $2';
+      await client.query(updateCourseStartDateTimeQuery, [courseStartDateTime, course.id]);
+    }
     course.startDateTime = moment.utc(courseStartDateTime).format(constants.DATE_TIME_FORMAT);
     return course;
   }
 
   async addMentorPartnershipSchedule(course: Course, client: pg.PoolClient): Promise<void> {
+    const getMentorPartnershipScheduleQuery = `SELECT course_id FROM users_courses_partnership_schedule WHERE course_id = $1`
+    const { rows }: pg.QueryResult = await client.query(getMentorPartnershipScheduleQuery, [course.id]);    
     let lessonDateTime = moment.utc(course.startDateTime);
-    if (course.type && course.type.duration && course.mentors && course.mentors.length > 1) {
+    if (rows.length == 0 && course.type && course.type.duration && course.mentors && course.mentors.length > 1) {
       while (lessonDateTime.isBefore(moment.utc(course.startDateTime).add(course.type.duration, 'months'))) {
         const insertLessonDateTimeQuery = `INSERT INTO users_courses_partnership_schedule (course_id, mentor_id, lesson_date_time)
           VALUES ($1, $2, $3)`;
