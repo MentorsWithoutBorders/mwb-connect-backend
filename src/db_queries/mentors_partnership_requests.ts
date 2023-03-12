@@ -13,7 +13,6 @@ import MentorPartnershipRequest from '../models/mentor_partnership_request.model
 import CourseType from '../models/course_type.model';
 import Course from '../models/course.model';
 import CourseMentor from '../models/course_mentor.model';
-import MentorWaitingRequest from '../models/mentor_waiting_request.model';
 import InAppMessage from '../models/in_app_message';
 
 const conn = new Conn();

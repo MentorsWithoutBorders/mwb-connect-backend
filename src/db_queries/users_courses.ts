@@ -295,6 +295,7 @@ export class UsersCourses {
         id: studentId
       }
       let course = await this.getCourseById(courseId, client);
+      const minStudentsCourse = constants.MIN_STUDENTS_COURSE;
       const maxStudentsCourse = constants.MAX_STUDENTS_COURSE;
       if (course.students && course.students.length >= maxStudentsCourse) {
         response.status(400).send({'message': `We're sorry, but there are already ${maxStudentsCourse} students in this course. Please join another course.`});
@@ -302,6 +303,10 @@ export class UsersCourses {
       } else {
         await this.addCourseStudent(courseId, student, client);
         course = await this.getCourseById(courseId, client);
+        course = await this.updateCourseStartDateTime(course, client);
+        if (course.mentors && course.students && course.mentors.length > 1 && course.students.length >= minStudentsCourse) {
+          await this.addMentorPartnershipSchedule(course, client);
+        }
       }
       response.status(200).json(course);
       await client.query('COMMIT');
@@ -327,6 +332,31 @@ export class UsersCourses {
       await client.query(insertStudentQuery, values);
     }
   }
+
+  async updateCourseStartDateTime(course: Course, client: pg.PoolClient): Promise<Course> {
+    let courseStartDateTime = moment.utc(course.startDateTime);
+    while (courseStartDateTime.isBefore(moment.utc())) {
+      courseStartDateTime = courseStartDateTime.add(1, 'week');
+    }
+    const updateCourseStartDateTimeQuery = 'UPDATE users_courses SET start_date_time = $1 WHERE id = $2';
+    await client.query(updateCourseStartDateTimeQuery, [courseStartDateTime, course.id]);
+    course.startDateTime = moment.utc(courseStartDateTime).format(constants.DATE_TIME_FORMAT);
+    return course;
+  }
+
+  async addMentorPartnershipSchedule(course: Course, client: pg.PoolClient): Promise<void> {
+    let lessonDateTime = moment.utc(course.startDateTime);
+    if (course.type && course.type.duration && course.mentors && course.mentors.length > 1) {
+      while (lessonDateTime.isBefore(moment.utc(course.startDateTime).add(course.type.duration, 'months'))) {
+        const insertLessonDateTimeQuery = `INSERT INTO users_courses_partnership_schedule (course_id, mentor_id, lesson_date_time)
+          VALUES ($1, $2, $3)`;
+        const mentorId = lessonDateTime.isBefore(moment.utc(course.startDateTime).add(course.type.duration * 30 / 2, 'days')) ? course.mentors[0].id : course.mentors[1].id;
+        const values = [course.id, mentorId, lessonDateTime];
+        await client.query(insertLessonDateTimeQuery, values);
+        lessonDateTime.add(1, 'week');
+      }
+    }
+  }    
 
   async setWhatsAppGroupUrl(request: Request, response: Response): Promise<void> {
     const courseId = request.params.id;
