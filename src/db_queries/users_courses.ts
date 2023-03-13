@@ -250,6 +250,9 @@ export class UsersCourses {
       const mentorPartnershipSchedule: Array<MentorPartnershipScheduleItem> = [];
       if (rows && rows.length > 0) {
         for (const row of rows) {
+          const course: Course = {
+            id: courseId
+          }
           let mentor = await users.getUserFromDB(row.mentor_id, client);
           mentor = {
             id: mentor.id,
@@ -257,7 +260,7 @@ export class UsersCourses {
           }
           const mentorPartnershipScheduleItem: MentorPartnershipScheduleItem = {
             id: row.id,
-            courseId: courseId,
+            course: course,
             mentor: mentor,
             lessonDateTime: moment.utc(row.lesson_date_time).format(constants.DATE_TIME_FORMAT)
           }
