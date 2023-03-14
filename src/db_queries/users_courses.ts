@@ -245,7 +245,8 @@ export class UsersCourses {
       await client.query('BEGIN');
       let getMentorPartnershipScheduleQuery = `SELECT id, mentor_id, lesson_date_time
         FROM users_courses_partnership_schedule  
-        WHERE course_id = $1`;
+        WHERE course_id = $1
+        ORDER BY lesson_date_time`;
       const { rows }: pg.QueryResult = await client.query(getMentorPartnershipScheduleQuery, [courseId]);
       const mentorPartnershipSchedule: Array<MentorPartnershipScheduleItem> = [];
       if (rows && rows.length > 0) {
