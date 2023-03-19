@@ -1,16 +1,17 @@
 import { Request, Response } from 'express';
-import autoBind from 'auto-bind';
 import pg from 'pg';
 import moment from 'moment'
 import { Conn } from '../db/conn';
+import { Helpers } from '../utils/helpers';
 import CertificatePause from '../models/certificate_pause.model';
 
 const conn = new Conn();
 const pool = conn.pool;
+const helpers = new Helpers();
 
 export class UsersCertificatesPauses {
   constructor() {
-    autoBind(this);
+    helpers.autoBind(this);
   }
 
   async getUserCertificatePause(request: Request, response: Response): Promise<void> {

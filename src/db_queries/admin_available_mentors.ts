@@ -1,18 +1,19 @@
 import { Request, Response } from 'express';
-import autoBind from 'auto-bind';
 import pg from 'pg';
 import 'moment-timezone';
 import { Conn } from '../db/conn';
+import { Helpers } from '../utils/helpers';
 import { UsersAvailableMentors } from './users_available_mentors';
 import User from '../models/user.model';
 
 const conn = new Conn();
 const pool = conn.pool;
+const helpers = new Helpers();
 const usersAvailableMentors: UsersAvailableMentors = new UsersAvailableMentors();
 
 export class AdminAvailableMentors {
   constructor() {
-    autoBind(this);
+    helpers.autoBind(this);
   }
 
   async getAvailableMentorsLessons(request: Request, response: Response): Promise<void> {

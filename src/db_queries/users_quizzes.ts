@@ -1,5 +1,4 @@
 import { Request, Response } from 'express';
-import autoBind from 'auto-bind';
 import moment from 'moment';
 import 'moment-timezone';
 import { Conn } from '../db/conn';
@@ -21,7 +20,7 @@ const quizzesSettings = new QuizzesSettings();
 
 export class UsersQuizzes {
   constructor() {
-    autoBind(this);
+    helpers.autoBind(this);
   }
 
   async getQuizzes(request: Request, response: Response): Promise<void> {

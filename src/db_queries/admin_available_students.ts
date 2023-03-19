@@ -1,5 +1,4 @@
 import { Request, Response } from 'express';
-import autoBind from 'auto-bind';
 import pg from 'pg';
 import moment from 'moment';
 import 'moment-timezone';
@@ -17,7 +16,7 @@ const helpers = new Helpers();
 
 export class AdminAvailableStudents {
   constructor() {
-    autoBind(this);
+    helpers.autoBind(this);
   }
 
   async getAvailableStudentsLessons(request: Request, response: Response): Promise<void> {

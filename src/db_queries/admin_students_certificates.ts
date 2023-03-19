@@ -1,10 +1,10 @@
 import { Request, Response } from 'express';
-import autoBind from 'auto-bind';
 import pg from 'pg';
 import moment from 'moment';
 import 'moment-timezone';
 import { Conn } from '../db/conn';
 import { constants } from '../utils/constants';
+import { Helpers } from '../utils/helpers';
 import { QuizzesSettings } from './quizzes_settings';
 import { UsersBackgroundProcesses } from './users_background_processes';
 import User from '../models/user.model';
@@ -13,12 +13,13 @@ import StudentCertificate from '../models/student_certificate.model';
 
 const conn = new Conn();
 const pool = conn.pool;
+const helpers = new Helpers();
 const quizzesSettings = new QuizzesSettings();
 const usersBackgroundProcesses = new UsersBackgroundProcesses();
 
 export class AdminStudentsCertificates {
   constructor() {
-    autoBind(this);
+    helpers.autoBind(this);
   }
 
   async getStudentsCertificates(request: Request, response: Response): Promise<void> {

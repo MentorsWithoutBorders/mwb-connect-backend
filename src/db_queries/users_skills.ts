@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
-import autoBind from 'auto-bind';
 import pg from 'pg';
 import { constants } from '../utils/constants';
+import { Helpers } from '../utils/helpers';
 import { Conn } from '../db/conn';
 import { Users } from './users';
 import { Skills } from './skills';
@@ -10,12 +10,13 @@ import Ids from '../models/ids.model';
 
 const conn = new Conn();
 const pool = conn.pool;
+const helpers = new Helpers();
 const users = new Users();
 const skillsQueries = new Skills();
 
 export class UsersSkills {
   constructor() {
-    autoBind(this);
+    helpers.autoBind(this);
   }
 
   async getUserSkills(request: Request, response: Response): Promise<void> {

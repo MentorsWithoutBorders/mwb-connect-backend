@@ -1,8 +1,6 @@
-import autoBind from 'auto-bind';
 import moment from 'moment';
 import pg from 'pg';
 import dotenv from 'dotenv';
-import axios from 'axios';
 import { createClient } from 'async-redis';
 import { UsersTimeZones } from './users_timezones';
 import { Helpers } from '../utils/helpers';
@@ -18,7 +16,7 @@ dotenv.config();
 
 export class UsersWhatsAppMessages {
   constructor() {
-    autoBind(this);
+    helpers.autoBind(this);
   }
 
   async sendWhatsAppMessage(phoneNumber: string | undefined, message: string): Promise<void> {

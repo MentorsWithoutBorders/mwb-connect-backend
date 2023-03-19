@@ -1,15 +1,16 @@
 import { Request, Response } from 'express';
-import autoBind from 'auto-bind';
 import pg from 'pg';
 import { Conn } from '../db/conn';
+import { Helpers } from '../utils/helpers';
 import InAppMessage from '../models/in_app_message';
 
 const conn = new Conn();
 const pool = conn.pool;
+const helpers = new Helpers();
 
 export class UsersInAppMessages {
   constructor() {
-    autoBind(this);
+    helpers.autoBind(this);
   }
 
   async getUserInAppMessage(request: Request, response: Response): Promise<void> {

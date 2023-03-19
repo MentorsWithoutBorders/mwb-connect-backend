@@ -1,5 +1,4 @@
 import { Request, Response } from 'express';
-import autoBind from 'auto-bind';
 import pg from 'pg';
 import moment from 'moment';
 import 'moment-timezone';
@@ -26,7 +25,7 @@ const quizzesSettings = new QuizzesSettings();
 
 export class AdminTrainingReminders {
   constructor() {
-    autoBind(this);
+    helpers.autoBind(this);
   }
 
   async getTrainingReminders(request: Request, response: Response): Promise<void> {

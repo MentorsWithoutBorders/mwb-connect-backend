@@ -12,6 +12,16 @@ import CourseMentor from '../models/course_mentor.model';
 dotenv.config();
 
 export class Helpers {
+  autoBind(self: any) {
+    for (const key of Object.getOwnPropertyNames(self.constructor.prototype)) {
+      const val = self[key];
+  
+      if (key !== "constructor" && typeof val === "function") {
+        self[key] = val.bind(self);
+      }
+    }
+  }
+
   hashPassword(password: string): string {
     return bcrypt.hashSync(password, bcrypt.genSaltSync(8));
   }

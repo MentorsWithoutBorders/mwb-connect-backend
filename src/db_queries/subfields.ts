@@ -1,16 +1,17 @@
 import { Request, Response } from 'express';
-import autoBind from 'auto-bind';
 import pg from 'pg';
 import { Conn } from '../db/conn';
 import { constants } from '../utils/constants';
+import { Helpers } from '../utils/helpers';
 import Subfield from '../models/subfield.model';
 
 const conn = new Conn();
 const pool = conn.pool;
+const helpers = new Helpers();
 
 export class Subfields {
   constructor() {
-    autoBind(this);
+    helpers.autoBind(this);
   }
 
   async getSubfields(request: Request, response: Response): Promise<void> {

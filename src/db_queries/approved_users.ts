@@ -1,19 +1,20 @@
 import { Request, Response } from 'express';
 import pg from 'pg';
-import autoBind from 'auto-bind';
 import dotenv from 'dotenv';
 import { Conn } from '../db/conn';
+import { Helpers } from '../utils/helpers';
 import ApprovedUser from '../models/approved_user.model';
 import Field from '../models/field.model';
 import Organization from '../models/organization.model';
 
 const conn = new Conn();
 const pool = conn.pool;
+const helpers = new Helpers();
 dotenv.config();
 
 export class ApprovedUsers {
   constructor() {
-    autoBind(this);
+    helpers.autoBind(this);
   }
 
   async getApprovedUser(email: string, client: pg.PoolClient): Promise<ApprovedUser> {

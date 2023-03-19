@@ -1,9 +1,9 @@
 import { Request, Response } from 'express';
-import autoBind from 'auto-bind';
 import moment from 'moment';
 import pg from 'pg';
 import { Conn } from '../db/conn';
 import { constants } from '../utils/constants';
+import { Helpers } from '../utils/helpers';
 import { Users } from './users';
 import { UsersCourses } from './users_courses';
 import { MentorsWaitingRequests } from './mentors_waiting_requests';
@@ -17,6 +17,7 @@ import InAppMessage from '../models/in_app_message';
 
 const conn = new Conn();
 const pool = conn.pool;
+const helpers = new Helpers();
 const users = new Users();
 const usersCourses = new UsersCourses();
 const mentorsWaitingRequests = new MentorsWaitingRequests();
@@ -25,7 +26,7 @@ const usersSendEmails = new UsersSendEmails();
 
 export class MentorsPartnershipRequests {
   constructor() {
-    autoBind(this);
+    helpers.autoBind(this);
   }
 
   async getCurrentMentorPartnershipRequest(request: Request, response: Response): Promise<void> {

@@ -1,16 +1,17 @@
 import { Request, Response } from 'express';
 import pg from 'pg';
-import autoBind from 'auto-bind';
 import { Conn } from '../db/conn';
 import { constants } from '../utils/constants';
+import { Helpers } from '../utils/helpers';
 import CourseType from '../models/course_type.model';
 
 const conn = new Conn();
 const pool = conn.pool;
+const helpers = new Helpers();
 
 export class CourseTypes {
   constructor() {
-    autoBind(this);
+    helpers.autoBind(this);
   }
 
   async getCourseTypes(request: Request, response: Response): Promise<void> {

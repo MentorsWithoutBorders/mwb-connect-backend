@@ -1,5 +1,4 @@
 import { Request, Response } from 'express';
-import autoBind from 'auto-bind';
 import moment from 'moment';
 import pg from 'pg';
 import { Conn } from '../db/conn';
@@ -17,7 +16,7 @@ const usersTimeZones = new UsersTimeZones();
 
 export class UsersSteps {
   constructor() {
-    autoBind(this);
+    helpers.autoBind(this);
   }
 
   async getSteps(request: Request, response: Response): Promise<void> {

@@ -1,5 +1,4 @@
 import { Request, Response } from 'express';
-import autoBind from 'auto-bind';
 import pg from 'pg';
 import admin from 'firebase-admin';
 import serviceAccount from '../../mwb-connect-firebase-adminsdk.json';
@@ -31,7 +30,7 @@ const notificationOptions = {
 
 export class UsersPushNotifications {
   constructor() {
-    autoBind(this);
+    helpers.autoBind(this);
   }
 
   async sendPushNotification(userId: string, pushNotification: PushNotification): Promise<void> {

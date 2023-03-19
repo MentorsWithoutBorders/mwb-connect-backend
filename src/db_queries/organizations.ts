@@ -1,5 +1,4 @@
 import { Request, Response } from 'express';
-import autoBind from 'auto-bind';
 import pg from 'pg';
 import { Conn } from '../db/conn';
 import { Helpers } from '../utils/helpers';
@@ -11,7 +10,7 @@ const helpers = new Helpers();
 
 export class Organizations {
   constructor() {
-    autoBind(this);
+    helpers.autoBind(this);
   }
 
   async getOrganizationById(request: Request, response: Response): Promise<void> {

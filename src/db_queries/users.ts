@@ -1,5 +1,4 @@
 import { Request, Response } from 'express';
-import autoBind from 'auto-bind';
 import moment from 'moment'
 import pg from 'pg';
 import dotenv from 'dotenv';
@@ -28,7 +27,7 @@ dotenv.config();
 
 export class Users {
   constructor() {
-    autoBind(this);
+    helpers.autoBind(this);
   }
 
   async getUsers(request: Request, response: Response): Promise<void> {

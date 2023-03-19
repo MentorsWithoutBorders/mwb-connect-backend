@@ -1,5 +1,4 @@
 import { Request, Response } from 'express';
-import autoBind from 'auto-bind';
 import moment from 'moment';
 import 'moment-timezone';
 import pg from 'pg';
@@ -43,7 +42,7 @@ dotenv.config();
 
 export class UsersBackgroundProcesses {
   constructor() {
-    autoBind(this);
+    helpers.autoBind(this);
   }
 
   async sendAllLessonRequestReminders(request: Request, response: Response): Promise<void> {

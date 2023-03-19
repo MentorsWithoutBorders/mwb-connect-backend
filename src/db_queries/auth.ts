@@ -2,7 +2,6 @@ import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import pg from 'pg';
 import dotenv from 'dotenv';
-import autoBind from 'auto-bind';
 import moment from 'moment';
 import { v4 as uuidv4 } from 'uuid';
 import { Conn } from '../db/conn';
@@ -31,7 +30,7 @@ dotenv.config();
 
 export class Auth {
   constructor() {
-    autoBind(this);
+    helpers.autoBind(this);
   }
 
   async signUp(request: Request, response: Response): Promise<void> {

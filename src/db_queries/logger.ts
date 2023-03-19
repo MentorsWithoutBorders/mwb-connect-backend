@@ -1,16 +1,17 @@
 import { Request, Response } from 'express';
-import autoBind from 'auto-bind';
 import moment from 'moment';
-import { constants } from '../utils/constants';
 import { Conn } from '../db/conn';
+import { constants } from '../utils/constants';
+import { Helpers } from '../utils/helpers';
 import LogEntry from '../models/log_entry.model';
 
 const conn = new Conn();
 const pool = conn.pool;
+const helpers = new Helpers();
 
 export class Logger {
   constructor() {
-    autoBind(this);
+    helpers.autoBind(this);
   }
 
   async addLogEntry(request: Request, response: Response): Promise<void> {

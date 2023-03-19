@@ -1,5 +1,4 @@
 import { Request, Response } from 'express';
-import autoBind from 'auto-bind';
 import pg from 'pg';
 import moment from 'moment'
 import dotenv from 'dotenv';
@@ -16,7 +15,7 @@ dotenv.config();
 
 export class UsersResetPassword {
   constructor() {
-    autoBind(this);
+    helpers.autoBind(this);
   }
 
   async resetPassword(request: Request, response: Response): Promise<void> {

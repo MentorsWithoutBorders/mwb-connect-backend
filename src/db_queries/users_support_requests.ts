@@ -1,15 +1,16 @@
 import { Request, Response } from 'express';
-import autoBind from 'auto-bind';
 import moment from 'moment';
 import { Conn } from '../db/conn';
+import { Helpers } from '../utils/helpers';
 import SupportRequest from '../models/support_request.model';
 
 const conn = new Conn();
 const pool = conn.pool;
+const helpers = new Helpers();
 
 export class UsersSupportRequests {
   constructor() {
-    autoBind(this);
+    helpers.autoBind(this);
   }
 
   async addSupportRequest(request: Request, response: Response): Promise<void> {

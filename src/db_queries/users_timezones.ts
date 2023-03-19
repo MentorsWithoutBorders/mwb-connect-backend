@@ -1,17 +1,18 @@
 import { Request, Response } from 'express';
-import autoBind from 'auto-bind';
 import moment from 'moment';
 import 'moment-timezone';
 import pg from 'pg';
 import { Conn } from '../db/conn';
+import { Helpers } from '../utils/helpers';
 import TimeZone from '../models/timezone.model';
 
 const conn = new Conn();
 const pool = conn.pool;
+const helpers = new Helpers();
 
 export class UsersTimeZones {
   constructor() {
-    autoBind(this);
+    helpers.autoBind(this);
   }
 
   async getUserTimeZone(userId: string, client: pg.PoolClient): Promise<TimeZone> {

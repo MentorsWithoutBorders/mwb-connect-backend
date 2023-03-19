@@ -1,16 +1,17 @@
 import { Request, Response } from 'express';
 import pg from 'pg';
-import autoBind from 'auto-bind';
 import { Conn } from '../db/conn';
 import { constants } from '../utils/constants';
+import { Helpers } from '../utils/helpers';
 import FieldTutorial from '../models/field_tutorial.model';
 
 const conn = new Conn();
 const pool = conn.pool;
+const helpers = new Helpers();
 
 export class FieldsTutorials {
   constructor() {
-    autoBind(this);
+    helpers.autoBind(this);
   }
 
   async getFieldsTutorials(request: Request, response: Response): Promise<void> {

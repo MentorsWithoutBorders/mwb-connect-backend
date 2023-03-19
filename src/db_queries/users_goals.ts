@@ -1,17 +1,18 @@
 import { Request, Response } from 'express';
-import autoBind from 'auto-bind';
 import moment from 'moment';
 import pg from 'pg';
 import { Conn } from '../db/conn';
+import { Helpers } from '../utils/helpers';
 import Goal from '../models/goal.model';
 import { constants } from '../utils/constants';
 
 const conn = new Conn();
 const pool = conn.pool;
+const helpers = new Helpers();
 
 export class UsersGoals {
   constructor() {
-    autoBind(this);
+    helpers.autoBind(this);
   }
 
   async getGoals(request: Request, response: Response): Promise<void> {

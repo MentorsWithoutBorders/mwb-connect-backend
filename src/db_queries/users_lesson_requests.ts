@@ -1,5 +1,4 @@
 import { Request, Response } from 'express';
-import autoBind from 'auto-bind';
 import moment from 'moment';
 import pg from 'pg';
 import { Conn } from '../db/conn';
@@ -31,7 +30,7 @@ const usersWhatsAppMessages = new UsersWhatsAppMessages();
 
 export class UsersLessonRequests {
   constructor() {
-    autoBind(this);
+    helpers.autoBind(this);
   }
 
   async addLessonRequest(request: Request, response: Response): Promise<void> {

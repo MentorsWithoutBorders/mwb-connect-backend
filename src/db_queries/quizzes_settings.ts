@@ -1,15 +1,16 @@
 import { Request, Response } from 'express';
-import autoBind from 'auto-bind';
 import pg from 'pg';
 import { Conn } from '../db/conn';
+import { Helpers } from '../utils/helpers';
 import QuizSettings from '../models/quiz_settings.model';
 
 const conn = new Conn();
 const pool = conn.pool;
+const helpers = new Helpers();
 
 export class QuizzesSettings {
   constructor() {
-    autoBind(this);
+    helpers.autoBind(this);
   }
 
   async getQuizzesSettings(request: Request, response: Response): Promise<void> {

@@ -1,15 +1,16 @@
 import { Request, Response } from 'express';
-import autoBind from 'auto-bind';
 import pg from 'pg';
 import { Conn } from '../db/conn';
+import { Helpers } from '../utils/helpers';
 import Tutorial from '../models/tutorial.model';
 
 const conn = new Conn();
 const pool = conn.pool;
+const helpers = new Helpers();
 
 export class Tutorials {
   constructor() {
-    autoBind(this);
+    helpers.autoBind(this);
   }
 
   async getTutorials(request: Request, response: Response): Promise<void> {

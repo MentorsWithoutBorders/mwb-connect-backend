@@ -1,5 +1,4 @@
 import { Request, Response } from 'express';
-import autoBind from 'auto-bind';
 import pg from 'pg';
 import { createClient } from 'async-redis';
 import moment from 'moment';
@@ -28,7 +27,7 @@ dotenv.config();
 
 export class UsersAvailableMentors {
   constructor() {
-    autoBind(this);
+    helpers.autoBind(this);
   }
 
   async getAvailableMentors(request: Request, response: Response): Promise<void> {

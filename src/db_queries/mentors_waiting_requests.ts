@@ -1,11 +1,11 @@
 import { Request, Response } from 'express';
 import pg from 'pg';
 import { createClient } from 'async-redis';
-import autoBind from 'auto-bind';
 import moment from 'moment';
 import 'moment-timezone';
 import { Conn } from '../db/conn';
 import { constants } from '../utils/constants';
+import { Helpers } from '../utils/helpers';
 import { Users } from './users';
 import { UsersAvailableMentors } from './users_available_mentors';
 import MentorWaitingRequest from '../models/mentor_waiting_request.model';
@@ -13,13 +13,14 @@ import CourseType from '../models/course_type.model';
 
 const conn = new Conn();
 const pool = conn.pool;
+const helpers = new Helpers();
 const redisClient = createClient();
 const users = new Users();
 const usersAvailableMentors = new UsersAvailableMentors();
 
 export class MentorsWaitingRequests {
   constructor() {
-    autoBind(this);
+    helpers.autoBind(this);
   }
 
   async getMentorsWaitingRequests(request: Request, response: Response): Promise<void> {

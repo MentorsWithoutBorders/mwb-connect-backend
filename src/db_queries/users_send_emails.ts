@@ -1,6 +1,5 @@
 import { Request, Response } from 'express';
 import nodemailer from 'nodemailer';
-import autoBind from 'auto-bind';
 import moment from 'moment';
 import 'moment-timezone';
 import pg from 'pg';
@@ -24,7 +23,7 @@ dotenv.config();
 
 export class UsersSendEmails {
   constructor() {
-    autoBind(this);
+    helpers.autoBind(this);
   }
 
   sendEmail(recipientEmailAddress: string, email: Email): void {
