@@ -169,7 +169,7 @@ app.post('/api/v1/quizzes', usersQuizzes.addQuiz);
 app.post('/api/v1/courses', usersCourses.getAvailableCourses);
 app.get('/api/v1/courses/fields', usersCourses.getAvailableCoursesFields);
 app.get('/api/v1/courses/current', usersCourses.getCurrentCourse);
-app.get('/api/v1/courses/current/next_lesson_datetime', usersCourses.getNextLessonDateTimeForUser);
+app.get('/api/v1/courses/:id/next_lesson_datetime', usersCourses.getNextLessonDateTimeForUser);
 app.get('/api/v1/courses/:id/mentor_partnership_schedule', usersCourses.getMentorPartnershipSchedule);
 app.get('/api/v1/courses/:id/notes', usersCourses.getNotes);
 app.post('/api/v1/courses/add', usersCourses.addCourse);
@@ -178,6 +178,7 @@ app.put('/api/v1/courses/:id/meeting_url', usersCourses.setMeetingUrl);
 app.put('/api/v1/courses/:id/whatsapp_group_url', usersCourses.setWhatsAppGroupUrl);
 app.put('/api/v1/courses/:id/notes', usersCourses.updateNotes);
 app.put('/api/v1/courses/:id/cancel', usersCourses.cancelCourse);
+app.put('/api/v1/courses/:id/cancel_next_lesson', usersCourses.cancelNextLesson);
 app.put('/api/v1/mentor_partnership_schedule', usersCourses.updateMentorPartnershipSchedule);
 
 // Users available mentors
