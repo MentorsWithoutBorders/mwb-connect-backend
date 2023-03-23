@@ -9,5 +9,6 @@ export class Conn {
     database: process.env.DB_NAME,
     password: process.env.DB_PASS,
     port: 5432,
+    idleTimeoutMillis: 3000
   })
 }

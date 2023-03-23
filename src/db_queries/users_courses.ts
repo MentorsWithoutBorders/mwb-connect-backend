@@ -583,8 +583,7 @@ export class UsersCourses {
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
-      const updateMentorPartnershipScheduleQuery = 'UPDATE users_courses_partnership_schedule SET mentor_id = $1 WHERE id = $2';
-      await client.query(updateMentorPartnershipScheduleQuery, [mentorPartnershipScheduleItem.mentor.id, mentorPartnershipScheduleItem.id]);
+      await this.updateMentorPartnershipScheduleFromDB(mentorPartnershipScheduleItem, client);
       response.status(200).send(`Mentor partnership schedule item ${mentorPartnershipScheduleItem.id} was update successfully`);
       await client.query('COMMIT');
     } catch (error) {
@@ -593,7 +592,12 @@ export class UsersCourses {
     } finally {
       client.release();
     }
-  }  
+  }
+  
+  async updateMentorPartnershipScheduleFromDB(mentorPartnershipScheduleItem: MentorPartnershipScheduleItem, client: pg.PoolClient): Promise<void> {
+    const updateMentorPartnershipScheduleQuery = 'UPDATE users_courses_partnership_schedule SET mentor_id = $1 WHERE id = $2';
+    await client.query(updateMentorPartnershipScheduleQuery, [mentorPartnershipScheduleItem.mentor.id, mentorPartnershipScheduleItem.id]);
+  }
 
   async setWhatsAppGroupUrl(request: Request, response: Response): Promise<void> {
     const courseId = request.params.id;
