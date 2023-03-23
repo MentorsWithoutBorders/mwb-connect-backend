@@ -394,14 +394,13 @@ export class UsersCourses {
     }
   }
   
-  
   async getStudentsParticipating(courseId: string, lessonDateTime: string, client: pg.PoolClient): Promise<Array<CourseStudent>> {
     const result = await client.query<CourseStudent>(`
       SELECT ucs.*
       FROM users_courses_students ucs
       LEFT JOIN users_courses_lessons_canceled ucls ON ucls.course_id = ucs.course_id AND ucls.user_id = ucs.student_id AND ucls.lesson_date_time = $2
       WHERE ucs.course_id = $1 AND ucls.canceled_date_time IS NULL
-    `, [courseId, lessonDateTime]);
+    `, [courseId, moment.utc(lessonDateTime)]);
   
     return result.rows;
   }
@@ -411,7 +410,7 @@ export class UsersCourses {
       SELECT *
       FROM users_courses_lessons_canceled
       WHERE course_id = $1 AND user_id = $2 AND lesson_date_time = $3
-    `, [courseId, userId, lessonDateTime]);
+    `, [courseId, userId, moment.utc(lessonDateTime)]);
   
     return result.rowCount > 0;
   }
@@ -428,26 +427,16 @@ export class UsersCourses {
   
   async getNextLessonDateTimeForStudent(course: Course, studentId: string, client: pg.PoolClient): Promise<string | null> {
     const courseType = course.type;
-    const mentors = course.mentors as Array<CourseMentor>;
-    const startDate = moment.utc(course.startDateTime as string).toDate();
+    const students = course.students as Array<CourseStudent>;
+    const courseStartDate = moment.utc(course.startDateTime as string).toDate();
+
+    if (students.length < constants.MIN_STUDENTS_COURSE) {
+      return null;
+    }    
   
-    if (mentors.length === 1) {
-      const nextLessonDateTime = await this.getNextLessonDateTime(startDate, courseType?.duration as number, studentId, undefined, client);
-      if (nextLessonDateTime) {
-        return nextLessonDateTime.toISOString();
-      }
-    } else if (mentors.length === 2) {
-      const partnershipSchedule = await this.getMentorPartnershipScheduleFromDB(course.id as string, client);
-      const nextLessonDateTime = await this.getNextLessonDateTime(startDate, courseType?.duration as number, studentId, partnershipSchedule, client);
-  
-      if (nextLessonDateTime) {
-        const mentorForNextLesson = partnershipSchedule.find(schedule => schedule.lessonDateTime === nextLessonDateTime.toISOString())?.mentor.id;
-        const isLessonCanceledByMentor = await this.isLessonCanceled(course.id as string, mentorForNextLesson as string, nextLessonDateTime, client);
-  
-        if (!isLessonCanceledByMentor) {
-          return nextLessonDateTime.toISOString();
-        }
-      }
+    const nextLessonDateTime = await this.getNextLessonDateTime(courseStartDate, courseType?.duration as number, studentId, undefined, client);
+    if (nextLessonDateTime) {
+      return moment.utc(nextLessonDateTime).format(constants.DATE_TIME_FORMAT)
     }
   
     return null;
@@ -567,7 +556,7 @@ export class UsersCourses {
     const { rows }: pg.QueryResult = await client.query(getMentorPartnershipScheduleQuery, [course.id]);    
     let lessonDateTime = moment.utc(course.startDateTime);
     if (rows.length == 0 && course.type && course.type.duration && course.mentors && course.mentors.length > 1) {
-      while (lessonDateTime.isBefore(moment.utc(course.startDateTime).add(course.type.duration, 'months'))) {
+      while (lessonDateTime.isBefore(moment.utc(course.startDateTime).add(course.type.duration, 'months').add(3, 'days'))) {
         const insertLessonDateTimeQuery = `INSERT INTO users_courses_partnership_schedule (course_id, mentor_id, lesson_date_time)
           VALUES ($1, $2, $3)`;
         const mentorId = lessonDateTime.isBefore(moment.utc(course.startDateTime).add(course.type.duration * 30 / 2, 'days')) ? course.mentors[0].id : course.mentors[1].id;
@@ -717,10 +706,25 @@ export class UsersCourses {
   }  
 
   async cancelNextLessonFromDB(userId: string, courseId: string, lessonDateTime: string, client: pg.PoolClient): Promise<void> {
-    const cancelLessonQuery = 'INSERT INTO users_courses_lessons_canceled (user_id, course_id, lesson_date_time, canceled_date_time) VALUES ($1, $2, $3, $4)';
-    const canceledDateTime = moment.utc().format(constants.DATE_TIME_FORMAT);
-    const values = [userId, courseId, lessonDateTime, canceledDateTime];
-    await client.query(cancelLessonQuery, values);
+    const user = await users.getUserFromDB(userId, client);
+    const isLessonCanceled = await this.isLessonCanceled(userId, courseId, moment.utc(lessonDateTime).toDate(), client);
+    if (!isLessonCanceled) {
+      const cancelLessonUserQuery = 'INSERT INTO users_courses_lessons_canceled (user_id, course_id, lesson_date_time, canceled_date_time) VALUES ($1, $2, $3, $4)';
+      const canceledDateTime = moment.utc().format(constants.DATE_TIME_FORMAT);
+      const values = [userId, courseId, lessonDateTime, canceledDateTime];
+      await client.query(cancelLessonUserQuery, values);
+      if (user.isMentor) {
+        const students = await this.getCourseStudents(courseId, client);
+        for (const student of students) {
+          const isLessonCanceled = await this.isLessonCanceled(student.id as string, courseId, moment.utc(lessonDateTime).toDate(), client);
+          if (!isLessonCanceled) {
+            const cancelLessonStudentQuery = 'INSERT INTO users_courses_lessons_canceled (user_id, course_id, lesson_date_time, canceled_date_time) VALUES ($1, $2, $3, $4)';
+            const values = [student.id, courseId, lessonDateTime, canceledDateTime];
+            await client.query(cancelLessonStudentQuery, values);        
+          }
+        }
+      }
+    }
   }  
 
   async setMeetingUrl(request: Request, response: Response): Promise<void> {
