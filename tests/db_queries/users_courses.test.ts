@@ -82,22 +82,104 @@ describe('Mentor and student lessons functionality', () => {
     nextLessonDateTime = await usersCourses.getNextLessonDateTimeForMentor(course, mentorId, client);
     if (!nextLessonDateTime) throw new Error('nextLessonDateTime is undefined');
     expect(nextLessonDateTime).toEqual(moment.utc(course.startDateTime).add(2, 'week').format(constants.DATE_TIME_FORMAT));
-  }, 1000000);   
+  });
 
-  // test('getNextLessonDateTimeForMentor returns the correct date for single mentor when there is less than one week until the end of the course', async () => {
-  //   let course = usersCoursesTestHelpers.getTestCourse();
-  //   course.startDateTime = moment.utc(course.startDateTime).subtract(14, 'week').format(constants.DATE_TIME_FORMAT);
-  //   course = await usersCoursesTestHelpers.addMentor(mentorId, course);
-  //   course = await usersCourses.addCourseFromDB(course, client);
-  //   course = await usersCoursesTestHelpers.addStudent(studentId, course);
-  //   for (let i = 0; i < otherStudentsIds.length; i++) {
-  //     course = await usersCoursesTestHelpers.addStudent(otherStudentsIds[i], course);
-  //   }
+  test('getNextLessonDateTimeForMentor returns the correct date for single mentor when there are no lessons left in the course', async () => {
+    let course = usersCoursesTestHelpers.getTestCourse();
+    course.startDateTime = moment.utc(course.startDateTime).subtract(13, 'week').format(constants.DATE_TIME_FORMAT);
+    course = await usersCoursesTestHelpers.addMentor(mentorId, course);
+    course = await usersCourses.addCourseFromDB(course, client);
+    course = await usersCoursesTestHelpers.addStudent(studentId, course);
+    for (let i = 0; i < otherStudentsIds.length; i++) {
+      course = await usersCoursesTestHelpers.addStudent(otherStudentsIds[i], course);
+    }
 
-  //   const nextLessonDateTime = await usersCourses.getNextLessonDateTimeForMentor(course, mentorId, client);
-  //   if (!nextLessonDateTime) throw new Error('nextLessonDateTime is undefined');
-  //   expect(nextLessonDateTime).toEqual(moment.utc(course.startDateTime).add(1, 'week').format(constants.DATE_TIME_FORMAT));
-  // }, 100000);
+    let nextLessonDateTime = await usersCourses.getNextLessonDateTimeForMentor(course, mentorId, client);
+    expect(nextLessonDateTime).toBeNull();
+  });
+
+  test('getNextLessonDateTimeForMentor returns the correct date for single mentor when there is less than one week until the end of the course and the last lesson was canceled by the mentor', async () => {
+    let course = usersCoursesTestHelpers.getTestCourse();
+    course.startDateTime = moment.utc(course.startDateTime).subtract(12, 'week').format(constants.DATE_TIME_FORMAT);
+    course = await usersCoursesTestHelpers.addMentor(mentorId, course);
+    course = await usersCourses.addCourseFromDB(course, client);
+    course = await usersCoursesTestHelpers.addStudent(studentId, course);
+    for (let i = 0; i < otherStudentsIds.length; i++) {
+      course = await usersCoursesTestHelpers.addStudent(otherStudentsIds[i], course);
+    }
+
+    let nextLessonDateTime = await usersCourses.getNextLessonDateTimeForMentor(course, mentorId, client);
+    if (!nextLessonDateTime) throw new Error('nextLessonDateTime is undefined');
+    await usersCourses.cancelNextLessonFromDB(mentorId, course?.id as string, nextLessonDateTime, client);
+    nextLessonDateTime = await usersCourses.getNextLessonDateTimeForMentor(course, mentorId, client);    
+    expect(nextLessonDateTime).toBeNull();
+  });
+
+  test('getNextLessonDateTimeForMentor returns the correct date for single mentor when there are less than 2 weeks until the end of the course and the last 2 lessons were canceled by the mentor', async () => {
+    let course = usersCoursesTestHelpers.getTestCourse();
+    course.startDateTime = moment.utc(course.startDateTime).subtract(11, 'week').format(constants.DATE_TIME_FORMAT);
+    course = await usersCoursesTestHelpers.addMentor(mentorId, course);
+    course = await usersCourses.addCourseFromDB(course, client);
+    course = await usersCoursesTestHelpers.addStudent(studentId, course);
+    for (let i = 0; i < otherStudentsIds.length; i++) {
+      course = await usersCoursesTestHelpers.addStudent(otherStudentsIds[i], course);
+    }
+
+    let nextLessonDateTime = await usersCourses.getNextLessonDateTimeForMentor(course, mentorId, client);
+    if (!nextLessonDateTime) throw new Error('nextLessonDateTime is undefined');
+    await usersCourses.cancelNextLessonFromDB(mentorId, course?.id as string, nextLessonDateTime, client);
+    nextLessonDateTime = await usersCourses.getNextLessonDateTimeForMentor(course, mentorId, client);
+    if (!nextLessonDateTime) throw new Error('nextLessonDateTime is undefined');    
+    await usersCourses.cancelNextLessonFromDB(mentorId, course?.id as string, nextLessonDateTime, client);
+    nextLessonDateTime = await usersCourses.getNextLessonDateTimeForMentor(course, mentorId, client);    
+    expect(nextLessonDateTime).toBeNull();
+  });
+
+  test('getNextLessonDateTimeForMentor returns the correct date for single mentor when there is less than one week until the end of the course and the last lesson was canceled by the students', async () => {
+    let course = usersCoursesTestHelpers.getTestCourse();
+    course.startDateTime = moment.utc(course.startDateTime).subtract(12, 'week').format(constants.DATE_TIME_FORMAT);
+    course = await usersCoursesTestHelpers.addMentor(mentorId, course);
+    course = await usersCourses.addCourseFromDB(course, client);
+    course = await usersCoursesTestHelpers.addStudent(studentId, course);
+    for (let i = 0; i < otherStudentsIds.length; i++) {
+      course = await usersCoursesTestHelpers.addStudent(otherStudentsIds[i], course);
+    }
+
+    let nextLessonDateTime = await usersCourses.getNextLessonDateTimeForMentor(course, mentorId, client);
+    if (!nextLessonDateTime) throw new Error('nextLessonDateTime is undefined');
+    await usersCourses.cancelNextLessonFromDB(studentId, course?.id as string, nextLessonDateTime, client);
+    for (let i = 0; i < otherStudentsIds.length; i++) {
+      await usersCourses.cancelNextLessonFromDB(otherStudentsIds[i], course?.id as string, nextLessonDateTime, client);
+    }
+    nextLessonDateTime = await usersCourses.getNextLessonDateTimeForMentor(course, mentorId, client);    
+    expect(nextLessonDateTime).toBeNull();
+  });
+
+  test('getNextLessonDateTimeForMentor returns the correct date for single mentor when there are less than 2 weeks until the end of the course and the last lessons were canceled by the students', async () => {
+    let course = usersCoursesTestHelpers.getTestCourse();
+    course.startDateTime = moment.utc(course.startDateTime).subtract(11, 'week').format(constants.DATE_TIME_FORMAT);
+    course = await usersCoursesTestHelpers.addMentor(mentorId, course);
+    course = await usersCourses.addCourseFromDB(course, client);
+    course = await usersCoursesTestHelpers.addStudent(studentId, course);
+    for (let i = 0; i < otherStudentsIds.length; i++) {
+      course = await usersCoursesTestHelpers.addStudent(otherStudentsIds[i], course);
+    }
+
+    let nextLessonDateTime = await usersCourses.getNextLessonDateTimeForMentor(course, mentorId, client);
+    if (!nextLessonDateTime) throw new Error('nextLessonDateTime is undefined');
+    await usersCourses.cancelNextLessonFromDB(studentId, course?.id as string, nextLessonDateTime, client);
+    for (let i = 0; i < otherStudentsIds.length; i++) {
+      await usersCourses.cancelNextLessonFromDB(otherStudentsIds[i], course?.id as string, nextLessonDateTime, client);
+    }
+    nextLessonDateTime = await usersCourses.getNextLessonDateTimeForMentor(course, mentorId, client);
+    if (!nextLessonDateTime) throw new Error('nextLessonDateTime is undefined');
+    await usersCourses.cancelNextLessonFromDB(studentId, course?.id as string, nextLessonDateTime, client);
+    for (let i = 0; i < otherStudentsIds.length; i++) {
+      await usersCourses.cancelNextLessonFromDB(otherStudentsIds[i], course?.id as string, nextLessonDateTime, client);
+    }    
+    nextLessonDateTime = await usersCourses.getNextLessonDateTimeForMentor(course, mentorId, client);    
+    expect(nextLessonDateTime).toBeNull();
+  });   
 
 
   // Add more tests for other functions: getNextLessonDateTime, getStudentsParticipating, isLessonCanceled, and isLessonCanceledByUser

@@ -329,7 +329,7 @@ export class UsersCourses {
     const courseType = course.type;
     const mentors = course.mentors as Array<CourseMentor>;
     const students = course.students as Array<CourseStudent>;
-    let startDate = moment.utc(course.startDateTime as string).toDate();
+    let courseStartDate = moment.utc(course.startDateTime as string).toDate();
     let nextLessonDateTime;
     let foundParticipatingStudents = false;
   
@@ -339,10 +339,10 @@ export class UsersCourses {
   
     while (!foundParticipatingStudents) {
       if (mentors.length === 1) {
-        nextLessonDateTime = await this.getNextLessonDateTime(startDate, courseType?.duration as number, mentorId, undefined, client);
+        nextLessonDateTime = await this.getNextLessonDateTime(courseStartDate, courseType?.duration as number, mentorId, undefined, client);
       } else if (mentors.length === 2) {
         const partnershipSchedule = await this.getMentorPartnershipScheduleFromDB(course.id as string, client);
-        nextLessonDateTime = await this.getNextLessonDateTime(startDate, courseType?.duration as number, mentorId, partnershipSchedule, client);
+        nextLessonDateTime = await this.getNextLessonDateTime(courseStartDate, courseType?.duration as number, mentorId, partnershipSchedule, client);
       }
   
       if (nextLessonDateTime) {
@@ -350,7 +350,7 @@ export class UsersCourses {
         if (studentsParticipating.length > 0) {
           foundParticipatingStudents = true;
         } else {
-          startDate = moment.utc(startDate).add(7, 'days').toDate();
+          await this.cancelNextLessonFromDB(mentorId, course?.id as string, moment.utc(nextLessonDateTime).format(constants.DATE_TIME_FORMAT), client);
         }
       } else {
         break;
@@ -360,33 +360,40 @@ export class UsersCourses {
     return nextLessonDateTime ? moment.utc(nextLessonDateTime).format(constants.DATE_TIME_FORMAT) : null;
   }
 
-  async getNextLessonDateTime(startDate: Date, courseDuration: number, userId: string, partnershipSchedule: Array<MentorPartnershipScheduleItem> | undefined, client: pg.PoolClient): Promise<Date | null> {
-    let nextLessonDateTime = moment.utc(startDate).toDate();
+  async getNextLessonDateTime(courseStartDate: Date, courseDuration: number, userId: string, partnershipSchedule: Array<MentorPartnershipScheduleItem> | undefined, client: pg.PoolClient): Promise<Date | null> {
+    // Calculate the course end date
+    let courseEndDate = moment.utc(courseStartDate).add(courseDuration, 'months').toDate();
+    courseEndDate = moment.utc(courseEndDate).add(3, 'days').toDate();
   
-    nextLessonDateTime = moment.utc(nextLessonDateTime).add(7, 'days').toDate();
-    console.log('nextLessonDateTime: ', nextLessonDateTime);
-    console.log('nextLessonDateTime + courseDuration: ', moment.utc(startDate).add(courseDuration, 'months').toDate());
-    if (nextLessonDateTime > moment.utc(startDate).add(courseDuration, 'months').toDate()) {
-      return null;
-    }
+    let nextLessonDateTime = moment.utc(courseStartDate).toDate();
   
-    if (partnershipSchedule) {
-      const nextScheduledLesson = partnershipSchedule.find(schedule => moment.utc(schedule.lessonDateTime).toDate() >= nextLessonDateTime && (schedule.mentor.id === userId || !schedule.mentor.id));
+    while (true) {
+      if (partnershipSchedule) {
+        const nextScheduledLesson = partnershipSchedule.find(schedule => moment.utc(schedule.lessonDateTime).toDate() >= nextLessonDateTime && (schedule.mentor.id === userId || !schedule.mentor.id));
   
-      if (nextScheduledLesson) {
-        nextLessonDateTime = moment.utc(nextScheduledLesson.lessonDateTime).toDate();
+        if (nextScheduledLesson) {
+          nextLessonDateTime = moment.utc(nextScheduledLesson.lessonDateTime).toDate();
+        } else {
+          return null;
+        }
+      }
+  
+      const isLessonCanceledByUser = await this.isLessonCanceledByUser(userId, nextLessonDateTime, client);
+  
+      // Check if nextLessonDateTime is after the course end date or not canceled by user and in the future
+      if (!isLessonCanceledByUser && nextLessonDateTime >= moment.utc().toDate() && nextLessonDateTime <= courseEndDate) {
+        return nextLessonDateTime;
       } else {
+        nextLessonDateTime = moment.utc(nextLessonDateTime).add(7, 'days').toDate();
+      }
+  
+      // If nextLessonDateTime is after the course end date, exit the loop and return null
+      if (nextLessonDateTime > courseEndDate) {
         return null;
       }
     }
-  
-    const isLessonCanceledByUser = await this.isLessonCanceledByUser(userId, nextLessonDateTime, client);
-    if (isLessonCanceledByUser || nextLessonDateTime < moment.utc().toDate()) {
-      return this.getNextLessonDateTime(nextLessonDateTime, courseDuration, userId, partnershipSchedule, client);
-    }
-  
-    return nextLessonDateTime;
   }
+  
   
   async getStudentsParticipating(courseId: string, lessonDateTime: string, client: pg.PoolClient): Promise<Array<CourseStudent>> {
     const result = await client.query<CourseStudent>(`
