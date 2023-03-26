@@ -371,7 +371,7 @@ export class UsersCourses {
     return courseEndDateTime;
   }
 
-  private async getNextLessonDatetimeSingleMentor(course: Course, userId: string, isMentor: boolean, client: pg.PoolClient): Promise<string | null> {
+  async getNextLessonDatetimeSingleMentor(course: Course, userId: string, isMentor: boolean, client: pg.PoolClient): Promise<string | null> {
     const courseEndDateTime = this.getCourseEndDateTime(course);
     const courseStartDate = moment.utc(course.startDateTime);
     const now = moment.utc();
@@ -403,7 +403,7 @@ export class UsersCourses {
     return null;
   }
 
-  private async getNextLessonDatetimeMentorsPartnership(course: Course, userId: string, isMentor: boolean, client: pg.PoolClient): Promise<string | null> {
+  async getNextLessonDatetimeMentorsPartnership(course: Course, userId: string, isMentor: boolean, client: pg.PoolClient): Promise<string | null> {
     const courseEndDateTime = this.getCourseEndDateTime(course);
     const now = moment.utc();
     let nextLessonDatetime: moment.Moment | null = null;
@@ -437,7 +437,7 @@ export class UsersCourses {
     return nextLessonDatetime ? nextLessonDatetime.toISOString() : null;
   }
 
-  private async isLessonCanceled(userId: string, courseId: string, lessonDatetime: string, client: pg.PoolClient): Promise<boolean> {
+  async isLessonCanceled(userId: string, courseId: string, lessonDatetime: string, client: pg.PoolClient): Promise<boolean> {
     const query = `
       SELECT COUNT(*) FROM users_courses_lessons_canceled
       WHERE user_id = $1 AND course_id = $2 AND lesson_date_time = $3;
@@ -448,7 +448,7 @@ export class UsersCourses {
     return parseInt(result.rows[0].count) > 0;
   }
 
-  private async hasAtLeastOneStudentParticipating(courseId: string, lessonDatetime: string, client: pg.PoolClient): Promise<boolean> {
+  async hasAtLeastOneStudentParticipating(courseId: string, lessonDatetime: string, client: pg.PoolClient): Promise<boolean> {
     const query = `
       SELECT student_id FROM users_courses_students
       WHERE course_id = $1

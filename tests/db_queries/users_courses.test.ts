@@ -1301,6 +1301,230 @@ describe('Next lesson datetime for student course functionality - ChatGPT', () =
     // Compare expected and actual values for the mentor
     expect(actualNextLessonDateTimeForMentor).toEqual(expectedNextLessonDateTime);
   });
+});
 
+
+describe('Next lesson datetime unit tests - ChatGPT', () => {
+
+  test(`Ensure that 'getCourseEndDateTime' returns the correct end date for a given course`, async () => {
+    let course = usersCoursesTestHelpers.getTestCourse();
+    const expectedCourseEndDateTime = moment
+      .utc(course.startDateTime)
+      .add(course.type!.duration, 'months')
+      .add(3, 'days')
+      .format(constants.DATE_TIME_FORMAT);
+    let actualCourseEndDateTime = usersCourses.getCourseEndDateTime(course);
+    actualCourseEndDateTime = moment.utc(actualCourseEndDateTime).format(constants.DATE_TIME_FORMAT);
+    expect(actualCourseEndDateTime).toEqual(expectedCourseEndDateTime);
+  });
+  
+  test(`Ensure that 'getNextLessonDatetime' returns the correct next lesson datetime for mentors and students`, async () => {
+    const isMentorArray = [true, false];
+  
+    for (const isMentor of isMentorArray) {
+      // Set up test data
+      let course = usersCoursesTestHelpers.getTestCourse();
+      course = await usersCoursesTestHelpers.addMentor(mentorId, course);
+      course = await usersCourses.addCourseFromDB(course, client);
+      course = await usersCoursesTestHelpers.addStudent(studentId, course);
+  
+      // Get the next lesson datetime
+      const userId = isMentor ? mentorId : studentId;
+      let actualNextLessonDatetime = await usersCourses.getNextLessonDatetime(course, userId, isMentor, client);
+      actualNextLessonDatetime = moment.utc(actualNextLessonDatetime).format(constants.DATE_TIME_FORMAT);
+  
+      // Calculate the expected next lesson datetime
+      const expectedNextLessonDatetime = moment
+        .utc(course.startDateTime)
+        .add(1, 'week')
+        .format(constants.DATE_TIME_FORMAT);
+  
+      // Compare expected and actual next lesson datetime
+      expect(actualNextLessonDatetime).toEqual(expectedNextLessonDatetime);
+    }
+  });
+
+  test(`Ensure that 'getNextLessonDatetime' returns null if the next lesson is after the end of the course`, async () => {
+    const isMentorArray = [true, false];
+  
+    for (const isMentor of isMentorArray) {
+      // Set up test data
+      let course = usersCoursesTestHelpers.getTestCourse();
+      course.type!.duration = 0; // Setting course duration to 0 months to force next lesson to be after the end of the course
+      course = await usersCoursesTestHelpers.addMentor(mentorId, course);
+      course = await usersCourses.addCourseFromDB(course, client);
+      course = await usersCoursesTestHelpers.addStudent(studentId, course);
+  
+      // Get the next lesson datetime
+      const userId = isMentor ? mentorId : studentId;
+      const actualNextLessonDatetime = await usersCourses.getNextLessonDatetime(course, userId, isMentor, client);
+  
+      // Expect next lesson datetime to be null
+      expect(actualNextLessonDatetime).toBeNull();
+    }
+  });
+  
+  test(`Ensure that the next lesson datetime calculation works correctly for a single-mentor course for both mentor and student`, async () => {
+    // Set up test data
+    let course = usersCoursesTestHelpers.getTestCourse();
+    course = await usersCoursesTestHelpers.addMentor(mentorId, course);
+    course = await usersCourses.addCourseFromDB(course, client);
+    course = await usersCoursesTestHelpers.addStudent(studentId, course);
+  
+    // Get the next lesson datetime for mentor
+    let nextLessonDateTimeMentor = await usersCourses.getNextLessonDatetimeSingleMentor(course, mentorId, true, client);
+    nextLessonDateTimeMentor = moment.utc(nextLessonDateTimeMentor).format(constants.DATE_TIME_FORMAT);
+  
+    // Get the next lesson datetime for student
+    let nextLessonDateTimeStudent = await usersCourses.getNextLessonDatetimeSingleMentor(course, studentId, false, client);
+    nextLessonDateTimeStudent = moment.utc(nextLessonDateTimeStudent).format(constants.DATE_TIME_FORMAT);
+  
+    // Calculate the expected next lesson datetime
+    const expectedNextLessonDateTime = moment
+      .utc(course.startDateTime)
+      .add(1, 'weeks')
+      .format(constants.DATE_TIME_FORMAT);
+  
+    // Compare expected and actual next lesson datetime for mentor and student
+    expect(nextLessonDateTimeMentor).toEqual(expectedNextLessonDateTime);
+    expect(nextLessonDateTimeStudent).toEqual(expectedNextLessonDateTime);
+  });
+
+  test(`Ensure that the function correctly finds the next lesson date/time for the first mentor in a partnership course`, async () => {
+    // Set up test data
+    let course = usersCoursesTestHelpers.getTestCourse();
+    course = await usersCoursesTestHelpers.addMentor(mentorId, course);
+    course = await usersCoursesTestHelpers.addMentor(partnerMentorId, course);
+    course = await usersCourses.addCourseFromDB(course, client);
+    course = await usersCoursesTestHelpers.addStudent(studentId, course);
+    await usersCourses.addMentorPartnershipSchedule(course, client);
+  
+    // Call the function
+    let nextLessonDatetime = await usersCourses.getNextLessonDatetimeMentorsPartnership(course, mentorId, true, client);
+    nextLessonDatetime = moment.utc(nextLessonDatetime).format(constants.DATE_TIME_FORMAT);
+  
+    // Calculate expected next lesson date/time
+    let expectedNextLessonDatetime = moment.utc(course.startDateTime).add(1, 'weeks').format(constants.DATE_TIME_FORMAT);
+    expectedNextLessonDatetime = moment.utc(expectedNextLessonDatetime).format(constants.DATE_TIME_FORMAT);
+  
+    // Compare expected and actual values
+    expect(nextLessonDatetime).toEqual(expectedNextLessonDatetime);
+  });
+
+  test(`Ensure that the function correctly finds the next lesson date/time for the second mentor in a partnership course`, async () => {
+    // Set up test data
+    let course = usersCoursesTestHelpers.getTestCourse();
+    course = await usersCoursesTestHelpers.addMentor(mentorId, course);
+    course = await usersCoursesTestHelpers.addMentor(partnerMentorId, course);
+    course = await usersCourses.addCourseFromDB(course, client);
+    course = await usersCoursesTestHelpers.addStudent(studentId, course);
+    await usersCourses.addMentorPartnershipSchedule(course, client);
+  
+    // Call the function
+    let nextLessonDatetime = await usersCourses.getNextLessonDatetimeMentorsPartnership(course, partnerMentorId, true, client);
+    nextLessonDatetime = moment.utc(nextLessonDatetime).format(constants.DATE_TIME_FORMAT);
+  
+    // Calculate expected next lesson date/time
+    let expectedNextLessonDatetime = moment.utc(course.startDateTime).add(7, 'weeks').format(constants.DATE_TIME_FORMAT);
+    expectedNextLessonDatetime = moment.utc(expectedNextLessonDatetime).format(constants.DATE_TIME_FORMAT);
+  
+    // Compare expected and actual values
+    expect(nextLessonDatetime).toEqual(expectedNextLessonDatetime);
+  });  
+
+  test(`Ensure that the function correctly finds the next lesson date/time for a student in a partnership course`, async () => {
+    // Set up test data
+    let course = usersCoursesTestHelpers.getTestCourse();
+    course = await usersCoursesTestHelpers.addMentor(mentorId, course);
+    course = await usersCoursesTestHelpers.addMentor(partnerMentorId, course);
+    course = await usersCourses.addCourseFromDB(course, client);
+    course = await usersCoursesTestHelpers.addStudent(studentId, course);
+    await usersCourses.addMentorPartnershipSchedule(course, client);
+  
+    // Call the function
+    let nextLessonDatetime = await usersCourses.getNextLessonDatetimeMentorsPartnership(course, studentId, false, client);
+    nextLessonDatetime = moment.utc(nextLessonDatetime).format(constants.DATE_TIME_FORMAT);
+  
+    // Calculate expected next lesson date/time
+    let expectedNextLessonDatetime = moment.utc(course.startDateTime).add(1, 'weeks').format(constants.DATE_TIME_FORMAT);
+    expectedNextLessonDatetime = moment.utc(expectedNextLessonDatetime).format(constants.DATE_TIME_FORMAT);
+  
+    // Compare expected and actual values
+    expect(nextLessonDatetime).toEqual(expectedNextLessonDatetime);
+  });
+
+  test(`Ensure that the function correctly skips a canceled lesson when finding the next lesson date/time for a mentor in a partnership course`, async () => {
+    // Set up test data
+    let course = usersCoursesTestHelpers.getTestCourse();
+    course = await usersCoursesTestHelpers.addMentor(mentorId, course);
+    course = await usersCoursesTestHelpers.addMentor(partnerMentorId, course);
+    course = await usersCourses.addCourseFromDB(course, client);
+    course = await usersCoursesTestHelpers.addStudent(studentId, course);
+    await usersCourses.addMentorPartnershipSchedule(course, client);
+  
+    // Calculate next lesson date/time for mentor
+    let nextLessonDateTime = await usersCourses.getNextLessonDatetimeMentorsPartnership(course, mentorId, true, client);
+    if (!nextLessonDateTime) throw new Error('nextLessonDateTime is undefined');
+  
+    // Cancel the next lesson
+    await usersCourses.cancelNextLessonFromDB(mentorId, course.id as string, nextLessonDateTime, client);
+  
+    // Calculate the next lesson date/time after canceling the current one
+    let actualNextLessonDateTime = await usersCourses.getNextLessonDatetimeMentorsPartnership(course, mentorId, true, client);
+    actualNextLessonDateTime = moment.utc(actualNextLessonDateTime).format(constants.DATE_TIME_FORMAT);
+  
+    // Calculate expected next lesson date/time after skipping the canceled lesson
+    const expectedNextLessonDateTime = moment
+      .utc(nextLessonDateTime)
+      .add(1, 'week')
+      .format(constants.DATE_TIME_FORMAT);
+  
+    // Compare expected and actual values
+    expect(actualNextLessonDateTime).toEqual(expectedNextLessonDateTime);
+  });
+
+  test('Ensure that the isLessonCanceled function correctly identifies if a lesson is canceled', async () => {
+    // Set up test data
+    let course = usersCoursesTestHelpers.getTestCourse();
+    course = await usersCoursesTestHelpers.addMentor(mentorId, course);
+    course = await usersCourses.addCourseFromDB(course, client);
+    course = await usersCoursesTestHelpers.addStudent(studentId, course);
+  
+    const lessonDateTime = moment.utc(course.startDateTime).add(1, 'weeks').format(constants.DATE_TIME_FORMAT);
+  
+    // Cancel the lesson
+    await usersCourses.cancelNextLessonFromDB(mentorId, course.id as string, lessonDateTime, client);
+  
+    // Call the isLessonCanceled function
+    const isCanceled = await usersCourses.isLessonCanceled(mentorId, course.id as string, lessonDateTime, client);
+  
+    // Check if the returned value matches the expected value
+    expect(isCanceled).toBeTruthy();
+  });
+  
+  test('Ensure that the hasAtLeastOneStudentParticipating function correctly identifies if at least one student is participating in a lesson', async () => {
+    // Set up test data
+    let course = usersCoursesTestHelpers.getTestCourse();
+    course = await usersCoursesTestHelpers.addMentor(mentorId, course);
+    course = await usersCourses.addCourseFromDB(course, client);
+    course = await usersCoursesTestHelpers.addStudent(studentId, course);
+  
+    const lessonDateTime = moment.utc(course.startDateTime).add(1, 'weeks').format(constants.DATE_TIME_FORMAT);
+  
+    // Call the hasAtLeastOneStudentParticipating function
+    const hasParticipatingStudent = await usersCourses.hasAtLeastOneStudentParticipating(course.id as string, lessonDateTime, client);
+  
+    // Check if the returned value matches the expected value
+    expect(hasParticipatingStudent).toBeTruthy();
+  
+    // Cancel the lesson for the student
+    await usersCourses.cancelNextLessonFromDB(studentId, course.id as string, lessonDateTime, client);
+  
+    // Call the hasAtLeastOneStudentParticipating function again
+    const hasParticipatingStudentAfterCancel = await usersCourses.hasAtLeastOneStudentParticipating(course.id as string, lessonDateTime, client);
+  
+    // Check if the returned value matches the expected value
+    expect(hasParticipatingStudentAfterCancel).toBeFalsy();
+  });  
 });
 
