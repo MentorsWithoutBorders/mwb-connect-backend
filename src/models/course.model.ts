@@ -10,5 +10,6 @@ export default interface Course {
   whatsAppGroupUrl?: string;
   notes?: string;
   startDateTime?: string;
+  hasStarted?: boolean;
   isCanceled?: boolean;
 }
