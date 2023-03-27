@@ -44,6 +44,7 @@ export class UsersCoursesTestHelpers {
       mentors: [],
       students: [],
       startDateTime: moment.utc(startDateTime).format(constants.DATE_TIME_FORMAT),
+      hasStarted: true
     };
     return course;
   }

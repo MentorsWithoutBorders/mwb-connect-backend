@@ -179,7 +179,7 @@ export class UsersCourses {
   }
 
   async getCourseById(courseId: string, client: pg.PoolClient): Promise<Course> {
-    const getCourseQuery = `SELECT uc.id, uc.start_date_time, uc.whatsapp_group_url, uc.notes, ct.duration, ct.is_with_partner, ct.index
+    const getCourseQuery = `SELECT uc.id, uc.start_date_time, uc.whatsapp_group_url, uc.notes, uc.has_started, ct.duration, ct.is_with_partner, ct.index
       FROM users_courses uc 
       JOIN course_types ct
         ON uc.course_type_id = ct.id
@@ -202,7 +202,8 @@ export class UsersCourses {
         mentors: mentors,
         students: students,
         whatsAppGroupUrl: rows[0].whatsapp_group_url,
-        notes: rows[0].notes
+        notes: rows[0].notes,
+        hasStarted: rows[0].has_started
       }
     }
     return course;
@@ -340,7 +341,7 @@ export class UsersCourses {
   }  
 
   async getNextLessonDatetime(course: Course, userId: string, isMentor: boolean, client: pg.PoolClient): Promise<string | null> {
-    if (!course || !course.mentors || course.mentors.length === 0) {
+    if (!course || !course.mentors || course.mentors.length === 0 || !course.hasStarted) {
       return null;
     }
 
@@ -529,8 +530,12 @@ export class UsersCourses {
         await this.addCourseStudent(courseId, student, client);
         course = await this.getCourseById(courseId, client);
         course = await this.updateCourseStartDateTime(course, client);
-        if (course.mentors && course.students && course.mentors.length > 1 && course.students.length >= minStudentsCourse) {
+        if (course.mentors && course.students && course.mentors.length > 1 && course.students.length >= minStudentsCourse && !course.hasStarted) {
           await this.addMentorPartnershipSchedule(course, client);
+        }
+        if (course.students && course.students.length >= minStudentsCourse) {
+          course.hasStarted = true;
+          await this.updateCourseHasStarted(courseId, course.hasStarted, client);
         }
       }
       response.status(200).json(course);
@@ -570,6 +575,11 @@ export class UsersCourses {
     course.startDateTime = moment.utc(courseStartDateTime).format(constants.DATE_TIME_FORMAT);
     return course;
   }
+
+  async updateCourseHasStarted(courseId: string, hasStarted: boolean, client: pg.PoolClient): Promise<void> {
+    const updateCourseHasStartedQuery = 'UPDATE users_courses SET has_started = $1 WHERE id = $2';
+    await client.query(updateCourseHasStartedQuery, [hasStarted, courseId]);
+  }  
 
   async addMentorPartnershipSchedule(course: Course, client: pg.PoolClient): Promise<void> {
     const getMentorPartnershipScheduleQuery = `SELECT course_id FROM users_courses_partnership_schedule WHERE course_id = $1`

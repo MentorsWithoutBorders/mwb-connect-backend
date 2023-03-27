@@ -183,6 +183,20 @@ describe('Next lesson datetime for single mentor course functionality', () => {
     nextLessonDateTime = await usersCourses.getNextLessonDateTimeForMentor(course, mentorId, client);    
     expect(nextLessonDateTime).toBeNull();
   });
+
+  test('getNextLessonDateTimeForMentor returns null if the course hasn\'t started', async () => {
+    let course = usersCoursesTestHelpers.getTestCourse();
+    course.hasStarted = false;
+    course = await usersCoursesTestHelpers.addMentor(mentorId, course);
+    course = await usersCourses.addCourseFromDB(course, client);
+    course = await usersCoursesTestHelpers.addStudent(studentId, course);
+    for (let i = 0; i < otherStudentsIds.length; i++) {
+      course = await usersCoursesTestHelpers.addStudent(otherStudentsIds[i], course);
+    }
+
+    let nextLessonDateTime = await usersCourses.getNextLessonDateTimeForMentor(course, mentorId, client);
+    expect(nextLessonDateTime).toBeNull();
+  });  
 });
 
 
