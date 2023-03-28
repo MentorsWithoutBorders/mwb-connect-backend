@@ -161,20 +161,25 @@ export class UsersCourses {
     let course: Course = {};
     let getCourseQuery;
     if (user.isMentor) {
-      getCourseQuery = `SELECT course_id FROM users_courses_mentors
-        WHERE mentor_id = $1 AND is_canceled IS DISTINCT FROM true`;
+      getCourseQuery = `SELECT uc.id FROM users_courses uc
+         JOIN users_courses_mentors ucm ON uc.id = ucm.course_id
+        WHERE ucm.mentor_id = $1
+          AND uc.is_canceled IS DISTINCT FROM true
+          AND ucm.is_canceled IS DISTINCT FROM true
+        ORDER BY uc.start_date_time DESC
+        LIMIT 1`;
     } else {
-      getCourseQuery = `SELECT course_id FROM users_courses_students
-        WHERE student_id = $1 AND is_canceled IS DISTINCT FROM true`;
+      getCourseQuery = `SELECT uc.id FROM users_courses uc
+         JOIN users_courses_students ucs ON uc.id = ucs.course_id
+        WHERE ucs.student_id = $1
+          AND uc.is_canceled IS DISTINCT FROM true
+          AND ucs.is_canceled IS DISTINCT FROM true
+        ORDER BY uc.start_date_time DESC
+        LIMIT 1`;
     }
     const { rows }: pg.QueryResult = await client.query(getCourseQuery, [userId]);
     if (rows && rows.length > 0) {
-      for (const row of rows) {
-        course = await this.getCourseById(row.course_id, client);
-        if (Object.keys(course).length > 0) {
-          break;
-        }
-      }
+      course = await this.getCourseById(rows[0].id, client);
     }
     return course;
   }
@@ -295,12 +300,16 @@ export class UsersCourses {
   
   async getNextLesson(request: Request, response: Response): Promise<void> {
     const userId = request.user.id as string;  
-    const courseId = request.params.id;  
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
       const user = await users.getUserFromDB(userId, client);
-      const nextLessonDateTime = await this.getNextLessonDateTimeForUserFromDB(userId, courseId, client);
+      const course = await this.getCurrentCourseFromDB(userId, client);
+      if (!course.id) {
+        response.status(200).json({});
+        return ;
+      }
+      const nextLessonDateTime = await this.getNextLessonDateTimeForUserFromDB(userId, course.id as string, client);
       if (nextLessonDateTime) {
         if (user.isMentor) {
           const nextLessonMentor: NextLessonMentor = {
@@ -308,7 +317,7 @@ export class UsersCourses {
           }
           response.status(200).json(nextLessonMentor);
         } else {
-          const mentor = await this.getMentorForNextLesson(courseId, nextLessonDateTime, client);
+          const mentor = await this.getMentorForNextLesson(course.id as string, nextLessonDateTime, client);
           const nextLessonStudent: NextLessonStudent = {
             mentor: mentor,
             lessonDateTime: nextLessonDateTime
@@ -316,7 +325,7 @@ export class UsersCourses {
           response.status(200).json(nextLessonStudent);
         }
       } else {
-        response.status(404).json({ message: 'No next lesson found.' });
+        response.status(200).json({});
       }
       await client.query('COMMIT');
     } catch (error) {
