@@ -169,7 +169,7 @@ app.post('/api/v1/quizzes', usersQuizzes.addQuiz);
 app.post('/api/v1/courses', usersCourses.getAvailableCourses);
 app.get('/api/v1/courses/fields', usersCourses.getAvailableCoursesFields);
 app.get('/api/v1/courses/current', usersCourses.getCurrentCourse);
-app.get('/api/v1/courses/:id/next_lesson_datetime', usersCourses.getNextLessonDateTimeForUser);
+app.get('/api/v1/courses/:id/next_lesson', usersCourses.getNextLesson);
 app.get('/api/v1/courses/:id/mentor_partnership_schedule', usersCourses.getMentorPartnershipSchedule);
 app.get('/api/v1/courses/:id/notes', usersCourses.getNotes);
 app.post('/api/v1/courses/add', usersCourses.addCourse);

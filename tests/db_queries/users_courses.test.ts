@@ -1542,3 +1542,42 @@ describe('Next lesson datetime unit tests - ChatGPT', () => {
   });  
 });
 
+
+describe('Mentor for student\'s next lesson unit tests - ChatGPT', () => {
+
+  test('getMentorForNextLesson returns null when nextLessonDateTime is not provided', async () => {
+    let course = usersCoursesTestHelpers.getTestCourse();
+    course = await usersCoursesTestHelpers.addMentor(mentorId, course);
+    course = await usersCourses.addCourseFromDB(course, client);
+    const nextLessonDateTime = null;
+  
+    const mentor = await usersCourses.getMentorForNextLesson(course.id as string, nextLessonDateTime, client);
+    expect(mentor).toBeNull();
+  });
+
+  test('getMentorForNextLesson returns the correct mentor when there is only one mentor for the course', async () => {
+    let course = usersCoursesTestHelpers.getTestCourse();
+    course = await usersCoursesTestHelpers.addMentor(mentorId, course);
+    course = await usersCourses.addCourseFromDB(course, client);
+  
+    const nextLessonDateTime = moment.utc(course.startDateTime).add(1, 'week').format(constants.DATE_TIME_FORMAT);
+    const mentor = await usersCourses.getMentorForNextLesson(course.id as string, nextLessonDateTime, client);
+  
+    expect(mentor).not.toBeNull();
+    expect(mentor?.id).toEqual(mentorId);
+  });
+
+  test('getMentorForNextLesson returns the correct mentor when there are two mentors for the course', async () => {
+    let course = usersCoursesTestHelpers.getTestCourse();
+    course = await usersCoursesTestHelpers.addMentor(mentorId, course);
+    course = await usersCoursesTestHelpers.addMentor(partnerMentorId, course);
+    course = await usersCourses.addCourseFromDB(course, client);
+    await usersCourses.addMentorPartnershipSchedule(course, client);
+  
+    const nextLessonDateTime = moment.utc(course.startDateTime).add(1, 'week').format(constants.DATE_TIME_FORMAT);
+    const mentor = await usersCourses.getMentorForNextLesson(course.id as string, nextLessonDateTime, client);
+  
+    expect(mentor).not.toBeNull();
+    expect(mentor?.id).toEqual(mentorId);
+  });  
+});
