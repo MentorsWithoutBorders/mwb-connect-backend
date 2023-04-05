@@ -304,16 +304,19 @@ export class UsersCourses {
     try {
       await client.query('BEGIN');
       const user = await users.getUserFromDB(userId, client);
-      const course = await this.getCurrentCourseFromDB(userId, client);
+			const course = await this.getCurrentCourseFromDB(userId, client);
       if (!course.id) {
-        response.status(200).json({});
+				response.status(200).json({});
         return ;
       }
       const nextLessonDateTime = await this.getNextLessonDateTimeForUserFromDB(userId, course.id as string, client);
       if (nextLessonDateTime) {
         if (user.isMentor) {
+					const students = await this.getCourseStudents(course.id as string, client);
+					const studentsWithNextLesson = await this.getStudentsWithNextLesson(students, course, nextLessonDateTime, client);
           const nextLessonMentor: NextLessonMentor = {
-            lessonDateTime: nextLessonDateTime
+            lessonDateTime: nextLessonDateTime,
+						students: studentsWithNextLesson
           }
           response.status(200).json(nextLessonMentor);
         } else {
@@ -336,20 +339,20 @@ export class UsersCourses {
     }
   }
 
-  async getNextLessonDateTimeForUserFromDB(userId: string, courseId: string, client: pg.PoolClient): Promise<string | null> {
-    const course = await this.getCourseById(courseId, client);
-
-    let nextLessonDateTime: string | null = null;
-
-    const user = await users.getUserFromDB(userId, client);
-    if (user.isMentor) {
-      nextLessonDateTime = await this.getNextLessonDateTimeForMentor(course, userId, client);
-    } else {
-      nextLessonDateTime = await this.getNextLessonDateTimeForStudent(course, userId, client);
-    }
-    return nextLessonDateTime;
-  }
-
+	async getStudentsWithNextLesson(students: Array<CourseStudent>, course: Course, nextLessonDateTime: string, client: pg.PoolClient) {
+		const cancellationStatuses = await Promise.all(
+			students.map(student =>
+				this.isLessonCanceled(student.id as string, course.id as string, nextLessonDateTime, client)
+			)
+		);
+	
+		const studentsWithNextLesson = students.filter(
+			(student, index) => !cancellationStatuses[index]
+		);
+	
+		return studentsWithNextLesson;
+	}
+	
   async getMentorForNextLesson(courseId: string, nextLessonDateTime: string | null, client: pg.PoolClient): Promise<CourseMentor | null> {
     let mentor: CourseMentor | null = null;
 		const course = await this.getCourseById(courseId, client);
@@ -398,6 +401,20 @@ export class UsersCourses {
 			}
 		}
     return mentor;
+  }	
+
+  async getNextLessonDateTimeForUserFromDB(userId: string, courseId: string, client: pg.PoolClient): Promise<string | null> {
+    const course = await this.getCourseById(courseId, client);
+
+    let nextLessonDateTime: string | null = null;
+
+    const user = await users.getUserFromDB(userId, client);
+    if (user.isMentor) {
+      nextLessonDateTime = await this.getNextLessonDateTimeForMentor(course, userId, client);
+    } else {
+      nextLessonDateTime = await this.getNextLessonDateTimeForStudent(course, userId, client);
+    }
+    return nextLessonDateTime;
   }
   
   async getNextLessonDateTimeForMentor(course: Course, mentorId: string, client: pg.PoolClient): Promise<string | null> {
@@ -790,6 +807,7 @@ export class UsersCourses {
     try {
       await client.query('BEGIN');
       const user = await users.getUserFromDB(userId, client);
+			const course = await this.getCurrentCourseFromDB(userId, client);
       let nextLessonDateTime = await this.getNextLessonDateTimeForUserFromDB(userId, courseId, client);
       if (nextLessonDateTime) {
         await this.cancelNextLessonFromDB(userId, courseId, nextLessonDateTime, client);
@@ -798,8 +816,11 @@ export class UsersCourses {
       }
       nextLessonDateTime = await this.getNextLessonDateTimeForUserFromDB(userId, courseId, client);
       if (user.isMentor) {
+				const students = await this.getCourseStudents(courseId, client);
+				const studentsWithNextLesson = await this.getStudentsWithNextLesson(students, course, nextLessonDateTime as string, client);
         const nextLessonMentor: NextLessonMentor = {
-          lessonDateTime: nextLessonDateTime
+          lessonDateTime: nextLessonDateTime,
+					students: studentsWithNextLesson
         }
         response.status(200).json(nextLessonMentor);
       } else {
