@@ -352,6 +352,7 @@ export class UsersCourses {
 
   async getMentorForNextLesson(courseId: string, nextLessonDateTime: string | null, client: pg.PoolClient): Promise<CourseMentor | null> {
     let mentor: CourseMentor | null = null;
+		const course = await this.getCourseById(courseId, client);
 
     // If the next lesson date/time is not provided, return null
     if (!nextLessonDateTime) {
@@ -389,6 +390,13 @@ export class UsersCourses {
         mentor = await users.getUserFromDB(mentorId, client);
       }
     }
+
+		if (mentor && course.mentors) {
+			const courseMentor = course.mentors.find((courseMentor) => courseMentor.id === mentor?.id);
+			if (courseMentor) {
+				mentor.meetingUrl = courseMentor.meetingUrl;
+			}
+		}
     return mentor;
   }
   
