@@ -526,7 +526,10 @@ export class UsersCourses {
   }
 
   async isLessonCanceled(userId: string, courseId: string, lessonDatetime: string, client: pg.PoolClient): Promise<boolean> {
-    const query = `
+		if (!lessonDatetime) {
+			return true;
+		}
+		const query = `
       SELECT COUNT(*) FROM users_courses_lessons_canceled
       WHERE user_id = $1 AND course_id = $2 AND lesson_date_time = $3;
     `;
