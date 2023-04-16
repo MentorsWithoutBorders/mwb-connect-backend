@@ -97,7 +97,7 @@ describe('Next lesson datetime for single mentor course functionality', () => {
       course = await usersCoursesTestHelpers.addStudent(otherStudentsIds[i], course);
     }
 
-    let nextLessonDateTime = await usersCourses.getNextLessonDateTimeForMentor(course, mentorId, client);
+    const nextLessonDateTime = await usersCourses.getNextLessonDateTimeForMentor(course, mentorId, client);
     expect(nextLessonDateTime).toBeNull();
   });
 
@@ -194,7 +194,7 @@ describe('Next lesson datetime for single mentor course functionality', () => {
       course = await usersCoursesTestHelpers.addStudent(otherStudentsIds[i], course);
     }
 
-    let nextLessonDateTime = await usersCourses.getNextLessonDateTimeForMentor(course, mentorId, client);
+    const nextLessonDateTime = await usersCourses.getNextLessonDateTimeForMentor(course, mentorId, client);
     expect(nextLessonDateTime).toBeNull();
   });  
 });
@@ -285,7 +285,7 @@ describe('Next lesson datetime for mentor partnership course functionality (firs
     }
     await usersCourses.addMentorPartnershipSchedule(course, client);
 
-    let nextLessonDateTime = await usersCourses.getNextLessonDateTimeForMentor(course, mentorId, client);
+    const nextLessonDateTime = await usersCourses.getNextLessonDateTimeForMentor(course, mentorId, client);
     expect(nextLessonDateTime).toBeNull();
   });
   
@@ -446,7 +446,7 @@ describe('Next lesson datetime for mentor partnership course functionality (seco
     }
     await usersCourses.addMentorPartnershipSchedule(course, client);
 
-    let nextLessonDateTime = await usersCourses.getNextLessonDateTimeForMentor(course, partnerMentorId, client);
+    const nextLessonDateTime = await usersCourses.getNextLessonDateTimeForMentor(course, partnerMentorId, client);
     expect(nextLessonDateTime).toBeNull();
   });
 
@@ -554,7 +554,7 @@ describe('Next lesson datetime for student course functionality', () => {
       course = await usersCoursesTestHelpers.addStudent(otherStudentsIds[i], course);
     }
 
-    let nextLessonDateTime = await usersCourses.getNextLessonDateTimeForStudent(course, studentId, client);
+    const nextLessonDateTime = await usersCourses.getNextLessonDateTimeForStudent(course, studentId, client);
     expect(nextLessonDateTime).toBeNull();
   });
   
@@ -672,7 +672,7 @@ describe('Next lesson datetime for mentor course functionality - ChatGPT', () =>
     }
 
     // Calculate next lesson date/time
-    let nextLessonDateTime = await usersCourses.getNextLessonDateTimeForMentor(course, mentorId, client);
+    const nextLessonDateTime = await usersCourses.getNextLessonDateTimeForMentor(course, mentorId, client);
     if (!nextLessonDateTime) throw new Error('nextLessonDateTime is undefined');
 
     // Cancel the next lesson
@@ -702,7 +702,7 @@ describe('Next lesson datetime for mentor course functionality - ChatGPT', () =>
     }
 
     // Calculate next lesson date/time
-    let nextLessonDateTime = await usersCourses.getNextLessonDateTimeForMentor(course, mentorId, client);
+    const nextLessonDateTime = await usersCourses.getNextLessonDateTimeForMentor(course, mentorId, client);
     if (!nextLessonDateTime) throw new Error('nextLessonDateTime is undefined');
 
     // Cancel the next lesson for the first student
@@ -895,7 +895,7 @@ describe('Next lesson datetime for mentor course functionality - ChatGPT', () =>
   
     // Cancel the next 3 lessons
     for (let i = 1; i <= 3; i++) {
-      let canceledLessonDateTime = moment
+      const canceledLessonDateTime = moment
         .utc(course.startDateTime)
         .add(i, 'week')
         .format(constants.DATE_TIME_FORMAT);
@@ -930,7 +930,7 @@ describe('Next lesson datetime for second mentor in partnership course functiona
     }
     await usersCourses.addMentorPartnershipSchedule(course, client);
   
-    let nextLessonDateTime = await usersCourses.getNextLessonDateTimeForMentor(course, partnerMentorId, client);
+    const nextLessonDateTime = await usersCourses.getNextLessonDateTimeForMentor(course, partnerMentorId, client);
     expect(nextLessonDateTime).toEqual(moment.utc(course.startDateTime).add(13, 'week').format(constants.DATE_TIME_FORMAT));
   });
   
@@ -947,7 +947,7 @@ describe('Next lesson datetime for second mentor in partnership course functiona
     }
     await usersCourses.addMentorPartnershipSchedule(course, client);
   
-    let nextLessonDateTime = await usersCourses.getNextLessonDateTimeForMentor(course, partnerMentorId, client);
+    const nextLessonDateTime = await usersCourses.getNextLessonDateTimeForMentor(course, partnerMentorId, client);
     expect(nextLessonDateTime).toEqual(moment.utc(course.startDateTime).add(16, 'week').format(constants.DATE_TIME_FORMAT));
   });
   
@@ -1001,14 +1001,14 @@ describe('Next lesson datetime for second mentor in partnership course functiona
     await usersCourses.addMentorPartnershipSchedule(course, client);
   
     // Cancel a lesson for the first mentor
-    let firstMentorLessonDateTime = moment.utc(course.startDateTime).add(1, 'week').format(constants.DATE_TIME_FORMAT);
+    const firstMentorLessonDateTime = moment.utc(course.startDateTime).add(1, 'week').format(constants.DATE_TIME_FORMAT);
     await usersCourses.cancelNextLessonFromDB(mentorId, course.id as string, firstMentorLessonDateTime, client);
   
     // Cancel a lesson for the second mentor
-    let secondMentorLessonDateTime = moment.utc(course.startDateTime).add(7, 'week').format(constants.DATE_TIME_FORMAT);
+    const secondMentorLessonDateTime = moment.utc(course.startDateTime).add(7, 'week').format(constants.DATE_TIME_FORMAT);
     await usersCourses.cancelNextLessonFromDB(partnerMentorId, course.id as string, secondMentorLessonDateTime, client);
   
-    let nextLessonDateTime = await usersCourses.getNextLessonDateTimeForMentor(course, partnerMentorId, client);
+    const nextLessonDateTime = await usersCourses.getNextLessonDateTimeForMentor(course, partnerMentorId, client);
     expect(nextLessonDateTime).toEqual(moment.utc(course.startDateTime).add(8, 'week').format(constants.DATE_TIME_FORMAT));
   });
 
@@ -1036,7 +1036,7 @@ describe('Next lesson datetime for second mentor in partnership course functiona
       await usersCourses.updateMentorPartnershipScheduleFromDB(schedule, client);
     }
   
-    let nextLessonDateTime = await usersCourses.getNextLessonDateTimeForMentor(course, partnerMentorId, client);
+    const nextLessonDateTime = await usersCourses.getNextLessonDateTimeForMentor(course, partnerMentorId, client);
     expect(nextLessonDateTime).toEqual(moment.utc(course.startDateTime).add(1, 'week').format(constants.DATE_TIME_FORMAT));
   });
 
@@ -1056,7 +1056,7 @@ describe('Next lesson datetime for student course functionality - ChatGPT', () =
     }
   
     // Calculate next lesson date/time
-    let nextLessonDateTime = await usersCourses.getNextLessonDateTimeForMentor(course, mentorId, client);
+    const nextLessonDateTime = await usersCourses.getNextLessonDateTimeForMentor(course, mentorId, client);
     if (!nextLessonDateTime) throw new Error('nextLessonDateTime is undefined');
   
     // Cancel the next lesson for the mentor
@@ -1133,7 +1133,7 @@ describe('Next lesson datetime for student course functionality - ChatGPT', () =
     }
   
     // Calculate next lesson date/time
-    let nextLessonDateTime = await usersCourses.getNextLessonDateTimeForStudent(course, studentId, client);
+    const nextLessonDateTime = await usersCourses.getNextLessonDateTimeForStudent(course, studentId, client);
     if (!nextLessonDateTime) throw new Error('nextLessonDateTime is undefined');
   
     // Cancel the next lesson for the student
@@ -1191,7 +1191,7 @@ describe('Next lesson datetime for student course functionality - ChatGPT', () =
     }
   
     // Calculate next lesson date/time
-    let nextLessonDateTime = await usersCourses.getNextLessonDateTimeForStudent(course, studentId, client);
+    const nextLessonDateTime = await usersCourses.getNextLessonDateTimeForStudent(course, studentId, client);
     if (!nextLessonDateTime) throw new Error('nextLessonDateTime is undefined');
   
     // Cancel the next lesson
@@ -1321,7 +1321,7 @@ describe('Next lesson datetime for student course functionality - ChatGPT', () =
 describe('Next lesson datetime unit tests - ChatGPT', () => {
 
   test(`Ensure that 'getCourseEndDateTime' returns the correct end date for a given course`, async () => {
-    let course = usersCoursesTestHelpers.getTestCourse();
+    const course = usersCoursesTestHelpers.getTestCourse();
     const expectedCourseEndDateTime = moment
       .utc(course.startDateTime)
       .add(course.type!.duration, 'months')
@@ -1477,7 +1477,7 @@ describe('Next lesson datetime unit tests - ChatGPT', () => {
     await usersCourses.addMentorPartnershipSchedule(course, client);
   
     // Calculate next lesson date/time for mentor
-    let nextLessonDateTime = await usersCourses.getNextLessonDatetimeMentorsPartnership(course, mentorId, true, client);
+    const nextLessonDateTime = await usersCourses.getNextLessonDatetimeMentorsPartnership(course, mentorId, true, client);
     if (!nextLessonDateTime) throw new Error('nextLessonDateTime is undefined');
   
     // Cancel the next lesson

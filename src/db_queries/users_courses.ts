@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import pg, { Client } from 'pg';
+import pg from 'pg';
 import { createClient } from 'async-redis';
 import moment from 'moment';
 import 'moment-timezone';
@@ -62,7 +62,7 @@ export class UsersCourses {
       WHERE is_canceled IS DISTINCT FROM true
         AND now() < (uc.start_date_time + (INTERVAL '1 month' * ct.duration))`;
     const courseDuration = courseFilter?.courseType?.duration;
-    let values: Array<string> = [];
+    const values: Array<string> = [];
     if (courseDuration) {
       getCoursesQuery += ` AND ct.duration = $1`;
       values.push(courseDuration.toString());
@@ -100,7 +100,7 @@ export class UsersCourses {
       let mentor = mentors[0];
       mentor = JSON.parse(JSON.stringify(mentor));
       courseCombinedMentor.field = mentor.field || {};
-      courseCombinedMentor!.field.subfields = [];
+      courseCombinedMentor.field.subfields = [];
       for (const mentor of mentors) {
         if (mentor.field?.subfields && mentor.field.subfields.length > 0) {
           for (const subfield of mentor.field.subfields) {
@@ -269,7 +269,7 @@ export class UsersCourses {
   }
 
   async getMentorPartnershipScheduleFromDB(courseId: string, client: pg.PoolClient): Promise<Array<MentorPartnershipScheduleItem>> {
-    let getMentorPartnershipScheduleQuery = `SELECT id, mentor_id, lesson_date_time
+    const getMentorPartnershipScheduleQuery = `SELECT id, mentor_id, lesson_date_time
       FROM users_courses_partnership_schedule  
       WHERE course_id = $1
         AND lesson_date_time >= CURRENT_DATE
@@ -362,19 +362,11 @@ export class UsersCourses {
       return null;
     }
 
-    // Find the mentors of the course
-    const { rows: mentors } = await client.query(
-      `
-      SELECT ucm.mentor_id
-      FROM users_courses_mentors ucm
-      WHERE ucm.course_id = $1
-      `,
-      [courseId]
-    );
+		const mentors = course.mentors as Array<CourseMentor>;
 
     // If there is only one mentor, return that mentor
     if (mentors.length === 1) {
-      mentor = await users.getUserFromDB(mentors[0].mentor_id, client);
+      mentor = mentors[0];
     }
 
     // If there are two mentors, find the mentor for the next lesson
@@ -390,12 +382,12 @@ export class UsersCourses {
 
       if (partnershipSchedule.length === 1) {
         const mentorId = partnershipSchedule[0].mentor_id;
-        mentor = await users.getUserFromDB(mentorId, client);
+				mentor = mentors.find((mentor) => mentor.id === mentorId) as CourseMentor;
       }
     }
 
-		if (mentor && course.mentors) {
-			const courseMentor = course.mentors.find((courseMentor) => courseMentor.id === mentor?.id);
+		if (mentor) {
+			const courseMentor = mentors.find((courseMentor) => courseMentor.id === mentor?.id);
 			if (courseMentor) {
 				mentor.meetingUrl = courseMentor.meetingUrl;
 			}
@@ -425,7 +417,7 @@ export class UsersCourses {
   async getNextLessonDateTimeForStudent(course: Course, studentId: string, client: pg.PoolClient): Promise<string | null> {
     const nextLessonDateTime = await this.getNextLessonDatetime(course, studentId, false, client);
     return nextLessonDateTime;
-  }  
+  } 
 
   async getNextLessonDatetime(course: Course, userId: string, isMentor: boolean, client: pg.PoolClient): Promise<string | null> {
     if (!course || !course.mentors || course.mentors.length === 0 || !course.hasStarted) {
@@ -463,7 +455,7 @@ export class UsersCourses {
     const courseEndDateTime = this.getCourseEndDateTime(course);
     const courseStartDate = moment.utc(course.startDateTime);
     const now = moment.utc();
-    let nextLessonDatetime = courseStartDate.clone();
+    const nextLessonDatetime = courseStartDate.clone();
   
     while (nextLessonDatetime.isBefore(now) || nextLessonDatetime.isSame(now)) {
       nextLessonDatetime.add(1, 'week');
@@ -674,7 +666,7 @@ export class UsersCourses {
   async addMentorPartnershipSchedule(course: Course, client: pg.PoolClient): Promise<void> {
     const getMentorPartnershipScheduleQuery = `SELECT course_id FROM users_courses_partnership_schedule WHERE course_id = $1`
     const { rows }: pg.QueryResult = await client.query(getMentorPartnershipScheduleQuery, [course.id]);    
-    let lessonDateTime = moment.utc(course.startDateTime);
+    const lessonDateTime = moment.utc(course.startDateTime);
     if (rows.length == 0 && course.type && course.type.duration && course.mentors && course.mentors.length > 1) {
       while (lessonDateTime.isBefore(moment.utc(course.startDateTime).add(course.type.duration, 'months').add(3, 'days'))) {
         const insertLessonDateTimeQuery = `INSERT INTO users_courses_partnership_schedule (course_id, mentor_id, lesson_date_time)
@@ -732,7 +724,7 @@ export class UsersCourses {
     try {
       await client.query('BEGIN');
       await client.query(constants.READ_ONLY_TRANSACTION);
-      let getNotesQuery = `SELECT notes FROM users_courses WHERE id = $1`;
+      const getNotesQuery = `SELECT notes FROM users_courses WHERE id = $1`;
       const { rows }: pg.QueryResult = await client.query(getNotesQuery, [courseId]);
       const course: Course = {};
       if (rows && rows[0]) {
