@@ -292,11 +292,11 @@ export class UsersCourses {
           mentor: mentor,
           lessonDateTime: moment.utc(row.lesson_date_time).format(constants.DATE_TIME_FORMAT)
         }
-				const hasMentorParticipating = await this.hasMentorParticipating(courseId, row.lesson_date_time, client);
-				const hasAtLeastOneStudentParticipating = await this.hasAtLeastOneStudentParticipating(courseId, row.lesson_date_time, client);
-				if (hasMentorParticipating && hasAtLeastOneStudentParticipating) {
+				// const hasMentorParticipating = await this.hasMentorParticipating(courseId, row.lesson_date_time, client);
+				// const hasAtLeastOneStudentParticipating = await this.hasAtLeastOneStudentParticipating(courseId, row.lesson_date_time, client);
+				// if (hasMentorParticipating && hasAtLeastOneStudentParticipating) {
         	mentorPartnershipSchedule.push(mentorPartnershipScheduleItem);
-				}
+				// }
       }
     }
     return mentorPartnershipSchedule;
