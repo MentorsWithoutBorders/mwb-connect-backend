@@ -292,29 +292,15 @@ export class UsersCourses {
           mentor: mentor,
           lessonDateTime: moment.utc(row.lesson_date_time).format(constants.DATE_TIME_FORMAT)
         }
-				const hasMentorParticipating = await this.hasMentorParticipating(courseId, row.lesson_date_time, client);
+				const isLessonCanceled = await this.isLessonCanceled(mentor.id as string, courseId, row.lesson_date_time, client);
 				const hasAtLeastOneStudentParticipating = await this.hasAtLeastOneStudentParticipating(courseId, row.lesson_date_time, client);
-				if (hasMentorParticipating && hasAtLeastOneStudentParticipating) {
+				if (!isLessonCanceled && hasAtLeastOneStudentParticipating) {
         	mentorPartnershipSchedule.push(mentorPartnershipScheduleItem);
 				}
       }
     }
     return mentorPartnershipSchedule;
   }
-
-  async hasMentorParticipating(courseId: string, lessonDatetime: string, client: pg.PoolClient): Promise<boolean> {
-    const query = `
-      SELECT mentor_id FROM users_courses_mentors
-      WHERE course_id = $1
-      EXCEPT
-      SELECT user_id FROM users_courses_lessons_canceled
-      WHERE course_id = $1 AND lesson_date_time = $2;
-    `;
-    const values = [courseId, moment.utc(lessonDatetime).format()];
-    const result = await client.query(query, values);
-
-    return result.rows.length > 0;
-  }	
   
   async getNextLesson(request: Request, response: Response): Promise<void> {
     const userId = request.user.id as string;  
