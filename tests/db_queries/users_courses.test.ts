@@ -226,7 +226,7 @@ describe('Next lesson datetime for mentor partnership course functionality (firs
       course = await usersCoursesTestHelpers.addStudent(otherStudentsIds[i], course);
     }
     await usersCourses.addMentorPartnershipSchedule(course, client);
-    const mentorPartnershipSchedule = await usersCourses.getMentorPartnershipScheduleFromDB(course.id as string, client);
+    const mentorPartnershipSchedule = await usersCourses.getMentorPartnershipScheduleFromDB(mentorId, course.id as string, client);
     mentorPartnershipSchedule[0].mentor.id = partnerMentorId;
     await usersCourses.updateMentorPartnershipScheduleFromDB(mentorPartnershipSchedule[0], client);
 
@@ -300,7 +300,7 @@ describe('Next lesson datetime for mentor partnership course functionality (firs
       course = await usersCoursesTestHelpers.addStudent(otherStudentsIds[i], course);
     }
     await usersCourses.addMentorPartnershipSchedule(course, client);
-    const mentorPartnershipSchedule = await usersCourses.getMentorPartnershipScheduleFromDB(course.id as string, client);
+    const mentorPartnershipSchedule = await usersCourses.getMentorPartnershipScheduleFromDB(mentorId, course.id as string, client);
     mentorPartnershipSchedule[0].mentor.id = mentorId;
     await usersCourses.updateMentorPartnershipScheduleFromDB(mentorPartnershipSchedule[0], client);    
 
@@ -387,7 +387,7 @@ describe('Next lesson datetime for mentor partnership course functionality (seco
       course = await usersCoursesTestHelpers.addStudent(otherStudentsIds[i], course);
     }
     await usersCourses.addMentorPartnershipSchedule(course, client);
-    const mentorPartnershipSchedule = await usersCourses.getMentorPartnershipScheduleFromDB(course.id as string, client);
+    const mentorPartnershipSchedule = await usersCourses.getMentorPartnershipScheduleFromDB(mentorId, course.id as string, client);
     mentorPartnershipSchedule[6].mentor.id = mentorId;
     await usersCourses.updateMentorPartnershipScheduleFromDB(mentorPartnershipSchedule[6], client);
 
@@ -796,7 +796,7 @@ describe('Next lesson datetime for mentor course functionality - ChatGPT', () =>
       course = await usersCoursesTestHelpers.addStudent(studentId, course);
       if (hasPartner) {
         await usersCourses.addMentorPartnershipSchedule(course, client);
-        const mentorPartnershipSchedule = await usersCourses.getMentorPartnershipScheduleFromDB(course.id as string, client);
+        const mentorPartnershipSchedule = await usersCourses.getMentorPartnershipScheduleFromDB(mentorId, course.id as string, client);
         mentorPartnershipSchedule[0].mentor.id = mentorId;
         await usersCourses.updateMentorPartnershipScheduleFromDB(mentorPartnershipSchedule[0], client);  
       }
@@ -1024,7 +1024,7 @@ describe('Next lesson datetime for second mentor in partnership course functiona
     await usersCourses.addMentorPartnershipSchedule(course, client);
   
     // Change partnership schedule
-    const mentorPartnershipSchedule = await usersCourses.getMentorPartnershipScheduleFromDB(course.id as string, client);
+    const mentorPartnershipSchedule = await usersCourses.getMentorPartnershipScheduleFromDB(mentorId, course.id as string, client);
     const updatedSchedule = mentorPartnershipSchedule.map((schedule, index) => {
       if (index % 2 === 0) {
         return { ...schedule, mentor: { ...schedule.mentor, id: partnerMentorId } };
