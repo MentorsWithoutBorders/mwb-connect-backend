@@ -253,12 +253,11 @@ export class UsersCourses {
   }
 
   async getMentorPartnershipSchedule(request: Request, response: Response): Promise<void> {
-		const userId = request.user.id as string;
     const courseId = request.params.id;  
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
-      const mentorPartnershipSchedule = await this.getMentorPartnershipScheduleFromDB(userId, courseId, client);
+      const mentorPartnershipSchedule = await this.getMentorPartnershipScheduleFromDB(courseId, client);
       response.status(200).json(mentorPartnershipSchedule);
       await client.query('COMMIT');
     } catch (error) {
@@ -269,7 +268,7 @@ export class UsersCourses {
     }
   }
 
-  async getMentorPartnershipScheduleFromDB(userId: string, courseId: string, client: pg.PoolClient): Promise<Array<MentorPartnershipScheduleItem>> {
+  async getMentorPartnershipScheduleFromDB(courseId: string, client: pg.PoolClient): Promise<Array<MentorPartnershipScheduleItem>> {
     const getMentorPartnershipScheduleQuery = `SELECT id, mentor_id, lesson_date_time
       FROM users_courses_partnership_schedule  
       WHERE course_id = $1
@@ -293,7 +292,7 @@ export class UsersCourses {
           mentor: mentor,
           lessonDateTime: moment.utc(row.lesson_date_time).format(constants.DATE_TIME_FORMAT)
         }
-				const isLessonCanceled = await this.isLessonCanceled(userId, courseId, row.lesson_date_time, client);
+				const isLessonCanceled = await this.isLessonCanceled(mentor.id as string, courseId, row.lesson_date_time, client);
 				const hasAtLeastOneStudentParticipating = await this.hasAtLeastOneStudentParticipating(courseId, row.lesson_date_time, client);
 				if (!isLessonCanceled && hasAtLeastOneStudentParticipating) {
         	mentorPartnershipSchedule.push(mentorPartnershipScheduleItem);
@@ -493,7 +492,7 @@ export class UsersCourses {
     const now = moment.utc();
     let nextLessonDatetime: moment.Moment | null = null;
   
-    const partnershipSchedule = await this.getMentorPartnershipScheduleFromDB(userId, course.id as string, client);
+    const partnershipSchedule = await this.getMentorPartnershipScheduleFromDB(course.id as string, client);
   
     for (const scheduleItem of partnershipSchedule) {
       const lessonDatetime = moment.utc(scheduleItem.lessonDateTime);
