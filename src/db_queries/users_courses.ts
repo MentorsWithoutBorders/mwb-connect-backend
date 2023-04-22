@@ -432,7 +432,7 @@ export class UsersCourses {
 
     let nextLessonDatetime: string | null;
     if (course.mentors.length === 1) {
-      nextLessonDatetime = await this.getNextLessonDatetimeSingleMentor(course, userId,isMentor, client);
+      nextLessonDatetime = await this.getNextLessonDatetimeSingleMentor(course, userId, isMentor, client);
     } else {
       nextLessonDatetime = await this.getNextLessonDatetimeMentorsPartnership(course, userId, isMentor, client);
     }
@@ -538,10 +538,11 @@ export class UsersCourses {
   async hasAtLeastOneStudentParticipating(courseId: string, lessonDatetime: string, client: pg.PoolClient): Promise<boolean> {
     const query = `
       SELECT student_id FROM users_courses_students
-      WHERE course_id = $1
+      	WHERE course_id = $1 
+				AND is_canceled IS DISTINCT FROM true
       EXCEPT
       SELECT user_id FROM users_courses_lessons_canceled
-      WHERE course_id = $1 AND lesson_date_time = $2;
+      	WHERE course_id = $1 AND lesson_date_time = $2;
     `;
     const values = [courseId, moment.utc(lessonDatetime).format()];
     const result = await client.query(query, values);
