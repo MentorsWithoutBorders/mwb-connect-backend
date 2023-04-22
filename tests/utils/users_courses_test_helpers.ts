@@ -36,7 +36,7 @@ export class UsersCoursesTestHelpers {
     const startDateTime = moment.utc();
     startDateTime.subtract(2, 'days');
     startDateTime.set({ hour: 10, minute: 0, second: 0, millisecond: 0 });
-    let course: Course = {
+    const course: Course = {
       type: {
         id: '67ccff8b-646e-4e0b-b425-e0ec19552ceb',
         duration: 3
