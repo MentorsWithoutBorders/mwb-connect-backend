@@ -477,7 +477,11 @@ export class UsersCourses {
             return lessonDateTimeStr;
           }
         } else {
-          return lessonDateTimeStr;
+					const courseMentors = course.mentors as Array<CourseMentor>;
+					const isLessonCanceledByMentor = await this.isLessonCanceled(courseMentors[0].id as string, course.id as string, lessonDateTimeStr, client);
+					if (!isLessonCanceledByMentor) {
+						return lessonDateTimeStr;
+					}
         }
       }
   
@@ -511,8 +515,11 @@ export class UsersCourses {
               }
             }
           } else {
-            nextLessonDatetime = lessonDatetime;
-            break;
+						const isLessonCanceledByMentor = await this.isLessonCanceled(scheduleItem.mentor.id as string, course.id as string, lessonDatetime.toISOString(), client);
+						if (!isLessonCanceledByMentor) {
+							nextLessonDatetime = lessonDatetime;
+							break;
+						}
           }
         }
       }
@@ -549,7 +556,7 @@ export class UsersCourses {
 
     return result.rows.length > 0;
   }
-  
+
   async addCourse(request: Request, response: Response): Promise<void> {
     const mentorId = request.user.id as string;
     const { type, mentors, startDateTime }: Course = request.body;

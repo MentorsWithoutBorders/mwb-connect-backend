@@ -67,7 +67,7 @@ export class Helpers {
   }
 
   getUserFirstName(user: User): string {
-    if (user.name != null) {
+    if (user?.name != null) {
       if (user?.name?.indexOf(' ') > 0) {
         return user?.name?.substring(0, user?.name?.indexOf(' '))
       } else {
