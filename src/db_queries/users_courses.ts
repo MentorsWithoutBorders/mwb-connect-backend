@@ -804,9 +804,10 @@ export class UsersCourses {
 		}		
     const canceledDateTime = moment.utc().format(constants.DATE_TIME_FORMAT);
     await client.query(cancelCourseUserQuery, [canceledDateTime, userId, courseId]);
-		mentors = await this.getCourseMentors(courseId, client);
-    const students = await this.getCourseStudents(courseId, client);
-		if (mentors.length == 0 || students.length == 0) {
+		const course = await this.getCourseById(courseId, client);
+		mentors = course.mentors as Array<CourseMentor>;
+    const students = course.students as Array<CourseStudent>;
+		if (course.hasStarted && (mentors.length == 0 || students.length == 0)) {
       const cancelCourseQuery = 'UPDATE users_courses SET is_canceled = true, canceled_date_time = $1 WHERE id = $2';
       await client.query(cancelCourseQuery, [canceledDateTime, courseId]);
     }
