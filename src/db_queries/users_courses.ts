@@ -807,7 +807,7 @@ export class UsersCourses {
 		const course = await this.getCourseById(courseId, client);
 		mentors = course.mentors as Array<CourseMentor>;
     const students = course.students as Array<CourseStudent>;
-		if (course.hasStarted && (mentors.length == 0 || students.length == 0)) {
+		if ((user.isMentor || course.hasStarted) && (mentors.length == 0 || students.length == 0)) {
       const cancelCourseQuery = 'UPDATE users_courses SET is_canceled = true, canceled_date_time = $1 WHERE id = $2';
       await client.query(cancelCourseQuery, [canceledDateTime, courseId]);
     }
