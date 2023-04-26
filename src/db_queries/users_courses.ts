@@ -185,7 +185,7 @@ export class UsersCourses {
   }
 
   async getCourseById(courseId: string, client: pg.PoolClient): Promise<Course> {
-    const getCourseQuery = `SELECT uc.id, uc.start_date_time, uc.whatsapp_group_url, uc.notes, uc.has_started, ct.duration, ct.is_with_partner, ct.index
+    const getCourseQuery = `SELECT uc.id, uc.start_date_time, uc.whatsapp_group_url, uc.notes, uc.has_started, uc.is_canceled, ct.duration, ct.is_with_partner, ct.index
       FROM users_courses uc 
       JOIN course_types ct
         ON uc.course_type_id = ct.id
@@ -209,7 +209,8 @@ export class UsersCourses {
         students: students,
         whatsAppGroupUrl: rows[0].whatsapp_group_url,
         notes: rows[0].notes,
-        hasStarted: rows[0].has_started
+        hasStarted: rows[0].has_started,
+				isCanceled: rows[0].is_canceled
       }
     }
     return course;
