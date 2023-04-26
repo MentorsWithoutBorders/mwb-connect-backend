@@ -826,10 +826,11 @@ export class UsersCourses {
       let nextLessonDateTime = await this.getNextLessonDateTimeForUserFromDB(userId, courseId, client);
       if (nextLessonDateTime) {
         await this.cancelNextLessonFromDB(userId, courseId, nextLessonDateTime, client);
-      } else {
-        await this.cancelCourseFromDB(userId, courseId, client);
       }
       nextLessonDateTime = await this.getNextLessonDateTimeForUserFromDB(userId, courseId, client);
+			if (!nextLessonDateTime) {
+				await this.cancelCourseFromDB(userId, courseId, client);
+			}
       if (user.isMentor) {
 				const students = await this.getCourseStudents(courseId, client);
 				const studentsWithNextLesson = await this.getStudentsWithNextLesson(students, course, nextLessonDateTime as string, client);
