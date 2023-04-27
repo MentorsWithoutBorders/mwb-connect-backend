@@ -49,7 +49,7 @@ export class MentorsWaitingRequests {
             OR mpr.is_rejected IS true AND EXTRACT(EPOCH FROM (now() - mpr.sent_date_time))/3600 > 168)
               OR mpr.id IS NULL)`;
       const courseDuration = courseType?.duration;
-      let values: Array<string> = [mentorId];
+      const values: Array<string> = [mentorId];
       if (courseDuration) {
         getMentorsWaitingRequestsQuery += ` AND ct.duration = $2`;
         values.push(courseDuration.toString());

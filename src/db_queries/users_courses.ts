@@ -163,17 +163,21 @@ export class UsersCourses {
     if (user.isMentor) {
       getCourseQuery = `SELECT uc.id FROM users_courses uc
          JOIN users_courses_mentors ucm ON uc.id = ucm.course_id
+				 JOIN course_types ct ON uc.course_type_id = ct.id
         WHERE ucm.mentor_id = $1
           AND uc.is_canceled IS DISTINCT FROM true
           AND ucm.is_canceled IS DISTINCT FROM true
+					AND current_timestamp <= (uc.start_date_time + interval '1 month' * ct.duration + interval '3 days')
         ORDER BY uc.start_date_time DESC
         LIMIT 1`;
     } else {
       getCourseQuery = `SELECT uc.id FROM users_courses uc
          JOIN users_courses_students ucs ON uc.id = ucs.course_id
+				 JOIN course_types ct ON uc.course_type_id = ct.id
         WHERE ucs.student_id = $1
           AND uc.is_canceled IS DISTINCT FROM true
           AND ucs.is_canceled IS DISTINCT FROM true
+					AND current_timestamp <= (uc.start_date_time + interval '1 month' * ct.duration + interval '3 days')
         ORDER BY uc.start_date_time DESC
         LIMIT 1`;
     }
@@ -436,6 +440,10 @@ export class UsersCourses {
       nextLessonDatetime = await this.getNextLessonDatetimeSingleMentor(course, userId, isMentor, client);
     } else {
       nextLessonDatetime = await this.getNextLessonDatetimeMentorsPartnership(course, userId, isMentor, client);
+			if (!nextLessonDatetime) {
+				const cancelCourseMentorQuery = 'UPDATE users_courses_mentors SET is_canceled = true WHERE mentor_id = $1 AND course_id = $2';
+				await client.query(cancelCourseMentorQuery, [userId, course.id]);
+			}
     }
 
     if (nextLessonDatetime && moment.utc(nextLessonDatetime).isAfter(moment.utc(courseEndDateTime))) {
@@ -798,17 +806,22 @@ export class UsersCourses {
       cancelCourseUserQuery = 'UPDATE users_courses_students SET is_canceled = true, canceled_date_time = $1 WHERE student_id = $2 AND course_id = $3';
     }
     let mentors = await this.getCourseMentors(courseId, client);
+		let isPartnerMentorCourseCanceled = false;
 		if (mentors.length == 2) {
 			const partnerMentor = mentors.find((mentor: CourseMentor) => mentor.id != userId);
 			const assignLessonsToPartnerMentorQuery = 'UPDATE users_courses_partnership_schedule SET mentor_id = $1 WHERE course_id = $2 AND mentor_id = $3 AND lesson_date_time > $4';
 			await client.query(assignLessonsToPartnerMentorQuery, [partnerMentor?.id, courseId, userId, moment.utc()]);
+			const nextLessonDateTime = await this.getNextLessonDateTimeForUserFromDB(partnerMentor?.id as string, courseId, client);
+			if (!nextLessonDateTime) {
+				isPartnerMentorCourseCanceled = true;
+			}
 		}		
     const canceledDateTime = moment.utc().format(constants.DATE_TIME_FORMAT);
     await client.query(cancelCourseUserQuery, [canceledDateTime, userId, courseId]);
 		const course = await this.getCourseById(courseId, client);
 		mentors = course.mentors as Array<CourseMentor>;
     const students = course.students as Array<CourseStudent>;
-		if ((user.isMentor || course.hasStarted) && (mentors.length == 0 || students.length == 0)) {
+		if ((user.isMentor || course.hasStarted) && (mentors.length == 0 || students.length == 0 || mentors.length == 1 && isPartnerMentorCourseCanceled)) {
       const cancelCourseQuery = 'UPDATE users_courses SET is_canceled = true, canceled_date_time = $1 WHERE id = $2';
       await client.query(cancelCourseQuery, [canceledDateTime, courseId]);
     }
