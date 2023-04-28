@@ -1,13 +1,17 @@
 import { Request, Response } from 'express';
 import pg from 'pg';
+import moment from 'moment';
 import { Conn } from '../db/conn';
+import { constants } from '../utils/constants';
 import { Helpers } from '../utils/helpers';
+import { UsersTimeZones } from './users_timezones';
 import { UsersSendEmails } from './users_send_emails';
 import NotificationsSettings from '../models/notifications_settings.model';
 
 const conn = new Conn();
 const pool = conn.pool;
 const helpers = new Helpers();
+const usersTimeZones = new UsersTimeZones();
 const usersSendEmails = new UsersSendEmails();
 
 export class UsersNotificationsSettings {
@@ -18,12 +22,14 @@ export class UsersNotificationsSettings {
   async getNotificationsSettings(request: Request, response: Response): Promise<void> {
     const userId = request.user.id as string;
     try {
-      const getNotificationsSettingsQuery = 'SELECT enabled, time FROM users_notifications_settings WHERE user_id = $1';
+      const getNotificationsSettingsQuery = 'SELECT training_reminders_enabled, training_reminders_time, start_course_reminders_enabled, start_course_reminders_date FROM users_notifications_settings WHERE user_id = $1';
       const { rows }: pg.QueryResult = await pool.query(getNotificationsSettingsQuery, [userId]);
-      const time = rows[0].time.substring(0, rows[0].time.lastIndexOf(':'));
+      const trainingRemindersTime = rows[0].training_reminders_time.substring(0, rows[0].training_reminders_time.lastIndexOf(':'));
       const notificationsSettings: NotificationsSettings = {
-        enabled: rows[0].enabled,
-        time: time
+        trainingRemindersEnabled: rows[0].training_reminders_enabled,
+        trainingRemindersTime: trainingRemindersTime,
+				startCourseRemindersEnabled: rows[0].start_course_reminders_enabled,
+				startCourseRemindersDate: rows[0].start_course_reminders_date ? moment.utc(rows[0].start_course_reminders_date).format(constants.DATE_TIME_FORMAT) : null
       }
       response.status(200).json(notificationsSettings);
     } catch (error) {
@@ -33,16 +39,23 @@ export class UsersNotificationsSettings {
 
   async updateNotificationsSettings(request: Request, response: Response): Promise<void> {
     const userId = request.user.id as string;
-    const { enabled, time }: NotificationsSettings = request.body
+    const { trainingRemindersEnabled, trainingRemindersTime, startCourseRemindersEnabled, startCourseRemindersDate }: NotificationsSettings = request.body
+		const client = await pool.connect();
     try {
+			await client.query('BEGIN');
       const updateNotificationsSettingsQuery = `UPDATE users_notifications_settings
-        SET enabled = $1, time = $2 WHERE user_id = $3`;
-      const values = [enabled, time, userId];
-      await pool.query(updateNotificationsSettingsQuery, values);
-      usersSendEmails.sendEmailNotificationsSettingsUpdate(userId, enabled);
+        SET training_reminders_enabled = $1, training_reminders_time = $2, start_course_reminders_enabled = $3, start_course_reminders_date = $4 WHERE user_id = $5`;
+			const userTimeZone = await usersTimeZones.getUserTimeZone(userId, client);
+      const values = [trainingRemindersEnabled, trainingRemindersTime, startCourseRemindersEnabled, moment.utc(startCourseRemindersDate).tz(userTimeZone.name).format(constants.DATE_FORMAT), userId];
+      await client.query(updateNotificationsSettingsQuery, values);
+      usersSendEmails.sendEmailNotificationsSettingsUpdate(userId, trainingRemindersEnabled);
       response.status(200).send(`Notifications settings have been updated for user: ${userId}`);
+			await client.query('COMMIT');
     } catch (error) {
       response.status(400).send(error);
+      await client.query('ROLLBACK');
+    } finally {
+      client.release();
     }
   }    
 }

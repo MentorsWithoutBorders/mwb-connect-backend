@@ -362,10 +362,10 @@ export class UsersBackgroundProcesses {
         ON u.id = uns.user_id
       JOIN users_timezones AS ut
         ON u.id = ut.user_id
-      WHERE uns.enabled = true
+      WHERE uns.training_reminders_enabled = true
         AND (date_trunc('day', now() AT TIME ZONE ut.name)::date - date_trunc('day', u.registered_on AT TIME ZONE ut.name)::date) % 7 = $1
         AND date_trunc('day', now() AT TIME ZONE ut.name)::date <> date_trunc('day', u.registered_on AT TIME ZONE ut.name)::date
-        AND date_trunc('day', now() AT TIME ZONE ut.name) + uns.time = date_trunc('minute', now() AT TIME ZONE ut.name);`;
+        AND date_trunc('day', now() AT TIME ZONE ut.name) + uns.training_reminders_time = date_trunc('minute', now() AT TIME ZONE ut.name);`;
     const { rows }: pg.QueryResult = await pool.query(getUsersForTrainingReminderQuery, [days]);
     for (const row of rows) {
       const client = await pool.connect();

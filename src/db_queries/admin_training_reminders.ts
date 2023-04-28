@@ -60,7 +60,7 @@ export class AdminTrainingReminders {
         ON atr.user_id = aau.assigned_user_id
       FULL OUTER JOIN admin_conversations ac
         ON atr.user_id = ac.user_id
-      WHERE uns.enabled IS true
+      WHERE uns.training_reminders_enabled IS true
         AND date_trunc('day', now())::date - date_trunc('day', atr.last_reminder_date_time)::date >= 2`;
     let values: Array<string> = [];
     if (!trainer.isAdmin) {
@@ -368,7 +368,7 @@ export class AdminTrainingReminders {
         ON u.id = aau.assigned_user_id
       FULL OUTER JOIN admin_conversations ac
         ON u.id = ac.user_id
-      WHERE uns.enabled IS true`;
+      WHERE uns.training_reminders_enabled IS true`;
     let values: Array<string> = [];
     if (!trainer.isAdmin) {
       getTrainingRemindersQuery += ' AND aau.trainer_id = $1';

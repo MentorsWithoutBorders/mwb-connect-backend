@@ -498,8 +498,8 @@ export class UsersSendEmails {
     this.sendEmail(emailAddress, email);  
   }
   
-  sendEmailNotificationsSettingsUpdate(userId: string, enabled: boolean): void {
-    const body = `User: ${userId} has updated the notifications settings to ${enabled}.`;
+  sendEmailNotificationsSettingsUpdate(userId: string, trainingRemindersEnabled: boolean): void {
+    const body = `User: ${userId} has updated the training reminders notifications to ${trainingRemindersEnabled}.`;
     const email: Email = {
       subject: 'Notifications settings update',
       body: body

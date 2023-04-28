@@ -78,9 +78,9 @@ export class Auth {
       ];
       ({ rows } = await client.query(createUserQuery, values));
       const userId: string = rows[0].id;
+      await usersTimeZones.addTimeZone(userId, timeZone as TimeZone, client);
       await this.setDefaultUserProfile(userId, approvedUser.isMentor as boolean, client);
       await usersAppFlags.addAppFlagsFromDB(userId, true, true, client);
-      await usersTimeZones.addTimeZone(userId, timeZone as TimeZone, client);
       if (!approvedUser.isMentor) {
         await usersGoals.addGoalToDB(userId, approvedUser.goal as string, client);
       }
@@ -96,16 +96,19 @@ export class Auth {
   }
 
   async setDefaultUserProfile(userId: string, isMentor: boolean, client: pg.PoolClient): Promise<void> {
-    const getDefaultUserQuery = 'SELECT lessons_availability_min_interval_in_days, lessons_availability_min_interval_unit, lessons_availability_max_students, notifications_enabled, notifications_time, is_available FROM user_default_profile';
+    const getDefaultUserQuery = 'SELECT lessons_availability_min_interval_in_days, lessons_availability_min_interval_unit, lessons_availability_max_students, training_reminders_notifications_enabled, training_reminders_notifications_time, start_course_reminders_notifications_enabled, is_available FROM user_default_profile';
     const { rows }: pg.QueryResult = await client.query(getDefaultUserQuery);
     const lessonsAvailability: LessonsAvailability = {
       minInterval: rows[0].lessons_availability_min_interval_in_days,
       minIntervalUnit: rows[0].lessons_availability_min_interval_unit,
       maxStudents: rows[0].lessons_availability_max_students
     };
+		const userTimeZone = await usersTimeZones.getUserTimeZone(userId, client);
     const notificationsSettings: NotificationsSettings = {
-      enabled: rows[0].notifications_enabled,
-      time: rows[0].notifications_time
+      trainingRemindersEnabled: rows[0].training_reminders_notifications_enabled,
+      trainingRemindersTime: rows[0].training_reminders_notifications_time,
+			startCourseRemindersEnabled: rows[0].start_course_reminders_notifications_enabled,
+			startCourseRemindersDate: moment.tz(userTimeZone.name).startOf('day').format(constants.DATE_FORMAT)
     }
     const defaultUser: User = {
       isAvailable: rows[0].is_available,
@@ -118,9 +121,11 @@ export class Auth {
         VALUES ($1, $2, $3, $4)`;
       await client.query(insertUserLessonsAvailabilityQuery, [userId, lessonsAvailability.minInterval, lessonsAvailability.minIntervalUnit, lessonsAvailability.maxStudents]);
     }
-    const insertNotificationsSettingsQuery = `INSERT INTO users_notifications_settings (user_id, enabled, time)
-      VALUES ($1, $2, $3)`;
-    await client.query(insertNotificationsSettingsQuery, [userId, notificationsSettings.enabled, notificationsSettings.time]);    
+		const startCourseRemindersEnabled = isMentor ? notificationsSettings.startCourseRemindersEnabled : null;
+		const startCourseRemindersDate = isMentor ? notificationsSettings.startCourseRemindersDate : null;
+    const insertNotificationsSettingsQuery = `INSERT INTO users_notifications_settings (user_id, training_reminders_enabled, training_reminders_time, start_course_reminders_enabled, start_course_reminders_date)
+      VALUES ($1, $2, $3, $4, $5)`;
+    await client.query(insertNotificationsSettingsQuery, [userId, notificationsSettings.trainingRemindersEnabled, notificationsSettings.trainingRemindersTime, startCourseRemindersEnabled, startCourseRemindersDate]);    
   }  
 
   async login(request: Request, response: Response): Promise<void> {
