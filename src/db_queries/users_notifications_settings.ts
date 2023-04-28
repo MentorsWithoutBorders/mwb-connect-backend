@@ -4,6 +4,7 @@ import moment from 'moment';
 import { Conn } from '../db/conn';
 import { constants } from '../utils/constants';
 import { Helpers } from '../utils/helpers';
+import { Users } from './users';
 import { UsersTimeZones } from './users_timezones';
 import { UsersSendEmails } from './users_send_emails';
 import NotificationsSettings from '../models/notifications_settings.model';
@@ -11,6 +12,7 @@ import NotificationsSettings from '../models/notifications_settings.model';
 const conn = new Conn();
 const pool = conn.pool;
 const helpers = new Helpers();
+const users = new Users();
 const usersTimeZones = new UsersTimeZones();
 const usersSendEmails = new UsersSendEmails();
 
@@ -45,8 +47,14 @@ export class UsersNotificationsSettings {
 			await client.query('BEGIN');
       const updateNotificationsSettingsQuery = `UPDATE users_notifications_settings
         SET training_reminders_enabled = $1, training_reminders_time = $2, start_course_reminders_enabled = $3, start_course_reminders_date = $4 WHERE user_id = $5`;
+			const user = await users.getUserFromDB(userId, client);
 			const userTimeZone = await usersTimeZones.getUserTimeZone(userId, client);
-      const values = [trainingRemindersEnabled, trainingRemindersTime, startCourseRemindersEnabled, moment.utc(startCourseRemindersDate).tz(userTimeZone.name).format(constants.DATE_FORMAT), userId];
+			let values = [];
+			if (user.isMentor) {
+				values = [trainingRemindersEnabled, trainingRemindersTime, startCourseRemindersEnabled, moment.utc(startCourseRemindersDate).tz(userTimeZone.name).format(constants.DATE_FORMAT), userId];
+			} else {
+				values = [trainingRemindersEnabled, trainingRemindersTime, null, null, userId];
+			}
       await client.query(updateNotificationsSettingsQuery, values);
       usersSendEmails.sendEmailNotificationsSettingsUpdate(userId, trainingRemindersEnabled);
       response.status(200).send(`Notifications settings have been updated for user: ${userId}`);
