@@ -617,7 +617,7 @@ export class UsersCourses {
       await client.query('BEGIN');
       const student = await users.getUserFromDB(studentId, client);
       let course = await this.getCourseById(courseId, client);
-			const shouldNotifyOtherStudents = !course.hasStarted;
+			let shouldNotifyOtherStudents = !course.hasStarted;
       const minStudentsCourse = constants.MIN_STUDENTS_COURSE;
       const maxStudentsCourse = constants.MAX_STUDENTS_COURSE;
       if (course.students && course.students.length >= maxStudentsCourse) {
@@ -635,6 +635,9 @@ export class UsersCourses {
           await this.updateCourseHasStarted(courseId, course.hasStarted, client);
         }
       }
+			if (!course.hasStarted) {
+				shouldNotifyOtherStudents = false;
+			}
       await client.query('COMMIT');
       response.status(200).json(course);
 			await usersPushNotifications.sendPNStudentAddedToCourse(student, course, shouldNotifyOtherStudents, client);

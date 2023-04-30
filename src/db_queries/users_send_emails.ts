@@ -206,7 +206,7 @@ export class UsersSendEmails {
 					let body = `The course will start on ${courseStartDate} at ${courseStartTime} ${userTimeZone.abbreviation}. Please see the details in the MWB Connect app.`;
 					body = this.setEmailBody(studentFirstName, body);
 					const email: Email = {
-						subject: 'Course can start',
+						subject: 'MWB course will start',
 						body: body
 					}
 					this.sendEmail(otherStudent.email as string, email);

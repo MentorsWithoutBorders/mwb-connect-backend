@@ -206,7 +206,7 @@ export class UsersPushNotifications {
 					const courseStartDate = moment.utc(course.startDateTime).tz(userTimeZone.name).format(constants.DATE_FORMAT_LESSON);
 					const courseStartTime = moment.utc(course.startDateTime).tz(userTimeZone.name).format(constants.TIME_FORMAT_LESSON);
 					const pushNotificationOtherStudents: PushNotification = {
-						title: 'Course can start',
+						title: 'Course will start',
 						body: `The course will start on ${courseStartDate} at ${courseStartTime} ${userTimeZone.abbreviation}`
 					}
 					this.sendPushNotification(otherStudent.id as string, pushNotificationOtherStudents);
