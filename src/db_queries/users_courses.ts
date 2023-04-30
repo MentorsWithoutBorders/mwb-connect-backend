@@ -623,6 +623,9 @@ export class UsersCourses {
       if (course.students && course.students.length >= maxStudentsCourse) {
         response.status(400).send({'message': `We're sorry, but there are already ${maxStudentsCourse} students in this course. Please join another course.`});
         return ;
+      } else if (course.isCanceled) {
+        response.status(400).send({'message': `We're sorry, but this course has been cancelled. Please join another course.`});
+        return ;
       } else {
         await this.addCourseStudent(courseId, student, client);
         course = await this.getCourseById(courseId, client);
