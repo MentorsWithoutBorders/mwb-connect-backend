@@ -184,17 +184,10 @@ export class UsersPushNotifications {
   }	
 
   async sendPNStudentAddedToCourse(student: CourseStudent, course: Course, shouldNotifyOtherStudents: boolean, client: pg.PoolClient): Promise<void> {
-    const mentorsSubfields = helpers.getMentorsSubfieldsNames(course.mentors);
-    const mentorsNames = helpers.getMentorsNames(course.mentors);
-    const pushNotificationStudent: PushNotification = {
-      title: 'Added to course',
-      body: `You have been added to the ${mentorsSubfields} course with ${mentorsNames}`
-    }
     const pushNotificationMentor: PushNotification = {
       title: 'Student added to course',
       body: `${student.name} from ${student.organization?.name} has joined your course`
     }    
-    // this.sendPushNotification(student.id as string, pushNotificationStudent);
     course?.mentors?.forEach(mentor => {
       this.sendPushNotification(mentor?.id as string, pushNotificationMentor);
     });
@@ -257,7 +250,7 @@ export class UsersPushNotifications {
   sendPNCourseCanceledByStudent(student: CourseStudent, course: Course): void {
 		const pushNotification: PushNotification = {
 			title: 'Student dropped out of the course',
-			body: `${student.name} from ${student.organization?.name} has has dropped out of the course`
+			body: `${student.name} from ${student.organization?.name} has dropped out of the course`
 		}
 		course?.mentors?.forEach(mentor => {
 			this.sendPushNotification(mentor?.id as string, pushNotification);

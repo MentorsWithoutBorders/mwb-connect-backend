@@ -174,11 +174,11 @@ export class MentorsPartnershipRequests {
         }
         course = await usersCourses.addCourseFromDB(course, client);
         await this.deleteMentorPartnershipRequest(mentorPartnershipRequestId, client);
+				usersPushNotifications.sendPNMentorPartnershipRequestAccepted(mentorPartnershipRequest);
+				usersSendEmails.sendEmailMentorPartnershipRequestAccepted(mentorPartnershipRequest);
       }
       await client.query('COMMIT');
       response.status(200).json(course);
-      usersPushNotifications.sendPNMentorPartnershipRequestAccepted(mentorPartnershipRequest);
-      usersSendEmails.sendEmailMentorPartnershipRequestAccepted(mentorPartnershipRequest);
     } catch (error) {
       await client.query('ROLLBACK');
       response.status(400).send(error);
