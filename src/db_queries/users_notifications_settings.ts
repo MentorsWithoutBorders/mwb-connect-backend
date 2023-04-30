@@ -24,10 +24,12 @@ export class UsersNotificationsSettings {
   async getNotificationsSettings(request: Request, response: Response): Promise<void> {
     const userId = request.user.id as string;
     try {
-      const getNotificationsSettingsQuery = 'SELECT training_reminders_enabled, training_reminders_time, start_course_reminders_enabled, start_course_reminders_date FROM users_notifications_settings WHERE user_id = $1';
+      const getNotificationsSettingsQuery = 'SELECT enabled, time, training_reminders_enabled, training_reminders_time, start_course_reminders_enabled, start_course_reminders_date FROM users_notifications_settings WHERE user_id = $1';
       const { rows }: pg.QueryResult = await pool.query(getNotificationsSettingsQuery, [userId]);
       const trainingRemindersTime = rows[0].training_reminders_time.substring(0, rows[0].training_reminders_time.lastIndexOf(':'));
       const notificationsSettings: NotificationsSettings = {
+				enabled: rows[0].enabled,
+				time: rows[0].time,
         trainingRemindersEnabled: rows[0].training_reminders_enabled,
         trainingRemindersTime: trainingRemindersTime,
 				startCourseRemindersEnabled: rows[0].start_course_reminders_enabled,
@@ -41,17 +43,17 @@ export class UsersNotificationsSettings {
 
   async updateNotificationsSettings(request: Request, response: Response): Promise<void> {
     const userId = request.user.id as string;
-    const { trainingRemindersEnabled, trainingRemindersTime, startCourseRemindersEnabled, startCourseRemindersDate }: NotificationsSettings = request.body
+    const { enabled, time, trainingRemindersEnabled, trainingRemindersTime, startCourseRemindersEnabled, startCourseRemindersDate }: NotificationsSettings = request.body
 		const client = await pool.connect();
     try {
 			await client.query('BEGIN');
       const updateNotificationsSettingsQuery = `UPDATE users_notifications_settings
-        SET training_reminders_enabled = $1, training_reminders_time = $2, start_course_reminders_enabled = $3, start_course_reminders_date = $4 WHERE user_id = $5`;
+        SET enabled = $1, time = $2, training_reminders_enabled = $3, training_reminders_time = $4, start_course_reminders_enabled = $5, start_course_reminders_date = $6 WHERE user_id = $7`;
 			const user = await users.getUserFromDB(userId, client);
 			const userTimeZone = await usersTimeZones.getUserTimeZone(userId, client);
 			let values = [];
 			if (user.isMentor) {
-				values = [trainingRemindersEnabled, trainingRemindersTime, startCourseRemindersEnabled, moment.utc(startCourseRemindersDate).tz(userTimeZone.name).format(constants.DATE_FORMAT), userId];
+				values = [enabled, time, trainingRemindersEnabled, trainingRemindersTime, startCourseRemindersEnabled, moment.utc(startCourseRemindersDate).tz(userTimeZone.name).format(constants.DATE_FORMAT), userId];
 			} else {
 				values = [trainingRemindersEnabled, trainingRemindersTime, null, null, userId];
 			}
