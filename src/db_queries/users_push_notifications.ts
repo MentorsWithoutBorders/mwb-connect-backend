@@ -194,7 +194,7 @@ export class UsersPushNotifications {
       title: 'Student added to course',
       body: `${student.name} from ${student.organization?.name} has joined your course`
     }    
-    this.sendPushNotification(student.id as string, pushNotificationStudent);
+    // this.sendPushNotification(student.id as string, pushNotificationStudent);
     course?.mentors?.forEach(mentor => {
       this.sendPushNotification(mentor?.id as string, pushNotificationMentor);
     });
