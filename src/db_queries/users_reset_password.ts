@@ -32,11 +32,11 @@ export class UsersResetPassword {
         const deleteResetPasswordQuery = 'DELETE FROM users_reset_password WHERE id = $1';
         await client.query(deleteResetPasswordQuery, [id]);        
       }
-      response.status(200).send({});
       await client.query('COMMIT');
+      response.status(200).send({});
     } catch (error) {
-      response.status(400).send(error);
       await client.query('ROLLBACK');
+      response.status(400).send(error);
     } finally {
       client.release();
     }
@@ -60,11 +60,11 @@ export class UsersResetPassword {
         ({ rows } = await client.query(insertResetPasswordQuery, values));
         usersSendEmails.sendEmailResetPassword(email, rows[0].id);
       }
-      response.status(200).send('Reset password data inserted');
       await client.query('COMMIT');
+      response.status(200).send('Reset password data inserted');
     } catch (error) {
-      response.status(400).send(error);
       await client.query('ROLLBACK');
+      response.status(400).send(error);
     } finally {
       client.release();
     }

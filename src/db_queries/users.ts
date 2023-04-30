@@ -33,7 +33,6 @@ export class Users {
   async getUsers(request: Request, response: Response): Promise<void> {
     const client = await pool.connect();
     try {
-      await client.query('BEGIN');
       await client.query(constants.READ_ONLY_TRANSACTION);
       const getUsersQuery = 'SELECT id, name, email, field_id, organization_id, is_mentor, is_available, available_from, registered_on FROM users ORDER BY id ASC';
       const { rows }: pg.QueryResult = await pool.query(getUsersQuery);
@@ -51,14 +50,12 @@ export class Users {
         }
       }
       response.status(200).json(users);
-      await client.query('COMMIT');
     } catch (error) {
       if (error instanceof ValidationError) {
         response.status(400).send({message: error.message});
       } else {
         response.status(500).send(error);
       }
-      await client.query('ROLLBACK');
     } finally {
       client.release();
     }
@@ -67,21 +64,18 @@ export class Users {
   async getUser(request: Request, response: Response): Promise<void> {
     const client = await pool.connect();
     try {
-      await client.query('BEGIN');
       await client.query(constants.READ_ONLY_TRANSACTION);
       const user = await this.getUserFromDB(request.user.id as string, client);
       if (user.isMentor) {
         user.lessonsAvailability = await this.getUserLessonsAvailability(request.user.id as string, client)        
       }
       response.status(200).json(user);
-      await client.query('COMMIT');
     } catch (error) {
       if (error instanceof ValidationError) {
         response.status(400).send({message: error.message});
       } else {
         response.status(500).send(error);
       }
-      await client.query('ROLLBACK');
     } finally {
       client.release();
     }
@@ -240,11 +234,11 @@ export class Users {
       const user = await this.getUserFromDB(userId, client);
       const server = process.env.SERVER as string;
       await redisClient.set(`user-${server}-${userId}`, JSON.stringify(user));
-      response.status(200).send(userId);
       await client.query('COMMIT');
+      response.status(200).send(userId);
     } catch (error) {
-      response.status(400).send(error);
       await client.query('ROLLBACK');
+      response.status(400).send(error);
     } finally {
       client.release();
     }
@@ -369,7 +363,7 @@ export class Users {
       const deleteLessonsCanceledQuery = 'DELETE FROM users_lessons_canceled WHERE user_id = $1';
       await client.query(deleteLessonsCanceledQuery, [id]);
       const deleteLessonsAvailabilitiesQuery = 'DELETE FROM users_lessons_availabilities WHERE user_id = $1';
-      await client.query(deleteLessonsAvailabilitiesQuery, [id]);
+      await client.query(deleteLessonsAvailabilitiesQuery, [id]);		
       if (user.isMentor) {
         const deleteLessonsQuery = 'DELETE FROM users_lessons WHERE mentor_id = $1';
         await client.query(deleteLessonsQuery, [id]);
@@ -377,9 +371,16 @@ export class Users {
         await client.query(deleteCoursesMentorsQuery, [id]);         
         const deleteMentorsWaitingRequestsQuery = 'DELETE FROM mentors_waiting_requests WHERE mentor_id = $1';
         await client.query(deleteMentorsWaitingRequestsQuery, [id]);
-        const deleteMentorsPartnershipRequestsQuery = 'DELETE FROM mentors_partnership_requests WHERE mentor_id = $1';
+        const deleteMentorsPartnershipRequestsQuery = 'DELETE FROM mentors_partnership_requests WHERE mentor_id = $1 OR partner_mentor_id = $1';
         await client.query(deleteMentorsPartnershipRequestsQuery, [id]);
-      }
+        const deleteCoursesPartnershipScheduleQuery = 'DELETE FROM users_courses_partnership_schedule WHERE mentor_id = $1';
+        await client.query(deleteCoursesPartnershipScheduleQuery, [id]);				
+      } else {
+        const deleteCoursesStudentsQuery = 'DELETE FROM users_courses_students WHERE student_id = $1';
+        await client.query(deleteCoursesStudentsQuery, [id]);
+			}
+      const deleteCoursesLessonsCanceledQuery = 'DELETE FROM users_courses_lessons_canceled WHERE user_id = $1';
+      await client.query(deleteCoursesLessonsCanceledQuery, [id]);			
       const deleteLessonRequestsQuery = 'DELETE FROM users_lesson_requests WHERE mentor_id = $1 OR student_id = $1';
       await client.query(deleteLessonRequestsQuery, [id]);
       const deleteGoalQuery = 'DELETE FROM users_goals WHERE user_id = $1';
@@ -411,11 +412,11 @@ export class Users {
       const deleteUserQuery = 'DELETE FROM users WHERE id = $1';
       await client.query(deleteUserQuery, [id]);
       await auth.revokeRefreshToken(id, client);
-      response.status(200).send(`User deleted with ID: ${id}`);
       await client.query('COMMIT');
+      response.status(200).send(`User deleted with ID: ${id}`);
     } catch (error) {
-      response.status(400).send(error);
       await client.query('ROLLBACK');
+      response.status(400).send(error);
     } finally {
       client.release();
     }

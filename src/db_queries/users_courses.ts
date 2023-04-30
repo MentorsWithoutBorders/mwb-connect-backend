@@ -8,6 +8,8 @@ import { constants } from '../utils/constants';
 import { Helpers } from '../utils/helpers';
 import { Users } from './users';
 import { UsersAvailableMentors } from './users_available_mentors';
+import { UsersPushNotifications } from './users_push_notifications';
+import { UsersSendEmails } from './users_send_emails';
 import Course from '../models/course.model';
 import CourseMentor from '../models/course_mentor.model';
 import CourseStudent from '../models/course_student.model';
@@ -29,6 +31,8 @@ const redisClient = createClient();
 const helpers = new Helpers();
 const users = new Users();
 const usersAvailableMentors = new UsersAvailableMentors();
+const usersPushNotifications = new UsersPushNotifications();
+const usersSendEmails = new UsersSendEmails();
 
 export class UsersCourses {
   constructor() {
@@ -43,11 +47,11 @@ export class UsersCourses {
       await client.query('BEGIN');
       let courses = await this.getAvailableCoursesFromDB(courseFilter, client);
       courses = this.getPaginatedCourses(courses, page);
-      response.status(200).json(courses);
       await client.query('COMMIT');
+      response.status(200).json(courses);
     } catch (error) {
-      response.status(400).send(error);
       await client.query('ROLLBACK');
+      response.status(400).send(error);
     } finally {
       client.release();
     }
@@ -144,13 +148,10 @@ export class UsersCourses {
     const userId = request.user.id as string;
     const client = await pool.connect();
     try {
-      await client.query('BEGIN');
       const course = await this.getCurrentCourseFromDB(userId, client);
       response.status(200).json(course);
-      await client.query('COMMIT');
     } catch (error) {
       response.status(400).send(error);
-      await client.query('ROLLBACK');
     } finally {
       client.release();
     }
@@ -261,13 +262,10 @@ export class UsersCourses {
     const courseId = request.params.id;  
     const client = await pool.connect();
     try {
-      await client.query('BEGIN');
       const mentorPartnershipSchedule = await this.getMentorPartnershipScheduleFromDB(courseId, client);
       response.status(200).json(mentorPartnershipSchedule);
-      await client.query('COMMIT');
     } catch (error) {
       response.status(400).send(error);
-      await client.query('ROLLBACK');
     } finally {
       client.release();
     }
@@ -311,7 +309,6 @@ export class UsersCourses {
     const userId = request.user.id as string;  
     const client = await pool.connect();
     try {
-      await client.query('BEGIN');
       const user = await users.getUserFromDB(userId, client);
 			const course = await this.getCurrentCourseFromDB(userId, client);
       if (!course.id) {
@@ -339,10 +336,8 @@ export class UsersCourses {
       } else {
         response.status(200).json({});
       }
-      await client.query('COMMIT');
     } catch (error) {
       response.status(400).send(error);
-      await client.query('ROLLBACK');
     } finally {
       client.release();
     }
@@ -582,11 +577,11 @@ export class UsersCourses {
         startDateTime: startDateTime
       }
       course = await this.addCourseFromDB(course, client);
-      response.status(200).json(course);
       await client.query('COMMIT');
+      response.status(200).json(course);
     } catch (error) {
-      response.status(400).send(error);
       await client.query('ROLLBACK');
+      response.status(400).send(error);
     } finally {
       client.release();
     }
@@ -620,10 +615,9 @@ export class UsersCourses {
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
-      const student: CourseStudent = {
-        id: studentId
-      }
+      const student = await users.getUserFromDB(studentId, client);
       let course = await this.getCourseById(courseId, client);
+			const shouldNotifyOtherStudents = !course.hasStarted;
       const minStudentsCourse = constants.MIN_STUDENTS_COURSE;
       const maxStudentsCourse = constants.MAX_STUDENTS_COURSE;
       if (course.students && course.students.length >= maxStudentsCourse) {
@@ -641,11 +635,13 @@ export class UsersCourses {
           await this.updateCourseHasStarted(courseId, course.hasStarted, client);
         }
       }
-      response.status(200).json(course);
       await client.query('COMMIT');
+      response.status(200).json(course);
+			await usersPushNotifications.sendPNStudentAddedToCourse(student, course, shouldNotifyOtherStudents, client);
+			await usersSendEmails.sendEmailStudentAddedToCourse(student, course, shouldNotifyOtherStudents, client);
     } catch (error) {
-      response.status(400).send(error);
       await client.query('ROLLBACK');
+      response.status(400).send(error);
     } finally {
       client.release();
     }
@@ -706,11 +702,11 @@ export class UsersCourses {
     try {
       await client.query('BEGIN');
       await this.updateMentorPartnershipScheduleFromDB(mentorPartnershipScheduleItem, client);
-      response.status(200).send(`Mentor partnership schedule item ${mentorPartnershipScheduleItem.id} was update successfully`);
       await client.query('COMMIT');
+      response.status(200).send(`Mentor partnership schedule item ${mentorPartnershipScheduleItem.id} was update successfully`);
     } catch (error) {
-      response.status(400).send(error);
       await client.query('ROLLBACK');
+      response.status(400).send(error);
     } finally {
       client.release();
     }
@@ -729,11 +725,11 @@ export class UsersCourses {
       await client.query('BEGIN');
       const setWhatsAppGroupUrlQuery = 'UPDATE users_courses SET whatsapp_group_url = $1 WHERE id = $2';
       await client.query(setWhatsAppGroupUrlQuery, [whatsAppGroupUrl, courseId]);
-      response.status(200).send(`WhatsApp group url for course ${courseId} was set successfully`);
       await client.query('COMMIT');
+      response.status(200).send(`WhatsApp group url for course ${courseId} was set successfully`);
     } catch (error) {
-      response.status(400).send(error);
       await client.query('ROLLBACK');
+      response.status(400).send(error);
     } finally {
       client.release();
     }
@@ -751,11 +747,11 @@ export class UsersCourses {
       if (rows && rows[0]) {
         course.notes = rows[0].notes;
       }
-      response.status(200).json(course);
       await client.query('COMMIT');
+      response.status(200).json(course);
     } catch (error) {
-      response.status(400).send(error);
       await client.query('ROLLBACK');
+      response.status(400).send(error);
     } finally {
       client.release();
     }
@@ -769,11 +765,11 @@ export class UsersCourses {
       await client.query('BEGIN');
       const updateNotesQuery = 'UPDATE users_courses SET notes = $1 WHERE id = $2';
       await client.query(updateNotesQuery, [notes, courseId]);
-      response.status(200).send(`Notes for course ${courseId} were updated successfully`);
       await client.query('COMMIT');
+      response.status(200).send(`Notes for course ${courseId} were updated successfully`);
     } catch (error) {
-      response.status(400).send(error);
       await client.query('ROLLBACK');
+      response.status(400).send(error);
     } finally {
       client.release();
     }    
@@ -786,12 +782,16 @@ export class UsersCourses {
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
+			const user = await users.getUserFromDB(userId, client);
+			const course = await this.getCourseById(courseId, client);
       await this.cancelCourseFromDB(userId, courseId, client);
-      response.status(200).send(`Course ${courseId} was canceled successfully for user ${userId}`);
       await client.query('COMMIT');
+      response.status(200).send(`Course ${courseId} was canceled successfully for user ${userId}`);
+			usersPushNotifications.sendPNCourseCanceled(user, course);
+			usersSendEmails.sendEmailCourseCanceled(user, course, text);
     } catch (error) {
-      response.status(400).send(error);
       await client.query('ROLLBACK');
+      response.status(400).send(error);
     } finally {
       client.release();
     }
@@ -837,6 +837,7 @@ export class UsersCourses {
       const user = await users.getUserFromDB(userId, client);
 			const course = await this.getCurrentCourseFromDB(userId, client);
       let nextLessonDateTime = await this.getNextLessonDateTimeForUserFromDB(userId, courseId, client);
+			const mentorForCancelNextLesson = await this.getMentorForNextLesson(courseId, nextLessonDateTime, client);
       if (nextLessonDateTime) {
         await this.cancelNextLessonFromDB(userId, courseId, nextLessonDateTime, client);
       }
@@ -851,19 +852,26 @@ export class UsersCourses {
           lessonDateTime: nextLessonDateTime,
 					students: studentsWithNextLesson
         }
+				await client.query('COMMIT');
         response.status(200).json(nextLessonMentor);
+				usersPushNotifications.sendPNNextLessonCanceledByMentor(course);
+				usersSendEmails.sendEmailNextLessonCanceledByMentor(course, text);				
       } else {
         const mentor = await this.getMentorForNextLesson(courseId, nextLessonDateTime, client);
         const nextLessonStudent: NextLessonStudent = {
           mentor: mentor,
           lessonDateTime: nextLessonDateTime
         }
+				await client.query('COMMIT');
         response.status(200).json(nextLessonStudent);
+				if (mentorForCancelNextLesson) {
+					usersPushNotifications.sendPNNextLessonCanceledByStudent(user, mentorForCancelNextLesson);
+					usersSendEmails.sendEmailNextLessonCanceledByStudent(user, mentorForCancelNextLesson, text);
+				}
       }
-      await client.query('COMMIT');
     } catch (error) {
-      response.status(400).send(error);
       await client.query('ROLLBACK');
+      response.status(400).send(error);
     } finally {
       client.release();
     }
@@ -900,11 +908,11 @@ export class UsersCourses {
       await client.query('BEGIN');
       const setMeetingUrlQuery = 'UPDATE users_courses_mentors SET meeting_url = $1 WHERE mentor_id = $2 AND course_id = $3';
       await client.query(setMeetingUrlQuery, [meetingUrl, userId, courseId]);
-      response.status(200).send(`Meeting url for course ${courseId} was updated successfully for user ${userId}`);
       await client.query('COMMIT');
+      response.status(200).send(`Meeting url for course ${courseId} was updated successfully for user ${userId}`);
     } catch (error) {
-      response.status(400).send(error);
       await client.query('ROLLBACK');
+      response.status(400).send(error);
     } finally {
       client.release();
     }
@@ -930,11 +938,11 @@ export class UsersCourses {
     try {
       await client.query('BEGIN');
       const fields = await this.getAvailableCoursesFieldsFromDB(client);
-      response.status(200).json(fields);
       await client.query('COMMIT');
+      response.status(200).json(fields);
     } catch (error) {
-      response.status(400).send(error);
       await client.query('ROLLBACK');
+      response.status(400).send(error);
     } finally {
       client.release();
     }

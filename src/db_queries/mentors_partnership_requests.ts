@@ -33,14 +33,11 @@ export class MentorsPartnershipRequests {
     const userId = request.user.id as string;
     const client = await pool.connect();
     try {
-      await client.query('BEGIN');
       await client.query(constants.READ_ONLY_TRANSACTION);
       const mentorPartnershipRequest = await this.getCurrentMentorPartnershipRequestFromDB(userId, undefined, client);
       response.status(200).json(mentorPartnershipRequest);
-      await client.query('COMMIT');
     } catch (error) {
       response.status(400).send(error);
-      await client.query('ROLLBACK');
     } finally {
       client.release();
     }
@@ -107,13 +104,13 @@ export class MentorsPartnershipRequests {
       mentorPartnershipRequest = await this.sendMentorPartnershipRequestFromDB(mentorPartnershipRequest, client);
       await mentorsWaitingRequests.deleteMentorWaitingRequest(mentor?.id as string, client);
       await mentorsWaitingRequests.deleteMentorWaitingRequest(partnerMentor?.id as string, client);
-      // usersPushNotifications.sendPNPartnershipRequest(mentorPartnershipRequest);
-      // usersSendEmails.sendEmailPartnershipRequest(mentorPartnershipRequest, client);
-      response.status(200).send(mentorPartnershipRequest);
       await client.query('COMMIT');
+      response.status(200).send(mentorPartnershipRequest);
+      usersPushNotifications.sendPNMentorPartnershipRequest(mentorPartnershipRequest);
+      await usersSendEmails.sendEmailMentorPartnershipRequest(mentorPartnershipRequest, client);
     } catch (error) {
-      response.status(400).send(error);
       await client.query('ROLLBACK');
+      response.status(400).send(error);
     } finally {
       client.release();
     }
@@ -178,13 +175,13 @@ export class MentorsPartnershipRequests {
         course = await usersCourses.addCourseFromDB(course, client);
         await this.deleteMentorPartnershipRequest(mentorPartnershipRequestId, client);
       }
-      response.status(200).json(course);
       await client.query('COMMIT');
-      // usersPushNotifications.sendPNMentorPartnershipRequestAccepted(course);
-      // usersSendEmails.sendEmailCourseScheduled(course, client);
+      response.status(200).json(course);
+      usersPushNotifications.sendPNMentorPartnershipRequestAccepted(mentorPartnershipRequest);
+      usersSendEmails.sendEmailMentorPartnershipRequestAccepted(mentorPartnershipRequest);
     } catch (error) {
-      response.status(400).send(error);
       await client.query('ROLLBACK');
+      response.status(400).send(error);
     } finally {
       client.release();
     }
@@ -206,14 +203,14 @@ export class MentorsPartnershipRequests {
         const updateMentorPartnershipRequestQuery = 'UPDATE mentors_partnership_requests SET is_rejected = true WHERE id = $1';
         await client.query(updateMentorPartnershipRequestQuery, [mentorPartnershipRequestId]);
         await mentorsWaitingRequests.addMentorWaitingRequestFromDB(mentorPartnershipRequest.partnerMentor?.id as string, mentorPartnershipRequest.courseType?.id as string, client);
-        // usersPushNotifications.sendPNMentorPartnershipRequestRejected(mentorPartnershipRequest, text);
-        // usersSendEmails.sendEmailMentorPartnershipRequestRejected(mentorPartnershipRequest, text);
+        usersPushNotifications.sendPNMentorPartnershipRequestRejected(mentorPartnershipRequest);
+        usersSendEmails.sendEmailMentorPartnershipRequestRejected(mentorPartnershipRequest, text);
       }
-      response.status(200).send(`Mentor partnership request modified with ID: ${mentorPartnershipRequestId}`);
       await client.query('COMMIT');
+      response.status(200).send(`Mentor partnership request modified with ID: ${mentorPartnershipRequestId}`);
     } catch (error) {
-      response.status(400).send(error);
       await client.query('ROLLBACK');
+      response.status(400).send(error);
     } finally {
       client.release();
     }
@@ -228,11 +225,11 @@ export class MentorsPartnershipRequests {
       const updateMentorPartnershipRequestQuery = 'UPDATE mentors_partnership_requests SET is_canceled = true WHERE id = $1';
       await client.query(updateMentorPartnershipRequestQuery, [mentorPartnershipRequestId]);
       await mentorsWaitingRequests.addMentorWaitingRequestFromDB(mentorPartnershipRequest.partnerMentor?.id as string, mentorPartnershipRequest.courseType?.id as string, client);
-      response.status(200).send(`Mentor partnership request modified with ID: ${mentorPartnershipRequestId}`);
       await client.query('COMMIT');
+      response.status(200).send(`Mentor partnership request modified with ID: ${mentorPartnershipRequestId}`);
     } catch (error) {
-      response.status(400).send(error);
       await client.query('ROLLBACK');
+      response.status(400).send(error);
     } finally {
       client.release();
     }

@@ -108,6 +108,15 @@ export class Helpers {
     return remainingQuizzes;
   }
 
+	getPartnerMentor(mentorId: string, mentors: Array<CourseMentor>): CourseMentor | null {
+		for (const mentor of mentors) {
+			if (mentor.id != mentorId) {
+				return mentor;
+			}
+		}
+		return null;
+	}
+
   getMentorsNames(mentors: Array<CourseMentor> | undefined): string {
     if (!mentors || mentors.length === 0) {
       return '';

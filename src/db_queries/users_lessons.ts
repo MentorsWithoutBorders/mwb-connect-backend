@@ -513,11 +513,11 @@ export class UsersLessons {
       const students = await this.getLessonStudents(lesson, false, client);
       const updateLessonQuery = 'UPDATE users_lessons SET meeting_url = $1 WHERE mentor_id = $2 AND id = $3';
       await client.query(updateLessonQuery, [meetingUrl, mentorId, lessonId]);
+      await client.query('COMMIT');
       usersPushNotifications.sendPNLessonUrlUpdated(students);
       usersSendEmails.sendEmailLessonUrlUpdated(students);
       await usersWhatsAppMessages.sendWMLessonUrlUpdated(students);
       response.status(200).send(`Lesson modified with ID: ${lessonId}`);
-      await client.query('COMMIT');
     } catch (error) {
       response.status(400).send(error);
       await client.query('ROLLBACK');

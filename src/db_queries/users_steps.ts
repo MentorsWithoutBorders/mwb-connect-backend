@@ -74,14 +74,11 @@ export class UsersSteps {
     const stepId = request.params.id;
     const client = await pool.connect();
     try {
-      await client.query('BEGIN');
       await client.query(constants.READ_ONLY_TRANSACTION);
       const step: Step = await this.getStepByIdFromDB(userId, stepId, client);
       response.status(200).json(step);
-      await client.query('COMMIT');
     } catch (error) {
       response.status(400).send(error);
-      await client.query('ROLLBACK');
     } finally {
       client.release();
     }
@@ -109,14 +106,11 @@ export class UsersSteps {
     const userId = request.user.id as string;
     const client = await pool.connect();
     try {
-      await client.query('BEGIN');
       await client.query(constants.READ_ONLY_TRANSACTION);
       const step: Step = await this.getLastStepAddedFromDB(userId, client);
       response.status(200).json(step);
-      await client.query('COMMIT');
     } catch (error) {
       response.status(400).send(error);
-      await client.query('ROLLBACK');
     } finally {
       client.release();
     }
@@ -177,11 +171,11 @@ export class UsersSteps {
         parentId: rows[0].parent_id
       };
       await this.updateTrainingReminderStepAdded(userId, client);
-      response.status(200).send(step);
       await client.query('COMMIT');
+      response.status(200).send(step);
     } catch (error) {
-      response.status(400).send(error);
       await client.query('ROLLBACK');
+      response.status(400).send(error);
     } finally {
       client.release();
     }
@@ -205,11 +199,11 @@ export class UsersSteps {
         dateTime: dateTime
       }
       await this.updateStepInDB(userId, step, client);
-      response.status(200).send(`Step modified with ID: ${stepId}`);
       await client.query('COMMIT');
+      response.status(200).send(`Step modified with ID: ${stepId}`);
     } catch (error) {
-      response.status(400).send(error);
       await client.query('ROLLBACK');
+      response.status(400).send(error);
     } finally {
       client.release();
     }
@@ -246,11 +240,11 @@ export class UsersSteps {
         }        
         await this.updateStepInDB(userId, step, client);
       }
-      response.status(200).send(`Step deleted with ID: ${stepId}`);
       await client.query('COMMIT');
+      response.status(200).send(`Step deleted with ID: ${stepId}`);
     } catch (error) {
-      response.status(400).send(error);
       await client.query('ROLLBACK');
+      response.status(400).send(error);
     } finally {
       client.release();
     }    
@@ -264,11 +258,11 @@ export class UsersSteps {
       await client.query('BEGIN');
       const deleteStepsQuery = 'DELETE FROM users_steps WHERE user_id = $1 AND goal_id = $2';
       await client.query(deleteStepsQuery, [userId, goalId]);
-      response.status(200).send(`All steps have been deleted for goal ${goalId}`);
       await client.query('COMMIT');
+      response.status(200).send(`All steps have been deleted for goal ${goalId}`);
     } catch (error) {
-      response.status(400).send(error);
       await client.query('ROLLBACK');
+      response.status(400).send(error);
     } finally {
       client.release();
     }

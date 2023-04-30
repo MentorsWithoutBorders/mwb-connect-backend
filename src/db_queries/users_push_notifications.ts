@@ -1,19 +1,27 @@
 import { Request, Response } from 'express';
 import pg from 'pg';
+import moment from 'moment';
+import 'moment-timezone';
 import admin from 'firebase-admin';
 import serviceAccount from '../../mwb-connect-firebase-adminsdk.json';
 import { Conn } from '../db/conn';
+import { constants } from '../utils/constants';
 import { Helpers } from '../utils/helpers';
+import { UsersTimeZones } from './users_timezones';
 import FCMToken from '../models/fcm_token.model';
 import PushNotification from '../models/push_notification.model';
 import User from '../models/user.model';
 import Course from '../models/course.model';
+import CourseMentor from '../models/course_mentor.model';
+import CourseStudent from '../models/course_student.model';
+import MentorPartnershipRequest from '../models/mentor_partnership_request.model';
 import LessonRequest from '../models/lesson_request.model';
 import Lesson from '../models/lesson.model';
 import { PushNotificationType } from '../utils/push_notification_type';
 
 const conn = new Conn();
 const helpers = new Helpers();
+const usersTimeZones = new UsersTimeZones();
 const pool = conn.pool;
 admin.initializeApp({
   credential: admin.credential.cert({
@@ -68,7 +76,7 @@ export class UsersPushNotifications {
     const client = await pool.connect();      
     try {
       await client.query('BEGIN');
-      let getFCMTokenQuery = `SELECT user_id FROM users_fcm_tokens WHERE user_id = $1;`;
+      const getFCMTokenQuery = `SELECT user_id FROM users_fcm_tokens WHERE user_id = $1;`;
       const { rows }: pg.QueryResult = await client.query(getFCMTokenQuery, [userId]);
       if (rows && rows.length > 0) {
         const updateFCMTokenQuery = `UPDATE users_fcm_tokens SET fcm_token = $1 WHERE user_id = $2;`;
@@ -144,22 +152,137 @@ export class UsersPushNotifications {
     }
   }
 
-  sendPNStudentAddedToCourse(student: User, course: Course): void {
+  sendPNMentorPartnershipRequest(mentorPartnershipRequest: MentorPartnershipRequest): void {
+    const mentor = mentorPartnershipRequest.mentor;
+    const partnerMentor = mentorPartnershipRequest.partnerMentor;
+    const pushNotification: PushNotification = {
+      title: 'New mentor partnership request',
+      body: `${mentor?.name} is requesting a mentor partnership with you`,
+      type: PushNotificationType.Request
+    }
+    this.sendPushNotification(partnerMentor?.id as string, pushNotification);
+  }
+	
+  sendPNMentorPartnershipRequestAccepted(mentorPartnershipRequest: MentorPartnershipRequest): void {
+    const mentor = mentorPartnershipRequest.mentor;
+    const partnerMentor = mentorPartnershipRequest.partnerMentor;
+    const pushNotification: PushNotification = {
+      title: 'Mentor partnership request accepted',
+      body: `${partnerMentor?.name} has accepted your partnership request`
+    }
+    this.sendPushNotification(mentor?.id as string, pushNotification);
+  }
+	
+  sendPNMentorPartnershipRequestRejected(mentorPartnershipRequest: MentorPartnershipRequest): void {
+    const mentor = mentorPartnershipRequest.mentor;
+    const partnerMentor = mentorPartnershipRequest.partnerMentor;
+    const pushNotification: PushNotification = {
+      title: 'Mentor partnership request rejected',
+      body: `We're sorry but ${partnerMentor?.name} has rejected your partnership request`
+    }
+    this.sendPushNotification(mentor?.id as string, pushNotification);
+  }	
+
+  async sendPNStudentAddedToCourse(student: CourseStudent, course: Course, shouldNotifyOtherStudents: boolean, client: pg.PoolClient): Promise<void> {
     const mentorsSubfields = helpers.getMentorsSubfieldsNames(course.mentors);
     const mentorsNames = helpers.getMentorsNames(course.mentors);
     const pushNotificationStudent: PushNotification = {
       title: 'Added to course',
-      body: `You have been added to a ${mentorsSubfields} course with ${mentorsNames}`
+      body: `You have been added to the ${mentorsSubfields} course with ${mentorsNames}`
     }
     const pushNotificationMentor: PushNotification = {
       title: 'Student added to course',
-      body: `${student.name} from ${student.organization?.name} has joined the course`
+      body: `${student.name} from ${student.organization?.name} has joined your course`
     }    
     this.sendPushNotification(student.id as string, pushNotificationStudent);
     course?.mentors?.forEach(mentor => {
       this.sendPushNotification(mentor?.id as string, pushNotificationMentor);
     });
-  }  
+		// Send push notification to the other students if the course can start
+		if (shouldNotifyOtherStudents && course?.students) {
+			await Promise.all(course?.students?.map(async otherStudent => {
+				if (otherStudent.id != student.id) {
+					const userTimeZone = await usersTimeZones.getUserTimeZone(otherStudent?.id as string, client);
+					const courseStartDate = moment.utc(course.startDateTime).tz(userTimeZone.name).format(constants.DATE_FORMAT_LESSON);
+					const courseStartTime = moment.utc(course.startDateTime).tz(userTimeZone.name).format(constants.TIME_FORMAT_LESSON);
+					const pushNotificationOtherStudents: PushNotification = {
+						title: 'Course can start',
+						body: `The course will start on ${courseStartDate} at ${courseStartTime} ${userTimeZone.abbreviation}`
+					}
+					this.sendPushNotification(otherStudent.id as string, pushNotificationOtherStudents);
+				}
+			})); 
+		}
+  }
+
+	sendPNCourseCanceled(user: User, course: Course): void {
+		if (user.isMentor) {
+			this.sendPNCourseCanceledByMentor(user, course);
+		} else {
+			this.sendPNCourseCanceledByStudent(user, course);
+		}		
+	}
+  
+  sendPNCourseCanceledByMentor(mentor: CourseMentor, course: Course): void {
+		const partnerMentor = helpers.getPartnerMentor(mentor.id as string, course.mentors as CourseMentor[]);
+		if (!partnerMentor) {
+			const pushNotificationStudent: PushNotification = {
+				title: 'Course cancelled',
+				body: `We're sorry but your mentor has cancelled the course`
+			}
+			course?.students?.forEach(student => {
+				this.sendPushNotification(student?.id as string, pushNotificationStudent);
+			});			
+		} else {
+			let title = '';
+			let body = '';	
+			if (course.students?.length == 0) {
+				title = 'Course cancelled';
+				body = `We're sorry but your partner has cancelled the course`;
+			} else if (course.students && course.students?.length > 0 && !course.hasStarted) {
+				title = 'Course reassigned';
+				body = `Your partner has cancelled and the course has been reassigned to you`;
+			} else if (course.hasStarted) {
+				title = 'Lessons reassigned';
+				body = `Your partner has cancelled and the remaining lessons have been reassigned to you`;
+			}
+			const pushNotificationPartnerMentor: PushNotification = {
+				title: title,
+				body: body
+			}    
+			this.sendPushNotification(partnerMentor.id as string, pushNotificationPartnerMentor);			
+		}			
+  }
+
+  sendPNCourseCanceledByStudent(student: CourseStudent, course: Course): void {
+		const pushNotification: PushNotification = {
+			title: 'Student dropped out of the course',
+			body: `${student.name} from ${student.organization?.name} has has dropped out of the course`
+		}
+		course?.mentors?.forEach(mentor => {
+			this.sendPushNotification(mentor?.id as string, pushNotification);
+		});		
+  }
+	
+  sendPNNextLessonCanceledByMentor(course: Course): void {
+		const pushNotification: PushNotification = {
+			title: 'Next lesson cancelled',
+			body: `We're sorry but your mentor has cancelled the next lesson`
+		}
+		course?.students?.forEach(student => {
+			this.sendPushNotification(student?.id as string, pushNotification);
+		});		
+  }
+
+	sendPNNextLessonCanceledByStudent(student: CourseStudent, mentor: CourseMentor): void {
+		const pushNotification: PushNotification = {
+			title: 'Student cancelled next lesson',
+			body: `${student.name} from ${student.organization?.name} won't participate in the next lesson`
+		}
+		this.sendPushNotification(mentor?.id as string, pushNotification);
+  }
+
+	
 
   sendPNStudentAddedToLesson(student: User, lesson: Lesson): void {
     const mentorName = lesson.mentor?.name;
@@ -186,7 +309,7 @@ export class UsersPushNotifications {
     const pushNotification: PushNotification = {
       title: 'New lesson request',
       body: `${student?.name} from ${student?.organization?.name} is requesting a ${subfieldName} lesson with you`,
-      type: PushNotificationType.LessonRequest
+      type: PushNotificationType.Request
     }
     this.sendPushNotification(mentorId as string, pushNotification);
   }
@@ -198,7 +321,7 @@ export class UsersPushNotifications {
     const pushNotification: PushNotification = {
       title: 'Lesson request reminder',
       body: `Last day for accepting or rejecting ${studentFirstName}'s lesson request`,
-      type: PushNotificationType.LessonRequest
+      type: PushNotificationType.Request
     }
     this.sendPushNotification(mentorId, pushNotification);
   }
@@ -239,7 +362,7 @@ export class UsersPushNotifications {
     const pushNotification: PushNotification = {
       title: 'Lesson request expired',
       body: `We're sorry but your lesson request has expired due to ${mentorFirstName}'s unavailability. Please find a new mentor.`,
-      type: PushNotificationType.LessonRequest
+      type: PushNotificationType.Request
     }
     this.sendPushNotification(studentId as string, pushNotification);
   }  

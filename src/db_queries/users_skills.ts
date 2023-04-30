@@ -24,14 +24,11 @@ export class UsersSkills {
     const subfieldId = request.params.subfield_id;
     const client = await pool.connect();
     try {
-      await client.query('BEGIN');
       await client.query(constants.READ_ONLY_TRANSACTION);
       const skills: Array<Skill> = await users.getUserSkills(userId, subfieldId, client);
       response.status(200).json(skills);
-      await client.query('COMMIT');
     } catch (error) {
       response.status(400).send(error);
-      await client.query('ROLLBACK');
     } finally {
       client.release();
     }  
@@ -49,12 +46,11 @@ export class UsersSkills {
         skills = [];
       }
       await this.addUserSkillsToDB(userId, subfieldId, skills, client);
-      response.status(200).send('User skills have been added');
       await client.query('COMMIT');
+      response.status(200).send('User skills have been added');
     } catch (error) {
-      console.log(error)
-      response.status(400).send(error);
       await client.query('ROLLBACK');
+      response.status(400).send(error);
     } finally {
       client.release();
     }  

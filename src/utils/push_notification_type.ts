@@ -1,5 +1,5 @@
 export enum PushNotificationType {
   Normal = 0,
-  LessonRequest,
+  Request,
   AfterLesson
 }

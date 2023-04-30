@@ -27,14 +27,11 @@ export class UsersQuizzes {
     const userId = request.user.id as string;
     const client = await pool.connect();
     try {
-      await client.query('BEGIN');
       await client.query(constants.READ_ONLY_TRANSACTION);
       const quizNumber = await this.getQuizzesFromDB(userId, client);
       response.status(200).json(quizNumber);
-      await client.query('COMMIT');
     } catch (error) {
       response.status(400).send(error);
-      await client.query('ROLLBACK');
     } finally {
       client.release();
     }
@@ -44,14 +41,11 @@ export class UsersQuizzes {
     const userId = request.user.id as string;
     const client = await pool.connect();
     try {
-      await client.query('BEGIN');
       await client.query(constants.READ_ONLY_TRANSACTION);
       const quizNumber = await this.getQuizNumberFromDB(userId, client);
       response.status(200).json(quizNumber);
-      await client.query('COMMIT');
     } catch (error) {
       response.status(400).send(error);
-      await client.query('ROLLBACK');
     } finally {
       client.release();
     }
@@ -320,11 +314,11 @@ export class UsersQuizzes {
       const quizzes = await this.getQuizzesFromDB(userId, client);
       const remainingQuizzes = helpers.getRemainingQuizzes(quizzes);
       await this.updateTrainingReminderRemainingQuizzes(userId, remainingQuizzes, client);
-      response.status(200).json(quizNumber);
       await client.query('COMMIT');
+      response.status(200).json(quizNumber);
     } catch (error) {
-      response.status(400).send(error);
       await client.query('ROLLBACK');
+      response.status(400).send(error);
     } finally {
       client.release();
     }

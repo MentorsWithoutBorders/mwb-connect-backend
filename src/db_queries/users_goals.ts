@@ -19,14 +19,11 @@ export class UsersGoals {
     const userId = request.user.id as string;
     const client = await pool.connect();
     try {
-      await client.query('BEGIN');
       await client.query(constants.READ_ONLY_TRANSACTION);
       const goals = await this.getGoalsFromDB(userId, client);
       response.status(200).json(goals);
-      await client.query('COMMIT');
     } catch (error) {
       response.status(400).send(error);
-      await client.query('ROLLBACK');
     } finally {
       client.release();
     }
@@ -74,11 +71,11 @@ export class UsersGoals {
     try {
       await client.query('BEGIN');
       const goal: Goal = await this.addGoalToDB(userId, text, client);
-      response.status(200).send(goal);
       await client.query('COMMIT');
+      response.status(200).send(goal);
     } catch (error) {
-      response.status(400).send(error);
       await client.query('ROLLBACK');
+      response.status(400).send(error);
     } finally {
       client.release();
     }
@@ -124,12 +121,11 @@ export class UsersGoals {
       const deleteGoalQuery = 'DELETE FROM users_goals WHERE user_id = $1 AND id = $2';
       await this.deleteSteps(userId, goalId, client);
       await client.query(deleteGoalQuery, [userId, goalId]);
-      response.status(200).send(`Goal deleted with ID: ${goalId}`);
       await client.query('COMMIT');
+      response.status(200).send(`Goal deleted with ID: ${goalId}`);
     } catch (error) {
-      console.log(error);
-      response.status(400).send(error);
       await client.query('ROLLBACK');
+      response.status(400).send(error);
     } finally {
       client.release();
     }
@@ -147,11 +143,11 @@ export class UsersGoals {
       await client.query('BEGIN');
       const deleteGoalsQuery = 'DELETE FROM users_goals WHERE user_id = $1';
       await client.query(deleteGoalsQuery, [userId]);      
-      response.status(200).send(`All goals have been deleted for user ${userId}`);
       await client.query('COMMIT');
+      response.status(200).send(`All goals have been deleted for user ${userId}`);
     } catch (error) {
-      response.status(400).send(error);
       await client.query('ROLLBACK');
+      response.status(400).send(error);
     } finally {
       client.release();
     }

@@ -29,7 +29,6 @@ export class MentorsWaitingRequests {
     const { courseType, mentor }: MentorWaitingRequest = request.body;
     const client = await pool.connect();
     try {
-      await client.query('BEGIN');
       await client.query(constants.READ_ONLY_TRANSACTION);
       let getMentorsWaitingRequestsQuery = `SELECT mwr.id, mwr.mentor_id, mwr.course_type_id, ct.duration AS course_duration, ct.is_with_partner, ct.index 
         FROM mentors_waiting_requests mwr
@@ -84,10 +83,8 @@ export class MentorsWaitingRequests {
       }
       mentorsWaitingRequests = this.getPaginatedMentorsWaitingRequests(mentorsWaitingRequests, page);
       response.status(200).json(mentorsWaitingRequests);
-      await client.query('COMMIT');
     } catch (error) {
       response.status(400).send(error);
-      await client.query('ROLLBACK');
     } finally {
       client.release();
     }  
@@ -110,7 +107,6 @@ export class MentorsWaitingRequests {
     const mentorId = request.user.id as string;
     const client = await pool.connect();
     try {
-      await client.query('BEGIN');
       await client.query(constants.READ_ONLY_TRANSACTION);
       const getMentorWaitingRequestQuery = `SELECT mwr.id, mwr.course_type_id, ct.duration AS course_duration, ct.is_with_partner, ct.index
         FROM mentors_waiting_requests mwr
@@ -133,10 +129,8 @@ export class MentorsWaitingRequests {
         };
       }
       response.status(200).json(mentorWaitingRequest);
-      await client.query('COMMIT');
     } catch (error) {
       response.status(400).send(error);
-      await client.query('ROLLBACK');
     } finally {
       client.release();
     }  
@@ -150,11 +144,11 @@ export class MentorsWaitingRequests {
       await client.query('BEGIN');
       await this.deleteMentorWaitingRequest(mentorId, client);
       const mentorWaitingRequest = await this.addMentorWaitingRequestFromDB(mentorId, courseType?.id as string, client);
-      response.status(200).send(mentorWaitingRequest);
       await client.query('COMMIT');
+      response.status(200).send(mentorWaitingRequest);
     } catch (error) {
-      response.status(400).send(error);
       await client.query('ROLLBACK');
+      response.status(400).send(error);
     } finally {
       client.release();
     }
@@ -185,11 +179,11 @@ export class MentorsWaitingRequests {
       const updateMentorWaitingRequestQuery = 'UPDATE mentors_waiting_requests SET is_canceled = true, canceled_date_time = $1 WHERE mentor_id = $2';
       const canceledDateTime = moment.utc().format(constants.DATE_TIME_FORMAT);      
       await client.query(updateMentorWaitingRequestQuery, [canceledDateTime, mentorId]);
-      response.status(200).send(`Mentor waiting requests canceled for mentor: ${mentorId}`);
       await client.query('COMMIT');
+      response.status(200).send(`Mentor waiting requests canceled for mentor: ${mentorId}`);
     } catch (error) {
-      response.status(400).send(error);
       await client.query('ROLLBACK');
+      response.status(400).send(error);
     } finally {
       client.release();
     }

@@ -17,14 +17,11 @@ export class CourseTypes {
   async getCourseTypes(request: Request, response: Response): Promise<void> {
     const client = await pool.connect();
     try {
-      await client.query('BEGIN');
       await client.query(constants.READ_ONLY_TRANSACTION);
       const courseTypes = await this.getCourseTypesFromDB(client);
       response.status(200).json(courseTypes);
-      await client.query('COMMIT');
     } catch (error) {
       response.status(400).send(error);
-      await client.query('ROLLBACK');
     } finally {
       client.release();
     }  
