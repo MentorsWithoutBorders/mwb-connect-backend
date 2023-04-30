@@ -171,7 +171,10 @@ export class UsersSendEmails {
 				const mentorFirstName = helpers.getUserFirstName(mentor);
 				const partnerMentor = helpers.getPartnerMentor(mentor.id as string, course.mentors as CourseMentor[]);
 				const partnerMentorFirstName = partnerMentor ? helpers.getUserFirstName(partnerMentor) : '';
-				const createWhatsAppGroupMessage = partnerMentor && !course.whatsAppGroupUrl ? `Kindly coordinate with your partner, ${partnerMentorFirstName} (${partnerMentor.email}), to establish a WhatsApp group for seamless communication with all the students who are joining the course.<br><br>` : `Kindly create a WhatsApp group for seamless communication with all the students who are joining the course.<br><br>`;
+				let createWhatsAppGroupMessage = '';
+				if (!course.whatsAppGroupUrl) {
+					createWhatsAppGroupMessage = partnerMentor ? `Kindly coordinate with your partner, ${partnerMentorFirstName} (${partnerMentor.email}), to establish a WhatsApp group for seamless communication with all the students who are joining the course.<br><br>` : `Kindly create a WhatsApp group for seamless communication with all the students who are joining the course.<br><br>`;
+				}
 				body = `Hi ${mentorFirstName},<br><br>`;
 				body += `${student.name} from ${student.organization?.name} has been added to your course`;
 				if (course.hasStarted) {
