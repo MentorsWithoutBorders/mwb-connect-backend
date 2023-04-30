@@ -166,35 +166,37 @@ export class UsersSendEmails {
     }
     this.sendEmail(student?.email as string, emailStudent);
     // Send email to mentor/s
-    course?.mentors?.forEach(async mentor => {
-			const mentorFirstName = helpers.getUserFirstName(mentor);
-			const partnerMentor = helpers.getPartnerMentor(mentor.id as string, course.mentors as CourseMentor[]);
-			const partnerMentorFirstName = partnerMentor ? helpers.getUserFirstName(partnerMentor) : '';
-			const createWhatsAppGroupMessage = partnerMentor && !course.whatsAppGroupUrl ? `Kindly coordinate with your partner, ${partnerMentorFirstName} (${partnerMentor.email}), to establish a WhatsApp group for seamless communication with all the students who are joining the course.<br><br>` : `Kindly create a WhatsApp group for seamless communication with all the students who are joining the course.<br><br>`;
-			body = `Hi ${mentorFirstName},<br><br>`;
-			body += `${student.name} from ${student.organization?.name} has been added to your course`;
-			if (course.hasStarted) {
-				const mentorTimeZone = await usersTimeZones.getUserTimeZone(mentor?.id as string, client);
-				const courseStartDate = moment.utc(course.startDateTime).tz(mentorTimeZone.name).format(constants.DATE_FORMAT_LESSON);
-				const courseStartTime = moment.utc(course.startDateTime).tz(mentorTimeZone.name).format(constants.TIME_FORMAT_LESSON);
-				body += `, which is now set to commence on ${courseStartDate} at ${courseStartTime} ${mentorTimeZone.abbreviation}`;
-			}
-			body += `.<br><br>`;
-			body += `The student's contact details are as follows:`;
-			body += this.createStudentsList([student]);
-			body += `${createWhatsAppGroupMessage}`;
-			if (course.students && course.students?.length > 1) {
-				body += 'Below are the contact details of all current students:';
-				body += this.createStudentsList(course.students as CourseStudent[]);
-			}
-			body += `<br>`;
-			body += `Regards,<br>MWB Support Team`; 
-			const emailMentor: Email = {
-				subject: `Student added to the course`,
-				body: body
-			}    
-			this.sendEmail(mentor?.email as string, emailMentor);
-		});
+		if (course?.mentors) {
+			await Promise.all(course?.mentors?.map(async mentor => {
+				const mentorFirstName = helpers.getUserFirstName(mentor);
+				const partnerMentor = helpers.getPartnerMentor(mentor.id as string, course.mentors as CourseMentor[]);
+				const partnerMentorFirstName = partnerMentor ? helpers.getUserFirstName(partnerMentor) : '';
+				const createWhatsAppGroupMessage = partnerMentor && !course.whatsAppGroupUrl ? `Kindly coordinate with your partner, ${partnerMentorFirstName} (${partnerMentor.email}), to establish a WhatsApp group for seamless communication with all the students who are joining the course.<br><br>` : `Kindly create a WhatsApp group for seamless communication with all the students who are joining the course.<br><br>`;
+				body = `Hi ${mentorFirstName},<br><br>`;
+				body += `${student.name} from ${student.organization?.name} has been added to your course`;
+				if (course.hasStarted) {
+					const mentorTimeZone = await usersTimeZones.getUserTimeZone(mentor?.id as string, client);
+					const courseStartDate = moment.utc(course.startDateTime).tz(mentorTimeZone.name).format(constants.DATE_FORMAT_LESSON);
+					const courseStartTime = moment.utc(course.startDateTime).tz(mentorTimeZone.name).format(constants.TIME_FORMAT_LESSON);
+					body += `, which is now set to commence on ${courseStartDate} at ${courseStartTime} ${mentorTimeZone.abbreviation}`;
+				}
+				body += `.<br><br>`;
+				body += `The student's contact details are as follows:`;
+				body += this.createStudentsList([student]);
+				body += `${createWhatsAppGroupMessage}`;
+				if (course.students && course.students?.length > 1) {
+					body += 'Below are the contact details of all current students:';
+					body += this.createStudentsList(course.students as CourseStudent[]);
+				}
+				body += `<br>`;
+				body += `Regards,<br>MWB Support Team`; 
+				const emailMentor: Email = {
+					subject: `Student added to the course`,
+					body: body
+				}    
+				this.sendEmail(mentor?.email as string, emailMentor);
+			}));
+		}
 		// Send email to the other students if the course can start
 		if (shouldNotifyOtherStudents && course?.students) {
 			await Promise.all(course?.students?.map(async otherStudent => {
