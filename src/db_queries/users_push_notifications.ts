@@ -193,7 +193,7 @@ export class UsersPushNotifications {
     });
 		// Send push notification to the other students if the course can start
 		if (shouldNotifyOtherStudents && course?.students) {
-			await Promise.all(course?.students?.map(async otherStudent => {
+			for (const otherStudent of course?.students) {
 				if (otherStudent.id != student.id) {
 					const userTimeZone = await usersTimeZones.getUserTimeZone(otherStudent?.id as string, client);
 					const courseStartDate = moment.utc(course.startDateTime).tz(userTimeZone.name).format(constants.DATE_FORMAT_LESSON);
@@ -204,7 +204,7 @@ export class UsersPushNotifications {
 					}
 					this.sendPushNotification(otherStudent.id as string, pushNotificationOtherStudents);
 				}
-			})); 
+			}
 		}
   }
 

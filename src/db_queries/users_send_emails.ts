@@ -167,7 +167,7 @@ export class UsersSendEmails {
     this.sendEmail(student?.email as string, emailStudent);
     // Send email to mentor/s
 		if (course?.mentors) {
-			await Promise.all(course?.mentors?.map(async mentor => {
+			for (const mentor of course?.mentors) {
 				const mentorFirstName = helpers.getUserFirstName(mentor);
 				const partnerMentor = helpers.getPartnerMentor(mentor.id as string, course.mentors as CourseMentor[]);
 				const partnerMentorFirstName = partnerMentor ? helpers.getUserFirstName(partnerMentor) : '';
@@ -195,11 +195,11 @@ export class UsersSendEmails {
 					body: body
 				}    
 				this.sendEmail(mentor?.email as string, emailMentor);
-			}));
+			}
 		}
 		// Send email to the other students if the course can start
 		if (shouldNotifyOtherStudents && course?.students) {
-			await Promise.all(course?.students?.map(async otherStudent => {
+			for (const otherStudent of course?.students) {
 				if (otherStudent.id != student.id) {
 					const studentFirstName = helpers.getUserFirstName(otherStudent);
 					const userTimeZone = await usersTimeZones.getUserTimeZone(otherStudent?.id as string, client);
@@ -213,7 +213,7 @@ export class UsersSendEmails {
 					}
 					this.sendEmail(otherStudent.email as string, email);
 				}
-			}));	
+			}
 		}		
   }
 	
