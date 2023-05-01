@@ -82,7 +82,7 @@ export class UsersNotificationsSettings {
 				values = [trainingRemindersEnabledForUpdate, trainingRemindersTimeForUpdate, trainingRemindersEnabledForUpdate, trainingRemindersTimeForUpdate, null, null, userId];
 			}
       await client.query(updateNotificationsSettingsQuery, values);
-      usersSendEmails.sendEmailNotificationsSettingsUpdate(userId, trainingRemindersEnabled);
+      usersSendEmails.sendEmailNotificationsSettingsUpdate(userId, trainingRemindersEnabledForUpdate);
       response.status(200).send(`Notifications settings have been updated for user: ${userId}`);
 			await client.query('COMMIT');
     } catch (error) {

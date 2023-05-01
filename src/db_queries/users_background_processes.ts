@@ -362,7 +362,7 @@ export class UsersBackgroundProcesses {
         ON u.id = uns.user_id
       JOIN users_timezones AS ut
         ON u.id = ut.user_id
-      WHERE uns.training_reminders_enabled = true
+      WHERE (uns.enabled IS true OR uns.training_reminders_enabled IS true)
         AND (date_trunc('day', now() AT TIME ZONE ut.name)::date - date_trunc('day', u.registered_on AT TIME ZONE ut.name)::date) % 7 = $1
         AND date_trunc('day', now() AT TIME ZONE ut.name)::date <> date_trunc('day', u.registered_on AT TIME ZONE ut.name)::date
         AND date_trunc('day', now() AT TIME ZONE ut.name) + uns.training_reminders_time = date_trunc('minute', now() AT TIME ZONE ut.name);`;

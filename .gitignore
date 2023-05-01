@@ -1,4 +1,5 @@
 .env
+.env.local
 .env.staging
 .env.prod
 mwb-connect-firebase-adminsdk.json
