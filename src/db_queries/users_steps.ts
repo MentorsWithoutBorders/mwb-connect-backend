@@ -23,15 +23,14 @@ export class UsersSteps {
     const userId = request.user.id as string;
     const goalId = request.params.id;
     try {
-      const getStepsQuery = 'SELECT id, text, position, level, parent_id, date_time FROM users_steps WHERE user_id = $1 AND goal_id = $2';
+      const getStepsQuery = 'SELECT id, text, index, level, parent_id, date_time FROM users_steps WHERE user_id = $1 AND goal_id = $2';
       const { rows }: pg.QueryResult = await pool.query(getStepsQuery, [userId, goalId]);
       const steps: Array<Step> = [];
       for (const row of rows) {
         const step: Step = {
           id: row.id,
           text: row.text,
-          position: row.position,
-          index: row.position,
+          index: row.index,
           level: row.level,
           parentId: row.parent_id,
           dateTime: moment.utc(row.date_time).format(constants.DATE_TIME_FORMAT)
@@ -47,7 +46,7 @@ export class UsersSteps {
   async getAllSteps(request: Request, response: Response): Promise<void> {
     const userId = request.user.id as string;
     try {
-      const getStepsQuery = 'SELECT id, goal_id, text, position, level, parent_id, date_time FROM users_steps WHERE user_id = $1';
+      const getStepsQuery = 'SELECT id, goal_id, text, index, level, parent_id, date_time FROM users_steps WHERE user_id = $1';
       const { rows }: pg.QueryResult = await pool.query(getStepsQuery, [userId]);
       const steps: Array<Step> = [];
       for (const row of rows) {
@@ -55,8 +54,7 @@ export class UsersSteps {
           id: row.id,
           goalId: row.goal_id,
           text: row.text,
-          position: row.position,
-          index: row.position,
+          index: row.index,
           level: row.level,
           parentId: row.parent_id,
           dateTime: moment.utc(row.date_time).format(constants.DATE_TIME_FORMAT)
@@ -85,15 +83,14 @@ export class UsersSteps {
   }
 
   async getStepByIdFromDB(userId: string, stepId: string, client: pg.PoolClient): Promise<Step> {
-    const getStepQuery = `SELECT id, text, position, level, parent_id, date_time FROM users_steps WHERE user_id = $1 AND id = $2`;
+    const getStepQuery = `SELECT id, text, index, level, parent_id, date_time FROM users_steps WHERE user_id = $1 AND id = $2`;
     const { rows }: pg.QueryResult = await client.query(getStepQuery, [userId, stepId]);
     let step: Step = {};
     if (rows[0]) {    
       step = {
         id: rows[0].id,
         text: rows[0].text,
-        position: rows[0].position,
-        index: rows[0].position,
+        index: rows[0].index,
         level: rows[0].level,
         parentId: rows[0].parent_id,
         dateTime: moment.utc(rows[0].date_time).format(constants.DATE_TIME_FORMAT)
@@ -117,7 +114,7 @@ export class UsersSteps {
   }
   
   async getLastStepAddedFromDB(userId: string, client: pg.PoolClient): Promise<Step> {
-    const getStepQuery = `SELECT id, text, position, level, parent_id, date_time FROM users_steps 
+    const getStepQuery = `SELECT id, text, index, level, parent_id, date_time FROM users_steps 
       WHERE user_id = $1
       ORDER BY date_time DESC LIMIT 1`;
     const { rows }: pg.QueryResult = await client.query(getStepQuery, [userId]);
@@ -126,8 +123,7 @@ export class UsersSteps {
       step = {
         id: rows[0].id,
         text: rows[0].text,
-        position: rows[0].position,
-        index: rows[0].position,
+        index: rows[0].index,
         level: rows[0].level,
         parentId: rows[0].parent_id,
         dateTime: moment.utc(rows[0].date_time).format(constants.DATE_TIME_FORMAT)
@@ -147,26 +143,24 @@ export class UsersSteps {
   async addStep(request: Request, response: Response): Promise<void> {
     const userId = request.user.id as string;
     const goalId = request.params.id;
-    const { id, text, index, position, level, parentId, dateTime }: Step = request.body;
+    const { id, text, index, level, parentId, dateTime }: Step = request.body;
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
       const stepDateTime = dateTime ? dateTime : moment.utc();
-      const positionOrIndex = position != null ? position : index;
-      let insertStepQuery = `INSERT INTO users_steps (user_id, goal_id, text, position, level, parent_id, date_time)
+      let insertStepQuery = `INSERT INTO users_steps (user_id, goal_id, text, index, level, parent_id, date_time)
       VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`;
-      let values = [userId, goalId, text, positionOrIndex, level, parentId, stepDateTime];       
+      let values = [userId, goalId, text, index, level, parentId, stepDateTime];       
       if (id) {
-        insertStepQuery = `INSERT INTO users_steps (id, user_id, goal_id, text, position, level, parent_id, date_time)
+        insertStepQuery = `INSERT INTO users_steps (id, user_id, goal_id, text, index, level, parent_id, date_time)
           VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`;
-        values = [id, userId, goalId, text, positionOrIndex, level, parentId, stepDateTime];        
+        values = [id, userId, goalId, text, index, level, parentId, stepDateTime];        
       }
       const { rows }: pg.QueryResult = await pool.query(insertStepQuery, values);
       const step: Step = {
         id: rows[0].id,
         text: rows[0].text,
-        position: rows[0].position,
-        index: rows[0].position,
+        index: rows[0].index,
         level: rows[0].level,
         parentId: rows[0].parent_id
       };
@@ -184,7 +178,7 @@ export class UsersSteps {
   async updateStep(request: Request, response: Response): Promise<void> {
     const userId = request.user.id as string;
     const stepId = request.params.id;
-    const { text, position, index, level, parentId }: Step = request.body
+    const { text, index, level, parentId }: Step = request.body
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
@@ -192,7 +186,6 @@ export class UsersSteps {
       const step: Step = {
         id: stepId, 
         text: text,
-        position: position,
         index: index, 
         level: level, 
         parentId: parentId, 
@@ -210,9 +203,8 @@ export class UsersSteps {
   }
 
   async updateStepInDB(userId: string, step: Step, client: pg.PoolClient): Promise<void> {
-    const updateStepQuery = 'UPDATE users_steps SET text = $1, position = $2, level = $3, parent_id = $4, date_time = $5 WHERE user_id = $6 AND id = $7';
-    const positionOrIndex = step.position != null ? step.position : step.index;
-    await client.query(updateStepQuery, [step.text, positionOrIndex, step.level, step.parentId, step.dateTime, userId, step.id]);
+    const updateStepQuery = 'UPDATE users_steps SET text = $1, index = $2, level = $3, parent_id = $4, date_time = $5 WHERE user_id = $6 AND id = $7';
+    await client.query(updateStepQuery, [step.text, step.index, step.level, step.parentId, step.dateTime, userId, step.id]);
   }
   
   async deleteStep(request: Request, response: Response): Promise<void> {
@@ -228,12 +220,11 @@ export class UsersSteps {
       await client.query(deleteStepQuery, [userId, stepId]);
       if (lastStepAddedBeforeDelete.id == stepId) {
         const lastStepAdded = await this.getLastStepAddedFromDB(userId, client);
-        const { id, text, position, level, parentId }: Step = lastStepAdded;
+        const { id, text, index, level, parentId }: Step = lastStepAdded;
         const step: Step = {
           id: id, 
           text: text,
-          position: position,
-          index: position, 
+          index: index, 
           level: level, 
           parentId: parentId, 
           dateTime: dateTime
