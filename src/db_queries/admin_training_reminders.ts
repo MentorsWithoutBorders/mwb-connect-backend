@@ -368,7 +368,7 @@ export class AdminTrainingReminders {
         ON u.id = aau.assigned_user_id
       FULL OUTER JOIN admin_conversations ac
         ON u.id = ac.user_id
-      WHERE uns.enabled IS true OR uns.training_reminders_enabled IS true`;
+      WHERE (uns.enabled IS true OR uns.training_reminders_enabled IS true)`;
     let values: Array<string> = [];
     if (!trainer.isAdmin) {
       getTrainingRemindersQuery += ' AND aau.trainer_id = $1';
