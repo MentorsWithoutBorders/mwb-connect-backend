@@ -6,6 +6,7 @@ import 'moment-timezone';
 import { Conn } from '../db/conn';
 import { constants } from '../utils/constants';
 import { Helpers } from '../utils/helpers';
+import { Fields } from './fields';
 import { Users } from './users';
 import { UsersAvailableMentors } from './users_available_mentors';
 import { UsersPushNotifications } from './users_push_notifications';
@@ -29,6 +30,7 @@ const conn = new Conn();
 const pool = conn.pool;
 const redisClient = createClient();
 const helpers = new Helpers();
+const fields = new Fields();
 const users = new Users();
 const usersAvailableMentors = new UsersAvailableMentors();
 const usersPushNotifications = new UsersPushNotifications();
@@ -227,13 +229,15 @@ export class UsersCourses {
       WHERE course_id = $1
         AND is_canceled IS DISTINCT FROM true`;
     const { rows }: pg.QueryResult = await client.query(getCourseMentorsQuery, [courseId]);
+		const allFields = await fields.getFieldsFromDB(client);
     const mentors: Array<CourseMentor> = [];
     if (rows && rows.length > 0) {
       for (const row of rows) {
         const mentor = (await users.getUserFromDB(row.mentor_id, client)) as CourseMentor;
-        const mentorSubfields = mentor?.field?.subfields;
-        if (mentor && mentor.field && mentorSubfields && mentorSubfields.length > 0) {
-          mentor.field.subfields = mentorSubfields.filter(subfield => subfield.id == row.subfield_id);
+				const field = allFields.find(field => field.subfields?.find(subfield => subfield.id == row.subfield_id));
+        const fieldSubfields = field?.subfields;
+        if (mentor && mentor.field && fieldSubfields) {
+          mentor.field.subfields = fieldSubfields.filter(subfield => subfield.id == row.subfield_id);
         }
         mentor.meetingUrl = row.meeting_url;
         mentors.push(mentor);
