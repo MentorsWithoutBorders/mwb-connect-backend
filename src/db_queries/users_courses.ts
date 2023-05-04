@@ -191,6 +191,38 @@ export class UsersCourses {
     return course;
   }
 
+  async getPreviousCourse(request: Request, response: Response): Promise<void> {
+    const userId = request.user.id as string;
+    const client = await pool.connect();
+    try {
+      const course = await this.getPreviousCourseFromDB(userId, client);
+      response.status(200).json(course);
+    } catch (error) {
+      response.status(400).send(error);
+    } finally {
+      client.release();
+    }
+  }
+
+  async getPreviousCourseFromDB(userId: string, client: pg.PoolClient): Promise<Course> {
+    let course: Course = {};
+    const getCourseQuery = `SELECT uc.id FROM users_courses uc
+			 JOIN users_courses_mentors ucm ON uc.id = ucm.course_id
+			WHERE ucm.mentor_id = $1
+			ORDER BY uc.start_date_time DESC`;
+    const { rows }: pg.QueryResult = await client.query(getCourseQuery, [userId]);
+    if (rows && rows.length > 0) {
+			for (const row of rows) {
+				course = await this.getCourseById(row.id, client);
+				const mentor = course.mentors?.find((mentor) => mentor.id === userId);
+				if (mentor && mentor.meetingUrl) {
+					break;
+				}
+			}
+    }
+    return course;
+  }	
+
   async getCourseById(courseId: string, client: pg.PoolClient): Promise<Course> {
     const getCourseQuery = `SELECT uc.id, uc.start_date_time, uc.whatsapp_group_url, uc.notes, uc.has_started, uc.is_canceled, ct.duration, ct.is_with_partner, ct.index
       FROM users_courses uc 
@@ -238,6 +270,7 @@ export class UsersCourses {
         const fieldSubfields = field?.subfields;
         if (mentor && mentor.field && fieldSubfields) {
           mentor.field.subfields = fieldSubfields.filter(subfield => subfield.id == row.subfield_id);
+					mentor.field.subfields.forEach(subfield => subfield.skills = []);
         }
         mentor.meetingUrl = row.meeting_url;
         mentors.push(mentor);
