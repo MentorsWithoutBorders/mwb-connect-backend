@@ -228,8 +228,7 @@ export class UsersCourses {
       FROM users_courses uc 
       JOIN course_types ct
         ON uc.course_type_id = ct.id
-      WHERE uc.id = $1
-        AND now() < (uc.start_date_time + (INTERVAL '1 month' * ct.duration))`;
+      WHERE uc.id = $1`;
     const { rows }: pg.QueryResult = await client.query(getCourseQuery, [courseId]);
     let course: Course = {};
     if (rows[0]) {
