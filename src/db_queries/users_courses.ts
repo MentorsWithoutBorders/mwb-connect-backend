@@ -214,6 +214,7 @@ export class UsersCourses {
     if (rows && rows.length > 0) {
 			for (const row of rows) {
 				course = await this.getCourseById(row.id, client);
+				course.mentors = await this.getAllCourseMentors(row.id, client);
 				const mentor = course.mentors?.find((mentor) => mentor.id === userId);
 				if (mentor && mentor.meetingUrl) {
 					break;
@@ -221,7 +222,7 @@ export class UsersCourses {
 			}
     }
     return course;
-  }	
+  }
 
   async getCourseById(courseId: string, client: pg.PoolClient): Promise<Course> {
     const getCourseQuery = `SELECT uc.id, uc.start_date_time, uc.whatsapp_group_url, uc.notes, uc.has_started, uc.is_canceled, ct.duration, ct.is_with_partner, ct.index
@@ -280,6 +281,22 @@ export class UsersCourses {
     }
     return mentors;
   }
+
+  async getAllCourseMentors(courseId: string, client: pg.PoolClient): Promise<Array<CourseMentor>> {
+    const getCourseMentorsQuery = `SELECT mentor_id, subfield_id, meeting_url
+      FROM users_courses_mentors
+      WHERE course_id = $1`;
+    const { rows }: pg.QueryResult = await client.query(getCourseMentorsQuery, [courseId]);
+		const mentors: Array<CourseMentor> = [];
+    if (rows && rows.length > 0) {
+      for (const row of rows) {
+        const mentor = (await users.getUserFromDB(row.mentor_id, client)) as CourseMentor;
+        mentor.meetingUrl = row.meeting_url;
+        mentors.push(mentor);
+      }
+    }
+    return mentors;		
+	}	
 
   async getCourseStudents(courseId: string, client: pg.PoolClient): Promise<Array<CourseStudent>> {
     const getCourseStudentsQuery = `SELECT student_id
