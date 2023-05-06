@@ -4,6 +4,7 @@ import pg from 'pg';
 import { Conn } from '../db/conn';
 import { constants } from '../utils/constants';
 import { Helpers } from '../utils/helpers';
+import { Fields } from './fields';
 import { Users } from './users';
 import { UsersCourses } from './users_courses';
 import { MentorsWaitingRequests } from './mentors_waiting_requests';
@@ -18,6 +19,7 @@ import InAppMessage from '../models/in_app_message';
 const conn = new Conn();
 const pool = conn.pool;
 const helpers = new Helpers();
+const fields = new Fields();
 const users = new Users();
 const usersCourses = new UsersCourses();
 const mentorsWaitingRequests = new MentorsWaitingRequests();
@@ -53,17 +55,29 @@ export class MentorsPartnershipRequests {
          OR mpr.partner_mentor_id = $2
       ORDER BY mpr.sent_date_time DESC LIMIT 1`;
     const { rows }: pg.QueryResult = await client.query(getMentorPartnershipRequestQuery, [mentorPartnershipRequestId, userId]);
+		const allFields = await fields.getFieldsFromDB(client);
     let mentorPartnershipRequest: MentorPartnershipRequest = {};
     if (rows[0]) {
       const mentor = await users.getUserFromDB(rows[0].mentor_id, client);
       const mentorSubfields = mentor?.field?.subfields;
-      if (mentor && mentor.field && mentorSubfields && mentorSubfields.length > 0) {
-        mentor.field.subfields = mentorSubfields.filter(subfield => subfield.id == rows[0].subfield_id);
-      }        
+			const courseField = allFields.find(field => field.subfields?.find(subfield => subfield.id == rows[0].subfield_id));
+      if (mentor && mentor.field && courseField) {
+        mentor.field.subfields = mentorSubfields?.filter(subfield => subfield.id == rows[0].subfield_id);
+				if (!mentor.field.subfields || mentor.field.subfields.length == 0) {
+					mentor.field = courseField;
+					mentor.field.subfields = mentor.field.subfields?.filter(subfield => subfield.id == rows[0].subfield_id);						
+					mentor.field.subfields?.forEach(subfield => subfield.skills = []);
+				}				
+      }
       const partnerMentor = await users.getUserFromDB(rows[0].partner_mentor_id, client);
       const partnerMentorSubfields = partnerMentor?.field?.subfields;
-      if (partnerMentor && partnerMentor.field && partnerMentorSubfields && partnerMentorSubfields.length > 0) {
-        partnerMentor.field.subfields = partnerMentorSubfields.filter(subfield => subfield.id == rows[0].partner_subfield_id);
+      if (partnerMentor && partnerMentor.field && courseField) {
+        partnerMentor.field.subfields = partnerMentorSubfields?.filter(subfield => subfield.id == rows[0].partner_subfield_id);
+				if (!partnerMentor.field.subfields || partnerMentor.field.subfields.length == 0) {
+					partnerMentor.field = courseField;
+					partnerMentor.field.subfields = partnerMentor.field.subfields?.filter(subfield => subfield.id == rows[0].partner_subfield_id);						
+					partnerMentor.field.subfields?.forEach(subfield => subfield.skills = []);
+				}					
       }          
       const courseType: CourseType = {
         id: rows[0].course_type_id,
