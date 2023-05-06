@@ -265,12 +265,15 @@ export class UsersCourses {
     if (rows && rows.length > 0) {
       for (const row of rows) {
         const mentor = (await users.getUserFromDB(row.mentor_id, client)) as CourseMentor;
-				const field = allFields.find(field => field.subfields?.find(subfield => subfield.id == row.subfield_id));
-        const fieldSubfields = field?.subfields;
-        if (mentor && mentor.field && fieldSubfields) {
-          mentor.field.subfields = fieldSubfields.filter(subfield => subfield.id == row.subfield_id);
-					mentor.field.subfields.forEach(subfield => subfield.skills = []);
-        }
+				const courseField = allFields.find(field => field.subfields?.find(subfield => subfield.id == row.subfield_id));
+				if (mentor && mentor.field && courseField) {
+					mentor.field.subfields = mentor.field.subfields?.filter(subfield => subfield.id == row.subfield_id);
+					if (!mentor.field.subfields || mentor.field.subfields.length == 0) {
+						mentor.field = courseField;
+						mentor.field.subfields = mentor.field.subfields?.filter(subfield => subfield.id == row.subfield_id);						
+						mentor.field.subfields?.forEach(subfield => subfield.skills = []);
+					}
+				}
         mentor.meetingUrl = row.meeting_url;
         mentors.push(mentor);
       }
