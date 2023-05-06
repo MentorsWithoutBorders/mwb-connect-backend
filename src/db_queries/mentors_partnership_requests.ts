@@ -64,7 +64,7 @@ export class MentorsPartnershipRequests {
       if (mentor && mentor.field && courseField) {
         mentor.field.subfields = mentorSubfields?.filter(subfield => subfield.id == rows[0].subfield_id);
 				if (!mentor.field.subfields || mentor.field.subfields.length == 0) {
-					mentor.field = courseField;
+					mentor.field = {...courseField};
 					mentor.field.subfields = mentor.field.subfields?.filter(subfield => subfield.id == rows[0].subfield_id);						
 					mentor.field.subfields?.forEach(subfield => subfield.skills = []);
 				}				
@@ -74,7 +74,7 @@ export class MentorsPartnershipRequests {
       if (partnerMentor && partnerMentor.field && courseField) {
         partnerMentor.field.subfields = partnerMentorSubfields?.filter(subfield => subfield.id == rows[0].partner_subfield_id);
 				if (!partnerMentor.field.subfields || partnerMentor.field.subfields.length == 0) {
-					partnerMentor.field = courseField;
+					partnerMentor.field = {...courseField};
 					partnerMentor.field.subfields = partnerMentor.field.subfields?.filter(subfield => subfield.id == rows[0].partner_subfield_id);						
 					partnerMentor.field.subfields?.forEach(subfield => subfield.skills = []);
 				}					

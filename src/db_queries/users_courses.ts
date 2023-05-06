@@ -270,7 +270,7 @@ export class UsersCourses {
 				if (mentor && mentor.field && courseField) {
 					mentor.field.subfields = mentor.field.subfields?.filter(subfield => subfield.id == row.subfield_id);
 					if (!mentor.field.subfields || mentor.field.subfields.length == 0) {
-						mentor.field = courseField;
+						mentor.field = {...courseField};
 						mentor.field.subfields = mentor.field.subfields?.filter(subfield => subfield.id == row.subfield_id);						
 						mentor.field.subfields?.forEach(subfield => subfield.skills = []);
 					}
