@@ -57,12 +57,12 @@ export class MentorsWaitingRequests {
       let mentorsWaitingRequests: Array<MentorWaitingRequest> = [];
       const server = process.env.SERVER as string;
       for (const row of rows) {
-        const mentorId = row.mentor_id;
-        const mentorString = await redisClient.get(`user-${server}-${mentorId}`);
+        const partnerMentorId = row.mentor_id;
+        const mentorString = await redisClient.get(`user-${server}-${partnerMentorId}`);
         let mentorFromDB;
         if (!mentorString) {
-          mentorFromDB = await users.getUserFromDB(mentorId, client);
-          await redisClient.set(`user-${server}-${mentorId}`, JSON.stringify(mentorFromDB));
+          mentorFromDB = await users.getUserFromDB(partnerMentorId, client);
+          await redisClient.set(`user-${server}-${partnerMentorId}`, JSON.stringify(mentorFromDB));
         } else {
           mentorFromDB = JSON.parse(mentorString);
         }

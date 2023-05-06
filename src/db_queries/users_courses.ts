@@ -603,13 +603,12 @@ export class UsersCourses {
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
-      const mentor = (await users.getUserFromDB(mentorId, client)) as CourseMentor;
-      if (mentors) {
-        mentor.meetingUrl = mentors[0].meetingUrl;
-      }
+			if (mentors && mentors.length > 0) {
+				mentors[0].id = mentorId;
+			}
       let course: Course = {
         type: type,
-        mentors: [mentor],
+        mentors: mentors,
         startDateTime: startDateTime
       }
       course = await this.addCourseFromDB(course, client);
