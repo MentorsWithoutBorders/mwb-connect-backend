@@ -867,8 +867,9 @@ export class UsersCourses {
       cancelCourseUserQuery = 'UPDATE users_courses_students SET is_canceled = true, canceled_date_time = $1 WHERE student_id = $2 AND course_id = $3';
     }
     let mentors = await this.getCourseMentors(courseId, client);
+		let course = await this.getCourseById(courseId, client);
 		let isPartnerMentorCourseCanceled = false;
-		if (mentors.length == 2) {
+		if (mentors.length == 2 && course.hasStarted) {
 			const partnerMentor = mentors.find((mentor: CourseMentor) => mentor.id != userId);
 			const assignLessonsToPartnerMentorQuery = 'UPDATE users_courses_partnership_schedule SET mentor_id = $1 WHERE course_id = $2 AND mentor_id = $3 AND lesson_date_time > $4';
 			await client.query(assignLessonsToPartnerMentorQuery, [partnerMentor?.id, courseId, userId, moment.utc()]);
@@ -879,7 +880,7 @@ export class UsersCourses {
 		}		
     const canceledDateTime = moment.utc().format(constants.DATE_TIME_FORMAT);
     await client.query(cancelCourseUserQuery, [canceledDateTime, userId, courseId]);
-		const course = await this.getCourseById(courseId, client);
+		course = await this.getCourseById(courseId, client);
 		mentors = course.mentors as Array<CourseMentor>;
     const students = course.students as Array<CourseStudent>;
 		if ((user.isMentor || course.hasStarted) && (mentors.length == 0 || students.length == 0 || mentors.length == 1 && isPartnerMentorCourseCanceled)) {
