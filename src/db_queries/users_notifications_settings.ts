@@ -64,9 +64,9 @@ export class UsersNotificationsSettings {
 			const user = await users.getUserFromDB(userId, client);
 			const userTimeZone = await usersTimeZones.getUserTimeZone(userId, client);
 			let trainingRemindersEnabledForUpdate = true;
-			if (trainingRemindersEnabled) {
+			if (trainingRemindersEnabled != null) {
 				trainingRemindersEnabledForUpdate = trainingRemindersEnabled;
-			} else if (enabled) {
+			} else if (enabled != null) {
 				trainingRemindersEnabledForUpdate = enabled;
 			}
 			let trainingRemindersTimeForUpdate = '';
