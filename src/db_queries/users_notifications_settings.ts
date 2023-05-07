@@ -27,9 +27,9 @@ export class UsersNotificationsSettings {
       const getNotificationsSettingsQuery = 'SELECT enabled, time, training_reminders_enabled, training_reminders_time, start_course_reminders_enabled, start_course_reminders_date FROM users_notifications_settings WHERE user_id = $1';
       const { rows }: pg.QueryResult = await pool.query(getNotificationsSettingsQuery, [userId]);
 			let trainingRemindersEnabledDB = true;
-			if (rows[0].training_reminders_enabled) {
+			if (rows[0].training_reminders_enabled != null) {
 				trainingRemindersEnabledDB = rows[0].training_reminders_enabled;
-			} else if (rows[0].enabled) {
+			} else if (rows[0].enabled != null) {
 				trainingRemindersEnabledDB = rows[0].enabled;
 			}
 			let trainingRemindersTimeDB = '';
