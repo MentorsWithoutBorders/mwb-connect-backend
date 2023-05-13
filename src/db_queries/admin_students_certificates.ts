@@ -122,6 +122,9 @@ export class AdminStudentsCertificates {
       const updateNotificationsSettingsQuery = `UPDATE users_notifications_settings
         SET enabled = false, training_reminders_enabled = false WHERE user_id = $1`; 
       await client.query(updateNotificationsSettingsQuery, [studentId]);
+      const updateAppFlagsQuery = `UPDATE users_app_flags
+        SET is_training_enabled = false WHERE user_id = $1`; 
+      await client.query(updateAppFlagsQuery, [studentId]);			
       const deleteTrainingReminderQuery = `DELETE FROM admin_training_reminders WHERE user_id = $1`;
       await client.query(deleteTrainingReminderQuery, [studentId]);       
       response.status(200).json(`Certificate sent has been updated for user: ${studentId}`);
