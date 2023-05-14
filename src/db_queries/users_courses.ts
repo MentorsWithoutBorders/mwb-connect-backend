@@ -733,7 +733,9 @@ export class UsersCourses {
 	
   async updateStudentSubfields(studentId: string, course: Course, client: pg.PoolClient): Promise<void> {
 		await users.deleteUserSubfields(studentId, client);
-		const courseSubfields = course.mentors?.map(mentor => mentor.field?.subfields).flat();
+		const courseSubfields = (course.mentors?.map(mentor => mentor.field?.subfields)
+			.filter(subfieldArray => subfieldArray !== undefined) as Subfield[][])
+			.flat();		
     if (courseSubfields) {
 			const filteredSubfields = courseSubfields.filter(subfield => subfield !== undefined) as Subfield[];
 			await users.insertUserSubfields(studentId, filteredSubfields, client);
