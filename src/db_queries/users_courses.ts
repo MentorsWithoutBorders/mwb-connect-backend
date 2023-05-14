@@ -7,6 +7,7 @@ import { Conn } from '../db/conn';
 import { constants } from '../utils/constants';
 import { Helpers } from '../utils/helpers';
 import { Fields } from './fields';
+import { FieldsGoals } from './fields_goals';
 import { Users } from './users';
 import { UsersAvailableMentors } from './users_available_mentors';
 import { UsersPushNotifications } from './users_push_notifications';
@@ -31,6 +32,7 @@ const pool = conn.pool;
 const redisClient = createClient();
 const helpers = new Helpers();
 const fields = new Fields();
+const fieldsGoals = new FieldsGoals();
 const users = new Users();
 const usersAvailableMentors = new UsersAvailableMentors();
 const usersPushNotifications = new UsersPushNotifications();
@@ -672,6 +674,10 @@ export class UsersCourses {
       await client.query('BEGIN');
       const student = await users.getUserFromDB(studentId, client);
       let course = await this.getCourseById(courseId, client);
+			const fieldId = course.mentors?.[0].field?.id;
+			await this.updateStudentField(studentId, fieldId, client);
+			await this.updateStudentGoal(studentId, fieldId, client);
+			await this.updateStudentSubfields(studentId, course, client);
 			let shouldNotifyOtherStudents = !course.hasStarted;
       const minStudentsCourse = constants.MIN_STUDENTS_COURSE;
       const maxStudentsCourse = constants.MAX_STUDENTS_COURSE;
@@ -707,6 +713,32 @@ export class UsersCourses {
       client.release();
     }
   }
+
+  async updateStudentGoal(studentId: string, fieldId: string | undefined, client: pg.PoolClient): Promise<void> {
+    if (fieldId) {
+			const fieldGoal = await fieldsGoals.getFieldGoal(fieldId, client);
+			if (fieldId && fieldGoal && fieldGoal.goal) {
+				const dateTime = moment.utc();
+				const updateStudentGoalQuery = `UPDATE users_goals SET text = $1, date_time = $2 WHERE user_id = $3`;
+				await client.query(updateStudentGoalQuery, [fieldGoal.goal, dateTime, studentId]);
+			}
+    }
+  }  
+  
+  async updateStudentField(studentId: string, fieldId: string | undefined, client: pg.PoolClient): Promise<void> {
+		if (fieldId) {
+			await users.updateUserField(studentId, fieldId, client);
+		}
+  }
+	
+  async updateStudentSubfields(studentId: string, course: Course, client: pg.PoolClient): Promise<void> {
+		await users.deleteUserSubfields(studentId, client);
+		const courseSubfields = course.mentors?.map(mentor => mentor.field?.subfields).flat();
+    if (courseSubfields) {
+			const filteredSubfields = courseSubfields.filter(subfield => subfield !== undefined) as Subfield[];
+			await users.insertUserSubfields(studentId, filteredSubfields, client);
+		}
+	}
 
   async addCourseStudent(courseId: string, student: CourseStudent, client: pg.PoolClient): Promise<void> {
     const getCourseStudentQuery = `SELECT student_id

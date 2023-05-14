@@ -225,8 +225,8 @@ export class UsersLessonRequests {
       if (rows[0]) {
         goalText = rows[0].goal;    
       }
-      const updateStudentFieldQuery = `UPDATE users_goals SET text = $1 WHERE user_id = $2`;
-      await client.query(updateStudentFieldQuery, [goalText, studentId]);
+      const updateStudentGoalQuery = `UPDATE users_goals SET text = $1 WHERE user_id = $2`;
+      await client.query(updateStudentGoalQuery, [goalText, studentId]);
     }
   }  
   

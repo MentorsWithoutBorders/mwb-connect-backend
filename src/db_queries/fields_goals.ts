@@ -39,5 +39,16 @@ export class FieldsGoals {
       client.release();
     }  
   }
+
+	async getFieldGoal(fieldId: string, client: pg.PoolClient): Promise<FieldGoal> {
+		const getFieldGoalQuery = 'SELECT field_id, goal, why_choose_url FROM fields_goals WHERE field_id = $1';
+		const { rows }: pg.QueryResult = await client.query(getFieldGoalQuery, [fieldId]);
+		const fieldGoal: FieldGoal = {
+			fieldId: rows[0].field_id,
+			goal: rows[0].goal,
+			whyChooseUrl: rows[0].why_choose_url
+		};
+		return fieldGoal;
+	}
 }
 

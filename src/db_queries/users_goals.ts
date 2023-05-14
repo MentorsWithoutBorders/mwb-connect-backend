@@ -101,13 +101,19 @@ export class UsersGoals {
     const userId = request.user.id as string;
     const goalId = request.params.id;
     const { text }: Goal = request.body
-    const dateTime = moment.utc();
+    const client = await pool.connect();
     try {
+      await client.query('BEGIN');
+			const dateTime = moment.utc();
       const updateGoalQuery = 'UPDATE users_goals SET text = $1, date_time = $2 WHERE user_id = $3 AND id = $4';
-      await pool.query(updateGoalQuery, [text, dateTime, userId, goalId]);
+      await client.query(updateGoalQuery, [text, dateTime, userId, goalId]);
+      await client.query('COMMIT');
       response.status(200).send(`Goal modified with ID: ${goalId}`);
     } catch (error) {
+      await client.query('ROLLBACK');
       response.status(400).send(error);
+    } finally {
+      client.release();
     }
   }
 

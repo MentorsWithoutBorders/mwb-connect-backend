@@ -260,17 +260,22 @@ export class Users {
     const deleteAvailabilitiesQuery = `DELETE FROM users_availabilities
       WHERE user_id = $1`;
     await client.query(deleteAvailabilitiesQuery, [userId]);    
-  }  
+  }
+	
+	async updateUserField(userId: string, fieldId: string, client: pg.PoolClient): Promise<void> {
+		const updateUserFieldQuery = `UPDATE users SET field_id = $1 WHERE id = $2`;
+		await client.query(updateUserFieldQuery, [fieldId, userId]);
+	}
 
   async insertUserSubfields(userId: string, subfields: Array<Subfield>, client: pg.PoolClient): Promise<void> {
-    for (let i = 0; i < subfields.length; i++) {
-      const insertSubfieldQuery = `INSERT INTO users_subfields (user_id, subfield_index, subfield_id)
-        VALUES ($1, $2, $3)`;
-      await client.query(insertSubfieldQuery, [userId, i+1, subfields[i].id]); 
-      if (subfields[i].skills != null && (subfields[i].skills as Array<Skill>).length > 0) {
-        await this.updateUserSkills(userId, subfields[i].id as string, subfields[i].skills as Array<Skill>, client);
-      }
-    }
+		for (let i = 0; i < subfields.length; i++) {
+			const insertSubfieldQuery = `INSERT INTO users_subfields (user_id, subfield_index, subfield_id)
+				VALUES ($1, $2, $3)`;
+			await client.query(insertSubfieldQuery, [userId, i+1, subfields[i].id]); 
+			if (subfields[i].skills != null && (subfields[i].skills as Array<Skill>).length > 0) {
+				await this.updateUserSkills(userId, subfields[i].id as string, subfields[i].skills as Array<Skill>, client);
+			}
+		}
   }
   
   async updateUserSkills(userId: string, subfieldId: string, skills: Array<Skill>, client: pg.PoolClient): Promise<void> {
