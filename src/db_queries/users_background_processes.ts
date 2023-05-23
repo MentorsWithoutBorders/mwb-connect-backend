@@ -13,7 +13,6 @@ import { UsersAvailableMentors } from './users_available_mentors';
 import { UsersSteps } from './users_steps';
 import { UsersQuizzes } from './users_quizzes';
 import { UsersTimeZones } from './users_timezones';
-import { UsersAppVersions } from './users_app_versions';
 import { UsersPushNotifications } from './users_push_notifications';
 import { UsersSendEmails } from './users_send_emails';
 import { UsersWhatsAppMessages } from './users_whatsapp_messages';
@@ -32,7 +31,6 @@ const usersCourses = new UsersCourses();
 const usersAvailableMentors = new UsersAvailableMentors();
 const usersSteps = new UsersSteps();
 const usersQuizzes = new UsersQuizzes();
-const usersAppVersions = new UsersAppVersions();
 const usersTimeZones = new UsersTimeZones();
 const usersPushNotifications = new UsersPushNotifications();
 const usersSendEmails = new UsersSendEmails();
@@ -44,6 +42,69 @@ export class UsersBackgroundProcesses {
   constructor() {
     helpers.autoBind(this);
   }
+
+  async sendNextCourseLessonRemindersFromDB(): Promise<void> {
+    const getCoursesQuery = `SELECT 
+				uc.id
+			FROM
+				(SELECT 
+					id, 
+					start_date_time, 
+					course_type_id, 
+					has_started, 
+					is_canceled, 
+					EXTRACT(EPOCH FROM (date_trunc('minute', now()) + INTERVAL '30 minutes' - start_date_time)) / 3600 / 24 / 7 AS diff_date_time
+				FROM 
+					users_courses
+				) uc
+			JOIN 
+				course_types AS ct ON uc.course_type_id = ct.id          
+			WHERE 
+				uc.has_started = true AND 
+				uc.is_canceled IS DISTINCT FROM true AND 
+				ct.duration * interval '1 month' + interval '3 days' >= (NOW() - uc.start_date_time) AND
+				uc.diff_date_time = FLOOR(uc.diff_date_time)`;
+    const { rows }: pg.QueryResult = await pool.query(getCoursesQuery);
+		const client = await pool.connect();
+		try {
+			await client.query('BEGIN');
+			for (const row of rows) {
+				const course = await usersCourses.getCourseById(row.id, client);
+				let nextLessonDateTime = moment.utc(course.startDateTime);
+				while (nextLessonDateTime.isBefore(moment.utc())) {
+					nextLessonDateTime = nextLessonDateTime.add(1, 'w');
+				}
+				let mentor;
+				const students = [];
+				if (course.mentors != null && course.mentors.length > 0) {
+					for (const courseMentor of course.mentors) {
+						const nextLessonMentor = await usersCourses.getNextLessonDateTimeForMentor(course, courseMentor.id as string, client);
+						if (moment.utc(nextLessonMentor).isSame(nextLessonDateTime)) {
+							mentor = courseMentor;
+							break;
+						}
+					}
+				}
+				if (mentor && course.students != null && course.students.length > 0) {
+					for (const student of course.students) {
+						const nextLessonStudent = await usersCourses.getNextLessonDateTimeForStudent(course, student.id as string, client);
+						if (moment.utc(nextLessonStudent).isSame(nextLessonDateTime)) {
+							students.push(student);
+						}
+					}
+				}
+				if (mentor) {
+					usersPushNotifications.sendPNNextCourseLessonReminder(mentor, students);
+					usersSendEmails.sendEmailNextCourseLessonReminder(mentor, students, nextLessonDateTime, client);
+				}
+			}
+			await client.query('COMMIT');
+		} catch (error) {
+			await client.query('ROLLBACK');
+		} finally {
+			client.release();
+		}        
+  }	
 
   async sendAllLessonRequestReminders(request: Request, response: Response): Promise<void> {
     try {
@@ -151,6 +212,15 @@ export class UsersBackgroundProcesses {
     }
   }
 
+  async sendNextCourseLessonReminders(request: Request, response: Response): Promise<void> {
+    try {
+      await this.sendNextCourseLessonRemindersFromDB();
+      response.status(200).send('Course lesson reminders sent');
+    } catch (error) {
+      response.status(400).send(error);
+    }    
+  }	
+
   async sendAllLessonReminders(request: Request, response: Response): Promise<void> {
     try {
       await this.sendAllLessonRemindersFromDB();
@@ -190,8 +260,8 @@ export class UsersBackgroundProcesses {
         if (difference.asSeconds() < 60) {
           const students = nextLesson.students;
           if (students != null && students.length > 0) {
-            usersSendEmails.sendEmailLessonReminder(nextLesson, client);
             usersPushNotifications.sendPNLessonReminder(nextLesson);
+            usersSendEmails.sendEmailLessonReminder(nextLesson, client);
             await usersWhatsAppMessages.sendWMLessonReminder(nextLesson, client);
           }
         }
@@ -380,19 +450,10 @@ export class UsersBackgroundProcesses {
           registeredOn: row.registered_on
         }
         const showStepReminder = await this.getShowStepReminder(user, client);
-        let showQuizReminder = false;
-        let remainingQuizzes = 0;
-        const hasOldAppVersion = await this.hasOldAppVersion(user.id as string, client);
-        if (user.isMentor && hasOldAppVersion) {
-          const quizNumber = await usersQuizzes.getQuizNumberFromDB(user.id as string, client);
-          remainingQuizzes = 3 - (quizNumber - 1) % 3;
-          showQuizReminder = quizNumber > 0 ? true : false;
-        } else {
-          const quizzes = await usersQuizzes.getQuizzesFromDB(user.id as string, client);
-          remainingQuizzes = helpers.getRemainingQuizzes(quizzes);
-          showQuizReminder = remainingQuizzes > 0 ? true : false;
-        }
-        await this.sendTrainingReminders(type, user, showStepReminder, showQuizReminder, remainingQuizzes, client);
+				const quizzes = await usersQuizzes.getQuizzesFromDB(user.id as string, client);
+				const remainingQuizzes = helpers.getRemainingQuizzes(quizzes);
+				const showQuizReminder = remainingQuizzes > 0 ? true : false;
+			await this.sendTrainingReminders(type, user, showStepReminder, showQuizReminder, remainingQuizzes, client);
         await client.query('COMMIT');
       } catch (error) {
         await client.query('ROLLBACK');
@@ -421,14 +482,7 @@ export class UsersBackgroundProcesses {
       }
     }
   }
-  
-  async hasOldAppVersion(userId: string, client: pg.PoolClient): Promise<boolean> {
-    const appVersion = await usersAppVersions.getAppVersion(userId, client);
-    return appVersion.major == 1 && appVersion.minor == 0 && 
-      (appVersion.revision == 1 && appVersion.build == 3 ||
-       appVersion.revision == 4 && (appVersion.build == 15 || appVersion.build == 23));
-  }
-  
+
   async getShowStepReminder(user: User, client: pg.PoolClient): Promise<boolean> {
     const userTimeZone = await usersTimeZones.getUserTimeZone(user.id as string, client);
     const lastStepAdded = await usersSteps.getLastStepAddedFromDB(user.id as string, client);

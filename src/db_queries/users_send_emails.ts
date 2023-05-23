@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import nodemailer from 'nodemailer';
-import moment from 'moment';
+import moment, { Moment } from 'moment';
 import 'moment-timezone';
 import pg from 'pg';
 import dotenv from 'dotenv';
@@ -329,7 +329,45 @@ export class UsersSendEmails {
 			body: body
 		}			
 		this.sendEmail(mentor?.email as string, email);
-  }	
+  }
+	
+	async sendEmailNextCourseLessonReminder(mentor: CourseMentor, students: Array<CourseStudent>, dateTime: Moment, client: pg.PoolClient): Promise<void> {
+		// Send email to students
+		if (students && students?.length > 1) {
+			for (const student of students) {
+				const studentFirstName = helpers.getUserFirstName(student);
+				const studentTimeZone = await usersTimeZones.getUserTimeZone(student.id as string, client);
+				const lessonTime = moment.utc(dateTime).tz(studentTimeZone.name).format(constants.TIME_FORMAT_LESSON) + ' ' + studentTimeZone.abbreviation;
+				let body = `This is a gentle reminder to participate in the next lesson at ${lessonTime}.<br><br>`;
+				body += `The meeting link is: <a href="${mentor.meetingUrl}" target="_blank">${mentor.meetingUrl}</a><br><br>`;
+				body += `If you aren't able to join the session, please notify your mentor, ${mentor?.name}, at: ${mentor?.email}`;
+				body = this.setEmailBody(studentFirstName, body);
+				const emailStudent: Email = {
+					subject: 'Next lesson in 30 mins',
+					body: body
+				}
+				this.sendEmail(student?.email as string, emailStudent);
+			}
+		}
+    // Send email to mentor
+		const mentorFirstName = helpers.getUserFirstName(mentor);
+		const mentorTimeZone = await usersTimeZones.getUserTimeZone(mentor.id as string, client);
+		const lessonTime = moment.utc(dateTime).tz(mentorTimeZone.name).format(constants.TIME_FORMAT_LESSON) + ' ' + mentorTimeZone.abbreviation;		
+		let body = `Hi ${mentorFirstName},<br><br>`;
+	 	body += `This is a gentle reminder to conduct the next lesson at ${lessonTime}.<br><br>`;
+		body += `The meeting link is: <a href="${mentor.meetingUrl}" target="_blank">${mentor.meetingUrl}</a><br><br>`;
+		if (students && students?.length > 1) {
+			body += 'Below are the contact details of all students in case you would like to message them (<b>WhatsApp</b> usually works best):';
+			body += this.createStudentsList(students as CourseStudent[]);
+		}
+		body += `<br>`;
+		body += `Regards,<br>MWB Support Team`; 
+		const emailMentor: Email = {
+			subject: `Next lesson in 30 mins`,
+			body: body
+		}    
+		this.sendEmail(mentor?.email as string, emailMentor);
+  }
 
 
 
