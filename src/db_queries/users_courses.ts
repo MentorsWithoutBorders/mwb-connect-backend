@@ -265,9 +265,18 @@ export class UsersCourses {
     const { rows }: pg.QueryResult = await client.query(getCourseMentorsQuery, [courseId]);
 		const allFields = await fields.getFieldsFromDB(client);
     const mentors: Array<CourseMentor> = [];
+		const server = process.env.SERVER as string;
     if (rows && rows.length > 0) {
       for (const row of rows) {
-        const mentor = (await users.getUserFromDB(row.mentor_id, client)) as CourseMentor;
+				const mentorId = row.mentor_id;
+				const mentorString = await redisClient.get(`user-${server}-${mentorId}`);
+				let mentor: CourseMentor;
+				if (!mentorString) {
+					mentor = await users.getUserFromDB(mentorId, client);
+					await redisClient.set(`user-${server}-${mentorId}`, JSON.stringify(mentor));
+				} else {
+					mentor = JSON.parse(mentorString);
+				}
 				const courseField = allFields.find(field => field.subfields?.find(subfield => subfield.id == row.subfield_id));
 				if (mentor && mentor.field && courseField) {
 					mentor.field.subfields = mentor.field.subfields?.filter(subfield => subfield.id == row.subfield_id);
@@ -290,9 +299,18 @@ export class UsersCourses {
       WHERE course_id = $1`;
     const { rows }: pg.QueryResult = await client.query(getCourseMentorsQuery, [courseId]);
 		const mentors: Array<CourseMentor> = [];
+		const server = process.env.SERVER as string;
     if (rows && rows.length > 0) {
       for (const row of rows) {
-        const mentor = (await users.getUserFromDB(row.mentor_id, client)) as CourseMentor;
+				const mentorId = row.mentor_id;
+				const mentorString = await redisClient.get(`user-${server}-${mentorId}`);
+				let mentor: CourseMentor;
+				if (!mentorString) {
+					mentor = await users.getUserFromDB(mentorId, client);
+					await redisClient.set(`user-${server}-${mentorId}`, JSON.stringify(mentor));
+				} else {
+					mentor = JSON.parse(mentorString);
+				}
         mentor.meetingUrl = row.meeting_url;
         mentors.push(mentor);
       }
@@ -307,9 +325,18 @@ export class UsersCourses {
         AND is_canceled IS DISTINCT FROM true`;
     const { rows }: pg.QueryResult = await client.query(getCourseStudentsQuery, [courseId]);
     const students: Array<CourseStudent> = [];
+		const server = process.env.SERVER as string;
     if (rows && rows.length > 0) {
       for (const row of rows) {
-        const student = await users.getUserFromDB(row.student_id, client);
+				const studentId = row.student_id;
+				const studentString = await redisClient.get(`user-${server}-${studentId}`);
+				let student: CourseStudent;
+				if (!studentString) {
+					student = await users.getUserFromDB(studentId, client);
+					await redisClient.set(`user-${server}-${studentId}`, JSON.stringify(student));
+				} else {
+					student = JSON.parse(studentString);
+				}
         students.push(student as CourseStudent);
       }
     }
