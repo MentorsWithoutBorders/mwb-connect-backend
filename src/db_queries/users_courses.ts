@@ -690,7 +690,9 @@ export class UsersCourses {
       } else {
         await this.addCourseStudent(courseId, student, client);
         course = await this.getCourseById(courseId, client);
-        course = await this.updateCourseStartDateTime(course, client);
+				if (!course.hasStarted)	{
+					course = await this.updateCourseStartDateTime(course, client);
+				}
         if (course.mentors && course.students && course.mentors.length > 1 && course.students.length >= minStudentsCourse && !course.hasStarted) {
           await this.addMentorPartnershipSchedule(course, client);
         }
