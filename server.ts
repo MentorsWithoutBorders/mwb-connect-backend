@@ -331,7 +331,7 @@ cron.schedule('* * * * *', async() => {
 });
 
 cron.schedule("*/5 * * * *", function() {
-  // usersCourses.setAvailableCoursesFieldsFromDB();
+  usersCourses.setAvailableCoursesFieldsFromDB();
   usersAvailableMentors.setAvailableMentorsFieldsFromDB();
 });
 

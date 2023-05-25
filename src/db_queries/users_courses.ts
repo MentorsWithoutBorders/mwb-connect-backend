@@ -1033,7 +1033,15 @@ export class UsersCourses {
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
-      const fields = await this.getAvailableCoursesFieldsFromDB(client);
+			const server = process.env.SERVER as string;
+      const fieldsString = await redisClient.get(`available_courses_fields-${server}`);
+      let fields: Array<Field> = [];
+      if (fieldsString && fieldsString != '{}') {
+        fields = JSON.parse(fieldsString);
+      } else {
+        fields = await this.getAvailableCoursesFieldsFromDB(client);
+        await redisClient.set(`available_courses_fields-${server}`, JSON.stringify(fields));
+      }			
       await client.query('COMMIT');
       response.status(200).json(fields);
     } catch (error) {
