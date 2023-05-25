@@ -75,24 +75,17 @@ export class UsersCourses {
       getCoursesQuery += ` AND ct.duration = $1`;
       values.push(courseDuration.toString());
     }
+		const allFields = await fields.getFieldsFromDB(client);
     const { rows }: pg.QueryResult = await client.query(getCoursesQuery, values);
     if (rows && rows.length > 0) {
       for (const row of rows) {
-				const startTime = moment.utc();
         const courseType: CourseType = {
           duration: row.duration,
           isWithPartner: row.is_with_partner,
           index: row.index
         }
-				// Get milliseconds passed from startTime
-				let millisecondsPassed = moment.utc().diff(startTime);
-				console.log(`millisecondsPassed before getCourseMentors and getCourseStudents for course id ${row.id}: ${millisecondsPassed}`);
-        const mentors = await this.getCourseMentors(row.id, client);
-				millisecondsPassed = moment.utc().diff(startTime);
-				console.log(`millisecondsPassed after getCourseMentors: ${millisecondsPassed}`);
+        const mentors = await this.getCourseMentors(row.id, allFields, client);
         const students = await this.getCourseStudents(row.id, client);
-				millisecondsPassed = moment.utc().diff(startTime);
-				console.log(`millisecondsPassed after getCourseStudents: ${millisecondsPassed}`);
         const course = {
           id: row.id,
           type: courseType,
@@ -101,13 +94,9 @@ export class UsersCourses {
           students: students
         }
         const courseCombinedMentor = this.getCourseCombinedMentor(mentors, course.startDateTime);
-				millisecondsPassed = moment.utc().diff(startTime);
-				console.log(`millisecondsPassed after getCourseCombinedMentor: ${millisecondsPassed}`);
         if (usersAvailableMentors.isValidMentor(courseCombinedMentor, courseFilter?.field, courseFilter?.availabilities) && students.length < constants.MAX_STUDENTS_COURSE) {
           courses.push(course);
         }
-				millisecondsPassed = moment.utc().diff(startTime);
-				console.log(`millisecondsPassed after isValidMentor: ${millisecondsPassed}`);
       }
     }
     return courses;
@@ -252,7 +241,8 @@ export class UsersCourses {
         isWithPartner: rows[0].is_with_partner,
         index: rows[0].index
       }
-      const mentors = await this.getCourseMentors(courseId, client);
+			const allFields = await fields.getFieldsFromDB(client);
+      const mentors = await this.getCourseMentors(courseId, allFields, client);
       const students = await this.getCourseStudents(courseId, client);
       course = {
         id: rows[0].id,
@@ -269,13 +259,12 @@ export class UsersCourses {
     return course;
   }
   
-  async getCourseMentors(courseId: string, client: pg.PoolClient): Promise<Array<CourseMentor>> {
+  async getCourseMentors(courseId: string, allFields: Array<Field>, client: pg.PoolClient): Promise<Array<CourseMentor>> {
     const getCourseMentorsQuery = `SELECT mentor_id, subfield_id, meeting_url
       FROM users_courses_mentors
       WHERE course_id = $1
         AND is_canceled IS DISTINCT FROM true`;
     const { rows }: pg.QueryResult = await client.query(getCourseMentorsQuery, [courseId]);
-		const allFields = await fields.getFieldsFromDB(client);
     const mentors: Array<CourseMentor> = [];
 		const server = process.env.SERVER as string;
     if (rows && rows.length > 0) {
@@ -306,10 +295,10 @@ export class UsersCourses {
   }
 
   async getAllCourseMentors(courseId: string, client: pg.PoolClient): Promise<Array<CourseMentor>> {
-    const getCourseMentorsQuery = `SELECT mentor_id, subfield_id, meeting_url
+    const getAllCourseMentorsQuery = `SELECT mentor_id, subfield_id, meeting_url
       FROM users_courses_mentors
       WHERE course_id = $1`;
-    const { rows }: pg.QueryResult = await client.query(getCourseMentorsQuery, [courseId]);
+    const { rows }: pg.QueryResult = await client.query(getAllCourseMentorsQuery, [courseId]);
 		const mentors: Array<CourseMentor> = [];
 		const server = process.env.SERVER as string;
     if (rows && rows.length > 0) {
@@ -941,7 +930,8 @@ export class UsersCourses {
     } else {
       cancelCourseUserQuery = 'UPDATE users_courses_students SET is_canceled = true, canceled_date_time = $1 WHERE student_id = $2 AND course_id = $3';
     }
-    let mentors = await this.getCourseMentors(courseId, client);
+		const allFields = await fields.getFieldsFromDB(client);
+    let mentors = await this.getCourseMentors(courseId, allFields, client);
 		let course = await this.getCourseById(courseId, client);
 		let isPartnerMentorCourseCanceled = false;
 		if (mentors.length == 2 && course.hasStarted) {
