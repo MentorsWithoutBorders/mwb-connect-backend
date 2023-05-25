@@ -101,10 +101,12 @@ export class UsersCourses {
           students: students
         }
         const courseCombinedMentor = this.getCourseCombinedMentor(mentors, course.startDateTime);
+				millisecondsPassed = moment.utc().diff(startTime);
 				console.log(`millisecondsPassed after getCourseCombinedMentor: ${millisecondsPassed}`);
         if (usersAvailableMentors.isValidMentor(courseCombinedMentor, courseFilter?.field, courseFilter?.availabilities) && students.length < constants.MAX_STUDENTS_COURSE) {
           courses.push(course);
         }
+				millisecondsPassed = moment.utc().diff(startTime);
 				console.log(`millisecondsPassed after isValidMentor: ${millisecondsPassed}`);
       }
     }
