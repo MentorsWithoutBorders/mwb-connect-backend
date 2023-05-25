@@ -78,13 +78,21 @@ export class UsersCourses {
     const { rows }: pg.QueryResult = await client.query(getCoursesQuery, values);
     if (rows && rows.length > 0) {
       for (const row of rows) {
+				const startTime = moment.utc();
         const courseType: CourseType = {
           duration: row.duration,
           isWithPartner: row.is_with_partner,
           index: row.index
         }
+				// Get milliseconds passed from startTime
+				let millisecondsPassed = moment.utc().diff(startTime);
+				console.log(`millisecondsPassed before getCourseMentors and getCourseStudents for course id ${row.id}: ${millisecondsPassed}`);
         const mentors = await this.getCourseMentors(row.id, client);
+				millisecondsPassed = moment.utc().diff(startTime);
+				console.log(`millisecondsPassed after getCourseMentors: ${millisecondsPassed}`);
         const students = await this.getCourseStudents(row.id, client);
+				millisecondsPassed = moment.utc().diff(startTime);
+				console.log(`millisecondsPassed after getCourseStudents: ${millisecondsPassed}`);
         const course = {
           id: row.id,
           type: courseType,
@@ -93,9 +101,11 @@ export class UsersCourses {
           students: students
         }
         const courseCombinedMentor = this.getCourseCombinedMentor(mentors, course.startDateTime);
+				console.log(`millisecondsPassed after getCourseCombinedMentor: ${millisecondsPassed}`);
         if (usersAvailableMentors.isValidMentor(courseCombinedMentor, courseFilter?.field, courseFilter?.availabilities) && students.length < constants.MAX_STUDENTS_COURSE) {
           courses.push(course);
-        }        
+        }
+				console.log(`millisecondsPassed after isValidMentor: ${millisecondsPassed}`);
       }
     }
     return courses;
