@@ -68,7 +68,8 @@ export class UsersCourses {
 			JOIN course_types ct
 				ON uc.course_type_id = ct.id
 			WHERE uc.is_canceled IS DISTINCT FROM true
-				AND (uc.has_started IS DISTINCT FROM true OR now() < uc.start_date_time + INTERVAL '2 weeks')`;
+				AND uc.has_started IS DISTINCT FROM true`;
+				// AND (uc.has_started IS DISTINCT FROM true OR now() < uc.start_date_time + INTERVAL '2 weeks')`;
     const courseDuration = courseFilter?.courseType?.duration;
     const values: Array<string> = [];
     if (courseDuration) {
