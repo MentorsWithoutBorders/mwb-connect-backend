@@ -39,6 +39,8 @@ export class ApprovedUsers {
         field: field,
         organization: organization,
         isMentor: rows[0].is_mentor,
+        isOrgManager: rows[0].is_org_manager,
+        isCentreManager: rows[0].is_centre_manager,
         goal: rows[0].goal
       };
     }
