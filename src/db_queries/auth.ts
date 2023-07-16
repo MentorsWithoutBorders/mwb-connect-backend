@@ -11,6 +11,7 @@ import { ApprovedUsers } from './approved_users';
 import { UsersAppFlags } from './users_app_flags';
 import { UsersGoals } from './users_goals';
 import { UsersTimeZones } from './users_timezones';
+import { AdminPermissions } from './admin_permissions';
 import Token from '../models/token.model';
 import Tokens from '../models/tokens.model';
 import User from '../models/user.model';
@@ -26,6 +27,7 @@ const approvedUsers = new ApprovedUsers();
 const usersAppFlags = new UsersAppFlags();
 const usersGoals = new UsersGoals();
 const usersTimeZones = new UsersTimeZones();
+const adminPermissions = new AdminPermissions();
 dotenv.config();
 
 export class Auth {
@@ -45,8 +47,9 @@ export class Auth {
     }
     const client = await pool.connect();
     try {
-      const getUsersQuery = 'SELECT email FROM users WHERE email = $1';
       await client.query('BEGIN');
+
+      const getUsersQuery = 'SELECT email FROM users WHERE email = $1';
       let { rows }: pg.QueryResult = await client.query(getUsersQuery, [email]);
       if (rows[0]) {
         response.status(400).send({'message': 'User already exists.'});
@@ -77,13 +80,19 @@ export class Auth {
         moment.utc().format(constants.DATE_TIME_FORMAT),
       ];
       ({ rows } = await client.query(createUserQuery, values));
+
       const userId: string = rows[0].id;
+
+      await adminPermissions.addPermission(userId, approvedUser, client);
       await usersTimeZones.addTimeZone(userId, timeZone as TimeZone, client);
       await this.setDefaultUserProfile(userId, approvedUser.isMentor as boolean, client);
       await usersAppFlags.addAppFlagsFromDB(userId, true, true, client);
-      if (!approvedUser.isMentor) {
+
+      const isStudent = !(approvedUser.isMentor || approvedUser.isCentreManager || approvedUser.isOrgManager);
+      if (isStudent) {
         await usersGoals.addGoalToDB(userId, approvedUser.goal as string, client);
       }
+
       const tokens: Tokens = await this.setTokens(userId, client);
       response.status(200).send(tokens);
       await client.query('COMMIT');
