@@ -87,7 +87,9 @@ export class Auth {
       await usersTimeZones.addTimeZone(userId, timeZone as TimeZone, client);
       await this.setDefaultUserProfile(userId, approvedUser.isMentor as boolean, client);
       await usersAppFlags.addAppFlagsFromDB(userId, true, true, client);
-      if (!approvedUser.isMentor) {
+
+      const isStudent = !(approvedUser.isMentor || approvedUser.isCentreManager || approvedUser.isOrgManager);
+      if (isStudent) {
         await usersGoals.addGoalToDB(userId, approvedUser.goal as string, client);
       }
 
