@@ -24,7 +24,6 @@ export default interface User {
   isAdmin?: boolean;
   hasScheduledLesson?: boolean;
   workdays?: number;
-  hasMentors?: boolean;
   isOrgManager?: boolean;
   isCentreManager?: boolean;
 }

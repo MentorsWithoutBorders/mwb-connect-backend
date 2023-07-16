@@ -85,7 +85,7 @@ export class Users {
     if (!uuidValidate(id)) {
       throw new ValidationError('Invalid user id');
     }
-    const getUserQuery = `SELECT u.id AS user_id, u.name, u.email, u.phone_number, o.id AS organization_id, o.name AS organization_name, f.id AS field_id, f.name AS field_name, u.is_available, u.available_from, u.registered_on, ap.is_admin, ap.is_mentor, ap.is_centre_manager, ap.is_org_manager
+    const getUserQuery = `SELECT u.id AS user_id, u.name, u.email, u.phone_number, o.id AS organization_id, o.name AS organization_name, o.has_mentors, f.id AS field_id, f.name AS field_name, u.is_available, u.available_from, u.registered_on, ap.is_admin, ap.is_mentor, ap.is_centre_manager, ap.is_org_manager
       FROM users u
       JOIN fields f
         ON u.field_id = f.id
@@ -100,7 +100,8 @@ export class Users {
     }
     const organization: Organization = {
       id: rows[0].organization_id,
-      name: rows[0].organization_name
+      name: rows[0].organization_name,
+      hasMentors: rows[0].has_mentors,
     };    
     const field: Field = {
       id: rows[0].field_id,
@@ -122,7 +123,6 @@ export class Users {
       isAdmin: rows[0].is_admin,
       isOrgManager: rows[0].is_org_manager,
       isCentreManager: rows[0].is_centre_manager,
-      hasMentors: rows[0].has_mentors,
     }
   }
 
