@@ -3,6 +3,7 @@ import pg from 'pg';
 import { Conn } from '../db/conn';
 import { Helpers } from '../utils/helpers';
 import Organization from '../models/organization.model';
+import OrganizationCentre from "../models/organizationcentre.model";
 
 const conn = new Conn();
 const pool = conn.pool;
@@ -11,6 +12,39 @@ const helpers = new Helpers();
 export class Organizations {
   constructor() {
     helpers.autoBind(this);
+  }
+
+  async getOrganizationCentresByOrganizationId(request: Request, response: Response): Promise<void> {
+    const organizationId = request.params.id;
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+      const organization = await this.getOrganizationCentresByOrganizationIdFromDB(organizationId, client);
+      response.status(200).json(organization);
+      await client.query('COMMIT');
+    } catch (error) {
+      response.status(400).send(error);
+      await client.query('ROLLBACK');
+    } finally {
+      client.release();
+    }
+  }
+
+  async getOrganizationCentresByOrganizationIdFromDB(id: string, client: pg.PoolClient): Promise<OrganizationCentre[]> {
+    const organizationCentres: OrganizationCentre[];
+    const getOrganizationCentreQuery = 'SELECT * FROM organizations_centres WHERE organization_id = $1';
+    const { rows } = await client.query(getOrganizationCentreQuery, [id]);
+
+    rows.forEach(function (row){
+      const centre = new OrganizationCentre();
+      centre.id = row.id;
+      centre.name = row.name;
+      centre.organization_id = row.organization_id;
+      centre.address = row.address;
+
+      organizationCentres.push(centre)
+    })
+    return organizationCentres;
   }
 
   async getOrganizationById(request: Request, response: Response): Promise<void> {
