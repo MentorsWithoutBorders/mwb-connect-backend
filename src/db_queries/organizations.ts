@@ -4,6 +4,7 @@ import { Conn } from '../db/conn';
 import { Helpers } from '../utils/helpers';
 import Organization from '../models/organization.model';
 import OrganizationCentre from "../models/organizationcentre.model";
+import CertificatePause from "../models/certificate_pause.model";
 
 const conn = new Conn();
 const pool = conn.pool;
@@ -31,16 +32,17 @@ export class Organizations {
   }
 
   async getOrganizationCentresByOrganizationIdFromDB(id: string, client: pg.PoolClient): Promise<OrganizationCentre[]> {
-    const organizationCentres: OrganizationCentre[];
+    const organizationCentres: OrganizationCentre[] = [];
     const getOrganizationCentreQuery = 'SELECT * FROM organizations_centres WHERE organization_id = $1';
     const { rows } = await client.query(getOrganizationCentreQuery, [id]);
 
     rows.forEach(function (row){
-      const centre = new OrganizationCentre();
-      centre.id = row.id;
-      centre.name = row.name;
-      centre.organization_id = row.organization_id;
-      centre.address = row.address;
+      const centre: OrganizationCentre = {
+        id:  row.id,
+        name:  row.name,
+        organization_id:  row.organization_id,
+        address:  row.address,
+      }
 
       organizationCentres.push(centre)
     })
