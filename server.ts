@@ -249,6 +249,9 @@ app.put('/api/v1/mentors_partnership_requests/:id/update', mentorsPartnershipReq
 app.get('/api/v1/organizations/id/:id', organizations.getOrganizationById);
 app.get('/api/v1/organizations/name/:name', organizations.getOrganizationByName);
 
+//Organizations Centres
+app.get('/api/v1/organizations/:id/centres', organizations.getOrganizationCentresByOrganizationId);
+
 // Fields
 app.get('/api/v1/fields', fields.getFields);
 app.get('/api/v1/fields_goals', fieldsGoals.getFieldsGoals);
