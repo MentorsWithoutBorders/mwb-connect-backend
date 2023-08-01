@@ -1,4 +1,4 @@
-export default interface MentorsSearch {
+export default interface PartnerMentorsSearch {
   mentorNameSearch?: string;
   courseFromDate?: string;
   courseToDate?: string;

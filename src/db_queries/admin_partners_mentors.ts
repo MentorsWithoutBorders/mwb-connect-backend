@@ -3,8 +3,8 @@ import pg from "pg";
 import "moment-timezone";
 import { Conn } from "../db/conn";
 import { Helpers } from "../utils/helpers";
-import MentorsSearch from "../models/mentors_search.model";
-import Mentor from "../models/mentor.model";
+import PartnerMentorsSearch from "../models/partner_mentors_search.model";
+import PartnerMentor from "../models/partner_mentor.model";
 
 const conn = new Conn();
 const pool = conn.pool;
@@ -20,7 +20,7 @@ export class AdminPartnersMentors {
     response: Response
   ): Promise<void> {
     const partnerId = request.params.partner_id;
-    const { mentorNameSearch, courseFromDate, courseToDate }: MentorsSearch =
+    const { mentorNameSearch, courseFromDate, courseToDate }: PartnerMentorsSearch =
       request.body;
     const client = await pool.connect();
     try {
@@ -48,7 +48,7 @@ export class AdminPartnersMentors {
     courseFromDate: string | undefined,
     courseToDate: string | undefined,
     client: pg.PoolClient
-  ): Promise<Array<Mentor>> {
+  ): Promise<Array<PartnerMentor>> {
     let andFromToCondition = "";
     let whereFromToCondition = "";
     let fromToCondition = "";
@@ -71,7 +71,7 @@ export class AdminPartnersMentors {
       whereFromToCondition = ` where ${fromToCondition} `;
     }
 
-    let AllMentorsOfOnePartnerQuery = `
+    let allMentorsOfOnePartnerQuery = `
       with
         mentor_courses as
         (
@@ -135,18 +135,18 @@ export class AdminPartnersMentors {
     `;
 
     if (mentorNameSearch) {
-      AllMentorsOfOnePartnerQuery += ` and u.name ilike '%${mentorNameSearch}%'`;
+      allMentorsOfOnePartnerQuery += ` and u.name ilike '%${mentorNameSearch}%'`;
     }
 
-    AllMentorsOfOnePartnerQuery += " order by u.name";
+    allMentorsOfOnePartnerQuery += " order by u.name";
 
     const { rows }: pg.QueryResult = await client.query(
-      AllMentorsOfOnePartnerQuery
+      allMentorsOfOnePartnerQuery
     );
 
-    const mentors: Array<Mentor> = [];
+    const mentors: Array<PartnerMentor> = [];
     for (const row of rows) {
-      const mentor: Mentor = {
+      const mentor: PartnerMentor = {
         name: row.full_name,
         email: row.email,
         courses: row.number_of_courses,

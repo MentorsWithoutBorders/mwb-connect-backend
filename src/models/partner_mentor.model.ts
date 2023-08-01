@@ -1,4 +1,4 @@
-export default interface Mentor {
+export default interface PartnerMentor {
   name: string;
   email: string;
   courses: number;
