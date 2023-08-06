@@ -28,6 +28,7 @@ import { UsersBackgroundProcesses } from './src/db_queries/users_background_proc
 import { MentorsWaitingRequests } from './src/db_queries/mentors_waiting_requests';
 import { MentorsPartnershipRequests } from './src/db_queries/mentors_partnership_requests';
 import { Organizations } from './src/db_queries/organizations';
+import { PartnersDashboardStats } from './src/db_queries/partners_dashboard_stats'
 import { Fields } from './src/db_queries/fields';
 import { Subfields } from './src/db_queries/subfields';
 import { Skills } from './src/db_queries/skills';
@@ -76,6 +77,7 @@ const usersBackgroundProcesses = new UsersBackgroundProcesses();
 const mentorsWaitingRequests = new MentorsWaitingRequests();
 const mentorsPartnershipRequests = new MentorsPartnershipRequests();
 const organizations = new Organizations();
+const partnersDashboardStats = new PartnersDashboardStats();
 const fields = new Fields();
 const subfields = new Subfields();
 const skills = new Skills();
@@ -251,8 +253,12 @@ app.put('/api/v1/mentors_partnership_requests/:id/update', mentorsPartnershipReq
 app.get('/api/v1/organizations/id/:id', organizations.getOrganizationById);
 app.get('/api/v1/organizations/name/:name', organizations.getOrganizationByName);
 
-//Organizations Centres
+// Organizations Centres
 app.get('/api/v1/organizations/:id/centres', organizations.getOrganizationCentresByOrganizationId);
+
+// Partners
+app.get('/api/v1/partners/dashboard/stats', partnersDashboardStats.getDashboardStats);
+app.get('/api/v1/partners/:partner_id/dashboard/stats', partnersDashboardStats.getDashboardStatsByPartnerId);
 
 // Fields
 app.get('/api/v1/fields', fields.getFields);
