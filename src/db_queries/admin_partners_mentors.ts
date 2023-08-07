@@ -147,27 +147,27 @@ export class AdminPartnersMentors {
 
     for (const row of rows) {
       if (searchString) {
-        let includeRow = false;
+        let shouldIncludeRow = false;
     
         // If none of the 4 parameters are passed, search by name only
         if (!searchByName && !searchByEmail && !searchByStudent && !searchByStudentOrganization) {
-          includeRow = row.full_name.toLowerCase().includes(lowerSearchString);
+          shouldIncludeRow = row.full_name.toLowerCase().includes(lowerSearchString);
         } else {
           if (searchByName && row.full_name.toLowerCase().includes(lowerSearchString)) {
-            includeRow = true;
+            shouldIncludeRow = true;
           }
           if (searchByEmail && row.email.toLowerCase().includes(lowerSearchString)) {
-            includeRow = true;
+            shouldIncludeRow = true;
           }
           if (searchByStudent && row.student_names.toLowerCase().includes(lowerSearchString)) {
-            includeRow = true;
+            shouldIncludeRow = true;
           }
           if (searchByStudentOrganization && row.student_organization_names.toLowerCase().includes(lowerSearchString)) {
-            includeRow = true;
+            shouldIncludeRow = true;
           }
         }
     
-        if (!includeRow) {
+        if (!shouldIncludeRow) {
           continue; // Skip to next iteration if row does not match search criteria
         }
       }
