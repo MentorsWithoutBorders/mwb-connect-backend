@@ -20,16 +20,14 @@ export class AdminPartnersMentors {
     response: Response
   ): Promise<void> {
     const partnerId = request.params.partner_id;
-    const { mentorNameSearch, courseFromDate, courseToDate }: PartnerMentorsSearch =
+    const searchParameters: PartnerMentorsSearch =
       request.body;
     const client = await pool.connect();
     try {
       await client.query("BEGIN");
       const mentors = await this.getAllMentorsOfOnePartnerFromDB(
         partnerId,
-        mentorNameSearch,
-        courseFromDate,
-        courseToDate,
+        searchParameters,
         client
       );
       response.status(200).json(mentors);
@@ -44,11 +42,10 @@ export class AdminPartnersMentors {
 
   async getAllMentorsOfOnePartnerFromDB(
     partnerId: string,
-    mentorNameSearch: string | undefined,
-    courseFromDate: string | undefined,
-    courseToDate: string | undefined,
+    searchParameters: PartnerMentorsSearch,
     client: pg.PoolClient
   ): Promise<Array<PartnerMentor>> {
+    const { searchString, courseFromDate, courseToDate, searchByName, searchByEmail, searchByStudent, searchByStudentOrganization }: PartnerMentorsSearch = searchParameters;
     let andFromToCondition = "";
     let whereFromToCondition = "";
     let fromToCondition = "";
@@ -84,10 +81,12 @@ export class AdminPartnersMentors {
         ),
         mentor_courses_students as
         (
-          select ucm.mentor_id, count(*) as students_count
+          select ucm.mentor_id, count(*) as students_count, string_agg(distinct u.name, ', ') as student_names, string_agg(distinct o.name, ', ') as student_organization_names
           from users_courses_mentors ucm
           inner join users_courses uc on uc.id = ucm.course_id
           inner join users_courses_students ucs on uc.id = ucs.course_id
+          inner join users u on ucs.student_id = u.id
+          inner join organizations o on u.organization_id = o.id
           inner join course_types ct on uc.course_type_id = ct.id
           where (ucs.course_id, ucs.student_id) not in (select course_id, user_id from users_courses_lessons_canceled where course_id = uc.id)
           and (ucs.is_canceled is null or ucs.is_canceled = false)
@@ -124,6 +123,8 @@ export class AdminPartnersMentors {
         u.email,
         coalesce(mc.courses_count, 0) as number_of_courses,
         coalesce(mcs.students_count, 0) as number_of_students,
+        coalesce(mcs.student_names, '') as student_names,
+        coalesce(mcs.student_organization_names, '') as student_organization_names,
         coalesce(mcl.lessons_count, 0) - coalesce(mclc.cancelled_lessons_count, 0) as number_of_lessons
       from users u
       left outer join mentor_courses mc on u.id = mc.mentor_id
@@ -134,10 +135,6 @@ export class AdminPartnersMentors {
       and u.organization_id = '${partnerId}'
     `;
 
-    if (mentorNameSearch) {
-      allMentorsOfOnePartnerQuery += ` and u.name ilike '%${mentorNameSearch}%'`;
-    }
-
     allMentorsOfOnePartnerQuery += " order by u.name";
 
     const { rows }: pg.QueryResult = await client.query(
@@ -145,7 +142,36 @@ export class AdminPartnersMentors {
     );
 
     const mentors: Array<PartnerMentor> = [];
+
+    const lowerSearchString = searchString ? searchString.toLowerCase() : null;
+
     for (const row of rows) {
+      if (searchString) {
+        let includeRow = false;
+    
+        // If none of the 4 parameters are passed, search by name only
+        if (!searchByName && !searchByEmail && !searchByStudent && !searchByStudentOrganization) {
+          includeRow = row.full_name.toLowerCase().includes(lowerSearchString);
+        } else {
+          if (searchByName && row.full_name.toLowerCase().includes(lowerSearchString)) {
+            includeRow = true;
+          }
+          if (searchByEmail && row.email.toLowerCase().includes(lowerSearchString)) {
+            includeRow = true;
+          }
+          if (searchByStudent && row.student_names.toLowerCase().includes(lowerSearchString)) {
+            includeRow = true;
+          }
+          if (searchByStudentOrganization && row.student_organization_names.toLowerCase().includes(lowerSearchString)) {
+            includeRow = true;
+          }
+        }
+    
+        if (!includeRow) {
+          continue; // Skip to next iteration if row does not match search criteria
+        }
+      }
+    
       const mentor: PartnerMentor = {
         name: row.full_name,
         email: row.email,
@@ -153,9 +179,10 @@ export class AdminPartnersMentors {
         students: row.number_of_students,
         hours: row.number_of_lessons,
       };
-
+    
       mentors.push(mentor);
     }
+
     return mentors;
   }
 }

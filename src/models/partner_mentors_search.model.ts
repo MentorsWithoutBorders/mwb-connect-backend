@@ -1,5 +1,9 @@
 export default interface PartnerMentorsSearch {
-  mentorNameSearch?: string;
+  searchString?: string;
   courseFromDate?: string;
   courseToDate?: string;
+  searchByName?: boolean;
+  searchByEmail?: boolean;
+  searchByStudent?: boolean;
+  searchByStudentOrganization?: boolean;
 }
