@@ -24,7 +24,7 @@ export class AdminPartnersProjects {
     // const client = await pool.connect();
     try {
       // await client.query("BEGIN");
-      const mentors = await this.getAllMentorsOfOnePartnerFromDB(
+      const mentors = await this.getAllProjectsOfOnePartnerFromDB(
         partnerId
         // client
       );
@@ -38,16 +38,16 @@ export class AdminPartnersProjects {
     }
   }
 
-  async getAllMentorsOfOnePartnerFromDB(
+  async getAllProjectsOfOnePartnerFromDB(
     partnerId: string
     // ,client: pg.PoolClient
   ): Promise<Array<PartnerProject>> {
-    const mentors = [
+    const projects = [
       { id: 1, name: "Project Spring 2023" },
       { id: 2, name: "Project Fall 2022" },
       { id: 3, name: "Project Spring 2022" },
     ];
 
-    return mentors;
+    return projects;
   }
 }
