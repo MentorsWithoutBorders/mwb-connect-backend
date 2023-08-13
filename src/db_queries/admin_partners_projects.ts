@@ -37,9 +37,9 @@ export class AdminPartnersProjects {
     ,client: pg.PoolClient
   ): Promise<Array<PartnerProject>> {
     const getPartnerProjectsQuery =`
-    select id, name
-    from projects
-    where organization_id =	'${partnerId}'`
+    SELECT id, name
+    FROM projects
+    WHERE organization_id =	'${partnerId}'`
 
     const { rows }: pg.QueryResult = await client.query(
       getPartnerProjectsQuery
