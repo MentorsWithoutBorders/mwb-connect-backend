@@ -46,7 +46,8 @@ import { AdminTrainingReminders } from './src/db_queries/admin_training_reminder
 import { AdminLessons } from './src/db_queries/admin_lessons';
 import { AdminAvailableMentors } from './src/db_queries/admin_available_mentors';
 import { AdminAvailableStudents } from './src/db_queries/admin_available_students';
-import { AdminPartnersMentors } from "./src/db_queries/admin_partners_mentors";
+import { AdminPartnersMentors } from './src/db_queries/admin_partners_mentors';
+import { AdminPartnersMentorStats } from './src/db_queries/admin_partners_mentors_stats';
 
 dotenv.config();
 const port = process.env.PORT;
@@ -95,6 +96,7 @@ const adminLessons = new AdminLessons();
 const adminAvailableMentors = new AdminAvailableMentors();
 const adminAvailableStudents = new AdminAvailableStudents();
 const adminPartnersMentors = new AdminPartnersMentors();
+const adminPartnersMentorStats = new AdminPartnersMentorStats();
 
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
@@ -359,6 +361,11 @@ app.put('/api/v1/admin/training_reminders/:id/last_contacted', adminTrainingRemi
 app.get(
   "/api/v1/partners/:partner_id/mentors",
   adminPartnersMentors.getAllMentorsOfOnePartner
+);
+// Admin partners' mentor stats
+app.get(
+  '/api/v1/partners/:partner_id/mentors/stats',
+  adminPartnersMentorStats.getAllMentorsStatsOfOnePartner
 );
 
 // Admin lessons
