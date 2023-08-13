@@ -1,4 +1,4 @@
 export default interface PartnerProject {
-  id: number;
+  id: string;
   name: string;
 }
