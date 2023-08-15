@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import { PoolClient } from "pg";
+import moment, { Moment } from "moment";
 import { Conn } from "../db/conn";
 import { constants } from "../utils/constants";
 
@@ -14,12 +15,52 @@ interface NgoStats {
   totalHours: number;
 }
 
+function getStartEndOfYear(year?: number) {
+  if (!year) return [undefined, undefined];
+  return [
+    moment(year, "YYYY").startOf("year"),
+    moment(year, "YYYY").endOf("year"),
+  ] satisfies [Moment, Moment];
+}
+
 async function getNgoStats(
   client: PoolClient,
-  { orgId, year }: { orgId?: string; year?: number }
+  {
+    orgId,
+    startDate,
+    endDate,
+  }: {
+    orgId?: string;
+    startDate?: number | Date | Moment;
+    endDate?: number | Date | Moment;
+  }
 ): Promise<NgoStats> {
   // We currently don't have orgId in courses table
   // so need to use JOIN (course_student.student_id -> user.id)
+
+  const endDateIso =
+    endDate && moment.min(moment(endDate), moment()).toISOString(); // shouldn't be more than current time
+
+  const endDateQuery = `
+    LEAST(
+      uclc.canceled_date_time,
+      uc.start_date_time + INTERVAL '1 month' * ct.duration
+      ${endDateIso ? `, '${endDateIso}'` : ""}
+    )
+  `;
+
+  const startDateQuery = `
+    GREATEST(
+      uc.start_date_time
+      ${startDate ? `, '${moment(startDate).toISOString()}'` : ""}
+    )
+  `;
+
+  // 1 week = 1 hour
+  // using GREATEST to cap at 0 bcz if endDateQuery result is less than provided startDate input, difference would be negative
+  const noOfWeeksQuery = `
+    GREATEST(CEIL(EXTRACT(days FROM (${endDateQuery} - ${startDateQuery})) / 7), 0)
+  `;
 
   const {
     rows: [
@@ -37,16 +78,26 @@ async function getNgoStats(
       SELECT
         COUNT(DISTINCT ucs.student_id) total_students,
         COUNT(DISTINCT ucs.course_id) total_courses,
-        COALESCE(SUM(CASE WHEN ct.duration = 3 THEN 14 WHEN ct.duration = 6 THEN 28 ELSE 0 END), 0) total_hours
+        COALESCE(SUM(${noOfWeeksQuery}), 0) total_hours
       FROM
         users_courses_students ucs
         ${orgId ? "JOIN users u ON u.id = ucs.student_id" : ""}
         JOIN users_courses uc ON uc.id = ucs.course_id
         JOIN course_types ct ON ct.id = uc.course_type_id
+        LEFT JOIN users_courses_lessons_canceled uclc ON uclc.course_id = ucs.course_id
       WHERE
         ucs.is_canceled IS NOT true
-        ${year ? `AND date_part('year', uc.start_date_time) = ${year}` : ""}
         ${orgId ? `AND u.organization_id = '${orgId}'` : ""}
+        ${
+          startDate
+            ? `AND uc.start_date_time >= '${moment(startDate).toISOString()}'`
+            : ""
+        }
+        ${
+          endDateIso
+            ? `AND uc.start_date_time + INTERVAL '1 month' * ct.duration <= '${endDateIso}'`
+            : ""
+        }
     `);
 
   return { totalStudents, totalCourses, totalHours };
@@ -69,9 +120,10 @@ export class PartnersDashboardStats {
         );
       }
 
-      const ngoStats = await getNgoStats(client, {
-        year: request.query.year ? +request.query.year : undefined,
-      });
+      const [startDate, endDate] = getStartEndOfYear(
+        request.query.year ? +request.query.year : undefined
+      );
+      const ngoStats = await getNgoStats(client, { startDate, endDate });
       response.status(200).json({ ngoStats });
 
       await client.query("COMMIT");
@@ -98,10 +150,10 @@ export class PartnersDashboardStats {
         throw new Error("Only organization members can access it's stats");
       }
 
-      const ngoStats = await getNgoStats(client, {
-        orgId,
-        year: request.query.year ? +request.query.year : undefined,
-      });
+      const [startDate, endDate] = getStartEndOfYear(
+        request.query.year ? +request.query.year : undefined
+      );
+      const ngoStats = await getNgoStats(client, { orgId, startDate, endDate });
       response.status(200).json({ ngoStats });
 
       await client.query("COMMIT");
