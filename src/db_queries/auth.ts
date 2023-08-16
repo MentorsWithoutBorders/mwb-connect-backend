@@ -250,13 +250,15 @@ export class Auth {
     }
     try {
       const decoded = await jwt.verify(token, process.env.JWT_SECRET_KEY as string) as Token;
-      const getUsersQuery = 'SELECT id FROM users WHERE id = $1';
+      const getUsersQuery = 'SELECT id, organization_id FROM users WHERE id = $1';
       const { rows }: pg.QueryResult = await pool.query(getUsersQuery, [decoded.userId]);
       if (!rows[0]) {
         response.status(401).send({'message': 'The token you provided is invalid'});
         return ;
       }
-      request.user = {id: decoded.userId}
+      
+      const { id, organization_id: orgId } = rows[0];
+      request.user = { id, orgId };
       next();
     } catch (error) {
       response.status(401).send(error);
