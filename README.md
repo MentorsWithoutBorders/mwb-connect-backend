@@ -1,7 +1,24 @@
-<h2>MWB Connect REST API</h2>
+# MWB Connect - API
 
-Running the app:
+## Getting Started on development
 
-- `yarn install`
-- `yarn start`
-- `redis-server` has to be running in the background
+### One time setup
+
+#### for Mac users
+
+```bash
+brew install nvm
+nvm use
+```
+
+### Run the development server
+
+```bash
+npm install
+npm start
+
+```
+
+## References
+
+- <https://github.com/nvm-sh/nvm>

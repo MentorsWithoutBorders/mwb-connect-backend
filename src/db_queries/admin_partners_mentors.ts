@@ -53,8 +53,8 @@ export class AdminPartnersMentors {
     if (courseFromDate || courseToDate) {
       if (courseFromDate && courseToDate) {
         fromToCondition = `(
-          (uc.start_date_time between '${courseFromDate}' and '${courseToDate}')
-          or (uc.start_date_time + (ct.duration * INTERVAL '1 month') between '${courseFromDate}' and '${courseToDate}')
+          (uc.start_date_time BETWEEN '${courseFromDate}' AND '${courseToDate}')
+          OR (uc.start_date_time + (ct.duration * INTERVAL '1 month') BETWEEN '${courseFromDate}' AND '${courseToDate}')
        )
       `;
       } else if (courseFromDate && !courseToDate) {
@@ -64,78 +64,78 @@ export class AdminPartnersMentors {
         // If only to date is provided, we will take all courses that begin before that date
         fromToCondition = `(uc.start_date_time < '${courseToDate}')`;
       }
-      andFromToCondition = ` and ${fromToCondition} `;
-      whereFromToCondition = ` where ${fromToCondition} `;
+      andFromToCondition = ` AND ${fromToCondition} `;
+      whereFromToCondition = ` WHERE ${fromToCondition} `;
     }
 
     let allMentorsOfOnePartnerQuery = `
-      with
-        mentor_courses as
+      WITH
+        mentor_courses AS
         (
-          select ucm.mentor_id, count(*) as courses_count
-          from users_courses_mentors ucm
-          inner join users_courses uc on uc.id = ucm.course_id
-          inner join course_types ct on uc.course_type_id = ct.id
+          SELECT ucm.mentor_id, count(*) AS courses_count
+          FROM users_courses_mentors ucm
+          INNER JOIN users_courses uc ON uc.id = ucm.course_id
+          INNER JOIN course_types ct ON uc.course_type_id = ct.id
           ${whereFromToCondition}
-          group by 1
+          GROUP BY 1
         ),
-        mentor_courses_students as
+        mentor_courses_students AS
         (
-          select ucm.mentor_id, count(*) as students_count, string_agg(distinct u.name, ', ') as student_names, string_agg(distinct o.name, ', ') as student_organization_names
-          from users_courses_mentors ucm
-          inner join users_courses uc on uc.id = ucm.course_id
-          inner join users_courses_students ucs on uc.id = ucs.course_id
-          inner join users u on ucs.student_id = u.id
-          inner join organizations o on u.organization_id = o.id
-          inner join course_types ct on uc.course_type_id = ct.id
-          where (ucs.course_id, ucs.student_id) not in (select course_id, user_id from users_courses_lessons_canceled where course_id = uc.id)
-          and (ucs.is_canceled is null or ucs.is_canceled = false)
+          SELECT ucm.mentor_id, COUNT(*) AS students_count, STRING_AGG(DISTINCT u.name, ', ') AS student_names, STRING_AGG(DISTINCT o.name, ', ') AS student_organization_names
+          FROM users_courses_mentors ucm
+          INNER JOIN users_courses uc ON uc.id = ucm.course_id
+          INNER JOIN users_courses_students ucs ON uc.id = ucs.course_id
+          INNER JOIN users u ON ucs.student_id = u.id
+          INNER JOIN organizations o ON u.organization_id = o.id
+          INNER JOIN course_types ct ON uc.course_type_id = ct.id
+          WHERE (ucs.course_id, ucs.student_id) NOT IN (SELECT course_id, user_id FROM users_courses_lessons_canceled WHERE course_id = uc.id)
+          AND (ucs.is_canceled IS NULL or ucs.is_canceled = false)
           ${andFromToCondition}
-          group by 1
+          GROUP BY 1
         ),
-        mentor_courses_lessons as
+        mentor_courses_lessons AS
         (
-          select ucm.mentor_id, sum(round(ct.duration*30.0/7)) as lessons_count
-          from users_courses_mentors ucm
-          inner join users_courses uc on uc.id = ucm.course_id
-          inner join course_types ct on ct.id = uc.course_type_id
+          SELECT ucm.mentor_id, sum(round(ct.duration*30.0/7)) AS lessons_count
+          FROM users_courses_mentors ucm
+          INNER JOIN users_courses uc ON uc.id = ucm.course_id
+          INNER JOIN course_types ct ON ct.id = uc.course_type_id
           ${whereFromToCondition}
-          group by 1
+          GROUP BY 1
         ),
-        mentor_courses_lessons_cancelled as
+        mentor_courses_lessons_cancelled AS
         (
-          select ucm.mentor_id, count(*) as cancelled_lessons_count
-          from users_courses_mentors ucm
-          inner join users_courses uc on uc.id = ucm.course_id
-          inner join course_types ct on ct.id = uc.course_type_id
-          inner join users_courses_lessons_canceled uclc on uc.id = uclc.course_id
-          where not exists
+          SELECT ucm.mentor_id, COUNT(*) AS cancelled_lessons_count
+          FROM users_courses_mentors ucm
+          INNER JOIN users_courses uc ON uc.id = ucm.course_id
+          INNER JOIN course_types ct ON ct.id = uc.course_type_id
+          INNER JOIN users_courses_lessons_canceled uclc ON uc.id = uclc.course_id
+          WHERE NOT EXISTS
           (
-            select 1
-            from users_courses_students
-            where (course_id, student_id) not in (select course_id, user_id from users_courses_lessons_canceled where course_id = uclc.course_id and lesson_date_time = uclc.lesson_date_time)
+            SELECT 1
+            FROM users_courses_students
+            WHERE (course_id, student_id) NOT IN (SELECT course_id, user_id FROM users_courses_lessons_canceled WHERE course_id = uclc.course_id AND lesson_date_time = uclc.lesson_date_time)
           )
           ${andFromToCondition}
-          group by 1
+          GROUP BY 1
         )
-      select
-        u.name as full_name,
+      SELECT
+        u.name AS full_name,
         u.email,
-        coalesce(mc.courses_count, 0) as number_of_courses,
-        coalesce(mcs.students_count, 0) as number_of_students,
-        coalesce(mcs.student_names, '') as student_names,
-        coalesce(mcs.student_organization_names, '') as student_organization_names,
-        coalesce(mcl.lessons_count, 0) - coalesce(mclc.cancelled_lessons_count, 0) as number_of_lessons
-      from users u
-      left outer join mentor_courses mc on u.id = mc.mentor_id
-      left outer join mentor_courses_students mcs on u.id = mcs.mentor_id
-      left outer join mentor_courses_lessons mcl on u.id = mcl.mentor_id
-      left outer join mentor_courses_lessons_cancelled mclc on u.id = mclc.mentor_id
-      where u.is_mentor
-      and u.organization_id = '${partnerId}'
+        COALESCE(mc.courses_count, 0) AS number_of_courses,
+        COALESCE(mcs.students_count, 0) AS number_of_students,
+        COALESCE(mcs.student_names, '') AS student_names,
+        COALESCE(mcs.student_organization_names, '') AS student_organization_names,
+        COALESCE(mcl.lessons_count, 0) - COALESCE(mclc.cancelled_lessons_count, 0) AS number_of_lessons
+      FROM users u
+      LEFT OUTER JOIN mentor_courses mc ON u.id = mc.mentor_id
+      LEFT OUTER JOIN mentor_courses_students mcs ON u.id = mcs.mentor_id
+      LEFT OUTER JOIN mentor_courses_lessons mcl ON u.id = mcl.mentor_id
+      LEFT OUTER JOIN mentor_courses_lessons_cancelled mclc ON u.id = mclc.mentor_id
+      WHERE u.is_mentor
+      AND u.organization_id = '${partnerId}'
     `;
 
-    allMentorsOfOnePartnerQuery += " order by u.name";
+    allMentorsOfOnePartnerQuery += " ORDER BY u.name";
 
     const { rows }: pg.QueryResult = await client.query(
       allMentorsOfOnePartnerQuery
@@ -148,7 +148,7 @@ export class AdminPartnersMentors {
     for (const row of rows) {
       if (searchString) {
         let shouldIncludeRow = false;
-    
+
         // If none of the 4 parameters are passed, search by name only
         if (!searchByName && !searchByEmail && !searchByStudent && !searchByStudentOrganization) {
           shouldIncludeRow = row.full_name.toLowerCase().includes(lowerSearchString);
@@ -166,12 +166,12 @@ export class AdminPartnersMentors {
             shouldIncludeRow = true;
           }
         }
-    
+
         if (!shouldIncludeRow) {
           continue; // Skip to next iteration if row does not match search criteria
         }
       }
-    
+
       const mentor: PartnerMentor = {
         name: row.full_name,
         email: row.email,
@@ -179,7 +179,7 @@ export class AdminPartnersMentors {
         students: row.number_of_students,
         hours: row.number_of_lessons,
       };
-    
+
       mentors.push(mentor);
     }
 
