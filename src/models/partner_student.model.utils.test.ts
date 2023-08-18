@@ -1,7 +1,6 @@
 import {filterRowsBySearchParams} from "./partner_student.model.utils";
 import PartnerStudent, {StudentStatus} from "./partner_student.model";
 
-// write 10 tests for the filterRowsBySearchParams function
 describe("filterRowsBySearchParams", () => {
   const rows: PartnerStudent[] = [
     {
