@@ -5,7 +5,7 @@ import {Conn} from "../db/conn";
 import {Helpers} from "../utils/helpers";
 import {PartnerStudentSearch} from "../models/partner_student_search.model";
 import {filterRowsBySearchParams} from "../models/partner_student.model.utils";
-import {PartnerStudent, StudentStatus} from "../models/partner_student.model";
+import {PartnerStudent, StudentCertificationStatus} from "../models/partner_student.model";
 
 const conn = new Conn();
 const pool = conn.pool;
@@ -78,15 +78,20 @@ export class AdminPartnersStudents {
         (
           select 
             ucs.student_id,
-            COUNT(*) as courses_count
+            COUNT(*) as courses_count,
+            orgs.name as student_organization_name
           from users_courses_students ucs
           inner join 
             users_courses uc on uc.id = ucs.course_id
           inner join 
             course_types ct on uc.course_type_id = ct.id
-          ${whereFromToCondition}
+          inner join 
+            users u ON ucs.student_id = u.id
+          inner join 
+            organizations orgs on u.organization_id = orgs.id
           group by 
-            ucs.student_id
+            ucs.student_id,
+            orgs.name
         ),
         student_status as
         (
@@ -94,13 +99,13 @@ export class AdminPartnersStudents {
             users.id as student_id,
             case
               when admin_students_certificates.is_certificate_sent = true 
-                then '${StudentStatus.Sent}'
+                then '${StudentCertificationStatus.Sent}'
               when admin_students_certificates.is_certificate_sent = false 
-                then '${StudentStatus.InProgress}'
+                then '${StudentCertificationStatus.InProgress}'
               when users_app_flags.is_training_enabled = false and users_app_flags.is_mentoring_enabled = FALSE 
-                then '${StudentStatus.Cancelled}'
+                then '${StudentCertificationStatus.Cancelled}'
               else 
-                '${StudentStatus.Unknown}'
+                '${StudentCertificationStatus.Unknown}'
             end as status
           from users
           left join 
@@ -111,23 +116,36 @@ export class AdminPartnersStudents {
         testimonials as
         (
           select 
-            users.*,
-            array_agg(students_testimonials.url) filter (where students_testimonials.url is not null) as testimonials
+            users.id,
+                case 
+                  when count(testimonial_objects) = 0 then '[]'::jsonb
+                  else jsonb_agg(testimonial_objects) 
+                end as testimonials
           from users
-          left join 
-            students_testimonials on users.id = students_testimonials.user_id
+          left join (
+            select 
+              students_testimonials.user_id,
+              jsonb_build_object(
+                'url', students_testimonials.url,
+                'uploadedDateTime', students_testimonials.uploaded_date_time
+              ) as testimonial_objects
+            from students_testimonials
+            where students_testimonials is not null
+          ) as testimonials_subquery on users.id = testimonials_subquery.user_id
           group by
-            users.id     
+            users.id
         )
       select
         users.name,
         users.email,
         users.phone_number as "phoneNumber",
         coalesce(sc.courses_count, 0) as "totalCoursesAttended",
-        coalesce(ss.status, 'Unknown') as "studentStatus",
-        coalesce(t.testimonials, ARRAY[]::text[]) as testimonials
+        coalesce(ss.status, '${StudentCertificationStatus.Unknown}'}) as "certificationStatus",
+        coalesce(sc.student_organization_name, '') AS "organizationName",
+        coalesce(t.testimonials, '[]'::jsonb) as testimonials
+        
       from users 
-
+      
       left outer join student_courses sc on users.id = sc.student_id
       left outer join student_status ss on users.id = ss.student_id
       left outer join testimonials t on users.id = t.id

@@ -1,4 +1,4 @@
-export enum StudentStatus {
+export enum StudentCertificationStatus {
   Sent = "SENT",
   InProgress = "IN_PROGRESS",
   Cancelled = "CANCELLED",
@@ -6,10 +6,11 @@ export enum StudentStatus {
 }
 
 export interface PartnerStudent {
-  name: string,
   email: string
-  totalCoursesAttended: number
+  name: string
   phoneNumber?: number
-  studentStatus: StudentStatus
+  certificationStatus: StudentCertificationStatus
+  organizationName: string
   testimonials: string[]
+  totalCoursesAttended: number
 }

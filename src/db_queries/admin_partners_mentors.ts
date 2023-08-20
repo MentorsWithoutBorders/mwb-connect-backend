@@ -81,7 +81,11 @@ export class AdminPartnersMentors {
         ),
         mentor_courses_students AS
         (
-          SELECT ucm.mentor_id, COUNT(*) AS students_count, STRING_AGG(DISTINCT u.name, ', ') AS student_names, STRING_AGG(DISTINCT o.name, ', ') AS student_organization_names
+          SELECT 
+            ucm.mentor_id, 
+            COUNT(*) AS students_count, 
+            STRING_AGG(DISTINCT u.name, ', ') AS student_names, 
+            STRING_AGG(DISTINCT o.name, ', ') AS student_organization_names
           FROM users_courses_mentors ucm
           INNER JOIN users_courses uc ON uc.id = ucm.course_id
           INNER JOIN users_courses_students ucs ON uc.id = ucs.course_id

@@ -1,35 +1,39 @@
 import {filterRowsBySearchParams} from "./partner_student.model.utils";
-import {PartnerStudent, StudentStatus} from "./partner_student.model";
+import {PartnerStudent, StudentCertificationStatus} from "./partner_student.model";
 
 describe("filterRowsBySearchParams", () => {
   const rows: PartnerStudent[] = [
     {
       name: "John anika",
-      studentStatus: StudentStatus.InProgress,
+      certificationStatus: StudentCertificationStatus.InProgress,
       email: "anika@test.com",
       totalCoursesAttended: 0,
-      testimonials: ['https://awesomeTestimonial']
+      testimonials: ['https://awesomeTestimonial'],
+      organizationName: "test organization"
     },
     {
       name: "tester",
-      studentStatus: StudentStatus.InProgress,
+      certificationStatus: StudentCertificationStatus.InProgress,
       email: "tester@test.com",
       totalCoursesAttended: 1,
-      testimonials: ['https://awesomeTestimonial0']
+      testimonials: ['https://awesomeTestimonial0'],
+      organizationName: "Some organization"
     },
     {
       name: "John",
-      studentStatus: StudentStatus.Sent,
+      certificationStatus: StudentCertificationStatus.Sent,
       email: "John@test.com",
       totalCoursesAttended: 10,
-      testimonials: ["https://magic", "https://magic2",]
+      testimonials: ["https://magic", "https://magic2",],
+      organizationName: "test organization"
     },
     {
       name: "Jane",
-      studentStatus: StudentStatus.Sent,
+      certificationStatus: StudentCertificationStatus.Sent,
       email: "jane@test.com",
       totalCoursesAttended: 0,
-      testimonials: ["https://youtubetest1", "https://youtubetest2",]
+      testimonials: ["https://youtubetest1", "https://youtubetest2",],
+      organizationName: "testing"
     }]
 
   it("should return rows if there is no search string", () => {
