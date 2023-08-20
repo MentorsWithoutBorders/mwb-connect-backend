@@ -11,7 +11,6 @@ const conn = new Conn();
 const pool = conn.pool;
 const helpers = new Helpers();
 
-
 export class AdminPartnersStudents {
   constructor() {
     helpers.autoBind(this);
@@ -81,14 +80,17 @@ export class AdminPartnersStudents {
             ucs.student_id,
             COUNT(*) as courses_count
           from users_courses_students ucs
-          inner join users_courses uc on uc.id = ucs.course_id
-          inner join course_types ct on uc.course_type_id = ct.id
+          inner join 
+            users_courses uc on uc.id = ucs.course_id
+          inner join 
+            course_types ct on uc.course_type_id = ct.id
           ${whereFromToCondition}
-          group by ucs.student_id
+          group by 
+            ucs.student_id
         ),
         student_status as
         (
-          select
+          select 
             users.id as student_id,
             case
               when admin_students_certificates.is_certificate_sent = true then 'Sent'
@@ -96,29 +98,51 @@ export class AdminPartnersStudents {
               when users_app_flags.is_training_enabled = false and users_app_flags.is_mentoring_enabled = FALSE then 'Cancelled'
               else 'Unknown'
             end as status
-          FROM users
-          left join admin_students_certificates on users.id = admin_students_certificates.user_id
-          left join users_app_flags on users.id = users_app_flags.user_id
+          from users
+          left join 
+            admin_students_certificates on users.id = admin_students_certificates.user_id
+          left join 
+            users_app_flags on users.id = users_app_flags.user_id
+        ),
+        testimonials as
+        (
+          select 
+            users.*,
+            array_agg(students_testimonials.url) filter (where students_testimonials.url is not null) as testimonials
+          from users
+          left join 
+            students_testimonials on users.id = students_testimonials.user_id
+          group by
+            users.id     
         )
       select
         users.name,
         users.email,
         users.phone_number as phoneNumber,
         coalesce(sc.courses_count, 0) as totalCoursesAttended,
-        coalesce(ss.status, 'Unknown') as studentStatus
+        coalesce(ss.status, 'Unknown') as studentStatus,
+        coalesce(t.testimonials, ARRAY[]::text[]) as testimonials
       from users 
-      
+
       left outer join student_courses sc on users.id = sc.student_id
-      left outer join student_status ss ON users.id = ss.student_id
+      left outer join student_status ss on users.id = ss.student_id
+      left outer join testimonials t on users.id = t.id
 
       where users.is_mentor = false
       and users.organization_id = '${partnerId}'
     `;
 
+    try {
     const {rows}: pg.QueryResult<PartnerStudent> = await client.query(
       allStudentsOfOnePartnerQuery
     );
 
     return filterRowsBySearchParams({rows, searchParameters});
+
+    }
+    catch (error) {
+      console.log("getAllStudentsOfOnePartnerFromDB", error)
+      // throw error;
+    }
   }
 }
