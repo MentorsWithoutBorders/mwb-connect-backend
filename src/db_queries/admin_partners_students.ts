@@ -5,7 +5,7 @@ import {Conn} from "../db/conn";
 import {Helpers} from "../utils/helpers";
 import {PartnerStudentSearch} from "../models/partner_student_search.model";
 import {filterRowsBySearchParams} from "../models/partner_student.model.utils";
-import {PartnerStudent} from "../models/partner_student.model";
+import {PartnerStudent, StudentStatus} from "../models/partner_student.model";
 
 const conn = new Conn();
 const pool = conn.pool;
@@ -93,10 +93,14 @@ export class AdminPartnersStudents {
           select 
             users.id as student_id,
             case
-              when admin_students_certificates.is_certificate_sent = true then 'Sent'
-              when admin_students_certificates.is_certificate_sent = false then 'In Progress'
-              when users_app_flags.is_training_enabled = false and users_app_flags.is_mentoring_enabled = FALSE then 'Cancelled'
-              else 'Unknown'
+              when admin_students_certificates.is_certificate_sent = true 
+                then '${StudentStatus.Sent}'
+              when admin_students_certificates.is_certificate_sent = false 
+                then '${StudentStatus.InProgress}'
+              when users_app_flags.is_training_enabled = false and users_app_flags.is_mentoring_enabled = FALSE 
+                then '${StudentStatus.Cancelled}'
+              else 
+                '${StudentStatus.Unknown}'
             end as status
           from users
           left join 
