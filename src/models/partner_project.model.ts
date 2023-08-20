@@ -1,4 +1,6 @@
 export default interface PartnerProject {
-  id: string;
+  id?: string;
   name: string;
+  startDate?: Date;
+  duration?: number;
 }
