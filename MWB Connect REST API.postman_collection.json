@@ -1,0 +1,5802 @@
+{
+	"info": {
+		"_postman_id": "49d4172b-001a-4ada-8004-96656d30681b",
+		"name": "MWB Connect REST API",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "26688802"
+	},
+	"item": [
+		{
+			"name": "Approved users",
+			"item": [
+				{
+					"name": "approved_user",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\":\"s4@test.fake\",\n    \"phoneNumber\": \"+234 53279853\",\n    \"organization\":{\n        \"id\":\"52ac508f-e27d-4c97-8327-c61da8e55abc\"\n    },\n    \"isMentor\":false\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}/approved_user",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"approved_user"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Auth",
+			"item": [
+				{
+					"name": "signup",
+					"protocolProfileBehavior": {
+						"disabledSystemHeaders": {}
+					},
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Student 5\",\n    \"email\": \"s5@test.fake\",\n    \"password\": \"123456\",\n    \"timeZone\": {\n        \"abbreviation\": \"EEST\",\n        \"name\": \"Europe/Bucharest\",\n        \"offset\": \"3:00\"\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}/signup",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"signup"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "login",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\":\"m1@test.fake\",\n    \"password\":\"123456\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}/login",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"login"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "access_token",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}/users/d4c98320-22ee-4b77-9c2f-81337b94e885/access_token?refreshToken=64077341-fa53-4f61-b4df-827cfd150841",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"users",
+								"d4c98320-22ee-4b77-9c2f-81337b94e885",
+								"access_token"
+							],
+							"query": [
+								{
+									"key": "refreshToken",
+									"value": "64077341-fa53-4f61-b4df-827cfd150841"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "logout",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}/logout",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"logout"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "send_reset_password",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}/send_reset_password/edmondpr@gmail.com",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"send_reset_password",
+								"edmondpr@gmail.com"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "reset_password",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"id\": \"580a1857-2f2a-4091-b135-c250529a5a91\",\n    \"newPassword\": \"123456\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}/reset_password",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"reset_password"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Users",
+			"item": [
+				{
+					"name": "users",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{url}}/users",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"users"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "user",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{url}}/user",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"user"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "user",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n   \"isAvailable\":true,\n   \"availabilities\":[\n      {\n         \"dayOfWeek\":\"Sunday\",\n         \"time\":{\n            \"from\":\"10:00pm\",\n            \"to\":\"2:00am\"\n         }\n      },\n      {\n         \"dayOfWeek\":\"Tuesday\",\n         \"time\":{\n            \"from\":\"10:00pm\",\n            \"to\":\"5:00am\"\n         }\n      }\n   ],\n   \"timeZone\":{\n      \n   },\n   \"availableFrom\":\"2022-02-12 17:38:16\",\n   \"password\":\"null\",\n   \"field\":{\n      \"subfields\":[\n         {\n            \"skills\":[\n               {\n                  \"name\":\"iOS\",\n                  \"id\":\"ce450664-1314-49c1-99fb-c8f3c566f946\"\n               },\n               {\n                  \"name\":\"Android\",\n                  \"id\":\"99718ef8-0b09-4452-a4ee-5d93d7f4f142\"\n               },\n               {\n                  \"name\":\"React Native\",\n                  \"id\":\"e51adee0-26fa-45be-a2a7-b2d5f7dc3880\"\n               }\n            ],\n            \"name\":\"Mobile Development\",\n            \"id\":\"d0a76ab3-93a6-4c3c-bb80-7aad85fa071d\"\n         }\n      ],\n      \"name\":\"Programming\",\n      \"id\":\"b021984a-c02c-4fd4-87a7-1aec84c68d6b\"\n   },\n   \"organization\":{\n      \"name\":\"MWB\",\n      \"id\":\"aac344ee-6cdf-4acd-8e60-609bfbc589b7\"\n   },\n   \"name\":\"Mentor 1\",\n   \"id\":\"d4c98320-22ee-4b77-9c2f-81337b94e885\",\n   \"isMentor\":true,\n   \"registeredOn\":\"2021-10-03 18:15:00\",\n   \"lessonsAvailability\":{\n      \"maxStudents\":3\n   },\n   \"email\":\"m1@test.fake\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}/user",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"user"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "user",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": []
+						},
+						"url": {
+							"raw": "{{url}}/user",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"user"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Users timezones",
+			"item": [
+				{
+					"name": "timezones",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n   \"offset\":\"-2:00\",\n   \"name\":\"America\\/Sao_Paulo\",\n   \"abbreviation\":\"-02\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}/timezones",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"timezones"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Users goals",
+			"item": [
+				{
+					"name": "goals",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{url}}/goals",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"goals"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "goals/id",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{url}}/goals/d1964f86-4a81-45e5-b1cf-42a930f88acf",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"goals",
+								"d1964f86-4a81-45e5-b1cf-42a930f88acf"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "goals",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}/goals/2a975f72-1e8d-4cb7-9e56-7a6a3b6b926e",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"goals",
+								"2a975f72-1e8d-4cb7-9e56-7a6a3b6b926e"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "goal/id",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"text\": \"New goal updated\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}/goals/d1964f86-4a81-45e5-b1cf-42a930f88acf",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"goals",
+								"d1964f86-4a81-45e5-b1cf-42a930f88acf"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "goals",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"text\": \"New goal\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}/goals",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"goals"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Users steps",
+			"item": [
+				{
+					"name": "steps",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{url}}/goals/1fddda95-3648-4f44-82f6-95f2df204ea3/steps",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"goals",
+								"1fddda95-3648-4f44-82f6-95f2df204ea3",
+								"steps"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "steps/id",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{url}}/steps/26b3a94a-c70e-4be9-858c-54d8b1277434",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"steps",
+								"26b3a94a-c70e-4be9-858c-54d8b1277434"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "steps",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n   \"dateTime\":\"2022-05-24 13:01:48\",\n   \"goalId\":\"1fddda95-3648-4f44-82f6-95f2df204ea3\",\n   \"level\":0,\n   \"id\":\"26b3a94a-c70e-4be9-858c-54d8b1277434\",\n   \"text\":\"S1\",\n   \"index\":0,\n   \"userId\":\"c9682d5f-a104-4229-b8b1-0ccfef35e5f6\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}/goals/1fddda95-3648-4f44-82f6-95f2df204ea3/steps",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"goals",
+								"1fddda95-3648-4f44-82f6-95f2df204ea3",
+								"steps"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "step/id",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"text\": \"s1 updated\",\n    \"index\": 0,\n    \"level\": 0\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}/steps/26b3a94a-c70e-4be9-858c-54d8b1277434",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"steps",
+								"26b3a94a-c70e-4be9-858c-54d8b1277434"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "steps",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}/steps/26b3a94a-c70e-4be9-858c-54d8b1277434",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"steps",
+								"26b3a94a-c70e-4be9-858c-54d8b1277434"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "goals/id/steps",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}/goals/1fddda95-3648-4f44-82f6-95f2df204ea3/steps",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"goals",
+								"1fddda95-3648-4f44-82f6-95f2df204ea3",
+								"steps"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "last_step_added",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{url}}/last_step_added",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"last_step_added"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Users notifications settings",
+			"item": [
+				{
+					"name": "notifications_settings",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{url}}/notifications_settings",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"notifications_settings"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "notifications_settings",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"trainingRemindersEnabled\": false,\n    \"trainingRemindersTime\": \"20:00\",\n    \"startCourseRemindersEnabled\": true,\n    \"startCourseRemindersDate\": \"2023-04-27 21:00:00+00:00\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}/notifications_settings",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"notifications_settings"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Users quizzes",
+			"item": [
+				{
+					"name": "quiz_number",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{url}}/quiz_number",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"quiz_number"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "quizzes",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{url}}/quizzes",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"quizzes"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "quizzes",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"number\": 3,\n    \"isCorrect\": true\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}/quizzes",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"quizzes"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Users available mentors",
+			"item": [
+				{
+					"name": "available_mentors",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n   \"availabilities\":[\n      \n   ],\n   \"field\":{\n      \"subfields\":[\n         \n      ]\n   }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}/available_mentors",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"available_mentors"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "available_mentors/fields",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}/available_mentors/fields",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"available_mentors",
+								"fields"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "available_mentors/fields",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"field\": {\n        \"id\": \"b021984a-c02c-4fd4-87a7-1aec84c68d6b\"\n    },\n    \"availabilities\": [\n        {\n            \"dayOfWeek\": \"Friday\",\n            \"time\": {\n                \"from\": \"4:00am\",\n                \"to\": \"9:00pm\"\n            },\n            \"isPreferred\": null\n        },\n        {\n            \"dayOfWeek\": \"Thursday\",\n            \"time\": {\n                \"from\": \"1am\",\n                \"to\": \"12pm\"\n            },\n            \"isPreferred\": null\n        }        \n    ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}/available_mentors/fields",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"available_mentors",
+								"fields"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Users courses",
+			"item": [
+				{
+					"name": "courses",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"courseType\": {\n        \"duration\": 3\n    },    \n    \"field\": {\n        \"id\": \"b021984a-c02c-4fd4-87a7-1aec84c68d6b\"\n    },\n    \"availabilities\": [\n \n    ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}/courses",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"courses"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "courses/current",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}/courses/current",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"courses",
+								"current"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "courses/previous",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}/courses/previous",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"courses",
+								"previous"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "courses/next_lesson",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}/courses/next_lesson",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"courses",
+								"next_lesson"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "courses/mentor_partnership_schedule",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}/courses/5230f462-31dc-4ced-8402-f41efd88bf93/mentor_partnership_schedule",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"courses",
+								"5230f462-31dc-4ced-8402-f41efd88bf93",
+								"mentor_partnership_schedule"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "courses/fields",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}/courses/fields",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"courses",
+								"fields"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "courses/notes",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}/courses/7ff6b660-2a0f-4248-995e-5e035e48ab4d/notes",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"courses",
+								"7ff6b660-2a0f-4248-995e-5e035e48ab4d",
+								"notes"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "courses/fields",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{url}}/courses/fields",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"courses",
+								"fields"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "courses/add",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"type\": {\n        \"id\": \"67ccff8b-646e-4e0b-b425-e0ec19552ceb\"\n    },\n    \"mentors\": [\n        {\n            \"field\": {\n                \"id\": \"b021984a-c02c-4fd4-87a7-1aec84c68d6b\",\n                \"name\": \"Programming\",\n                \"subfields\": [\n                    {\n                        \"id\": \"ef1e8355-7abe-457a-93e5-ca877d133c20\",\n                        \"name\": \"Web Development\"\n                    }\n                ]\n            },\n            \"meetingUrl\": \"https://meet.google.com/test\"\n        }\n    ],\n    \"startDateTime\": \"2023-08-30 13:00:00\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}/courses/add",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"courses",
+								"add"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "courses/join",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}/courses/17ce0e5d-01b7-44ed-9baf-2afaaff278ff/join",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"courses",
+								"17ce0e5d-01b7-44ed-9baf-2afaaff278ff",
+								"join"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "courses/meeting_url",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"meetingUrl\": \"https://meet.google.com/test\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}/courses/d3ab6a10-ead7-4c52-82a8-afc3e526994a/meeting_url",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"courses",
+								"d3ab6a10-ead7-4c52-82a8-afc3e526994a",
+								"meeting_url"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "courses/whatsapp_group_url",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"whatsAppGroupUrl\": \"test whatsapp 2\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}/courses/7ff6b660-2a0f-4248-995e-5e035e48ab4d/whatsapp_group_url",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"courses",
+								"7ff6b660-2a0f-4248-995e-5e035e48ab4d",
+								"whatsapp_group_url"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "courses/notes",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"notes\": \"https://meet.google.com/test\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}/courses/7ff6b660-2a0f-4248-995e-5e035e48ab4d/notes",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"courses",
+								"7ff6b660-2a0f-4248-995e-5e035e48ab4d",
+								"notes"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "courses/cancel",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"reason\": \"test reason\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}/courses/9b6cfddc-c41a-472f-861b-bc8f9394d70f/cancel",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"courses",
+								"9b6cfddc-c41a-472f-861b-bc8f9394d70f",
+								"cancel"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "courses/cancel_next_lesson",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"reason\": \"test reason\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}/courses/9b6cfddc-c41a-472f-861b-bc8f9394d70f/cancel_next_lesson",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"courses",
+								"9b6cfddc-c41a-472f-861b-bc8f9394d70f",
+								"cancel_next_lesson"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "mentor_partnership_schedule",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"id\": \"c4bb52d7-2e79-4c2a-8eea-e9794c50091c\",\n    \"mentor\": {\n        \"id\": \"dfffbad3-0cad-493e-a66d-cf3161616323\"\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}/mentor_partnership_schedule",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"mentor_partnership_schedule"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "available_courses/fields",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}/available_courses/fields",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"available_courses",
+								"fields"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Users lesson requests",
+			"item": [
+				{
+					"name": "lesson_requests",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}/lesson_requests",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"lesson_requests"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "send_custom_lesson_request",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n   \"availabilities\":[\n      {\n         \"dayOfWeek\":\"Friday\",\n         \"time\":{\n            \"from\":\"8:00am\",\n            \"to\":\"9:00am\"\n         }\n      }\n   ],\n   \"field\":{\n      \"subfields\":[\n          {\n              \"id\": \"42b85870-a801-427d-a7d5-67a34e8b1e0c\",\n              \"name\": \"Project Management Fundamentals\"\n          }\n      ],\n      \"id\":\"51b3c5f5-7c28-40a0-bc6c-faa4e008f21a\"\n   },\n   \"id\":\"4bc87206-ccb4-43ee-9798-f1617f6c703a\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}/lesson_requests/send_custom_lesson_request",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"lesson_requests",
+								"send_custom_lesson_request"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "lesson_request",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{url}}/lesson_request",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"lesson_request"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "accept_lesson_request",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"meetingUrl\": \"https://meet.google.com/rga-brfa-pwc\",\n    \"endRecurrenceDateTime\": \"2022-05-16 03:00:00+00\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}/lesson_requests/d3cee50a-70e7-4cec-a163-9ad35a0b4f74/accept_lesson_request",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"lesson_requests",
+								"d3cee50a-70e7-4cec-a163-9ad35a0b4f74",
+								"accept_lesson_request"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "reject_lesson_request",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}/lesson_requests/c2a6f22a-68d3-4f12-b324-f2f98d252736/reject_lesson_request",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"lesson_requests",
+								"c2a6f22a-68d3-4f12-b324-f2f98d252736",
+								"reject_lesson_request"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "cancel_lesson_request",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}/lesson_requests/3a9b789b-ed52-4584-8864-ffac0878dda3/cancel_lesson_request",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"lesson_requests",
+								"3a9b789b-ed52-4584-8864-ffac0878dda3",
+								"cancel_lesson_request"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "update_lesson_request",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"wasRejectedShown\": true\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}/lesson_requests/d96b2a66-f270-4cee-acfa-aeed583ad850/update_lesson_request",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"lesson_requests",
+								"d96b2a66-f270-4cee-acfa-aeed583ad850",
+								"update_lesson_request"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Users lessons",
+			"item": [
+				{
+					"name": "next_lesson",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{url}}/next_lesson",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"next_lesson"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "previous_lesson",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{url}}/previous_lesson",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"previous_lesson"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "cancel_lesson",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n   \"dateTime\":\"2022-07-06 15:00:00\",\n   \"mentor\":{\n      \"id\":\"d4c98320-22ee-4b77-9c2f-81337b94e885\"\n   },\n   \"endRecurrenceDateTime\":\"2022-07-06 15:00:00\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}/lessons/e655ba1f-00e6-49e9-8798-8b2ecd408b0d/cancel_lesson",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"lessons",
+								"e655ba1f-00e6-49e9-8798-8b2ecd408b0d",
+								"cancel_lesson"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "recurrence",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"isRecurrent\": true,\n    \"endRecurrenceDateTime\": \"2022-08-21 12:00:00+00\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}/lessons/3467bd9c-b676-428e-96e2-398b96c6ad24/recurrence",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"lessons",
+								"3467bd9c-b676-428e-96e2-398b96c6ad24",
+								"recurrence"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "mentor_presence",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"isMentorPresent\": true\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}/lessons/2c8afa83-03aa-4779-b845-0c0984619fb6/mentor_presence",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"lessons",
+								"2c8afa83-03aa-4779-b845-0c0984619fb6",
+								"mentor_presence"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "meeting_url",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"meetingUrl\": \"https://meet.google.com/rga-brfa-pwu\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}/lessons/2c8afa83-03aa-4779-b845-0c0984619fb6/meeting_url",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"lessons",
+								"2c8afa83-03aa-4779-b845-0c0984619fb6",
+								"meeting_url"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "skills",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"idsList\": [\n        \"775f5002-3ce4-4dd7-9cc3-94082c6b9da2\",\n        \"304a4f4f-eebd-467a-9eec-375450034095\",\n        \"1cc0f516-733e-4106-9ef3-bda2fac0d3d2\"\n    ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}/lessons/9bb90228-4fe8-40f0-888e-a56f986c7659/skills",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"lessons",
+								"9bb90228-4fe8-40f0-888e-a56f986c7659",
+								"skills"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "notes",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"text\": \"new note 1\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}/lessons/796469d1-7a64-4f38-ba2f-71cca85afaca/notes",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"lessons",
+								"796469d1-7a64-4f38-ba2f-71cca85afaca",
+								"notes"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "lessons_notes",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{url}}/users/50ba89c6-aac0-48c2-9770-c33fef18a9ec/lessons_notes",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"users",
+								"50ba89c6-aac0-48c2-9770-c33fef18a9ec",
+								"lessons_notes"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "guide_tutorials",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{url}}/lessons/44725e3c-66cc-49ce-8d6f-342e4948ec36/guide_tutorials",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"lessons",
+								"44725e3c-66cc-49ce-8d6f-342e4948ec36",
+								"guide_tutorials"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "guide_recommendations",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{url}}/lessons/484a4552-a172-497b-8657-1ce1a4664b28/guide_recommendations",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"lessons",
+								"484a4552-a172-497b-8657-1ce1a4664b28",
+								"guide_recommendations"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Users certificates pauses",
+			"item": [
+				{
+					"name": "certificate_pause",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{url}}/certificate_pause",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"certificate_pause"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "certificate_pause",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "[\n    \"ce450664-1314-49c1-99fb-c8f3c566f946\",\n    \"99718ef8-0b09-4452-a4ee-5d93d7f4f142\",\n    \"e51adee0-26fa-45be-a2a7-b2d5f7dc3880\"\n]",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}/certificate_pause",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"certificate_pause"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Users skills",
+			"item": [
+				{
+					"name": "skills",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{url}}/users/042e7356-5efe-421f-bce3-aba317c68188/subfields/ef1e8355-7abe-457a-93e5-ca877d133c20/skills",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"users",
+								"042e7356-5efe-421f-bce3-aba317c68188",
+								"subfields",
+								"ef1e8355-7abe-457a-93e5-ca877d133c20",
+								"skills"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "skills",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"idsList\": [\n        \"775f5002-3ce4-4dd7-9cc3-94082c6b9da2\",\n        \"304a4f4f-eebd-467a-9eec-375450034095\",\n        \"1cc0f516-733e-4106-9ef3-bda2fac0d3d2\"\n    ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}/user/subfields/ef1e8355-7abe-457a-93e5-ca877d133c20/skills",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"user",
+								"subfields",
+								"ef1e8355-7abe-457a-93e5-ca877d133c20",
+								"skills"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Users app versions",
+			"item": [
+				{
+					"name": "app_versions",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"major\": 1,\n    \"minor\": 0,\n    \"revision\": 0,\n    \"build\": 3\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}/app_versions",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"app_versions"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Users in-app messages",
+			"item": [
+				{
+					"name": "in_app_messages",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"text\": \"gdasg\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}/in_app_messages",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"in_app_messages"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "in_app_messages",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"text\": \"gdasg\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}/in_app_messages",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"in_app_messages"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "in_app_messages",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"text\": \"gdasg\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}/in_app_messages",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"in_app_messages"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Users app flags",
+			"item": [
+				{
+					"name": "app_flags",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"major\": 1,\n    \"minor\": 0,\n    \"revision\": 0,\n    \"build\": 3\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}/app_flags",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"app_flags"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Users FCM Tokens",
+			"item": [
+				{
+					"name": "fcm_tokens",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"token\": \"f-TTwS_PT9y8ILhXgApRfp:APA91bEc8Y1-ihYgQSF5ppnrPe1w_Rfa7tqkQc55nyOqV8pAeBDknHZ1ei06DjW01auZ4lLWFZ-9n4LjXPv8ivoVEoGykRCcYozWAESxgBPcraf_96KJPGNKAwkQ7mGbtH3qR2HXAXmO\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}/fcm_tokens",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"fcm_tokens"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Mentors waiting requests",
+			"item": [
+				{
+					"name": "mentors_waiting_requests",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n   \"courseType\":{\n      \"duration\": 3\n   },\n   \"mentor\":{\n      \"availabilities\":[\n\n      ],\n      \"field\":{\n         \"subfields\":[\n      \n         ],\n         \"name\":\"Programming\",\n         \"id\":\"b021984a-c02c-4fd4-87a7-1aec84c68d6b\"\n      }\n   }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}/mentors_waiting_requests",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"mentors_waiting_requests"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "mentors_waiting_requests/current",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}/mentors_waiting_requests/current",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"mentors_waiting_requests",
+								"current"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "mentors_waiting_requests/add",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"courseType\": {\n        \"id\": \"5a64abf0-eaa2-48b4-be48-d0708f010526\"\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}/mentors_waiting_requests/add",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"mentors_waiting_requests",
+								"add"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "mentors_waiting_requests/cancel",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}/mentors_waiting_requests/cancel",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"mentors_waiting_requests",
+								"cancel"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Mentors partnership requests",
+			"item": [
+				{
+					"name": "mentors_partnership_requests/current",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}/mentors_partnership_requests/current",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"mentors_partnership_requests",
+								"current"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "mentors_partnership_requests",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"mentor\": {\n        \"id\": \"229209d6-5c17-43a0-98cc-0dac6bbcc451\",\n        \"field\": {\n            \"subfields\": [\n                {\n                    \"id\": \"ef1e8355-7abe-457a-93e5-ca877d133c20\"\n                }\n            ]\n        }\n    },\n    \"partnerMentor\": {\n        \"id\": \"b603ba9a-a5ac-4561-b963-7286db543a50\",\n        \"field\": {\n            \"subfields\": [\n                {\n                    \"id\": \"d0a76ab3-93a6-4c3c-bb80-7aad85fa071d\"\n                }\n            ]\n        }\n    },\n    \"courseType\": {\n        \"id\": \"5a64abf0-eaa2-48b4-be48-d0708f010526\"\n    },\n    \"courseDayOfWeek\": \"Tuesday\",\n    \"courseStartTime\": \"8am\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}/mentors_partnership_requests",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"mentors_partnership_requests"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "mentors_partnership_requests/accept",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"meetingUrl\": \"https://meet.google.com/test\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}/mentors_partnership_requests/66fa490c-9319-4ef1-b045-405162b96608/accept",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"mentors_partnership_requests",
+								"66fa490c-9319-4ef1-b045-405162b96608",
+								"accept"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "mentors_partnership_requests/reject",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}/mentors_partnership_requests/a5ba964e-895e-417e-a2bc-e83735155136/reject",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"mentors_partnership_requests",
+								"a5ba964e-895e-417e-a2bc-e83735155136",
+								"reject"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "mentors_partnership_requests/cancel",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}/mentors_partnership_requests/fcab6e2b-7f8b-425b-bc03-022b4752bd08/cancel",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"mentors_partnership_requests",
+								"fcab6e2b-7f8b-425b-bc03-022b4752bd08",
+								"cancel"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Tutorials lessons",
+			"item": [
+				{
+					"name": "tutorials_lessons",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{url}}/tutorials_lessons",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"tutorials_lessons"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Tutorials",
+			"item": [
+				{
+					"name": "tutorials",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{url}}/tutorials",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"tutorials"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Quizzes settings",
+			"item": [
+				{
+					"name": "quizzes_settings",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{url}}/quizzes_settings",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"quizzes_settings"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Course types",
+			"item": [
+				{
+					"name": "course_types",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{url}}/course_types",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"course_types"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Updates",
+			"item": [
+				{
+					"name": "updates",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{url}}/updates",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"updates"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Support requests",
+			"item": [
+				{
+					"name": "support_requests",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"text\": \"Help!\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}/support_requests",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"support_requests"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Organizations",
+			"item": [
+				{
+					"name": "organizations/id",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{url}}/organizations/id/52ac508f-e27d-4c97-8327-c61da8e55abc",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"organizations",
+								"id",
+								"52ac508f-e27d-4c97-8327-c61da8e55abc"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "organizations/name",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{url}}/organizations/name/Anchor-of-Hope-Ghana",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"organizations",
+								"name",
+								"Anchor-of-Hope-Ghana"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "organizations/centres",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{url}}/organizations/d0b45a28-3640-4867-ad68-faf1c09b3983/centres",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"organizations",
+								"d0b45a28-3640-4867-ad68-faf1c09b3983",
+								"centres"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Fields",
+			"item": [
+				{
+					"name": "fields",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{url}}/fields",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"fields"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "fields/id",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{url}}/fields/b021984a-c02c-4fd4-87a7-1aec84c68d6b",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"fields",
+								"b021984a-c02c-4fd4-87a7-1aec84c68d6b"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "fields",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"New field\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}/fields",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"fields"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "fields/id",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Programming\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}/fields/b021984a-c02c-4fd4-87a7-1aec84c68d6b",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"fields",
+								"b021984a-c02c-4fd4-87a7-1aec84c68d6b"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "fields/id",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}/fields/24cab8b7-11cc-45c6-96aa-b5247007320b",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"fields",
+								"24cab8b7-11cc-45c6-96aa-b5247007320b"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "fields_goals",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{url}}/fields_goals",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"fields_goals"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Subfields",
+			"item": [
+				{
+					"name": "subfields",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{url}}/fields/b021984a-c02c-4fd4-87a7-1aec84c68d6b/subfields",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"fields",
+								"b021984a-c02c-4fd4-87a7-1aec84c68d6b",
+								"subfields"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "subfields/id",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{url}}/subfields/ef1e8355-7abe-457a-93e5-ca877d133c20",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"subfields",
+								"ef1e8355-7abe-457a-93e5-ca877d133c20"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "subfields",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"New subfield\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}/fields/b021984a-c02c-4fd4-87a7-1aec84c68d6b/subfields",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"fields",
+								"b021984a-c02c-4fd4-87a7-1aec84c68d6b",
+								"subfields"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "subfields/id",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"New subfield\",\n    \"index\": 11\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}/subfields/078e1f75-65e7-4e49-9584-406486db2419",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"subfields",
+								"078e1f75-65e7-4e49-9584-406486db2419"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "subfields/id",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}/subfields/078e1f75-65e7-4e49-9584-406486db2419",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"subfields",
+								"078e1f75-65e7-4e49-9584-406486db2419"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Skills",
+			"item": [
+				{
+					"name": "skills",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{url}}/subfields/ef1e8355-7abe-457a-93e5-ca877d133c20/skills",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"subfields",
+								"ef1e8355-7abe-457a-93e5-ca877d133c20",
+								"skills"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "skills/id",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{url}}/skills/304a4f4f-eebd-467a-9eec-375450034095",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"skills",
+								"304a4f4f-eebd-467a-9eec-375450034095"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "skills",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"New skill\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}/subfields/ef1e8355-7abe-457a-93e5-ca877d133c20/skills",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"subfields",
+								"ef1e8355-7abe-457a-93e5-ca877d133c20",
+								"skills"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "skills/id",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"New skill\",\n    \"index\": 16\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}/skills/21cff1d7-3c7d-4d07-8e19-fc124f4b252b",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"skills",
+								"21cff1d7-3c7d-4d07-8e19-fc124f4b252b"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "skills/id",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}/skills/21cff1d7-3c7d-4d07-8e19-fc124f4b252b",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"skills",
+								"21cff1d7-3c7d-4d07-8e19-fc124f4b252b"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Fields tutorials",
+			"item": [
+				{
+					"name": "fields_tutorials",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{url}}/fields_tutorials",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"fields_tutorials"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "fields_tutorials/id",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{url}}/fields_tutorials/4d57155d-d783-4b79-b37d-1a89e695c9f9",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"fields_tutorials",
+								"4d57155d-d783-4b79-b37d-1a89e695c9f9"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "fields_tutorials",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"fieldId\": \"b021984a-c02c-4fd4-87a7-1aec84c68d6b\",\n    \"tutorialId\": \"a132f464-37a5-4d12-bd5d-0139b8e17e2d\",\n    \"timesUsed\": 5\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}/fields_tutorials",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"fields_tutorials"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "fields_tutorials/id",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"fieldId\": \"b021984a-c02c-4fd4-87a7-1aec84c68d6b\",\n    \"tutorialId\": \"4e4183fb-6d75-488f-93a8-d9e0a044186b\",\n    \"timesUsed\": 4\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}/fields_tutorials/4d57155d-d783-4b79-b37d-1a89e695c9f9",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"fields_tutorials",
+								"4d57155d-d783-4b79-b37d-1a89e695c9f9"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "fields_tutorials/id",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}/fields_tutorials/4d57155d-d783-4b79-b37d-1a89e695c9f9",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"fields_tutorials",
+								"4d57155d-d783-4b79-b37d-1a89e695c9f9"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Subfields tutorials",
+			"item": [
+				{
+					"name": "subfields_tutorials",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{url}}/subfields_tutorials",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"subfields_tutorials"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "subfields_tutorials/id",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{url}}/subfields_tutorials/4adf5997-b74f-4489-8fa6-70bec090309c",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"subfields_tutorials",
+								"4adf5997-b74f-4489-8fa6-70bec090309c"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "subfields_tutorials",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"subfieldId\": \"ef1e8355-7abe-457a-93e5-ca877d133c20\",\n    \"tutorialId\": \"a132f464-37a5-4d12-bd5d-0139b8e17e2d\",\n    \"timesUsed\": 5\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}/subfields_tutorials",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"subfields_tutorials"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "subfields_tutorials/id",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"subfieldId\": \"ef1e8355-7abe-457a-93e5-ca877d133c20\",\n    \"tutorialId\": \"4e4183fb-6d75-488f-93a8-d9e0a044186b\",\n    \"timesUsed\": 3\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}/subfields_tutorials/4adf5997-b74f-4489-8fa6-70bec090309c",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"subfields_tutorials",
+								"4adf5997-b74f-4489-8fa6-70bec090309c"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "subfields_tutorials/id",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}/subfields_tutorials/4adf5997-b74f-4489-8fa6-70bec090309c",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"subfields_tutorials",
+								"4adf5997-b74f-4489-8fa6-70bec090309c"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Skills tutorials",
+			"item": [
+				{
+					"name": "skills_tutorials",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{url}}/skills_tutorials",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"skills_tutorials"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "skills_tutorials/id",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{url}}/skills_tutorials/dd7ec2e7-e857-414f-8ec0-43782e84f797",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"skills_tutorials",
+								"dd7ec2e7-e857-414f-8ec0-43782e84f797"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "skills_tutorials",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"skillId\": \"21e61c28-6751-44f9-a204-610db29ee4c5\",\n    \"tutorialId\": \"a132f464-37a5-4d12-bd5d-0139b8e17e2d\",\n    \"timesUsed\": 5\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}/skills_tutorials",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"skills_tutorials"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "skills_tutorials/id",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"skillId\": \"21e61c28-6751-44f9-a204-610db29ee4c5\",\n    \"tutorialId\": \"a132f464-37a5-4d12-bd5d-0139b8e17e2d\",\n    \"timesUsed\": 3\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}/skills_tutorials/dd7ec2e7-e857-414f-8ec0-43782e84f797",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"skills_tutorials",
+								"dd7ec2e7-e857-414f-8ec0-43782e84f797"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "skills_tutorials/id",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}/skills_tutorials/dd7ec2e7-e857-414f-8ec0-43782e84f797",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"skills_tutorials",
+								"dd7ec2e7-e857-414f-8ec0-43782e84f797"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Logger",
+			"item": [
+				{
+					"name": "logger",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"text\": \"new log\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}/logger",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"logger"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Background processes",
+			"item": [
+				{
+					"name": "send_lesson_request_reminders",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{url}}/send_lesson_request_reminders",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"send_lesson_request_reminders"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "send_lesson_reminders",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{url}}/send_lesson_reminders",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"send_lesson_reminders"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "send_course_lesson_reminders",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{url}}/send_course_lesson_reminders",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"send_course_lesson_reminders"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "send_training_reminders",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{url}}/send_training_reminders",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"send_training_reminders"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Admin training reminders",
+			"item": [
+				{
+					"name": "admin/training_reminders",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{url}}/admin/8132a0c1-828d-4b98-ae55-9f024421ded2/training_reminders",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"admin",
+								"8132a0c1-828d-4b98-ae55-9f024421ded2",
+								"training_reminders"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "admin/all_training_reminders",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{url}}/admin/8132a0c1-828d-4b98-ae55-9f024421ded2/all_training_reminders",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"admin",
+								"8132a0c1-828d-4b98-ae55-9f024421ded2",
+								"all_training_reminders"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "admin/conversations",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"user\": {\n        \"id\": \"cc40d453-8b82-4f9b-81d3-03f3624940f9\"\n    },\n    \"conversations\": \"text new\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}/admin/conversations",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"admin",
+								"conversations"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "id/last_contacted",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"shouldContact\": false,\n    \"lastContactedDateTime\": \"2021-11-26 16:35:00+00\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}/admin/available_mentors/29e58df1-a1d3-4a22-a789-ee49dc7150c6/last_contacted",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"admin",
+								"available_mentors",
+								"29e58df1-a1d3-4a22-a789-ee49dc7150c6",
+								"last_contacted"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "trainers",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{url}}/admin/trainers",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"admin",
+								"trainers"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Admin lessons",
+			"item": [
+				{
+					"name": "admin/lessons",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{url}}/admin/lessons",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"admin",
+								"lessons"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Admin available mentors",
+			"item": [
+				{
+					"name": "admin/available_mentors_lessons",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{url}}/admin/available_mentors",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"admin",
+								"available_mentors"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "id/should_contact",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"shouldContact\": false,\n    \"lastContactedDateTime\": \"2021-11-28 16:35:00+00\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}/admin/available_mentors/29e58df1-a1d3-4a22-a789-ee49dc7150c6/should_contact",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"admin",
+								"available_mentors",
+								"29e58df1-a1d3-4a22-a789-ee49dc7150c6",
+								"should_contact"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Admin available students",
+			"item": [
+				{
+					"name": "admin/available_students_lessons",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{url}}/admin/available_students_lessons",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"admin",
+								"available_students_lessons"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "id/should_contact",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"shouldContact\": false,\n    \"lastContactedDateTime\": \"2021-11-28 16:35:00+00\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}/admin/available_students/29e58df1-a1d3-4a22-a789-ee49dc7150c6/should_contact",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"admin",
+								"available_students",
+								"29e58df1-a1d3-4a22-a789-ee49dc7150c6",
+								"should_contact"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Admin students certificates",
+			"item": [
+				{
+					"name": "admin/students_certificates",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{url}}/admin/students_certificates",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"admin",
+								"students_certificates"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "admin/certificate_sent",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{url}}/admin/students_certificates/certificate_sent",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"admin",
+								"students_certificates",
+								"certificate_sent"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "id/certificate_sent",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"isCertificateSent\": true\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}/admin/students_certificates/c9682d5f-a104-4229-b8b1-0ccfef35e5f6/certificate_sent",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"admin",
+								"students_certificates",
+								"c9682d5f-a104-4229-b8b1-0ccfef35e5f6",
+								"certificate_sent"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Partners",
+			"item": [
+				{
+					"name": "partners/id/mentors",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{url}}/partners/aac344ee-6cdf-4acd-8e60-609bfbc589b7/mentors",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"partners",
+								"aac344ee-6cdf-4acd-8e60-609bfbc589b7",
+								"mentors"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "partners/id/mentors/stats",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{url}}/partners/aac344ee-6cdf-4acd-8e60-609bfbc589b7/mentors/stats",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"partners",
+								"aac344ee-6cdf-4acd-8e60-609bfbc589b7",
+								"mentors",
+								"stats"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "partners/id/projects",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{url}}/partners/d4a4f7c2-3257-40c3-8ea7-771a83355990/projects",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"partners",
+								"d4a4f7c2-3257-40c3-8ea7-771a83355990",
+								"projects"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Partner dashboard stats",
+			"item": [
+				{
+					"name": "partners/dashboard/stats",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{url}}/partners/dashboard/stats",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"partners",
+								"dashboard",
+								"stats"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "partners/id/dashboard/stats",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{url}}/partners/aac344ee-6cdf-4acd-8e60-609bfbc589b7/dashboard/stats",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"partners",
+								"aac344ee-6cdf-4acd-8e60-609bfbc589b7",
+								"dashboard",
+								"stats"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "WhatsApp",
+			"item": [
+				{
+					"name": "send_message",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"phoneNumber\": \"40742805664\",\n    \"message\": \"new reminder\",\n    \"accessToken\": \"VMCVA2754U6FvUnLFQ7ChCrQFjVbxr\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}/send_message",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"send_message"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Test notifications",
+			"item": [
+				{
+					"name": "send_push_notification",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}/test/d4c98320-22ee-4b77-9c2f-81337b94e885/send_push_notification",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"test",
+								"d4c98320-22ee-4b77-9c2f-81337b94e885",
+								"send_push_notification"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "send_email",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}/test/4716d30a-ece3-4d2a-8424-da783a9640a5/send_email",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"test",
+								"4716d30a-ece3-4d2a-8424-da783a9640a5",
+								"send_email"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	]
+}
