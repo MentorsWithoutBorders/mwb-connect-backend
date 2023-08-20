@@ -3,9 +3,9 @@ import pg from "pg";
 import "moment-timezone";
 import {Conn} from "../db/conn";
 import {Helpers} from "../utils/helpers";
-import PartnerStudent from "../models/partner_student.model";
-import PartnerStudentSearch from "../models/partner_student_search.model";
+import {PartnerStudentSearch} from "../models/partner_student_search.model";
 import {filterRowsBySearchParams} from "../models/partner_student.model.utils";
+import {PartnerStudent} from "../models/partner_student.model";
 
 const conn = new Conn();
 const pool = conn.pool;
@@ -118,9 +118,9 @@ export class AdminPartnersStudents {
       select
         users.name,
         users.email,
-        users.phone_number as phoneNumber,
-        coalesce(sc.courses_count, 0) as totalCoursesAttended,
-        coalesce(ss.status, 'Unknown') as studentStatus,
+        users.phone_number as "phoneNumber",
+        coalesce(sc.courses_count, 0) as "totalCoursesAttended",
+        coalesce(ss.status, 'Unknown') as "studentStatus",
         coalesce(t.testimonials, ARRAY[]::text[]) as testimonials
       from users 
 
@@ -132,17 +132,10 @@ export class AdminPartnersStudents {
       and users.organization_id = '${partnerId}'
     `;
 
-    try {
     const {rows}: pg.QueryResult<PartnerStudent> = await client.query(
       allStudentsOfOnePartnerQuery
     );
 
     return filterRowsBySearchParams({rows, searchParameters});
-
-    }
-    catch (error) {
-      console.log("getAllStudentsOfOnePartnerFromDB", error)
-      // throw error;
-    }
   }
 }

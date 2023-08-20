@@ -1,4 +1,4 @@
-export default interface PartnerStudentSearch {
+export interface PartnerStudentSearch {
   courseFromDate?: string;
   courseToDate?: string;
 

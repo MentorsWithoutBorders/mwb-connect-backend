@@ -1,5 +1,6 @@
-import PartnerStudentSearch from "./partner_student_search.model";
-import PartnerStudent from "./partner_student.model";
+import {PartnerStudentSearch} from "./partner_student_search.model";
+import {PartnerStudent} from "./partner_student.model";
+
 
 export const filterRowsBySearchParams = ({rows, searchParameters}: {
   rows: PartnerStudent[],
@@ -18,19 +19,20 @@ export const filterRowsBySearchParams = ({rows, searchParameters}: {
   }
 
   const noneOfTheSearchParametersExists = !searchByName && !searchByEmail && !searchByStudentStatus && !searchByStudentOrganization
-  return rows.filter(({name, studentStatus, email}) => {
-    if (noneOfTheSearchParametersExists) {
-      return name.toLowerCase().includes(lowerSearchString)
-    }
-    if (searchByName) {
-      return name.toLowerCase().includes(lowerSearchString)
-    }
-    if (searchByEmail) {
-      return email.toLowerCase().includes(lowerSearchString)
-    }
-    if (searchByStudentStatus) {
-      return studentStatus.toLowerCase().includes(lowerSearchString)
-    }
-    return false
-  })
+  return rows
+    .filter(({name, studentStatus, email}) => {
+      if (noneOfTheSearchParametersExists) {
+        return name.toLowerCase().includes(lowerSearchString)
+      }
+      if (searchByName) {
+        return name.toLowerCase().includes(lowerSearchString)
+      }
+      if (searchByEmail) {
+        return email.toLowerCase().includes(lowerSearchString)
+      }
+      if (searchByStudentStatus) {
+        return studentStatus.toLowerCase().includes(lowerSearchString)
+      }
+      return false
+    })
 }

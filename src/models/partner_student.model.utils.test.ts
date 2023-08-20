@@ -1,5 +1,5 @@
 import {filterRowsBySearchParams} from "./partner_student.model.utils";
-import PartnerStudent, {StudentStatus} from "./partner_student.model";
+import {PartnerStudent, StudentStatus} from "./partner_student.model";
 
 describe("filterRowsBySearchParams", () => {
   const rows: PartnerStudent[] = [
@@ -8,24 +8,28 @@ describe("filterRowsBySearchParams", () => {
       studentStatus: StudentStatus.InProgress,
       email: "anika@test.com",
       totalCoursesAttended: 0,
+      testimonials: ['https://awesomeTestimonial']
     },
     {
       name: "tester",
       studentStatus: StudentStatus.InProgress,
       email: "tester@test.com",
       totalCoursesAttended: 1,
+      testimonials: ['https://awesomeTestimonial0']
     },
     {
       name: "John",
       studentStatus: StudentStatus.Sent,
       email: "John@test.com",
       totalCoursesAttended: 10,
+      testimonials: ["https://magic", "https://magic2",]
     },
     {
       name: "Jane",
       studentStatus: StudentStatus.Sent,
       email: "jane@test.com",
       totalCoursesAttended: 0,
+      testimonials: ["https://youtubetest1", "https://youtubetest2",]
     }]
 
   it("should return rows if there is no search string", () => {
@@ -58,7 +62,7 @@ describe("filterRowsBySearchParams", () => {
       searchByStudentStatus: false,
       searchByStudentOrganization: false
     }
-    expect(filterRowsBySearchParams({rows, searchParameters})).toEqual([rows[0],rows[2]])
+    expect(filterRowsBySearchParams({rows, searchParameters})).toEqual([rows[0], rows[2]])
   })
 
   it("should return empty array when searching by name dont match any row", () => {

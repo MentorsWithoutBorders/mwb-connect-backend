@@ -5,10 +5,11 @@ export enum StudentStatus {
   Unknown = "UNKNOWN",
 }
 
-export default interface PartnerStudent {
+export interface PartnerStudent {
   name: string,
   email: string
   totalCoursesAttended: number
   phoneNumber?: number
   studentStatus: StudentStatus
+  testimonials: string[]
 }
