@@ -51,26 +51,24 @@ export class AdminPartnersStudents {
       courseFromDate,
       courseToDate,
     } = searchParameters;
-    let andFromToCondition = "";
-    let whereFromToCondition = "";
-    let fromToCondition = "";
+    let whereFromToDateCondition = "";
+    let fromToDateCondition = "";
 
     if (courseFromDate || courseToDate) {
       if (courseFromDate && courseToDate) {
-        fromToCondition = `(
+        fromToDateCondition = `(
           (uc.start_date_time between '${courseFromDate}' and '${courseToDate}')
           or (uc.start_date_time + (ct.duration * INTERVAL '1 month') between '${courseFromDate}' and '${courseToDate}')
        )
       `;
       } else if (courseFromDate && !courseToDate) {
         // If only from date is provided, we will take all courses that end after that date
-        fromToCondition = `(uc.start_date_time + (ct.duration * INTERVAL '1 month') > '${courseFromDate}')`;
+        fromToDateCondition = `(uc.start_date_time + (ct.duration * INTERVAL '1 month') > '${courseFromDate}')`;
       } else if (!courseFromDate && courseToDate) {
         // If only to date is provided, we will take all courses that begin before that date
-        fromToCondition = `(uc.start_date_time < '${courseToDate}')`;
+        fromToDateCondition = `(uc.start_date_time < '${courseToDate}')`;
       }
-      andFromToCondition = ` and ${fromToCondition} `;
-      whereFromToCondition = ` where ${fromToCondition} `;
+      whereFromToDateCondition = ` where ${fromToDateCondition} `;
     }
     const allStudentsOfOnePartnerQuery = `
       with
@@ -78,20 +76,25 @@ export class AdminPartnersStudents {
         (
           select 
             ucs.student_id,
-            COUNT(*) as courses_count,
-            orgs.name as student_organization_name
+            COUNT(*) as courses_count
           from users_courses_students ucs
           inner join 
             users_courses uc on uc.id = ucs.course_id
           inner join 
             course_types ct on uc.course_type_id = ct.id
           inner join 
-            users u ON ucs.student_id = u.id
-          inner join 
-            organizations orgs on u.organization_id = orgs.id
+            users u on ucs.student_id = u.id
           group by 
-            ucs.student_id,
-            orgs.name
+            ucs.student_id
+        ),
+        student_organization as
+        (
+          select 
+            organizations.id,
+            organizations.name
+          from users
+          inner join 
+            organizations on users.organization_id = organizations.id
         ),
         student_status as
         (
@@ -135,23 +138,32 @@ export class AdminPartnersStudents {
           group by
             users.id
         )
+      
       select
+        users.id,
         users.name,
         users.email,
         users.phone_number as "phoneNumber",
         coalesce(sc.courses_count, 0) as "totalCoursesAttended",
-        coalesce(ss.status, '${StudentCertificationStatus.Unknown}'}) as "certificationStatus",
-        coalesce(sc.student_organization_name, '') AS "organizationName",
+        coalesce(so.name, '') as "organizationName",
+        coalesce(ss.status, '${StudentCertificationStatus.Unknown}') as "certificationStatus",
         coalesce(t.testimonials, '[]'::jsonb) as testimonials
-        
       from users 
       
       left outer join student_courses sc on users.id = sc.student_id
       left outer join student_status ss on users.id = ss.student_id
+      left outer join student_organization so on users.organization_id = so.id
       left outer join testimonials t on users.id = t.id
 
       where users.is_mentor = false
       and users.organization_id = '${partnerId}'
+      ${whereFromToDateCondition}
+      group by
+        users.id,
+        sc.courses_count,
+        so.name,
+        ss.status,
+        t.testimonials
     `;
 
     const {rows}: pg.QueryResult<PartnerStudent> = await client.query(
