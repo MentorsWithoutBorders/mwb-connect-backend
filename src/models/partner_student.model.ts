@@ -6,6 +6,7 @@ export enum StudentCertificationStatus {
 }
 
 export interface PartnerStudent {
+  id: string
   email: string
   name: string
   phoneNumber?: number

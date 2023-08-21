@@ -20,19 +20,23 @@ export const filterRowsBySearchParams = ({rows, searchParameters}: {
 
   const noneOfTheSearchParametersExists = !searchByName && !searchByEmail && !searchByStudentStatus && !searchByStudentOrganization
   return rows
-    .filter(({name, certificationStatus, email}) => {
+    .filter(({name, certificationStatus, email, organizationName}) => {
+      let condition = false
       if (noneOfTheSearchParametersExists) {
-        return name.toLowerCase().includes(lowerSearchString)
+        condition = name.toLowerCase().includes(lowerSearchString)
       }
-      if (searchByName) {
-        return name.toLowerCase().includes(lowerSearchString)
+      if (searchByName && name.toLowerCase().includes(lowerSearchString)) {
+        condition = true
       }
-      if (searchByEmail) {
-        return email.toLowerCase().includes(lowerSearchString)
+      if (searchByEmail && email.toLowerCase().includes(lowerSearchString)) {
+        condition = true
       }
-      if (searchByStudentStatus) {
-        return certificationStatus.toLowerCase().includes(lowerSearchString)
+      if (searchByStudentStatus && certificationStatus.toLowerCase().includes(lowerSearchString)) {
+        condition = true
       }
-      return false
+      if (searchByStudentOrganization && organizationName.toLowerCase().includes(lowerSearchString)) {
+        condition = true
+      }
+      return condition
     })
 }
