@@ -549,6 +549,12 @@ app.get(
   adminPartnersProjects.getAllProjectsOfOnePartner
 );
 
+// Admin - Create partner project
+app.post(
+  "/api/v1/partners/:partner_id/projects",
+  adminPartnersProjects.createProjectOfOnePartner
+);
+
 // Admin lessons
 app.get("/api/v1/admin/lessons", adminLessons.getLessons);
 
