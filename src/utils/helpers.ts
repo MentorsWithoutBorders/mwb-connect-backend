@@ -15,7 +15,7 @@ export class Helpers {
   autoBind(self: any) {
     for (const key of Object.getOwnPropertyNames(self.constructor.prototype)) {
       const val = self[key];
-  
+
       if (key !== "constructor" && typeof val === "function") {
         self[key] = val.bind(self);
       }
@@ -32,6 +32,10 @@ export class Helpers {
 
   isValidEmail(email:string ): boolean {
     return /\S+@\S+\.\S+/.test(email);
+  }
+
+  isEmptyObject(obj: any): boolean{
+    return JSON.stringify(obj) === '{}';
   }
 
   generateAccessToken(id: string): string {
@@ -53,11 +57,11 @@ export class Helpers {
   replaceAll(str: string, find: string, replace: string): string {
     return str.replace(new RegExp(this.escapeRegExp(find), 'g'), replace);
   }
-  
+
   escapeRegExp(str: string): string {
     return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  }  
-  
+  }
+
   getNextDayOfWeek(dayOfWeek: string): string {
     let date = moment();
     while (constants.DAYS_OF_WEEK[date.isoWeekday() - 1] != dayOfWeek) {
@@ -76,7 +80,7 @@ export class Helpers {
     }
     return '';
   }
-  
+
   getDSTAdjustedDifferenceInDays(differenceInMilliseconds: number): number {
     let differenceInHours = moment.duration(differenceInMilliseconds).asHours();
     let differenceInDays = moment.duration(differenceInMilliseconds).asDays();
@@ -131,7 +135,7 @@ export class Helpers {
     }
     return mentorsNames;
   }
-  
+
   getMentorsSubfieldsNames(mentors: Array<CourseMentor> | undefined): string {
     if (!mentors || mentors.length === 0) {
       return '';

@@ -3,10 +3,12 @@ import pg from "pg";
 import { Conn } from "../db/conn";
 import { Helpers } from "../utils/helpers";
 import PartnerProject from "../models/partner_project.model";
+import { Organizations } from "../db_queries/organizations";
 
 const conn = new Conn();
 const pool = conn.pool;
 const helpers = new Helpers();
+const organizations = new Organizations();
 
 export class AdminPartnersProjects {
   constructor() {
@@ -21,8 +23,11 @@ export class AdminPartnersProjects {
     const project: PartnerProject = request.body;
     const client = await pool.connect();
     try {
-      const isOrganizationValid = await this.getOrganization(partnerId, client);
-      if (isOrganizationValid) {
+      const organization = await organizations.getOrganizationByIdFromDB(
+        partnerId,
+        client
+      );
+      if (!helpers.isEmptyObject(organization)) {
         await this.createProjectInDB(partnerId, client, project);
         response.status(201).send("New project created");
       } else {
@@ -34,14 +39,6 @@ export class AdminPartnersProjects {
     } finally {
       client.release();
     }
-  }
-
-  async getOrganization(partnerId: string, client: pg.PoolClient): Promise<boolean> {
-    const getOganizationQuery = "SELECT id FROM organizations WHERE id = $1";
-    const { rows }: pg.QueryResult = await client.query(getOganizationQuery, [
-      partnerId,
-    ]);
-    return rows.length > 0;
   }
 
   async createProjectInDB(
