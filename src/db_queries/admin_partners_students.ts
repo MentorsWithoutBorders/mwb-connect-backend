@@ -57,8 +57,8 @@ export class AdminPartnersStudents {
     if (courseFromDate || courseToDate) {
       if (courseFromDate && courseToDate) {
         fromToDateCondition = `(
-          (uc.start_date_time between '${courseFromDate}' and '${courseToDate}')
-          or (uc.start_date_time + (ct.duration * INTERVAL '1 month') between '${courseFromDate}' and '${courseToDate}')
+          (uc.start_date_time between '${courseFromDate}' AND '${courseToDate}')
+          OR (uc.start_date_time + (ct.duration * INTERVAL '1 month') between '${courseFromDate}' and '${courseToDate}')
        )
       `;
       } else if (courseFromDate && !courseToDate) {
@@ -68,97 +68,97 @@ export class AdminPartnersStudents {
         // If only to date is provided, we will take all courses that begin before that date
         fromToDateCondition = `(uc.start_date_time < '${courseToDate}')`;
       }
-      whereFromToDateCondition = ` where ${fromToDateCondition} `;
+      whereFromToDateCondition = ` WHERE ${fromToDateCondition} `;
     }
     const allStudentsOfOnePartnerQuery = `
-      with
-        student_courses as
+      WITH
+        student_courses AS
         (
-          select 
+          SELECT 
             ucs.student_id,
-            COUNT(*) as courses_count
-          from users_courses_students ucs
-          inner join 
-            users_courses uc on uc.id = ucs.course_id
-          inner join 
-            course_types ct on uc.course_type_id = ct.id
-          inner join 
-            users u on ucs.student_id = u.id
-          group by 
+            COUNT(*) AS courses_count
+          FROM users_courses_students ucs
+          INNER JOIN
+            users_courses uc ON uc.id = ucs.course_id
+          INNER JOIN 
+            course_types ct ON uc.course_type_id = ct.id
+          INNER JOIN 
+            users u ON ucs.student_id = u.id
+          GROUP BY 
             ucs.student_id
         ),
-        student_organization as
+        student_organization AS
         (
-          select 
+          SELECT 
             organizations.id,
             organizations.name
-          from users
-          inner join 
-            organizations on users.organization_id = organizations.id
+          FROM users
+          INNER JOIN 
+            organizations ON users.organization_id = organizations.id
         ),
-        student_status as
+        student_status AS
         (
-          select 
-            users.id as student_id,
-            case
-              when admin_students_certificates.is_certificate_sent = true 
-                then '${StudentCertificationStatus.Sent}'
-              when admin_students_certificates.is_certificate_sent = false 
-                then '${StudentCertificationStatus.InProgress}'
-              when users_app_flags.is_training_enabled = false and users_app_flags.is_mentoring_enabled = FALSE 
-                then '${StudentCertificationStatus.Cancelled}'
-              else 
+          SELECT 
+            users.id AS student_id,
+            CASE
+              WHEN admin_students_certificates.is_certificate_sent = true 
+                THEN '${StudentCertificationStatus.Sent}'
+              WHEN admin_students_certificates.is_certificate_sent = false 
+                THEN '${StudentCertificationStatus.InProgress}'
+              WHEN users_app_flags.is_training_enabled = false AND users_app_flags.is_mentoring_enabled = FALSE 
+                THEN '${StudentCertificationStatus.Cancelled}'
+              ELSE 
                 '${StudentCertificationStatus.Unknown}'
-            end as status
-          from users
-          left join 
-            admin_students_certificates on users.id = admin_students_certificates.user_id
-          left join 
+            END AS status
+          FROM users
+          LEFT JOIN 
+            admin_students_certificates ON users.id = admin_students_certificates.user_id
+          LEFT JOIN 
             users_app_flags on users.id = users_app_flags.user_id
         ),
-        testimonials as
+        testimonials AS
         (
-          select 
+          SELECT 
             users.id,
-                case 
-                  when count(testimonial_objects) = 0 then '[]'::jsonb
-                  else jsonb_agg(testimonial_objects) 
-                end as testimonials
-          from users
-          left join (
-            select 
+                CASE 
+                  WHEN count(testimonial_objects) = 0 THEN '[]'::jsonb
+                  ELSE jsonb_agg(testimonial_objects) 
+                END AS testimonials
+          FROM users
+          LEFT JOIN (
+            SELECT 
               students_testimonials.user_id,
               jsonb_build_object(
                 'url', students_testimonials.url,
                 'uploadedDateTime', students_testimonials.uploaded_date_time
               ) as testimonial_objects
-            from students_testimonials
-            where students_testimonials is not null
-          ) as testimonials_subquery on users.id = testimonials_subquery.user_id
-          group by
+            FROM students_testimonials
+            WHERE students_testimonials IS NOT null
+          ) AS testimonials_subquery on users.id = testimonials_subquery.user_id
+          GROUP BY
             users.id
         )
       
-      select
+      SELECT
         users.id,
         users.name,
         users.email,
-        users.phone_number as "phoneNumber",
-        coalesce(sc.courses_count, 0) as "totalCoursesAttended",
-        coalesce(so.name, '') as "organizationName",
-        coalesce(ss.status, '${StudentCertificationStatus.Unknown}') as "certificationStatus",
-        coalesce(t.testimonials, '[]'::jsonb) as testimonials
-      from users 
+        users.phone_number AS "phoneNumber",
+        coalesce(sc.courses_count, 0) AS "totalCoursesAttended",
+        coalesce(so.name, '') AS "organizationName",
+        coalesce(ss.status, '${StudentCertificationStatus.Unknown}') AS "certificationStatus",
+        coalesce(t.testimonials, '[]'::jsonb) AS testimonials
+      FROM users 
       
-      left outer join student_courses sc on users.id = sc.student_id
-      left outer join student_status ss on users.id = ss.student_id
-      left outer join student_organization so on users.organization_id = so.id
-      left outer join testimonials t on users.id = t.id
+      LEFT OUTER JOIN student_courses sc on users.id = sc.student_id
+      LEFT OUTER JOIN student_status ss on users.id = ss.student_id
+      LEFT OUTER JOIN student_organization so on users.organization_id = so.id
+      LEFT OUTER JOIN testimonials t on users.id = t.id
 
-      where users.is_mentor = false
-      and users.organization_id = '${partnerId}'
+      WHERE users.is_mentor = false
+      AND users.organization_id = '${partnerId}'
       ${whereFromToDateCondition}
-      group by
+      GROUP BY
         users.id,
         sc.courses_count,
         so.name,
