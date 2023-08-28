@@ -7,3 +7,4 @@ mwb-connect-firebase-adminsdk.prod.json
 \node_modules
 \dist
 \.wwebjs_auth
+.idea
