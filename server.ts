@@ -384,6 +384,20 @@ app.get(
 // Partners
 app.get('/api/v1/partners/dashboard/stats', partnersDashboardStats.getDashboardStats);
 app.get('/api/v1/partners/:partner_id/dashboard/stats', partnersDashboardStats.getDashboardStatsByPartnerId);
+// Returns the location of the org centers of _all_ the partners
+// that have had at least one active student.
+// Filtering by date is possible.
+app.get(
+  '/api/v1/partners/dashboard/organization-centers-with-students',
+  adminPartnersCentersWithStudents.getAllOrganizationCentersWithOneStudent
+);
+// Returns the location of the org centers of _a specific_ partner
+// that have had at least one active student.
+// Filtering by date is possible.
+app.get(
+  '/api/v1/partners/:partner_id/dashboard/organization-centers-with-students',
+  adminPartnersCentersWithStudents.getAllOrganizationCentersWithOneStudentByPartnerId
+);
 
 // Fields
 app.get("/api/v1/fields", fields.getFields);
