@@ -106,6 +106,7 @@ const adminPartnersMentors = new AdminPartnersMentors();
 const adminPartnersMentorStats = new AdminPartnersMentorStats();
 const adminPartnersProjects = new AdminPartnersProjects();
 const adminPartnersStudents = new AdminPartnersStudents();
+const adminPartnersCentersWithStudents = new AdminPartnersOrganizationCentersWithStudents();
 
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
