@@ -50,7 +50,10 @@ import { AdminAvailableStudents } from './src/db_queries/admin_available_student
 import { AdminPartnersMentors } from './src/db_queries/admin_partners_mentors';
 import { AdminPartnersMentorStats } from './src/db_queries/admin_partners_mentors_stats';
 import { AdminPartnersProjects } from './src/db_queries/admin_partners_projects'
-import {AdminPartnersStudents} from "./src/db_queries/admin_partners_students";
+import { AdminPartnersStudents } from "./src/db_queries/admin_partners_students";
+import {
+  AdminPartnersOrganizationCentersWithStudents
+} from "./src/db_queries/admin_partners_organization_centers_with_students";
 
 dotenv.config();
 const port = process.env.PORT;
