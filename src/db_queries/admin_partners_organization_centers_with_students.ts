@@ -10,7 +10,7 @@ const conn = new Conn();
 const pool = conn.pool;
 const helpers = new Helpers();
 
-const deriveQuery = ({fromDate, toDate}: { fromDate?: string, toDate?: string }, partnerId?: string) => {
+const deriveQuery = ({fromDate, toDate}: PartnerCentersSearch, partnerId?: string) => {
   let whereFromToDateCondition = "";
   const andPartnerIdCondition = partnerId ? ` AND oc.organization_id = '${partnerId}'` : "";
 
