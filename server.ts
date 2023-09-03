@@ -1,8 +1,7 @@
-import express from 'express';
+import express, { NextFunction, Request, Response } from 'express';
 import cron from 'node-cron';
 import dotenv from 'dotenv';
 import cors from 'cors';
-import { Request, Response, NextFunction } from 'express';
 import { Auth } from './src/db_queries/auth';
 import { ApprovedUsers } from './src/db_queries/approved_users';
 import { Users } from './src/db_queries/users';
@@ -50,7 +49,10 @@ import { AdminAvailableStudents } from './src/db_queries/admin_available_student
 import { AdminPartnersMentors } from './src/db_queries/admin_partners_mentors';
 import { AdminPartnersMentorStats } from './src/db_queries/admin_partners_mentors_stats';
 import { AdminPartnersProjects } from './src/db_queries/admin_partners_projects'
-import {AdminPartnersStudents} from "./src/db_queries/admin_partners_students";
+import { AdminPartnersStudents } from "./src/db_queries/admin_partners_students";
+import {
+  AdminPartnersOrganizationCentres
+} from "./src/db_queries/admin_partners_organization_centres";
 
 dotenv.config();
 const port = process.env.PORT;
@@ -103,6 +105,7 @@ const adminPartnersMentors = new AdminPartnersMentors();
 const adminPartnersMentorStats = new AdminPartnersMentorStats();
 const adminPartnersProjects = new AdminPartnersProjects();
 const adminPartnersStudents = new AdminPartnersStudents();
+const adminPartnersCentres = new AdminPartnersOrganizationCentres();
 
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
@@ -380,6 +383,20 @@ app.get(
 // Partners
 app.get('/api/v1/partners/dashboard/stats', partnersDashboardStats.getDashboardStats);
 app.get('/api/v1/partners/:partner_id/dashboard/stats', partnersDashboardStats.getDashboardStatsByPartnerId);
+// Returns the location of the org centres of _all_ the partners
+// that have had at least one active student.
+// Filtering by date is possible.
+app.get(
+  '/api/v1/partners/dashboard/organization-centres',
+  adminPartnersCentres.getDashboardOrganizationCentres
+);
+// Returns the location of the org centres of _a specific_ partner
+// that have had at least one active student.
+// Filtering by date is possible.
+app.get(
+  '/api/v1/partners/:partner_id/dashboard/organization-centres',
+  adminPartnersCentres.getDashboardOrganizationCentresByPartnerId
+);
 
 // Fields
 app.get("/api/v1/fields", fields.getFields);
