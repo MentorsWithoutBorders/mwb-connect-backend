@@ -1,16 +1,16 @@
-import {Request, Response} from "express";
+import { Request, Response } from "express";
 import pg from "pg";
 import "moment-timezone";
-import {Conn} from "../db/conn";
-import {Helpers} from "../utils/helpers";
-import {PartnerCentersSearch} from "../models/partner_organization_centers_with_students.model";
+import { Conn } from "../db/conn";
+import { Helpers } from "../utils/helpers";
+import { PartnerCentersSearch } from "../models/partner_organization_centres.model";
 
 
 const conn = new Conn();
 const pool = conn.pool;
 const helpers = new Helpers();
 
-const deriveQuery = ({fromDate, toDate}: PartnerCentersSearch, partnerId?: string) => {
+const deriveQuery = ({ fromDate, toDate }: PartnerCentersSearch, partnerId?: string) => {
   let whereFromToDateCondition = "";
   const andPartnerIdCondition = partnerId ? ` AND oc.organization_id = '${partnerId}'` : "";
 
@@ -42,7 +42,6 @@ const deriveQuery = ({fromDate, toDate}: PartnerCentersSearch, partnerId?: strin
       ${whereFromToDateCondition}
       GROUP BY 
         ucs.student_id
-      HAVING COUNT(*) >= 1
     )
     SELECT 
       oc.*,
@@ -59,29 +58,28 @@ const deriveQuery = ({fromDate, toDate}: PartnerCentersSearch, partnerId?: strin
 
 }
 
-export class AdminPartnersOrganizationCentersWithStudents {
+export class AdminPartnersOrganizationCentres {
   constructor() {
     helpers.autoBind(this);
   }
 
-  async getAllOrganizationCentersWithOneStudent(
+  async getDashboardOrganizationCentres(
     request: Request,
     response: Response
   ): Promise<void> {
     const searchParameters: PartnerCentersSearch = request.query;
 
     const client = await pool.connect();
-    console.log("getAllOrganizationCentersWithOneStudent, connection established")
     try {
       await client.query("BEGIN");
-      const students = await this.getAllOrganizationCentersWithOneStudentFromDB(
+      const students = await this.getDashboardOrganizationCentresFromDB(
         searchParameters,
         client
       );
       response.status(200).json(students);
       await client.query("COMMIT");
     } catch (error) {
-      console.log("getAllOrganizationCentersWithOneStudent", error)
+      console.log("getDashboardOrganizationCentresFromDB", error)
       response.status(400).send(error);
       await client.query("ROLLBACK");
     } finally {
@@ -89,17 +87,16 @@ export class AdminPartnersOrganizationCentersWithStudents {
     }
   }
 
-  async getAllOrganizationCentersWithOneStudentByPartnerId(
+  async getDashboardOrganizationCentresByPartnerId(
     request: Request,
     response: Response
   ): Promise<void> {
-    const {partner_id: partnerId} = request.params;
+    const { partner_id: partnerId } = request.params;
     const searchParameters: PartnerCentersSearch = request.body;
-    console.log({searchParameters})
     const client = await pool.connect();
     try {
       await client.query("BEGIN");
-      const students = await this.getAllOrganizationCentersForOnePartnerWithOneStudentFromDB(
+      const students = await this.getDashboardOrganizationCentresByPartnerIdFromDB(
         partnerId,
         searchParameters,
         client
@@ -107,7 +104,7 @@ export class AdminPartnersOrganizationCentersWithStudents {
       response.status(200).json(students);
       await client.query("COMMIT");
     } catch (error) {
-      console.log("getAllStudentsOfOnePartner", error)
+      console.log("getDashboardOrganizationCentresByPartnerIdFromDB", error)
       response.status(400).send(error);
       await client.query("ROLLBACK");
     } finally {
@@ -115,29 +112,26 @@ export class AdminPartnersOrganizationCentersWithStudents {
     }
   }
 
-  private async getAllOrganizationCentersWithOneStudentFromDB(
+  private async getDashboardOrganizationCentresFromDB(
     searchParameters: PartnerCentersSearch,
     client: pg.PoolClient
   ) {
-    const {fromDate, toDate,} = searchParameters;
-    const getAllOrganizationCentersWithOneStudentQuery = deriveQuery({fromDate, toDate});
-    const {rows}: pg.QueryResult = await client.query(getAllOrganizationCentersWithOneStudentQuery);
+    const { fromDate, toDate, } = searchParameters;
+    const getAllOrganizationCentersWithOneStudentQuery = deriveQuery({ fromDate, toDate });
+
+    const { rows }: pg.QueryResult = await client.query(getAllOrganizationCentersWithOneStudentQuery);
     return rows;
   }
 
-  private async getAllOrganizationCentersForOnePartnerWithOneStudentFromDB(
+  private async getDashboardOrganizationCentresByPartnerIdFromDB(
     partnerId: string,
     searchParameters: PartnerCentersSearch,
     client: pg.PoolClient
   ) {
-    const {fromDate, toDate} = searchParameters;
-    const getAllOrganizationCentersWithOneStudentQuery = deriveQuery({fromDate, toDate}, partnerId)
-    ;
+    const { fromDate, toDate } = searchParameters;
+    const getAllOrganizationCentersWithOneStudentQuery = deriveQuery({ fromDate, toDate }, partnerId);
 
-    const {rows}: pg.QueryResult = await client.query(
-      getAllOrganizationCentersWithOneStudentQuery
-    );
-
+    const { rows }: pg.QueryResult = await client.query(getAllOrganizationCentersWithOneStudentQuery);
     return rows;
   }
 }
