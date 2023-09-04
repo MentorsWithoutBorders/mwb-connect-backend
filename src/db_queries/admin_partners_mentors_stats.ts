@@ -42,18 +42,18 @@ export class AdminPartnersMentorStats {
     searchParameters: PartnerMentorsSearch,
     client: pg.PoolClient
   ): Promise<PartnerMentorStats> {
-    const mentors = new AdminPartnersMentors().getAllMentorsOfOnePartnerFromDB(
+    const mentors = await new AdminPartnersMentors().getAllMentorsOfOnePartnerFromDB(
       partnerId,
       searchParameters,
       client
     );
-    const mentorStats = (await mentors).reduce(
+    const mentorStats = mentors.reduce(
       (acc, curr) => {
         return {
           mentors: 0,
-          courses: acc.courses + curr.courses,
-          students: acc.students + curr.students,
-          hours: acc.hours + curr.hours,
+          courses: acc.courses + Number(curr.courses),
+          students: acc.students + Number(curr.students),
+          hours: acc.hours + Number(curr.hours),
         };
       },
       {
@@ -64,7 +64,7 @@ export class AdminPartnersMentorStats {
       }
     );
 
-    mentorStats.mentors = (await mentors).length;
+    mentorStats.mentors = mentors.length;
     return mentorStats;
   }
 }
