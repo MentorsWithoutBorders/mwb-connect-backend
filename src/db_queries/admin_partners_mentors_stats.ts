@@ -21,7 +21,7 @@ export class AdminPartnersMentorStats {
     response: Response
   ): Promise<void> {
     const partnerId = request.params.partner_id;
-    const searchParameters: PartnerMentorsSearch = request.body;
+    const searchParameters: PartnerMentorsSearch = request.query;
     const client = await pool.connect();
     try {
       const mentors = await this.getAllMentorStatsOfOnePartnerFromDB(
