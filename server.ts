@@ -50,6 +50,7 @@ import { AdminAvailableStudents } from './src/db_queries/admin_available_student
 import { AdminPartnersMentors } from './src/db_queries/admin_partners_mentors';
 import { AdminPartnersMentorStats } from './src/db_queries/admin_partners_mentors_stats';
 import { AdminPartnersProjects } from './src/db_queries/admin_partners_projects'
+import { adminPartnersStudents } from './src/db_queries/admin_partners_students'
 
 dotenv.config();
 const port = process.env.PORT;
@@ -548,11 +549,16 @@ app.get(
   "/api/v1/partners/:partner_id/projects",
   adminPartnersProjects.getAllProjectsOfOnePartner
 );
-
 // Admin - Create partner project
 app.post(
   "/api/v1/partners/:partner_id/projects",
   adminPartnersProjects.createProjectOfOnePartner
+);
+
+// Admin partners' mentors
+app.get(
+  "/api/v1/partners/:partner_id/students",
+  adminPartnersStudents.getAllStudentsOfOnePartner
 );
 
 // Admin lessons
