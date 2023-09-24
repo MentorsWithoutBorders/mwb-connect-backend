@@ -20,8 +20,7 @@ export class AdminPartnersMentors {
     response: Response
   ): Promise<void> {
     const partnerId = request.params.partner_id;
-    const searchParameters: PartnerMentorsSearch =
-      request.body;
+    const searchParameters: PartnerMentorsSearch = request.query;
     const client = await pool.connect();
     try {
       await client.query("BEGIN");
@@ -45,7 +44,14 @@ export class AdminPartnersMentors {
     searchParameters: PartnerMentorsSearch,
     client: pg.PoolClient
   ): Promise<Array<PartnerMentor>> {
-    const { searchString, courseFromDate, courseToDate, searchByName, searchByEmail, searchByStudent, searchByStudentOrganization }: PartnerMentorsSearch = searchParameters;
+    const { searchString, courseFromDate, courseToDate }: PartnerMentorsSearch =
+      searchParameters;
+    const searchByName = searchParameters.searchByName === "true";
+    const searchByEmail = searchParameters.searchByEmail === "true";
+    const searchByStudent = searchParameters.searchByStudent === "true";
+    const searchByStudentOrganization =
+      searchParameters.searchByStudentOrganization === "true";
+
     let andFromToCondition = "";
     let whereFromToCondition = "";
     let fromToCondition = "";
@@ -119,6 +125,7 @@ export class AdminPartnersMentors {
           GROUP BY 1
         )
       SELECT
+        u.id,
         u.name AS full_name,
         u.email,
         COALESCE(mc.courses_count, 0) AS number_of_courses,
@@ -173,6 +180,7 @@ export class AdminPartnersMentors {
       }
 
       const mentor: PartnerMentor = {
+        id: row.id,
         name: row.full_name,
         email: row.email,
         courses: row.number_of_courses,
