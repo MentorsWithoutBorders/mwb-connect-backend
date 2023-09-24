@@ -21,7 +21,7 @@ export class AdminPartnersStudents {
     response: Response
   ): Promise<void> {
     const {partner_id: partnerId} = request.params;
-    const searchParameters: PartnerStudentSearch = request.body;
+    const searchParameters: PartnerStudentSearch = request.query;
 
     const client = await pool.connect();
     try {

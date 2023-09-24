@@ -6,16 +6,17 @@ export const filterRowsBySearchParams = ({rows, searchParameters}: {
   rows: PartnerStudent[],
   searchParameters: PartnerStudentSearch
 }) => {
-  const {
-    searchString,
-    searchByName,
-    searchByEmail,
-    searchByStudentStatus,
-    searchByStudentOrganization
-  } = searchParameters;
+  const { searchString } = searchParameters;
+  const searchByName = searchParameters.searchByName === "true";
+  const searchByEmail = searchParameters.searchByEmail === "true";
+  const searchByStudentStatus =
+    searchParameters.searchByStudentStatus === "true";
+  const searchByStudentOrganization =
+    searchParameters.searchByStudentOrganization === "true";
+
   const lowerSearchString = searchString ? searchString.toLowerCase() : null;
   if (!lowerSearchString) {
-    return rows // we don't need to filter if there is no search string
+    return rows; // we don't need to filter if there is no search string
   }
 
   const noneOfTheSearchParametersExists = !searchByName && !searchByEmail && !searchByStudentStatus && !searchByStudentOrganization

@@ -3,8 +3,8 @@ export interface PartnerStudentSearch {
   courseToDate?: string;
 
   searchString?: string;
-  searchByName?: boolean;
-  searchByEmail?: boolean;
-  searchByStudentStatus?: boolean;
-  searchByStudentOrganization?: boolean;
+  searchByName?: "true" | "false";
+  searchByEmail?: "true" | "false";
+  searchByStudentStatus?: "true" | "false";
+  searchByStudentOrganization?: "true" | "false";
 }
