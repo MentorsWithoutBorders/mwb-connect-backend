@@ -7,6 +7,8 @@ import { constants } from "../utils/constants";
 const pool = new Conn().pool;
 
 interface NgoStats {
+  /** total number of mentors who have scheduled at least 1 course */
+  totalMentors: number;
   /** total students who have enrolled in at least one course and who haven't cancelled it */
   totalStudents: number;
   /** total courses in which the students have enrolled (completed + not completed) */
@@ -65,17 +67,29 @@ async function getNgoStats(
   const {
     rows: [
       {
+        total_mentors: totalMentors,
         total_students: totalStudents,
         total_courses: totalCourses,
         total_hours: totalHours,
       },
     ],
   } = await client.query<{
+    total_mentors: number,
     total_students: number;
     total_courses: number;
     total_hours: number;
   }>(`
       SELECT
+        (
+          SELECT
+            COUNT(DISTINCT ucm.mentor_id) total_mentors
+          FROM
+            users_courses_mentors ucm
+          ${orgId ? `
+            JOIN users u ON u.id = ucm.mentor_id
+            WHERE u.organization_id = '${orgId}'
+          ` : ``}
+        ) total_mentors,
         COUNT(DISTINCT ucs.student_id) total_students,
         COUNT(DISTINCT ucs.course_id) total_courses,
         COALESCE(SUM(${noOfWeeksQuery}), 0) total_hours
@@ -100,7 +114,7 @@ async function getNgoStats(
         }
     `);
 
-  return { totalStudents, totalCourses, totalHours };
+  return { totalMentors, totalStudents, totalCourses, totalHours };
 }
 
 export class PartnersDashboardStats {
