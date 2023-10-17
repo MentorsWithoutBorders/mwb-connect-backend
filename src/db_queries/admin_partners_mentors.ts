@@ -101,7 +101,7 @@ export class AdminPartnersMentors {
         ),
         mentor_courses_lessons AS
         (
-          SELECT ucm.mentor_id, sum(round(ct.duration*30.0/7)) AS lessons_count
+          SELECT ucm.mentor_id, sum(round((ct.duration*30)/7) + (ct.duration)/3 + 1) AS lessons_count
           FROM users_courses_mentors ucm
           INNER JOIN users_courses uc ON uc.id = ucm.course_id
           INNER JOIN course_types ct ON ct.id = uc.course_type_id
