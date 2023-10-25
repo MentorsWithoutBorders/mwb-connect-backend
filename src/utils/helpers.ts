@@ -1,12 +1,11 @@
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import dotenv from 'dotenv';
-import moment from 'moment';
+import moment, { type Moment } from 'moment';
 import { v4 as uuidv4 } from 'uuid';
 import { constants } from '../utils/constants';
 import User from '../models/user.model';
 import Quiz from '../models/quiz.model';
-import Course from '../models/course.model';
 import CourseMentor from '../models/course_mentor.model';
 
 dotenv.config();
@@ -154,4 +153,33 @@ export class Helpers {
   isLessonRecurrent(lessonDateTime: string, endRecurrenceDateTime: string | undefined): boolean {
     return endRecurrenceDateTime !== undefined && endRecurrenceDateTime !== null && moment.utc(lessonDateTime).format(constants.DATE_TIME_FORMAT) !== moment.utc(endRecurrenceDateTime).format(constants.DATE_TIME_FORMAT);
   }
+}
+
+export function getCourseCompletedWeeks(
+  courseStartDate: Moment | Date | string | number,
+  courseDurationInMonths: 3 | 6,
+  canceledDate?: Moment | Date | string | number | null
+) {
+  if (moment(courseStartDate).isAfter()) return 0; // course not started yet
+
+  const courseEndDate = moment(courseStartDate).add(
+    courseDurationInMonths,
+    "months"
+  );
+
+  if (canceledDate && moment(canceledDate).isBefore(courseEndDate)) {
+    const weeksTillCanceledDate = moment(canceledDate).diff(
+      moment(courseStartDate),
+      "weeks"
+    );
+    return weeksTillCanceledDate;
+  }
+
+  if (courseEndDate.isBefore()) {
+    // if course already ended, return weeks till course end-date only (based on duration)
+    return courseDurationInMonths === 3 ? 14 : 28;
+  }
+
+  const weeksTillNow = moment().diff(moment(courseStartDate), "weeks");
+  return weeksTillNow; // weeks till now
 }

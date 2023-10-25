@@ -561,6 +561,11 @@ app.get(
   '/api/v1/partners/:partner_id/mentors/stats',
   adminPartnersMentorStats.getAllMentorsStatsOfOnePartner
 );
+// Mentor details
+app.get(
+  "/api/v1/partners/:partner_id/mentors/:mentor_id",
+  adminPartnersMentors.getMentorDetails
+);
 // Admin partners' students
 app.get(
   '/api/v1/partners/:partner_id/students',
