@@ -205,7 +205,7 @@ app.get("/api/v1/courses/previous", usersCourses.getPreviousCourse);
 app.get("/api/v1/courses/next_lesson", usersCourses.getNextLesson);
 app.get(
   "/api/v1/courses/:id/mentor_partnership_schedule",
-  usersCourses.getMentorPartnershipSchedule
+  usersCourses.getCourseLessons
 );
 app.get("/api/v1/courses/:id/notes", usersCourses.getNotes);
 app.post("/api/v1/courses/add", usersCourses.addCourse);
@@ -223,7 +223,7 @@ app.put(
 );
 app.put(
   "/api/v1/mentor_partnership_schedule",
-  usersCourses.updateMentorPartnershipSchedule
+  usersCourses.updateCourseLessons
 );
 
 // Users available mentors

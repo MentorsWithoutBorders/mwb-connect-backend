@@ -210,7 +210,7 @@ describe('Next lesson datetime for mentor partnership course functionality (firs
     for (let i = 0; i < otherStudentsIds.length; i++) {
       course = await usersCoursesTestHelpers.addStudent(otherStudentsIds[i], course);
     }
-    await usersCourses.addMentorPartnershipSchedule(course, client);
+    await usersCourses.addCourseLessons(course, client);
 
     const nextLessonDateTime = await usersCourses.getNextLessonDateTimeForMentor(course, mentorId, client);
     expect(nextLessonDateTime).toEqual(moment.utc(course.startDateTime).add(1, 'week').format(constants.DATE_TIME_FORMAT));
@@ -225,10 +225,10 @@ describe('Next lesson datetime for mentor partnership course functionality (firs
     for (let i = 0; i < otherStudentsIds.length; i++) {
       course = await usersCoursesTestHelpers.addStudent(otherStudentsIds[i], course);
     }
-    await usersCourses.addMentorPartnershipSchedule(course, client);
-    const mentorPartnershipSchedule = await usersCourses.getMentorPartnershipScheduleFromDB(course.id as string, client);
-    mentorPartnershipSchedule[0].mentor.id = partnerMentorId;
-    await usersCourses.updateMentorPartnershipScheduleFromDB(mentorPartnershipSchedule[0], client);
+    await usersCourses.addCourseLessons(course, client);
+    const courseLessons = await usersCourses.getCourseLessonsFromDB(course.id as string, client);
+    courseLessons[0].mentor.id = partnerMentorId;
+    await usersCourses.updateCourseLessonsFromDB(courseLessons[0], client);
 
     const nextLessonDateTime = await usersCourses.getNextLessonDateTimeForMentor(course, mentorId, client);
     expect(nextLessonDateTime).toEqual(moment.utc(course.startDateTime).add(2, 'week').format(constants.DATE_TIME_FORMAT));
@@ -243,7 +243,7 @@ describe('Next lesson datetime for mentor partnership course functionality (firs
     for (let i = 0; i < otherStudentsIds.length; i++) {
       course = await usersCoursesTestHelpers.addStudent(otherStudentsIds[i], course);
     }
-    await usersCourses.addMentorPartnershipSchedule(course, client);
+    await usersCourses.addCourseLessons(course, client);
 
     let nextLessonDateTime = await usersCourses.getNextLessonDateTimeForMentor(course, mentorId, client);
     if (!nextLessonDateTime) throw new Error('nextLessonDateTime is undefined');
@@ -261,7 +261,7 @@ describe('Next lesson datetime for mentor partnership course functionality (firs
     for (let i = 0; i < otherStudentsIds.length; i++) {
       course = await usersCoursesTestHelpers.addStudent(otherStudentsIds[i], course);
     }
-    await usersCourses.addMentorPartnershipSchedule(course, client);
+    await usersCourses.addCourseLessons(course, client);
 
     let nextLessonDateTime = await usersCourses.getNextLessonDateTimeForMentor(course, mentorId, client);
     if (!nextLessonDateTime) throw new Error('nextLessonDateTime is undefined');
@@ -283,7 +283,7 @@ describe('Next lesson datetime for mentor partnership course functionality (firs
     for (let i = 0; i < otherStudentsIds.length; i++) {
       course = await usersCoursesTestHelpers.addStudent(otherStudentsIds[i], course);
     }
-    await usersCourses.addMentorPartnershipSchedule(course, client);
+    await usersCourses.addCourseLessons(course, client);
 
     const nextLessonDateTime = await usersCourses.getNextLessonDateTimeForMentor(course, mentorId, client);
     expect(nextLessonDateTime).toBeNull();
@@ -299,10 +299,10 @@ describe('Next lesson datetime for mentor partnership course functionality (firs
     for (let i = 0; i < otherStudentsIds.length; i++) {
       course = await usersCoursesTestHelpers.addStudent(otherStudentsIds[i], course);
     }
-    await usersCourses.addMentorPartnershipSchedule(course, client);
-    const mentorPartnershipSchedule = await usersCourses.getMentorPartnershipScheduleFromDB(course.id as string, client);
-    mentorPartnershipSchedule[0].mentor.id = mentorId;
-    await usersCourses.updateMentorPartnershipScheduleFromDB(mentorPartnershipSchedule[0], client);    
+    await usersCourses.addCourseLessons(course, client);
+    const courseLessons = await usersCourses.getCourseLessonsFromDB(course.id as string, client);
+    courseLessons[0].mentor.id = mentorId;
+    await usersCourses.updateCourseLessonsFromDB(courseLessons[0], client);    
 
     let nextLessonDateTime = await usersCourses.getNextLessonDateTimeForMentor(course, mentorId, client);
     if (!nextLessonDateTime) throw new Error('nextLessonDateTime is undefined');
@@ -321,7 +321,7 @@ describe('Next lesson datetime for mentor partnership course functionality (firs
     for (let i = 0; i < otherStudentsIds.length; i++) {
       course = await usersCoursesTestHelpers.addStudent(otherStudentsIds[i], course);
     }
-    await usersCourses.addMentorPartnershipSchedule(course, client);
+    await usersCourses.addCourseLessons(course, client);
 
     let nextLessonDateTime = await usersCourses.getNextLessonDateTimeForMentor(course, mentorId, client);
     if (!nextLessonDateTime) throw new Error('nextLessonDateTime is undefined');
@@ -343,7 +343,7 @@ describe('Next lesson datetime for mentor partnership course functionality (firs
     for (let i = 0; i < otherStudentsIds.length; i++) {
       course = await usersCoursesTestHelpers.addStudent(otherStudentsIds[i], course);
     }
-    await usersCourses.addMentorPartnershipSchedule(course, client);
+    await usersCourses.addCourseLessons(course, client);
 
     let nextLessonDateTime = await usersCourses.getNextLessonDateTimeForMentor(course, mentorId, client);
     if (!nextLessonDateTime) throw new Error('nextLessonDateTime is undefined');
@@ -371,7 +371,7 @@ describe('Next lesson datetime for mentor partnership course functionality (seco
     for (let i = 0; i < otherStudentsIds.length; i++) {
       course = await usersCoursesTestHelpers.addStudent(otherStudentsIds[i], course);
     }
-    await usersCourses.addMentorPartnershipSchedule(course, client);
+    await usersCourses.addCourseLessons(course, client);
 
     const nextLessonDateTime = await usersCourses.getNextLessonDateTimeForMentor(course, partnerMentorId, client);
     expect(nextLessonDateTime).toEqual(moment.utc(course.startDateTime).add(7, 'week').format(constants.DATE_TIME_FORMAT));
@@ -386,10 +386,10 @@ describe('Next lesson datetime for mentor partnership course functionality (seco
     for (let i = 0; i < otherStudentsIds.length; i++) {
       course = await usersCoursesTestHelpers.addStudent(otherStudentsIds[i], course);
     }
-    await usersCourses.addMentorPartnershipSchedule(course, client);
-    const mentorPartnershipSchedule = await usersCourses.getMentorPartnershipScheduleFromDB(course.id as string, client);
-    mentorPartnershipSchedule[6].mentor.id = mentorId;
-    await usersCourses.updateMentorPartnershipScheduleFromDB(mentorPartnershipSchedule[6], client);
+    await usersCourses.addCourseLessons(course, client);
+    const courseLessons = await usersCourses.getCourseLessonsFromDB(course.id as string, client);
+    courseLessons[6].mentor.id = mentorId;
+    await usersCourses.updateCourseLessonsFromDB(courseLessons[6], client);
 
     const nextLessonDateTime = await usersCourses.getNextLessonDateTimeForMentor(course, partnerMentorId, client);
     expect(nextLessonDateTime).toEqual(moment.utc(course.startDateTime).add(8, 'week').format(constants.DATE_TIME_FORMAT));
@@ -404,7 +404,7 @@ describe('Next lesson datetime for mentor partnership course functionality (seco
     for (let i = 0; i < otherStudentsIds.length; i++) {
       course = await usersCoursesTestHelpers.addStudent(otherStudentsIds[i], course);
     }
-    await usersCourses.addMentorPartnershipSchedule(course, client);
+    await usersCourses.addCourseLessons(course, client);
 
     let nextLessonDateTime = await usersCourses.getNextLessonDateTimeForMentor(course, partnerMentorId, client);
     if (!nextLessonDateTime) throw new Error('nextLessonDateTime is undefined');
@@ -422,7 +422,7 @@ describe('Next lesson datetime for mentor partnership course functionality (seco
     for (let i = 0; i < otherStudentsIds.length; i++) {
       course = await usersCoursesTestHelpers.addStudent(otherStudentsIds[i], course);
     }
-    await usersCourses.addMentorPartnershipSchedule(course, client);
+    await usersCourses.addCourseLessons(course, client);
 
     let nextLessonDateTime = await usersCourses.getNextLessonDateTimeForMentor(course, partnerMentorId, client);
     if (!nextLessonDateTime) throw new Error('nextLessonDateTime is undefined');
@@ -444,7 +444,7 @@ describe('Next lesson datetime for mentor partnership course functionality (seco
     for (let i = 0; i < otherStudentsIds.length; i++) {
       course = await usersCoursesTestHelpers.addStudent(otherStudentsIds[i], course);
     }
-    await usersCourses.addMentorPartnershipSchedule(course, client);
+    await usersCourses.addCourseLessons(course, client);
 
     const nextLessonDateTime = await usersCourses.getNextLessonDateTimeForMentor(course, partnerMentorId, client);
     expect(nextLessonDateTime).toBeNull();
@@ -460,7 +460,7 @@ describe('Next lesson datetime for mentor partnership course functionality (seco
     for (let i = 0; i < otherStudentsIds.length; i++) {
       course = await usersCoursesTestHelpers.addStudent(otherStudentsIds[i], course);
     }
-    await usersCourses.addMentorPartnershipSchedule(course, client);
+    await usersCourses.addCourseLessons(course, client);
 
     let nextLessonDateTime = await usersCourses.getNextLessonDateTimeForMentor(course, partnerMentorId, client);
     if (!nextLessonDateTime) throw new Error('nextLessonDateTime is undefined');
@@ -482,7 +482,7 @@ describe('Next lesson datetime for mentor partnership course functionality (seco
     for (let i = 0; i < otherStudentsIds.length; i++) {
       course = await usersCoursesTestHelpers.addStudent(otherStudentsIds[i], course);
     }
-    await usersCourses.addMentorPartnershipSchedule(course, client);
+    await usersCourses.addCourseLessons(course, client);
 
     let nextLessonDateTime = await usersCourses.getNextLessonDateTimeForMentor(course, partnerMentorId, client);
     if (!nextLessonDateTime) throw new Error('nextLessonDateTime is undefined');
@@ -567,7 +567,7 @@ describe('Next lesson datetime for student course functionality', () => {
     for (let i = 0; i < otherStudentsIds.length; i++) {
       course = await usersCoursesTestHelpers.addStudent(otherStudentsIds[i], course);
     }
-    await usersCourses.addMentorPartnershipSchedule(course, client);
+    await usersCourses.addCourseLessons(course, client);
 
     let nextLessonDateTime = await usersCourses.getNextLessonDateTimeForMentor(course, mentorId, client);
     if (!nextLessonDateTime) throw new Error('nextLessonDateTime is undefined');
@@ -586,7 +586,7 @@ describe('Next lesson datetime for student course functionality', () => {
     for (let i = 0; i < otherStudentsIds.length; i++) {
       course = await usersCoursesTestHelpers.addStudent(otherStudentsIds[i], course);
     }
-    await usersCourses.addMentorPartnershipSchedule(course, client);
+    await usersCourses.addCourseLessons(course, client);
 
     let nextLessonDateTime = await usersCourses.getNextLessonDateTimeForMentor(course, partnerMentorId, client);
     if (!nextLessonDateTime) throw new Error('nextLessonDateTime is undefined');
@@ -622,7 +622,7 @@ describe('Next lesson datetime for mentor course functionality - ChatGPT', () =>
     expect(actualNextLessonDateTime).toEqual(expectedNextLessonDateTime);
   });
 
-  test(`Ensure that the next lesson date/time is calculated correctly based on the start_date_time value, the weekly interval, and the partnership schedule in the 'users_courses_partnership_schedule' table`, async () => {
+  test(`Ensure that the next lesson date/time is calculated correctly based on the start_date_time value, the weekly interval, and the partnership schedule in the 'users_courses_lessons' table`, async () => {
     // Set up test data
     let course = usersCoursesTestHelpers.getTestCourse();
     course = await usersCoursesTestHelpers.addMentor(mentorId, course);
@@ -634,7 +634,7 @@ describe('Next lesson datetime for mentor course functionality - ChatGPT', () =>
     }   
     
     // Create partnership schedule
-    await usersCourses.addMentorPartnershipSchedule(course, client);
+    await usersCourses.addCourseLessons(course, client);
 
     // Calculate expected next lesson date/time for mentor 1
     const expectedNextLessonDateTime1 = moment
@@ -795,10 +795,10 @@ describe('Next lesson datetime for mentor course functionality - ChatGPT', () =>
       course = await usersCourses.addCourseFromDB(course, client);
       course = await usersCoursesTestHelpers.addStudent(studentId, course);
       if (hasPartner) {
-        await usersCourses.addMentorPartnershipSchedule(course, client);
-        const mentorPartnershipSchedule = await usersCourses.getMentorPartnershipScheduleFromDB(course.id as string, client);
-        mentorPartnershipSchedule[0].mentor.id = mentorId;
-        await usersCourses.updateMentorPartnershipScheduleFromDB(mentorPartnershipSchedule[0], client);  
+        await usersCourses.addCourseLessons(course, client);
+        const courseLessons = await usersCourses.getCourseLessonsFromDB(course.id as string, client);
+        courseLessons[0].mentor.id = mentorId;
+        await usersCourses.updateCourseLessonsFromDB(courseLessons[0], client);  
       }
 
       // Get the next lesson datetime for mentor
@@ -928,7 +928,7 @@ describe('Next lesson datetime for second mentor in partnership course functiona
     for (let i = 0; i < otherStudentsIds.length; i++) {
       course = await usersCoursesTestHelpers.addStudent(otherStudentsIds[i], course);
     }
-    await usersCourses.addMentorPartnershipSchedule(course, client);
+    await usersCourses.addCourseLessons(course, client);
   
     const nextLessonDateTime = await usersCourses.getNextLessonDateTimeForMentor(course, partnerMentorId, client);
     expect(nextLessonDateTime).toEqual(moment.utc(course.startDateTime).add(13, 'week').format(constants.DATE_TIME_FORMAT));
@@ -945,7 +945,7 @@ describe('Next lesson datetime for second mentor in partnership course functiona
     for (let i = 0; i < otherStudentsIds.length; i++) {
       course = await usersCoursesTestHelpers.addStudent(otherStudentsIds[i], course);
     }
-    await usersCourses.addMentorPartnershipSchedule(course, client);
+    await usersCourses.addCourseLessons(course, client);
   
     const nextLessonDateTime = await usersCourses.getNextLessonDateTimeForMentor(course, partnerMentorId, client);
     expect(nextLessonDateTime).toEqual(moment.utc(course.startDateTime).add(16, 'week').format(constants.DATE_TIME_FORMAT));
@@ -960,7 +960,7 @@ describe('Next lesson datetime for second mentor in partnership course functiona
     for (let i = 0; i < otherStudentsIds.length; i++) {
       course = await usersCoursesTestHelpers.addStudent(otherStudentsIds[i], course);
     }
-    await usersCourses.addMentorPartnershipSchedule(course, client);
+    await usersCourses.addCourseLessons(course, client);
   
     let nextLessonDateTime = await usersCourses.getNextLessonDateTimeForMentor(course, mentorId, client);
     if (!nextLessonDateTime) throw new Error('nextLessonDateTime is undefined');
@@ -979,7 +979,7 @@ describe('Next lesson datetime for second mentor in partnership course functiona
     for (let i = 0; i < otherStudentsIds.length; i++) {
       course = await usersCoursesTestHelpers.addStudent(otherStudentsIds[i], course);
     }
-    await usersCourses.addMentorPartnershipSchedule(course, client);
+    await usersCourses.addCourseLessons(course, client);
   
     let nextLessonDateTime = await usersCourses.getNextLessonDateTimeForMentor(course, partnerMentorId, client);
     if (!nextLessonDateTime) throw new Error('nextLessonDateTime is undefined');
@@ -998,7 +998,7 @@ describe('Next lesson datetime for second mentor in partnership course functiona
     for (let i = 0; i < otherStudentsIds.length; i++) {
       course = await usersCoursesTestHelpers.addStudent(otherStudentsIds[i], course);
     }
-    await usersCourses.addMentorPartnershipSchedule(course, client);
+    await usersCourses.addCourseLessons(course, client);
   
     // Cancel a lesson for the first mentor
     const firstMentorLessonDateTime = moment.utc(course.startDateTime).add(1, 'week').format(constants.DATE_TIME_FORMAT);
@@ -1021,11 +1021,11 @@ describe('Next lesson datetime for second mentor in partnership course functiona
     for (let i = 0; i < otherStudentsIds.length; i++) {
       course = await usersCoursesTestHelpers.addStudent(otherStudentsIds[i], course);
     }
-    await usersCourses.addMentorPartnershipSchedule(course, client);
+    await usersCourses.addCourseLessons(course, client);
   
     // Change partnership schedule
-    const mentorPartnershipSchedule = await usersCourses.getMentorPartnershipScheduleFromDB(course.id as string, client);
-    const updatedSchedule = mentorPartnershipSchedule.map((schedule, index) => {
+    const courseLessons = await usersCourses.getCourseLessonsFromDB(course.id as string, client);
+    const updatedSchedule = courseLessons.map((schedule, index) => {
       if (index % 2 === 0) {
         return { ...schedule, mentor: { ...schedule.mentor, id: partnerMentorId } };
       } else {
@@ -1033,7 +1033,7 @@ describe('Next lesson datetime for second mentor in partnership course functiona
       }
     });
     for (const schedule of updatedSchedule) {
-      await usersCourses.updateMentorPartnershipScheduleFromDB(schedule, client);
+      await usersCourses.updateCourseLessonsFromDB(schedule, client);
     }
   
     const nextLessonDateTime = await usersCourses.getNextLessonDateTimeForMentor(course, partnerMentorId, client);
@@ -1095,7 +1095,7 @@ describe('Next lesson datetime for student course functionality - ChatGPT', () =
     expect(actualNextLessonDateTime).toEqual(expectedNextLessonDateTime);
   });
   
-  test(`Ensure that the next lesson date/time is calculated correctly for a student in a course with two mentors based on the start_date_time value, the weekly interval, and the mentor for the next lesson found in the 'users_courses_partnership_schedule' table`, async () => {
+  test(`Ensure that the next lesson date/time is calculated correctly for a student in a course with two mentors based on the start_date_time value, the weekly interval, and the mentor for the next lesson found in the 'users_courses_lessons' table`, async () => {
     // Set up test data
     let course = usersCoursesTestHelpers.getTestCourse();
     course = await usersCoursesTestHelpers.addMentor(mentorId, course);
@@ -1107,7 +1107,7 @@ describe('Next lesson datetime for student course functionality - ChatGPT', () =
     }
   
     // Create partnership schedule
-    await usersCourses.addMentorPartnershipSchedule(course, client);
+    await usersCourses.addCourseLessons(course, client);
   
     // Calculate expected next lesson date/time for the student
     const expectedNextLessonDateTime = moment
@@ -1244,7 +1244,7 @@ describe('Next lesson datetime for student course functionality - ChatGPT', () =
       course = await usersCourses.addCourseFromDB(course, client);
       course = await usersCoursesTestHelpers.addStudent(studentId, course);
       if (hasPartner) {
-        await usersCourses.addMentorPartnershipSchedule(course, client);
+        await usersCourses.addCourseLessons(course, client);
       }
   
       // Get the next lesson datetime for the student
@@ -1411,7 +1411,7 @@ describe('Next lesson datetime unit tests - ChatGPT', () => {
     course = await usersCoursesTestHelpers.addMentor(partnerMentorId, course);
     course = await usersCourses.addCourseFromDB(course, client);
     course = await usersCoursesTestHelpers.addStudent(studentId, course);
-    await usersCourses.addMentorPartnershipSchedule(course, client);
+    await usersCourses.addCourseLessons(course, client);
   
     // Call the function
     let nextLessonDatetime = await usersCourses.getNextLessonDatetimeMentorsPartnership(course, mentorId, true, client);
@@ -1432,7 +1432,7 @@ describe('Next lesson datetime unit tests - ChatGPT', () => {
     course = await usersCoursesTestHelpers.addMentor(partnerMentorId, course);
     course = await usersCourses.addCourseFromDB(course, client);
     course = await usersCoursesTestHelpers.addStudent(studentId, course);
-    await usersCourses.addMentorPartnershipSchedule(course, client);
+    await usersCourses.addCourseLessons(course, client);
   
     // Call the function
     let nextLessonDatetime = await usersCourses.getNextLessonDatetimeMentorsPartnership(course, partnerMentorId, true, client);
@@ -1453,7 +1453,7 @@ describe('Next lesson datetime unit tests - ChatGPT', () => {
     course = await usersCoursesTestHelpers.addMentor(partnerMentorId, course);
     course = await usersCourses.addCourseFromDB(course, client);
     course = await usersCoursesTestHelpers.addStudent(studentId, course);
-    await usersCourses.addMentorPartnershipSchedule(course, client);
+    await usersCourses.addCourseLessons(course, client);
   
     // Call the function
     let nextLessonDatetime = await usersCourses.getNextLessonDatetimeMentorsPartnership(course, studentId, false, client);
@@ -1474,7 +1474,7 @@ describe('Next lesson datetime unit tests - ChatGPT', () => {
     course = await usersCoursesTestHelpers.addMentor(partnerMentorId, course);
     course = await usersCourses.addCourseFromDB(course, client);
     course = await usersCoursesTestHelpers.addStudent(studentId, course);
-    await usersCourses.addMentorPartnershipSchedule(course, client);
+    await usersCourses.addCourseLessons(course, client);
   
     // Calculate next lesson date/time for mentor
     const nextLessonDateTime = await usersCourses.getNextLessonDatetimeMentorsPartnership(course, mentorId, true, client);
@@ -1572,7 +1572,7 @@ describe('Mentor for student\'s next lesson unit tests - ChatGPT', () => {
     course = await usersCoursesTestHelpers.addMentor(mentorId, course);
     course = await usersCoursesTestHelpers.addMentor(partnerMentorId, course);
     course = await usersCourses.addCourseFromDB(course, client);
-    await usersCourses.addMentorPartnershipSchedule(course, client);
+    await usersCourses.addCourseLessons(course, client);
   
     const nextLessonDateTime = moment.utc(course.startDateTime).add(1, 'week').format(constants.DATE_TIME_FORMAT);
     const mentor = await usersCourses.getMentorForNextLesson(course.id as string, nextLessonDateTime, client);

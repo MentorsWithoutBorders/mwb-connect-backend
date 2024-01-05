@@ -381,7 +381,7 @@ export class Users {
         await client.query(deleteMentorsWaitingRequestsQuery, [id]);
         const deleteMentorsPartnershipRequestsQuery = 'DELETE FROM mentors_partnership_requests WHERE mentor_id = $1 OR partner_mentor_id = $1';
         await client.query(deleteMentorsPartnershipRequestsQuery, [id]);
-        const deleteCoursesPartnershipScheduleQuery = 'DELETE FROM users_courses_partnership_schedule WHERE mentor_id = $1';
+        const deleteCoursesPartnershipScheduleQuery = 'DELETE FROM users_courses_lessons WHERE mentor_id = $1';
         await client.query(deleteCoursesPartnershipScheduleQuery, [id]);				
       } else {
         const deleteCoursesStudentsQuery = 'DELETE FROM users_courses_students WHERE student_id = $1';

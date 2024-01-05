@@ -22,7 +22,7 @@ import Skill from '../models/skill.model';
 import Availability from '../models/availability.model';
 import AvailabilityTime from '../models/availability_time.model';
 import CourseFilter from '../models/course_filter.model';
-import MentorPartnershipScheduleItem from '../models/mentor_partnership_schedule_item.model';
+import CourseLessonItem from '../models/course_lesson_item.model';
 import NextLessonMentor from '../models/next_lesson_mentor.model';
 import NextLessonStudent from '../models/next_lesson_student.model';
 import InAppMessage from '../models/in_app_message';
@@ -344,12 +344,12 @@ export class UsersCourses {
     return students;
   }
 
-  async getMentorPartnershipSchedule(request: Request, response: Response): Promise<void> {
+  async getCourseLessons(request: Request, response: Response): Promise<void> {
     const courseId = request.params.id;  
     const client = await pool.connect();
     try {
-      const mentorPartnershipSchedule = await this.getMentorPartnershipScheduleFromDB(courseId, client);
-      response.status(200).json(mentorPartnershipSchedule);
+      const courseLessons = await this.getCourseLessonsFromDB(courseId, client);
+      response.status(200).json(courseLessons);
     } catch (error) {
       response.status(400).send(error);
     } finally {
@@ -357,14 +357,14 @@ export class UsersCourses {
     }
   }
 
-  async getMentorPartnershipScheduleFromDB(courseId: string, client: pg.PoolClient): Promise<Array<MentorPartnershipScheduleItem>> {
-    const getMentorPartnershipScheduleQuery = `SELECT id, mentor_id, lesson_date_time
-      FROM users_courses_partnership_schedule  
+  async getCourseLessonsFromDB(courseId: string, client: pg.PoolClient): Promise<Array<CourseLessonItem>> {
+    const getCourseLessonsQuery = `SELECT id, mentor_id, lesson_date_time
+      FROM users_courses_lessons  
       WHERE course_id = $1
         AND lesson_date_time >= CURRENT_DATE
       ORDER BY lesson_date_time`;
-    const { rows }: pg.QueryResult = await client.query(getMentorPartnershipScheduleQuery, [courseId]);
-    const mentorPartnershipSchedule: Array<MentorPartnershipScheduleItem> = [];
+    const { rows }: pg.QueryResult = await client.query(getCourseLessonsQuery, [courseId]);
+    const courseLessons: Array<CourseLessonItem> = [];
     if (rows && rows.length > 0) {
       for (const row of rows) {
         const course: Course = {
@@ -375,7 +375,7 @@ export class UsersCourses {
           id: mentor.id,
           name: mentor.name
         }
-        const mentorPartnershipScheduleItem: MentorPartnershipScheduleItem = {
+        const courseLessonItem: CourseLessonItem = {
           id: row.id,
           course: course,
           mentor: mentor,
@@ -384,11 +384,11 @@ export class UsersCourses {
 				const isLessonCanceled = await this.isLessonCanceled(mentor.id as string, courseId, row.lesson_date_time, client);
 				const hasAtLeastOneStudentParticipating = await this.hasAtLeastOneStudentParticipating(courseId, row.lesson_date_time, client);
 				if (!isLessonCanceled && hasAtLeastOneStudentParticipating) {
-        	mentorPartnershipSchedule.push(mentorPartnershipScheduleItem);
+        	courseLessons.push(courseLessonItem);
 				}
       }
     }
-    return mentorPartnershipSchedule;
+    return courseLessons;
   }
   
   async getNextLesson(request: Request, response: Response): Promise<void> {
@@ -464,7 +464,7 @@ export class UsersCourses {
       const { rows: partnershipSchedule } = await client.query(
         `
         SELECT *
-        FROM users_courses_partnership_schedule
+        FROM users_courses_lessons
         WHERE course_id = $1 AND lesson_date_time = $2
         `,
         [courseId, nextLessonDateTime]
@@ -586,7 +586,7 @@ export class UsersCourses {
     const now = moment.utc();
     let nextLessonDatetime: moment.Moment | null = null;
   
-    const partnershipSchedule = await this.getMentorPartnershipScheduleFromDB(course.id as string, client);
+    const partnershipSchedule = await this.getCourseLessonsFromDB(course.id as string, client);
   
     for (const scheduleItem of partnershipSchedule) {
       const lessonDatetime = moment.utc(scheduleItem.lessonDateTime);
@@ -722,7 +722,7 @@ export class UsersCourses {
 					course = await this.updateCourseStartDateTime(course, client);
 				}
         if (course.mentors && course.students && course.mentors.length > 1 && course.students.length >= minStudentsCourse && !course.hasStarted) {
-          await this.addMentorPartnershipSchedule(course, client);
+          await this.addCourseLessons(course, client);
         }
         if (course.students && course.students.length >= minStudentsCourse) {
           course.hasStarted = true;
@@ -805,15 +805,18 @@ export class UsersCourses {
     await client.query(updateCourseHasStartedQuery, [hasStarted, courseId]);
   }  
 
-  async addMentorPartnershipSchedule(course: Course, client: pg.PoolClient): Promise<void> {
-    const getMentorPartnershipScheduleQuery = `SELECT course_id FROM users_courses_partnership_schedule WHERE course_id = $1`
-    const { rows }: pg.QueryResult = await client.query(getMentorPartnershipScheduleQuery, [course.id]);    
+  async addCourseLessons(course: Course, client: pg.PoolClient): Promise<void> {
+    const getLessonsQuery = `SELECT course_id FROM users_courses_lessons WHERE course_id = $1`
+    const { rows }: pg.QueryResult = await client.query(getLessonsQuery, [course.id]);    
     const lessonDateTime = moment.utc(course.startDateTime);
-    if (rows.length == 0 && course.type && course.type.duration && course.mentors && course.mentors.length > 1) {
+    if (rows.length == 0 && course.type && course.type.duration && course.mentors) {
       while (lessonDateTime.isBefore(moment.utc(course.startDateTime).add(course.type.duration, 'months').add(3, 'days'))) {
-        const insertLessonDateTimeQuery = `INSERT INTO users_courses_partnership_schedule (course_id, mentor_id, lesson_date_time)
+        const insertLessonDateTimeQuery = `INSERT INTO users_courses_lessons (course_id, mentor_id, lesson_date_time)
           VALUES ($1, $2, $3)`;
-        const mentorId = lessonDateTime.isBefore(moment.utc(course.startDateTime).add(course.type.duration * 30 / 2, 'days')) ? course.mentors[0].id : course.mentors[1].id;
+				let mentorId = course.mentors[0].id;
+				if (course.mentors.length > 1) {
+					mentorId = lessonDateTime.isBefore(moment.utc(course.startDateTime).add(course.type.duration * 30 / 2, 'days')) ? course.mentors[0].id : course.mentors[1].id;
+				}
         const values = [course.id, mentorId, lessonDateTime];
         await client.query(insertLessonDateTimeQuery, values);
         lessonDateTime.add(1, 'week');
@@ -821,14 +824,14 @@ export class UsersCourses {
     }
   }
   
-  async updateMentorPartnershipSchedule(request: Request, response: Response): Promise<void> {
-    const mentorPartnershipScheduleItem: MentorPartnershipScheduleItem = request.body;
+  async updateCourseLessons(request: Request, response: Response): Promise<void> {
+    const courseLessonItem: CourseLessonItem = request.body;
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
-      await this.updateMentorPartnershipScheduleFromDB(mentorPartnershipScheduleItem, client);
+      await this.updateCourseLessonsFromDB(courseLessonItem, client);
       await client.query('COMMIT');
-      response.status(200).send(`Mentor partnership schedule item ${mentorPartnershipScheduleItem.id} was update successfully`);
+      response.status(200).send(`Mentor partnership schedule item ${courseLessonItem.id} was update successfully`);
     } catch (error) {
       await client.query('ROLLBACK');
       response.status(400).send(error);
@@ -837,9 +840,9 @@ export class UsersCourses {
     }
   }
   
-  async updateMentorPartnershipScheduleFromDB(mentorPartnershipScheduleItem: MentorPartnershipScheduleItem, client: pg.PoolClient): Promise<void> {
-    const updateMentorPartnershipScheduleQuery = 'UPDATE users_courses_partnership_schedule SET mentor_id = $1 WHERE id = $2';
-    await client.query(updateMentorPartnershipScheduleQuery, [mentorPartnershipScheduleItem.mentor.id, mentorPartnershipScheduleItem.id]);
+  async updateCourseLessonsFromDB(courseLessonItem: CourseLessonItem, client: pg.PoolClient): Promise<void> {
+    const updateCourseLessonsQuery = 'UPDATE users_courses_lessons SET mentor_id = $1 WHERE id = $2';
+    await client.query(updateCourseLessonsQuery, [courseLessonItem.mentor.id, courseLessonItem.id]);
   }
 
   async setWhatsAppGroupUrl(request: Request, response: Response): Promise<void> {
@@ -936,7 +939,7 @@ export class UsersCourses {
 		let isPartnerMentorCourseCanceled = false;
 		if (mentors.length == 2 && course.hasStarted) {
 			const partnerMentor = mentors.find((mentor: CourseMentor) => mentor.id != userId);
-			const assignLessonsToPartnerMentorQuery = 'UPDATE users_courses_partnership_schedule SET mentor_id = $1 WHERE course_id = $2 AND mentor_id = $3 AND lesson_date_time > $4';
+			const assignLessonsToPartnerMentorQuery = 'UPDATE users_courses_lessons SET mentor_id = $1 WHERE course_id = $2 AND mentor_id = $3 AND lesson_date_time > $4';
 			await client.query(assignLessonsToPartnerMentorQuery, [partnerMentor?.id, courseId, userId, moment.utc()]);
 			const nextLessonDateTime = await this.getNextLessonDateTimeForUserFromDB(partnerMentor?.id as string, courseId, client);
 			if (!nextLessonDateTime) {
