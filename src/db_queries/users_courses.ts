@@ -721,7 +721,7 @@ export class UsersCourses {
 				if (!course.hasStarted)	{
 					course = await this.updateCourseStartDateTime(course, client);
 				}
-        if (course.mentors && course.students && course.mentors.length > 1 && course.students.length >= minStudentsCourse && !course.hasStarted) {
+        if (course.mentors && course.students && course.students.length >= minStudentsCourse && !course.hasStarted) {
           await this.addCourseLessons(course, client);
         }
         if (course.students && course.students.length >= minStudentsCourse) {
