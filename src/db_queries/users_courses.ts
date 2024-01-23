@@ -461,7 +461,7 @@ export class UsersCourses {
 
     // If there are two mentors, find the mentor for the next lesson
     if (mentors.length === 2) {
-      const { rows: partnershipSchedule } = await client.query(
+      const { rows: courseLessons } = await client.query(
         `
         SELECT *
         FROM users_courses_lessons
@@ -470,8 +470,8 @@ export class UsersCourses {
         [courseId, nextLessonDateTime]
       );
 
-      if (partnershipSchedule.length === 1) {
-        const mentorId = partnershipSchedule[0].mentor_id;
+      if (courseLessons.length === 1) {
+        const mentorId = courseLessons[0].mentor_id;
 				mentor = mentors.find((mentor) => mentor.id === mentorId) as CourseMentor;
       }
     }
@@ -586,17 +586,17 @@ export class UsersCourses {
     const now = moment.utc();
     let nextLessonDatetime: moment.Moment | null = null;
   
-    const partnershipSchedule = await this.getCourseLessonsFromDB(course.id as string, client);
+    const courseLessons = await this.getCourseLessonsFromDB(course.id as string, client);
   
-    for (const scheduleItem of partnershipSchedule) {
-      const lessonDatetime = moment.utc(scheduleItem.lessonDateTime);
+    for (const courseLessonItem of courseLessons) {
+      const lessonDatetime = moment.utc(courseLessonItem.lessonDateTime);
   
       if (lessonDatetime.isAfter(now) && lessonDatetime.isBefore(courseEndDateTime)) {
         const isLessonCanceled = await this.isLessonCanceled(userId, course.id as string, lessonDatetime.toISOString(), client);
   
         if (!isLessonCanceled) {
           if (isMentor) {
-            if (scheduleItem.mentor.id === userId) {
+            if (courseLessonItem.mentor.id === userId) {
               const hasAtLeastOneStudentParticipating = await this.hasAtLeastOneStudentParticipating(course.id as string, lessonDatetime.toISOString(), client);
   
               if (hasAtLeastOneStudentParticipating) {
@@ -605,7 +605,7 @@ export class UsersCourses {
               }
             }
           } else {
-						const isLessonCanceledByMentor = await this.isLessonCanceled(scheduleItem.mentor.id as string, course.id as string, lessonDatetime.toISOString(), client);
+						const isLessonCanceledByMentor = await this.isLessonCanceled(courseLessonItem.mentor.id as string, course.id as string, lessonDatetime.toISOString(), client);
 						if (!isLessonCanceledByMentor) {
 							nextLessonDatetime = lessonDatetime;
 							break;
