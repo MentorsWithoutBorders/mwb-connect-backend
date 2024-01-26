@@ -78,7 +78,7 @@ export class UsersBackgroundProcesses {
 				const students = [];
 				if (course.mentors != null && course.mentors.length > 0) {
 					for (const courseMentor of course.mentors) {
-						const nextLessonMentor = await usersCourses.getNextLessonDateTimeForMentor(course, courseMentor.id as string, client);
+						const nextLessonMentor = await usersCourses.getNextLessonDateTime(courseMentor.id as string, course, client);
 						if (moment.utc(nextLessonMentor).isSame(nextLessonDateTime)) {
 							mentor = courseMentor;
 							break;
@@ -87,7 +87,7 @@ export class UsersBackgroundProcesses {
 				}
 				if (mentor && course.students != null && course.students.length > 0) {
 					for (const student of course.students) {
-						const nextLessonStudent = await usersCourses.getNextLessonDateTimeForStudent(course, student.id as string, client);
+						const nextLessonStudent = await usersCourses.getNextLessonDateTime(student.id as string, course, client);
 						if (moment.utc(nextLessonStudent).isSame(nextLessonDateTime)) {
 							students.push(student);
 						}
