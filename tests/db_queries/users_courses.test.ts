@@ -1290,7 +1290,6 @@ describe('Next lesson datetime for student course functionality - ChatGPT', () =
     let course = usersCoursesTestHelpers.getTestCourse();
     course = await usersCoursesTestHelpers.addMentor(mentorId, course);
     course = await usersCourses.addCourseFromDB(course, client);
-		await usersCourses.addCourseLessons(course, client);
 
     // Fast forward the course by 3 weeks
     course.startDateTime = moment
@@ -1300,6 +1299,7 @@ describe('Next lesson datetime for student course functionality - ChatGPT', () =
   
     // Add student to the course
     course = await usersCoursesTestHelpers.addStudent(studentId, course);
+		await usersCourses.addCourseLessons(course, client);		
   
     // Calculate expected next lesson date/time
     const expectedNextLessonDateTime = moment
