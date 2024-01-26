@@ -430,44 +430,49 @@ export class UsersCourses {
   }
 
 	async getNextLessonDateTime(userId: string, course: Course, client: pg.PoolClient): Promise<string | null> {
-    if (!course.hasStarted) {
-      return null;
-    }
-
-    const now = moment.utc();
-    const courseStartDate = moment.utc(course.startDateTime);
-    const courseEndDate = this.getCourseEndDateTime(course);
-
-    if (now.isAfter(courseEndDate)) {
-      return null;
-    }
-
-    if (now.isAfter(courseStartDate)) {
-			const lessonsQuery = `
-				SELECT l.lesson_date_time, l.mentor_id
-				FROM users_courses_lessons l
-				LEFT JOIN users_courses_lessons_canceled lc ON lc.lesson_date_time = l.lesson_date_time AND lc.course_id = l.course_id
-				WHERE l.course_id = $1 AND l.lesson_date_time > NOW() AND lc.id IS NULL
-				ORDER BY l.lesson_date_time ASC;
-			`;
-			const lessonsResult = await client.query(lessonsQuery, [course.id]);
-
-			for (const lesson of lessonsResult.rows) {
-				const isLessonCanceled = await this.isLessonCanceled(userId, course.id as string, lesson.lesson_date_time, client);
-				if (!isLessonCanceled) {
-					const hasAtLeastOneStudentParticipating = await this.hasAtLeastOneStudentParticipating(course.id as string, lesson.lesson_date_time, client);
-					// Check if the mentor is assigned to this lesson or if any student is still participating
-					if ((course.mentors?.some(mentor => mentor.id === userId) && lesson.mentor_id === userId) || 
-							(!course.mentors?.some(mentor => mentor.id === userId) && hasAtLeastOneStudentParticipating)) {
-							return moment.utc(lesson.lesson_date_time).format(constants.DATE_TIME_FORMAT);
-					}
+		// Preliminary checks for course status
+		if (!course.hasStarted || course.isCanceled) {
+			return null;
+		}
+	
+		const now = moment.utc();
+		const courseStartDate = moment.utc(course.startDateTime);
+		const courseEndDate = this.getCourseEndDateTime(course);
+	
+		// Check if current time is after the course end date
+		if (now.isAfter(courseEndDate)) {
+			return null;
+		}
+	
+		// Adjust to start from current date if the course has started
+		const queryStartDate = courseStartDate.isBefore(now) ? now : courseStartDate;
+	
+		// Prepare the query to select future lessons that haven't been canceled
+		const lessonsQuery = `
+			SELECT l.lesson_date_time, l.mentor_id
+			FROM users_courses_lessons l
+			LEFT JOIN users_courses_lessons_canceled lc ON lc.lesson_date_time = l.lesson_date_time AND lc.course_id = l.course_id
+			WHERE l.course_id = $1 AND l.lesson_date_time >= $2 AND lc.id IS NULL
+			ORDER BY l.lesson_date_time ASC;
+		`;
+		const lessonsResult = await client.query(lessonsQuery, [course.id, queryStartDate.toISOString()]);
+	
+		// Iterate through potential lessons
+		for (const lesson of lessonsResult.rows) {
+			const isLessonCanceled = await this.isLessonCanceled(userId, course.id as string, lesson.lesson_date_time, client);
+			if (!isLessonCanceled) {
+				const hasAtLeastOneStudentParticipating = await this.hasAtLeastOneStudentParticipating(course.id as string, lesson.lesson_date_time, client);
+				// Check if the mentor is assigned to this lesson or if any student is still participating
+				if ((course.mentors?.some(mentor => mentor.id === userId) && lesson.mentor_id === userId) || 
+						(!course.mentors?.some(mentor => mentor.id === userId) && hasAtLeastOneStudentParticipating)) {
+					return moment.utc(lesson.lesson_date_time).format(constants.DATE_TIME_FORMAT);
 				}
 			}
-    }
-
-    return null;
+		}
+	
+		// If no suitable lesson is found, return null
+		return null;
 	}
-
 
 	async getStudentsWithNextLesson(students: Array<CourseStudent>, course: Course, nextLessonDateTime: string, client: pg.PoolClient) {
 		const cancellationStatuses = await Promise.all(
