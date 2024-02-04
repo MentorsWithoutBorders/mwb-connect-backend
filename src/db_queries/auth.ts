@@ -88,7 +88,7 @@ export class Auth {
       await this.setDefaultUserProfile(userId, approvedUser.isMentor as boolean, client);
       await usersAppFlags.addAppFlagsFromDB(userId, true, true, client);
 
-      const isStudent = !(approvedUser.isMentor || approvedUser.isCentreManager || approvedUser.isOrgManager);
+      const isStudent = !(approvedUser.isMentor || approvedUser.isCenterManager || approvedUser.isOrgManager);
       if (isStudent) {
         await usersGoals.addGoalToDB(userId, approvedUser.goal as string, client);
       }

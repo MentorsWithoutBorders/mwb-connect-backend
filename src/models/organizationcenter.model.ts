@@ -1,4 +1,4 @@
-export default interface OrganizationCentre {
+export default interface OrganizationCenter {
   id?: string;
   name?: string;
   address?: string;

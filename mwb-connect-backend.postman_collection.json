@@ -3573,7 +3573,7 @@
 					"response": []
 				},
 				{
-					"name": "organizations/centres",
+					"name": "organizations/centers",
 					"protocolProfileBehavior": {
 						"disableBodyPruning": true
 					},
@@ -3595,14 +3595,14 @@
 							"raw": ""
 						},
 						"url": {
-							"raw": "{{url}}/organizations/d0b45a28-3640-4867-ad68-faf1c09b3983/centres",
+							"raw": "{{url}}/organizations/d0b45a28-3640-4867-ad68-faf1c09b3983/centers",
 							"host": [
 								"{{url}}"
 							],
 							"path": [
 								"organizations",
 								"d0b45a28-3640-4867-ad68-faf1c09b3983",
-								"centres"
+								"centers"
 							]
 						}
 					},

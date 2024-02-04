@@ -3,8 +3,7 @@ import pg from 'pg';
 import { Conn } from '../db/conn';
 import { Helpers } from '../utils/helpers';
 import Organization from '../models/organization.model';
-import OrganizationCentre from "../models/organizationcentre.model";
-import CertificatePause from "../models/certificate_pause.model";
+import OrganizationCenter from "../models/organizationcenter.model";
 
 const conn = new Conn();
 const pool = conn.pool;
@@ -15,12 +14,12 @@ export class Organizations {
     helpers.autoBind(this);
   }
 
-  async getOrganizationCentresByOrganizationId(request: Request, response: Response): Promise<void> {
+  async getOrganizationCentersByOrganizationId(request: Request, response: Response): Promise<void> {
     const organizationId = request.params.id;
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
-      const organization = await this.getOrganizationCentresByOrganizationIdFromDB(organizationId, client);
+      const organization = await this.getOrganizationCentersByOrganizationIdFromDB(organizationId, client);
       response.status(200).json(organization);
       await client.query('COMMIT');
     } catch (error) {
@@ -31,22 +30,22 @@ export class Organizations {
     }
   }
 
-  async getOrganizationCentresByOrganizationIdFromDB(id: string, client: pg.PoolClient): Promise<OrganizationCentre[]> {
-    const organizationCentres: OrganizationCentre[] = [];
-    const getOrganizationCentreQuery = 'SELECT * FROM organizations_centres WHERE organization_id = $1';
-    const { rows } = await client.query(getOrganizationCentreQuery, [id]);
+  async getOrganizationCentersByOrganizationIdFromDB(id: string, client: pg.PoolClient): Promise<OrganizationCenter[]> {
+    const organizationCenters: OrganizationCenter[] = [];
+    const getOrganizationCenterQuery = 'SELECT * FROM organizations_centers WHERE organization_id = $1';
+    const { rows } = await client.query(getOrganizationCenterQuery, [id]);
 
     rows.forEach(function (row){
-      const centre: OrganizationCentre = {
+      const center: OrganizationCenter = {
         id:  row.id,
         name:  row.name,
         organization_id:  row.organization_id,
         address:  row.address,
       }
 
-      organizationCentres.push(centre)
+      organizationCenters.push(center)
     })
-    return organizationCentres;
+    return organizationCenters;
   }
 
   async getOrganizationById(request: Request, response: Response): Promise<void> {

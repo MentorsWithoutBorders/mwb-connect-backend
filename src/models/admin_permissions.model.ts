@@ -1,7 +1,7 @@
 export interface Permissions {
   isMentor?: boolean;
   isOrgManager?: boolean;
-  isCentreManager?: boolean;
+  isCenterManager?: boolean;
   isAdmin?: boolean;
 }
 

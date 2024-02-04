@@ -21,7 +21,7 @@ export class ApprovedUsers {
     let approvedUser: ApprovedUser = {
       email: email
     };
-    const getApprovedUserQuery = 'SELECT field_id, organization_id, name, phone_number, is_mentor, is_centre_manager, is_org_manager, goal FROM approved_users WHERE LOWER(email) = $1';
+    const getApprovedUserQuery = 'SELECT field_id, organization_id, name, phone_number, is_mentor, is_center_manager, is_org_manager, goal FROM approved_users WHERE LOWER(email) = $1';
     const { rows }: pg.QueryResult = await client.query(getApprovedUserQuery, [email.toLowerCase()]);
     if (!rows[0]) {
       approvedUser.email = '';
@@ -40,7 +40,7 @@ export class ApprovedUsers {
         organization: organization,
         isMentor: rows[0].is_mentor,
         isOrgManager: rows[0].is_org_manager,
-        isCentreManager: rows[0].is_centre_manager,
+        isCenterManager: rows[0].is_center_manager,
         goal: rows[0].goal
       };
     }

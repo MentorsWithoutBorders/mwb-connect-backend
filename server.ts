@@ -51,8 +51,8 @@ import { AdminPartnersMentorStats } from './src/db_queries/admin_partners_mentor
 import { AdminPartnersProjects } from './src/db_queries/admin_partners_projects'
 import { AdminPartnersStudents } from "./src/db_queries/admin_partners_students";
 import {
-  AdminPartnersOrganizationCentres
-} from "./src/db_queries/admin_partners_organization_centres";
+  AdminPartnersOrganizationCenters
+} from "./src/db_queries/admin_partners_organization_centers";
 
 dotenv.config();
 const port = process.env.PORT;
@@ -105,7 +105,7 @@ const adminPartnersMentors = new AdminPartnersMentors();
 const adminPartnersMentorStats = new AdminPartnersMentorStats();
 const adminPartnersProjects = new AdminPartnersProjects();
 const adminPartnersStudents = new AdminPartnersStudents();
-const adminPartnersCentres = new AdminPartnersOrganizationCentres();
+const adminPartnersCenters = new AdminPartnersOrganizationCenters();
 
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
@@ -374,28 +374,28 @@ app.get(
   organizations.getOrganizationByName
 );
 
-// Organizations Centres
+// Organizations Centers
 app.get(
-  "/api/v1/organizations/:id/centres",
-  organizations.getOrganizationCentresByOrganizationId
+  "/api/v1/organizations/:id/centers",
+  organizations.getOrganizationCentersByOrganizationId
 );
 
 // Partners
 app.get('/api/v1/partners/dashboard/stats', partnersDashboardStats.getDashboardStats);
 app.get('/api/v1/partners/:partner_id/dashboard/stats', partnersDashboardStats.getDashboardStatsByPartnerId);
-// Returns the location of the org centres of _all_ the partners
+// Returns the location of the org centers of _all_ the partners
 // that have had at least one active student.
 // Filtering by date is possible.
 app.get(
-  '/api/v1/partners/dashboard/organization-centres',
-  adminPartnersCentres.getDashboardOrganizationCentres
+  '/api/v1/partners/dashboard/organization-centers',
+  adminPartnersCenters.getDashboardOrganizationCenters
 );
-// Returns the location of the org centres of _a specific_ partner
+// Returns the location of the org centers of _a specific_ partner
 // that have had at least one active student.
 // Filtering by date is possible.
 app.get(
-  '/api/v1/partners/:partner_id/dashboard/organization-centres',
-  adminPartnersCentres.getDashboardOrganizationCentresByPartnerId
+  '/api/v1/partners/:partner_id/dashboard/organization-centers',
+  adminPartnersCenters.getDashboardOrganizationCentersByPartnerId
 );
 
 // Fields

@@ -3,7 +3,7 @@ import pg from "pg";
 import "moment-timezone";
 import { Conn } from "../db/conn";
 import { Helpers } from "../utils/helpers";
-import { PartnerCentersSearch } from "../models/partner_organization_centres.model";
+import { PartnerCentersSearch } from "../models/partner_organization_centers.model";
 
 
 const conn = new Conn();
@@ -46,7 +46,7 @@ const deriveQuery = ({ fromDate, toDate }: PartnerCentersSearch, partnerId?: str
     SELECT 
       oc.*,
       json_agg(json_build_object('id', u.id, 'name', u.name)) AS students
-    FROM organizations_centres AS oc
+    FROM organizations_centers AS oc
     JOIN users AS u ON oc.organization_id = u.organization_id
     JOIN users_courses_students AS ucs ON ucs.student_id = u.id
     LEFT JOIN student_courses AS sc ON sc.student_id = u.id
@@ -58,12 +58,12 @@ const deriveQuery = ({ fromDate, toDate }: PartnerCentersSearch, partnerId?: str
 
 }
 
-export class AdminPartnersOrganizationCentres {
+export class AdminPartnersOrganizationCenters {
   constructor() {
     helpers.autoBind(this);
   }
 
-  async getDashboardOrganizationCentres(
+  async getDashboardOrganizationCenters(
     request: Request,
     response: Response
   ): Promise<void> {
@@ -72,14 +72,14 @@ export class AdminPartnersOrganizationCentres {
     const client = await pool.connect();
     try {
       await client.query("BEGIN");
-      const students = await this.getDashboardOrganizationCentresFromDB(
+      const students = await this.getDashboardOrganizationCentersFromDB(
         searchParameters,
         client
       );
       response.status(200).json(students);
       await client.query("COMMIT");
     } catch (error) {
-      console.log("getDashboardOrganizationCentresFromDB", error)
+      console.log("getDashboardOrganizationCentersFromDB", error)
       response.status(400).send(error);
       await client.query("ROLLBACK");
     } finally {
@@ -87,7 +87,7 @@ export class AdminPartnersOrganizationCentres {
     }
   }
 
-  async getDashboardOrganizationCentresByPartnerId(
+  async getDashboardOrganizationCentersByPartnerId(
     request: Request,
     response: Response
   ): Promise<void> {
@@ -96,7 +96,7 @@ export class AdminPartnersOrganizationCentres {
     const client = await pool.connect();
     try {
       await client.query("BEGIN");
-      const students = await this.getDashboardOrganizationCentresByPartnerIdFromDB(
+      const students = await this.getDashboardOrganizationCentersByPartnerIdFromDB(
         partnerId,
         searchParameters,
         client
@@ -104,7 +104,7 @@ export class AdminPartnersOrganizationCentres {
       response.status(200).json(students);
       await client.query("COMMIT");
     } catch (error) {
-      console.log("getDashboardOrganizationCentresByPartnerIdFromDB", error)
+      console.log("getDashboardOrganizationCentersByPartnerIdFromDB", error)
       response.status(400).send(error);
       await client.query("ROLLBACK");
     } finally {
@@ -112,7 +112,7 @@ export class AdminPartnersOrganizationCentres {
     }
   }
 
-  private async getDashboardOrganizationCentresFromDB(
+  private async getDashboardOrganizationCentersFromDB(
     searchParameters: PartnerCentersSearch,
     client: pg.PoolClient
   ) {
@@ -123,7 +123,7 @@ export class AdminPartnersOrganizationCentres {
     return rows;
   }
 
-  private async getDashboardOrganizationCentresByPartnerIdFromDB(
+  private async getDashboardOrganizationCentersByPartnerIdFromDB(
     partnerId: string,
     searchParameters: PartnerCentersSearch,
     client: pg.PoolClient
