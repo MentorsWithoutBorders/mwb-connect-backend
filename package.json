@@ -10,9 +10,9 @@
     "format": "eslint src/**/*.ts --fix",
     "test": "jest",
     "postinstall": "rm ./node_modules/async-redis/src/index.d.ts",
-    "migrate": "db-migrate up --config migrations/config.json",
-    "revert": "db-migrate down --config migrations/config.json --count 1",
-    "migration:add": "db-migrate create --sql-file --config migrations/config.json"
+    "migrate:up": "db-migrate up --config migrations/config.json",
+    "migrate:down1": "db-migrate down --config migrations/config.json --count 1",
+    "migrate:create": "db-migrate create --sql-file --config migrations/config.json"
   },
   "license": "Apache-2.0",
   "dependencies": {
