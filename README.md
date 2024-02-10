@@ -4,8 +4,8 @@
 
 ### One time setup
 
-* Copy the `.env.example` file to `.env` and update the values as needed.
 * Install Redis
+* Copy the `.env.example` file to `.env` and update the values as needed.
 
 
 #### Migrations
