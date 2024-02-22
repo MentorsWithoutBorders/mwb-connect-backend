@@ -20,7 +20,6 @@ class DBClient {
         try {
             return await callback(client);
         } catch(e){
-            console.log("withclient error")
             console.log(e);
             throw e;
         }finally {
