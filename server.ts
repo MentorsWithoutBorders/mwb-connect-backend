@@ -53,6 +53,8 @@ import { AdminPartnersStudents } from "./src/db_queries/admin_partners_students"
 import {
   AdminPartnersOrganizationCenters
 } from "./src/db_queries/admin_partners_organization_centers";
+import { Expenses } from "./src/db_queries/expenses";
+import {ExpensesPaid} from "./src/db_queries/expenses_paid";
 
 dotenv.config();
 const port = process.env.PORT;
@@ -106,6 +108,8 @@ const adminPartnersMentorStats = new AdminPartnersMentorStats();
 const adminPartnersProjects = new AdminPartnersProjects();
 const adminPartnersStudents = new AdminPartnersStudents();
 const adminPartnersCenters = new AdminPartnersOrganizationCenters();
+const centerExpenses = new Expenses();
+const centerExpensesPaid = new ExpensesPaid();
 
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
@@ -613,6 +617,17 @@ app.post(
   usersPushNotifications.sendPNTest
 );
 app.post("/api/v1/test/:user_id/send_email", usersSendEmails.sendEmailTest);
+
+// Center expenses paid
+app.get("/api/v1/centers/:center_id/expense/paid", centerExpensesPaid.getCenterExpensePaid)
+app.patch("/api/v1/centers/:center_id/expense/paid", centerExpensesPaid.updateCenterExpensePaid)
+
+// Center Expenses
+app.get("/api/v1/centers/:center_id/expenses", centerExpenses.getCenterExpenses)
+app.post("/api/v1/centers/:center_id/expenses", centerExpenses.createCenterExpenses)
+app.patch("/api/v1/centers/:center_id/expenses/:expense_id", centerExpenses.updateCenterExpenses)
+app.delete("/api/v1/centers/:center_id/expenses/:expense_id", centerExpenses.deleteCenterExpenses)
+app.get("/api/v1/centers/:center_id/expenses/balance", centerExpenses.getCenterExpenseBalance)
 
 app.listen(port, () => {
   console.log(`App running on port ${port}.`);
