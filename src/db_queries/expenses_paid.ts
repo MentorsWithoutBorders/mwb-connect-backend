@@ -7,9 +7,9 @@ const helpers = new Helpers();
 
 export class ExpensesPaid {
 
-    _centerExpensesPaidQuery = "SELECT * FROM organizations_centers_expenses_paid WHERE center_id = $1 AND month = $2 AND year = $3";
-    _updateExpensePaidQuery = "UPDATE organizations_centers_expenses_paid SET amount = $1 WHERE center_id = $2 AND month = $3 AND year = $4";
-    _createExpensePaidQuery = "INSERT INTO organizations_centers_expenses_paid (center_id, month, year, amount) VALUES ($1, $2, $3, $4)";
+    private centerExpensesPaidQuery = "SELECT * FROM organizations_centers_expenses_paid WHERE center_id = $1 AND month = $2 AND year = $3";
+    private updateExpensePaidQuery = "UPDATE organizations_centers_expenses_paid SET amount = $1 WHERE center_id = $2 AND month = $3 AND year = $4";
+    private createExpensePaidQuery = "INSERT INTO organizations_centers_expenses_paid (center_id, month, year, amount) VALUES ($1, $2, $3, $4)";
 
     constructor() {
         helpers.autoBind(this);
@@ -19,7 +19,7 @@ export class ExpensesPaid {
         const {center_id} = request.params;
         const {month, year} = request.query
         try {
-            const result = await dbClient.query<CenterExpensePaid>(this._centerExpensesPaidQuery, [center_id, month, year]);
+            const result = await dbClient.query<CenterExpensePaid>(this.centerExpensesPaidQuery, [center_id, month, year]);
 
             if(result.rowCount === 0) {
                 response.status(404).send("No expense paid yet");
@@ -37,11 +37,11 @@ export class ExpensesPaid {
         const { month, year, amount } = request.body;
         try {
             await dbClient.withClient(async (client) => {
-                const result = await client.query<CenterExpensePaid>(this._centerExpensesPaidQuery, [center_id, month, year]);
+                const result = await client.query<CenterExpensePaid>(this.centerExpensesPaidQuery, [center_id, month, year]);
                 if(result.rowCount === 0) {
-                    await client.query(this._createExpensePaidQuery, [center_id, month, year, amount]);
+                    await client.query(this.createExpensePaidQuery, [center_id, month, year, amount]);
                 } else{
-                    await client.query(this._updateExpensePaidQuery, [amount, center_id, month, year]);
+                    await client.query(this.updateExpensePaidQuery, [amount, center_id, month, year]);
                 }
             })
             response.status(200).send("Expense paid is saved.");

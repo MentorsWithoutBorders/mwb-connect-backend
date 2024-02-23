@@ -2,7 +2,7 @@ import pg, { QueryResultRow } from 'pg';
 
 class DBClient {
     
-    _pool: pg.Pool;
+    private _pool: pg.Pool;
 
     constructor(){
         this._pool = new pg.Pool({
@@ -22,7 +22,7 @@ class DBClient {
         } catch(e){
             console.log(e);
             throw e;
-        }finally {
+        } finally {
             client.release();
         }
     }
@@ -32,7 +32,7 @@ class DBClient {
         try{
             return await pgClient.query<T>(query, values);
         } catch(e){
-            console.log(e);
+            console.log(e); 
             throw e;
         } finally {
             pgClient.release();
