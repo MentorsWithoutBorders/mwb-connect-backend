@@ -2,6 +2,7 @@ import { Helpers } from '../utils/helpers';
 import { Request, Response } from 'express';
 import { dbClient } from '../db/conn';
 import CenterExpensesPaid from '../models/center_expenses_paid.model';
+import { ValidationError } from '../utils/errors';
 
 type QueryArgs = [string, (string | number | boolean)[]];
 
@@ -59,6 +60,7 @@ export class ExpensesPaid {
   ): Promise<void> {
     const { center_id } = request.params;
     const { month, year } = request.query;
+
     try {
       if (
         typeof month === 'string' &&
@@ -75,7 +77,7 @@ export class ExpensesPaid {
         const result = await dbClient.query<CenterExpensesPaid>(query, values);
         response.status(200).json(result.rows[0]);
       } else {
-        throw new Error('Please provide month and year.');
+        throw new ValidationError('Please provide month and year.');
       }
     } catch (error) {
       response.status(400).send(error);

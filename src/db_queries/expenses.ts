@@ -194,39 +194,29 @@ export class Expenses {
     const { center_id } = request.params;
     try {
       dbClient.withClient(async (client) => {
-        try {
-          const [query, values] = this.totalExpenseQuery({
+        const [query, values] = this.totalExpenseQuery({
+          centerId: center_id
+        });
+        const totalExpense = await client.query(query, values);
+
+        const [expensePaidQuery, expensePaidValues] =
+          this.totalExpensePaidQuery({
             centerId: center_id
           });
-          const totalExpense = await client.query(query, values);
+        const totalExpensePaid = await client.query(
+          expensePaidQuery,
+          expensePaidValues
+        );
 
-          const [expensePaidQuery, expensePaidValues] =
-            this.totalExpensePaidQuery({
-              centerId: center_id
-            });
+        const totalExpenseSum = totalExpense.rows[0].sum || 0;
+        const totalExpensePaidSum = totalExpensePaid.rows[0].sum || 0;
+        const balance = totalExpensePaidSum - totalExpenseSum;
 
-          const totalExpensePaid = await client.query(
-            expensePaidQuery,
-            expensePaidValues
-          );
-
-          if (totalExpense.rowCount === 0 || totalExpensePaid.rowCount === 0) {
-            response.status(404).send('No expenses found');
-            return;
-          }
-
-          const totalExpenseSum = totalExpense.rows[0].sum;
-          const totalExpensePaidSum = totalExpensePaid.rows[0].sum;
-          const balance = totalExpensePaidSum - totalExpenseSum;
-
-          response.status(200).json({
-            totalExpense: totalExpenseSum,
-            totalExpensePaid: totalExpensePaidSum,
-            balance
-          });
-        } catch (error) {
-          response.status(400).send(error);
-        }
+        response.status(200).json({
+          totalExpense: totalExpenseSum,
+          totalExpensePaid: totalExpensePaidSum,
+          balance
+        });
       });
     } catch (error) {
       response.status(400).send(error);
