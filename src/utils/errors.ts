@@ -3,6 +3,13 @@ class CustomErrors extends Error {
     super(message);
     this.name = this.constructor.name;
   }
+
+  toJSON() {
+    return {
+      name: this.name,
+      message: this.message
+    };
+  }
 }
 
 export class ValidationError extends CustomErrors {}
