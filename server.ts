@@ -43,9 +43,6 @@ import { Updates } from './src/db_queries/updates';
 import { Logger } from './src/db_queries/logger';
 import { AdminStudentsCertificates } from './src/db_queries/admin_students_certificates';
 import { AdminTrainingReminders } from './src/db_queries/admin_training_reminders';
-import { AdminLessons } from './src/db_queries/admin_lessons';
-import { AdminAvailableMentors } from './src/db_queries/admin_available_mentors';
-import { AdminAvailableStudents } from './src/db_queries/admin_available_students';
 import { AdminPartnersMentors } from './src/db_queries/admin_partners_mentors';
 import { AdminPartnersMentorStats } from './src/db_queries/admin_partners_mentors_stats';
 import { AdminPartnersProjects } from './src/db_queries/admin_partners_projects';
@@ -98,9 +95,6 @@ const updates = new Updates();
 const logger = new Logger();
 const adminStudentsCertificates = new AdminStudentsCertificates();
 const adminTrainingReminders = new AdminTrainingReminders();
-const adminLessons = new AdminLessons();
-const adminAvailableMentors = new AdminAvailableMentors();
-const adminAvailableStudents = new AdminAvailableStudents();
 const adminPartnersMentors = new AdminPartnersMentors();
 const adminPartnersMentorStats = new AdminPartnersMentorStats();
 const adminPartnersProjects = new AdminPartnersProjects();
@@ -590,29 +584,6 @@ app.get(
 app.post(
   '/api/v1/partners/:partner_id/projects',
   adminPartnersProjects.createProjectOfOnePartner
-);
-
-// Admin lessons
-app.get('/api/v1/admin/lessons', adminLessons.getLessons);
-
-// Admin available mentors
-app.get(
-  '/api/v1/admin/available_mentors_lessons',
-  adminAvailableMentors.getAvailableMentorsLessons
-);
-app.put(
-  '/api/v1/admin/available_mentors/:mentor_id/should_contact',
-  adminAvailableMentors.updateShouldContact
-);
-
-// Admin available students
-app.get(
-  '/api/v1/admin/available_students_lessons',
-  adminAvailableStudents.getAvailableStudentsLessons
-);
-app.put(
-  '/api/v1/admin/available_students/:student_id/should_contact',
-  adminAvailableStudents.updateShouldContact
 );
 
 // Tests notifications
