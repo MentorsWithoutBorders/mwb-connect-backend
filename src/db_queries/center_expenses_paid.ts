@@ -1,15 +1,15 @@
 import { Helpers } from '../utils/helpers';
 import { Request, Response } from 'express';
 import { dbClient } from '../db/conn';
-import CenterExpensesPaid from '../models/center_expenses_paid.model';
+import CenterExpensePaid from '../models/center_expense_paid.model';
 import { ValidationError } from '../utils/errors';
 
 type QueryArgs = [string, (string | number | boolean)[]];
 
 const helpers = new Helpers();
 
-export class ExpensesPaid {
-  private centerExpensesPaidQuery = ({
+export class CenterExpensesPaid {
+  private getExpensesPaidQuery = ({
     centerId,
     month,
     year
@@ -21,7 +21,8 @@ export class ExpensesPaid {
     'SELECT * FROM organizations_centers_expenses_paid WHERE center_id = $1 AND month = $2 AND year = $3',
     [centerId, month, year]
   ];
-  private updateExpensePaidQuery = ({
+
+  private updateExpensesPaidQuery = ({
     amount,
     centerId,
     month,
@@ -35,7 +36,8 @@ export class ExpensesPaid {
     'UPDATE organizations_centers_expenses_paid SET amount = $1 WHERE center_id = $2 AND month = $3 AND year = $4',
     [amount, centerId, month, year]
   ];
-  private createExpensePaidQuery = ({
+
+  private createExpensesPaidQuery = ({
     centerId,
     month,
     year,
@@ -69,12 +71,12 @@ export class ExpensesPaid {
         year
       ) {
         // To be replaced with param validation like joi/yup
-        const [query, values] = this.centerExpensesPaidQuery({
+        const [query, values] = this.getExpensesPaidQuery({
           centerId: center_id,
           month: parseInt(month),
           year: parseInt(year)
         });
-        const result = await dbClient.query<CenterExpensesPaid>(query, values);
+        const result = await dbClient.query<CenterExpensePaid>(query, values);
         response.status(200).json(result.rows[0]);
       } else {
         throw new ValidationError('Please provide month and year.');
@@ -92,14 +94,14 @@ export class ExpensesPaid {
     const { month, year, amount } = request.body;
     try {
       await dbClient.withClient(async (client) => {
-        const [query, values] = this.centerExpensesPaidQuery({
+        const [query, values] = this.getExpensesPaidQuery({
           centerId: center_id,
           month,
           year
         });
-        const result = await client.query<CenterExpensesPaid>(query, values);
+        const result = await client.query<CenterExpensePaid>(query, values);
         if (result.rowCount === 0) {
-          const [createQuery, createValues] = this.createExpensePaidQuery({
+          const [createQuery, createValues] = this.createExpensesPaidQuery({
             centerId: center_id,
             month,
             year,
@@ -107,7 +109,7 @@ export class ExpensesPaid {
           });
           await client.query(createQuery, createValues);
         } else {
-          const [updateQuery, updateValues] = this.updateExpensePaidQuery({
+          const [updateQuery, updateValues] = this.updateExpensesPaidQuery({
             amount,
             centerId: center_id,
             month,

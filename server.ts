@@ -48,8 +48,8 @@ import { AdminPartnersMentorStats } from './src/db_queries/admin_partners_mentor
 import { AdminPartnersProjects } from './src/db_queries/admin_partners_projects';
 import { AdminPartnersStudents } from './src/db_queries/admin_partners_students';
 import { AdminPartnersOrganizationCenters } from './src/db_queries/admin_partners_organization_centers';
-import { Expenses } from './src/db_queries/expenses';
-import { ExpensesPaid } from './src/db_queries/expenses_paid';
+import { CenterExpenses } from './src/db_queries/center_expenses';
+import { CenterExpensesPaid } from './src/db_queries/center_expenses_paid';
 
 dotenv.config();
 const port = process.env.PORT;
@@ -100,8 +100,8 @@ const adminPartnersMentorStats = new AdminPartnersMentorStats();
 const adminPartnersProjects = new AdminPartnersProjects();
 const adminPartnersStudents = new AdminPartnersStudents();
 const adminPartnersCenters = new AdminPartnersOrganizationCenters();
-const centerExpenses = new Expenses();
-const centerExpensesPaid = new ExpensesPaid();
+const centerExpenses = new CenterExpenses();
+const centerExpensesPaid = new CenterExpensesPaid();
 
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
@@ -529,6 +529,11 @@ app.put(
   adminStudentsCertificates.updateCertificateSent
 );
 
+app.post(
+  '/api/v1/admin/students_certificates/create',
+  adminStudentsCertificates.createCertificate
+);
+
 // Admin training reminders
 app.get(
   '/api/v1/admin/training_reminders',
@@ -610,15 +615,15 @@ app.get(
 );
 app.post(
   '/api/v1/centers/:center_id/expenses',
-  centerExpenses.createCenterExpenses
+  centerExpenses.createCenterExpense
 );
 app.patch(
   '/api/v1/centers/:center_id/expenses/:expense_id',
-  centerExpenses.updateCenterExpenses
+  centerExpenses.updateCenterExpense
 );
 app.delete(
   '/api/v1/centers/:center_id/expenses/:expense_id',
-  centerExpenses.deleteCenterExpenses
+  centerExpenses.deleteCenterExpense
 );
 app.get(
   '/api/v1/centers/:center_id/expenses/balance',
