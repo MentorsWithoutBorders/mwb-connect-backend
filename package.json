@@ -37,7 +37,8 @@
     "nodemailer": "^6.9.1",
     "os-utils": "0.0.14",
     "pg": "^8.10.0",
-    "uuid": "^9.0.0"
+    "uuid": "^9.0.0",
+    "yup": "^1.4.0"
   },
   "devDependencies": {
     "@babel/plugin-proposal-class-properties": "^7.18.6",

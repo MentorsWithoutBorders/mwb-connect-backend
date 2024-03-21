@@ -2,19 +2,23 @@ import type CenterExpense from '../models/center_expenses.model';
 import { Helpers } from '../utils/helpers';
 import { Request, Response } from 'express';
 import { dbClient } from '../db/conn';
-import { QueryResult } from 'pg';
+import * as yup from 'yup';
 
 type QueryArgs = [string, (string | number | boolean)[]];
 
 const helpers = new Helpers();
 
 export class Expenses {
-  private getReadExpensesQuery({ centerId }: { centerId: string }): QueryArgs {
+  private getReadExpensesQuery = ({
+    centerId
+  }: {
+    centerId: string;
+  }): QueryArgs => {
     return [
       `SELECT * FROM organizations_centers_expenses WHERE center_id = $1`,
       [centerId]
     ];
-  }
+  };
 
   private createExpenseQuery = ({
     centerId,
@@ -78,9 +82,18 @@ export class Expenses {
 
   private async getCenterExpensesQuery(
     centerId: string
-  ): Promise<QueryResult<CenterExpense>> {
+  ): Promise<CenterExpense[]> {
     const [query, values] = this.getReadExpensesQuery({ centerId });
-    return await dbClient.query<CenterExpense>(query, values);
+    const result = await dbClient.query(query, values);
+    return result.rows.map((row) => ({
+      id: row.id,
+      expense: row.expense,
+      amount: row.amount,
+      month: row.month,
+      year: row.year,
+      isRecurring: row.is_recurring,
+      centerId: row.center_id
+    }));
   }
 
   private mergeExpenses(
@@ -104,7 +117,7 @@ export class Expenses {
 
     try {
       const result = await this.getCenterExpensesQuery(centerId);
-      response.status(200).json(result?.rows);
+      response.status(200).json(result);
     } catch (error) {
       response.status(400).send(error);
     }
@@ -151,22 +164,35 @@ export class Expenses {
     }
   }
 
+  updateCenterExpensesValidationSchema = {
+    paramSchema: yup.object({
+      center_id: yup.string().required(),
+      expense_id: yup.string().required()
+    }),
+    bodySchema: yup.object({
+      expense: yup.string(),
+      amount: yup.number(),
+      month: yup.number().min(1).max(12),
+      year: yup.number().min(999).max(9999),
+      isRecurring: yup.boolean()
+    })
+  };
+
   async updateCenterExpenses(
     request: Request,
     response: Response
   ): Promise<void> {
-    // Todo: Add validation
     const { center_id, expense_id } = request.params;
 
     const expenseResult = await this.getCenterExpensesQuery(center_id);
 
-    if (expenseResult.rowCount === 0) {
+    if (expenseResult.length === 0) {
       response.status(404).send('No expenses found');
       return;
     }
 
     const { month, year, expense, amount, isRecurring } = this.mergeExpenses(
-      expenseResult.rows[0],
+      expenseResult[0],
       request.body as CenterExpense
     );
 
@@ -186,6 +212,17 @@ export class Expenses {
       response.status(400).send(error);
     }
   }
+
+  createCenterExpensesValidationSchema = {
+    paramsSchema: yup.object({ center_id: yup.string().required() }),
+    bodySchema: yup.object({
+      expense: yup.string().required(),
+      amount: yup.number().required(),
+      month: yup.number().min(1).max(12).required(),
+      year: yup.number().min(999).max(9999).required(),
+      isRecurring: yup.boolean().required()
+    })
+  };
 
   async getCenterExpensesBalance(
     request: Request,

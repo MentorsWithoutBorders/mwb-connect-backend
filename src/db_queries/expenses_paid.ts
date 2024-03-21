@@ -3,6 +3,7 @@ import { Request, Response } from 'express';
 import { dbClient } from '../db/conn';
 import CenterExpensesPaid from '../models/center_expenses_paid.model';
 import { ValidationError } from '../utils/errors';
+import * as yup from 'yup';
 
 type QueryArgs = [string, (string | number | boolean)[]];
 
@@ -83,6 +84,14 @@ export class ExpensesPaid {
       response.status(400).send(error);
     }
   }
+
+  updateCenterExpensesPaidSchema = {
+    bodySchema: yup.object().shape({
+      month: yup.number().required(),
+      year: yup.number().required(),
+      amount: yup.number().required()
+    })
+  };
 
   async updateCenterExpensesPaid(
     request: Request,
