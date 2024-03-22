@@ -1,7 +1,10 @@
 import { Request, Response } from 'express';
+import fs from 'fs';
 import pg from 'pg';
+import path from 'path';
 import moment from 'moment';
 import 'moment-timezone';
+import { PDFDocument, StandardFonts, rgb } from 'pdf-lib';
 import { Conn } from '../db/conn';
 import { constants } from '../utils/constants';
 import { Helpers } from '../utils/helpers';
@@ -152,5 +155,78 @@ export class AdminStudentsCertificates {
     } catch (error) {
       response.status(400).send(error);
     }
-  } 
+  }
+	
+	async loadPng(pngPath: string): Promise<Uint8Array> {
+		return fs.readFileSync(pngPath);
+	}
+
+	async customizeCertificatePdf(originalPdfPath: string, newPdfPath: string, imagePath: string) {
+		const existingPdfBytes = fs.readFileSync(originalPdfPath);
+		const pdfDoc = await PDFDocument.load(existingPdfBytes);
+		const timesRomanFont = await pdfDoc.embedFont(StandardFonts.TimesRoman)
+	
+		// Load the image
+		const imageData = await this.loadPng(imagePath);
+		const image = await pdfDoc.embedPng(imageData);
+	
+		const pages = pdfDoc.getPages();
+		const firstPage = pages[0];
+	
+		// Image dimensions and position (top right corner)
+		const imgHeight = 80;
+		const scaleFactor = imgHeight / image.height;
+		const imgWidth = image.width * scaleFactor;		
+		firstPage.drawImage(image, {
+			x: firstPage.getWidth() - imgWidth - 190,
+			y: firstPage.getHeight() - imgHeight - 80,
+			width: imgWidth,
+			height: imgHeight
+		});
+	
+		// Add red text in the middle
+		const redText = "Edmond Claudiu Pruteanu";
+		const redTextSize = 60;
+		const textWidth = timesRomanFont.widthOfTextAtSize(redText, redTextSize);
+		console.log('textWidth:', textWidth);
+		firstPage.drawText(redText, {
+			x: firstPage.getWidth() / 2 - textWidth / 2,
+			y: firstPage.getHeight() / 2,
+			font: timesRomanFont,
+			size: redTextSize,
+			color: rgb(1, 0, 0)
+		});
+	
+		// Add black text on the bottom left corner
+		const blackText = "Mar 19, 2024";
+		firstPage.drawText(blackText, {
+			x: 295,
+			y: 178,
+			size: 16,
+			color: rgb(0, 0, 0)
+		});
+	
+		const pdfBytes = await pdfDoc.save();
+		fs.writeFileSync(newPdfPath, pdfBytes);
+	}
+
+  async createCertificate(request: Request, response: Response): Promise<void> {
+    const userId = request.user.id as string;
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+			const certificateModelPath = path.join('src', 'certificates', 'certificate-model.pdf');
+			const certificatePath = path.join('src', 'certificates', 'certificate-Edmond-Pruteanu.pdf'); 
+			const imagePath = path.join('src', 'certificates', 'partner-logos', 'Education-for-All-Children.png');
+			await this.customizeCertificatePdf(certificateModelPath, certificatePath, imagePath)
+			.then(() => console.log('New PDF created successfully with the customizations.'));
+      response.status(200).send(`Certificate has been created for user: ${userId}`);
+      await client.query('COMMIT');
+    } catch (error) {
+      response.status(400).send(error);
+      await client.query('ROLLBACK');
+    } finally {
+      client.release();
+    }
+  }	
 }

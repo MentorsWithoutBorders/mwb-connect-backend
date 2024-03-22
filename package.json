@@ -36,7 +36,9 @@
     "node-cron": "3.0.2",
     "nodemailer": "^6.9.1",
     "os-utils": "0.0.14",
+    "pdf-lib": "^1.17.1",
     "pg": "^8.10.0",
+    "pngjs": "^7.0.0",
     "uuid": "^9.0.0"
   },
   "devDependencies": {
