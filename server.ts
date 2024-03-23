@@ -43,16 +43,13 @@ import { Updates } from './src/db_queries/updates';
 import { Logger } from './src/db_queries/logger';
 import { AdminStudentsCertificates } from './src/db_queries/admin_students_certificates';
 import { AdminTrainingReminders } from './src/db_queries/admin_training_reminders';
-import { AdminLessons } from './src/db_queries/admin_lessons';
-import { AdminAvailableMentors } from './src/db_queries/admin_available_mentors';
-import { AdminAvailableStudents } from './src/db_queries/admin_available_students';
 import { AdminPartnersMentors } from './src/db_queries/admin_partners_mentors';
 import { AdminPartnersMentorStats } from './src/db_queries/admin_partners_mentors_stats';
 import { AdminPartnersProjects } from './src/db_queries/admin_partners_projects';
 import { AdminPartnersStudents } from './src/db_queries/admin_partners_students';
 import { AdminPartnersOrganizationCenters } from './src/db_queries/admin_partners_organization_centers';
-import { Expenses } from './src/db_queries/expenses';
-import { ExpensesPaid } from './src/db_queries/expenses_paid';
+import { CenterExpenses } from './src/db_queries/center_expenses';
+import { CenterExpensesPaid } from './src/db_queries/center_expenses_paid';
 import { reqValidator } from './src/middelwares/reqValidator';
 
 dotenv.config();
@@ -99,16 +96,13 @@ const updates = new Updates();
 const logger = new Logger();
 const adminStudentsCertificates = new AdminStudentsCertificates();
 const adminTrainingReminders = new AdminTrainingReminders();
-const adminLessons = new AdminLessons();
-const adminAvailableMentors = new AdminAvailableMentors();
-const adminAvailableStudents = new AdminAvailableStudents();
 const adminPartnersMentors = new AdminPartnersMentors();
 const adminPartnersMentorStats = new AdminPartnersMentorStats();
 const adminPartnersProjects = new AdminPartnersProjects();
 const adminPartnersStudents = new AdminPartnersStudents();
 const adminPartnersCenters = new AdminPartnersOrganizationCenters();
-const centerExpenses = new Expenses();
-const centerExpensesPaid = new ExpensesPaid();
+const centerExpenses = new CenterExpenses();
+const centerExpensesPaid = new CenterExpensesPaid();
 
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
@@ -593,29 +587,6 @@ app.post(
   adminPartnersProjects.createProjectOfOnePartner
 );
 
-// Admin lessons
-app.get('/api/v1/admin/lessons', adminLessons.getLessons);
-
-// Admin available mentors
-app.get(
-  '/api/v1/admin/available_mentors_lessons',
-  adminAvailableMentors.getAvailableMentorsLessons
-);
-app.put(
-  '/api/v1/admin/available_mentors/:mentor_id/should_contact',
-  adminAvailableMentors.updateShouldContact
-);
-
-// Admin available students
-app.get(
-  '/api/v1/admin/available_students_lessons',
-  adminAvailableStudents.getAvailableStudentsLessons
-);
-app.put(
-  '/api/v1/admin/available_students/:student_id/should_contact',
-  adminAvailableStudents.updateShouldContact
-);
-
 // Tests notifications
 app.post(
   '/api/v1/test/:user_id/send_push_notification',
@@ -642,16 +613,16 @@ app.get(
 app.post(
   '/api/v1/centers/:center_id/expenses',
   reqValidator(centerExpenses.createCenterExpensesValidationSchema),
-  centerExpenses.createCenterExpenses
+  centerExpenses.createCenterExpense
 );
 app.patch(
   '/api/v1/centers/:center_id/expenses/:expense_id',
   reqValidator(centerExpenses.updateCenterExpensesValidationSchema),
-  centerExpenses.updateCenterExpenses
+  centerExpenses.updateCenterExpense
 );
 app.delete(
   '/api/v1/centers/:center_id/expenses/:expense_id',
-  centerExpenses.deleteCenterExpenses
+  centerExpenses.deleteCenterExpense
 );
 app.get(
   '/api/v1/centers/:center_id/expenses/balance',

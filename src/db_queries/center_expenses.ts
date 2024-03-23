@@ -1,4 +1,4 @@
-import type CenterExpense from '../models/center_expenses.model';
+import type CenterExpense from '../models/center_expense.model';
 import { Helpers } from '../utils/helpers';
 import { Request, Response } from 'express';
 import { dbClient } from '../db/conn';
@@ -8,17 +8,13 @@ type QueryArgs = [string, (string | number | boolean)[]];
 
 const helpers = new Helpers();
 
-export class Expenses {
-  private getReadExpensesQuery = ({
-    centerId
-  }: {
-    centerId: string;
-  }): QueryArgs => {
+export class CenterExpenses {
+  private getExpensesQuery({ centerId }: { centerId: string }): QueryArgs {
     return [
       `SELECT * FROM organizations_centers_expenses WHERE center_id = $1`,
       [centerId]
     ];
-  };
+  }
 
   private createExpenseQuery = ({
     centerId,
@@ -45,7 +41,7 @@ export class Expenses {
     [centerId, id]
   ];
 
-  private updateExpensesQuery = ({
+  private updateExpenseQuery = ({
     centerId,
     month,
     year,
@@ -58,7 +54,7 @@ export class Expenses {
     [month, year, expense, amount, isRecurring, centerId, id]
   ];
 
-  private totalExpenseQuery = ({
+  private getTotalExpensesQuery = ({
     centerId
   }: {
     centerId: string;
@@ -67,7 +63,7 @@ export class Expenses {
     [centerId]
   ];
 
-  private totalExpensePaidQuery = ({
+  private getTotalExpensesPaidQuery = ({
     centerId
   }: {
     centerId: string;
@@ -83,7 +79,7 @@ export class Expenses {
   private async getCenterExpensesQuery(
     centerId: string
   ): Promise<CenterExpense[]> {
-    const [query, values] = this.getReadExpensesQuery({ centerId });
+    const [query, values] = this.getExpensesQuery({ centerId });
     const result = await dbClient.query(query, values);
     return result.rows.map((row) => ({
       id: row.id,
@@ -123,7 +119,7 @@ export class Expenses {
     }
   }
 
-  async createCenterExpenses(
+  async createCenterExpense(
     request: Request,
     response: Response
   ): Promise<void> {
@@ -147,7 +143,7 @@ export class Expenses {
     }
   }
 
-  async deleteCenterExpenses(
+  async deleteCenterExpense(
     request: Request,
     response: Response
   ): Promise<void> {
@@ -178,7 +174,7 @@ export class Expenses {
     })
   };
 
-  async updateCenterExpenses(
+  async updateCenterExpense(
     request: Request,
     response: Response
   ): Promise<void> {
@@ -197,7 +193,7 @@ export class Expenses {
     );
 
     try {
-      const [query, values] = this.updateExpensesQuery({
+      const [query, values] = this.updateExpenseQuery({
         centerId: center_id,
         month,
         year,
@@ -231,27 +227,27 @@ export class Expenses {
     const { center_id } = request.params;
     try {
       dbClient.withClient(async (client) => {
-        const [query, values] = this.totalExpenseQuery({
+        const [query, values] = this.getTotalExpensesQuery({
           centerId: center_id
         });
-        const totalExpense = await client.query(query, values);
+        const totalExpenses = await client.query(query, values);
 
-        const [expensePaidQuery, expensePaidValues] =
-          this.totalExpensePaidQuery({
+        const [expensesPaidQuery, expensesPaidValues] =
+          this.getTotalExpensesPaidQuery({
             centerId: center_id
           });
-        const totalExpensePaid = await client.query(
-          expensePaidQuery,
-          expensePaidValues
+        const totalExpensesPaid = await client.query(
+          expensesPaidQuery,
+          expensesPaidValues
         );
 
-        const totalExpenseSum = totalExpense.rows[0].sum || 0;
-        const totalExpensePaidSum = totalExpensePaid.rows[0].sum || 0;
-        const balance = totalExpensePaidSum - totalExpenseSum;
+        const totalExpensesSum = totalExpenses.rows[0].sum || 0;
+        const totalExpensesPaidSum = totalExpensesPaid.rows[0].sum || 0;
+        const balance = totalExpensesPaidSum - totalExpensesSum;
 
         response.status(200).json({
-          totalExpense: totalExpenseSum,
-          totalExpensePaid: totalExpensePaidSum,
+          totalExpenses: totalExpensesSum,
+          totalExpensesPaid: totalExpensesPaidSum,
           balance
         });
       });

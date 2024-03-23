@@ -1,4 +1,4 @@
-export default interface CenterExpensesPaid {
+export default interface CenterExpensePaid {
   id: string;
   amount: number;
   month: number;

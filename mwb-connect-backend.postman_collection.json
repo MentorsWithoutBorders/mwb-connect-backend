@@ -63,7 +63,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"name\": \"Student 5\",\n    \"email\": \"s5@test.fake\",\n    \"password\": \"123456\",\n    \"timeZone\": {\n        \"abbreviation\": \"EEST\",\n        \"name\": \"Europe/Bucharest\",\n        \"offset\": \"3:00\"\n    }\n}",
+							"raw": "{\n    \"name\": \"Mentor 4\",\n    \"email\": \"m4@test.fake\",\n    \"password\": \"123456\",\n    \"timeZone\": {\n        \"abbreviation\": \"EEST\",\n        \"name\": \"Europe/Bucharest\",\n        \"offset\": \"3:00\"\n    }\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -1561,13 +1561,13 @@
 							}
 						},
 						"url": {
-							"raw": "{{url}}/courses/17ce0e5d-01b7-44ed-9baf-2afaaff278ff/join",
+							"raw": "{{url}}/courses/61836523-40ce-4044-b071-e0e2b3eced09/join",
 							"host": [
 								"{{url}}"
 							],
 							"path": [
 								"courses",
-								"17ce0e5d-01b7-44ed-9baf-2afaaff278ff",
+								"61836523-40ce-4044-b071-e0e2b3eced09",
 								"join"
 							]
 						}
@@ -3571,9 +3571,14 @@
 						}
 					},
 					"response": []
-				},
+				}
+			]
+		},
+		{
+			"name": "Organizations centers",
+			"item": [
 				{
-					"name": "organizations/centers",
+					"name": "centers",
 					"protocolProfileBehavior": {
 						"disableBodyPruning": true
 					},
@@ -3603,6 +3608,281 @@
 								"organizations",
 								"d0b45a28-3640-4867-ad68-faf1c09b3983",
 								"centers"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "centers/:id/expenses",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{url}}/centers/48d0872b-9963-4af0-857b-fe64228f615e/expenses",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"centers",
+								"48d0872b-9963-4af0-857b-fe64228f615e",
+								"expenses"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "centers/:id/expenses/paid",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{url}}/centers/48d0872b-9963-4af0-857b-fe64228f615e/expenses/paid?month=1&year=2024",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"centers",
+								"48d0872b-9963-4af0-857b-fe64228f615e",
+								"expenses",
+								"paid"
+							],
+							"query": [
+								{
+									"key": "month",
+									"value": "1"
+								},
+								{
+									"key": "year",
+									"value": "2024"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "centers/:id/expenses/balance",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{url}}/centers/48d0872b-9963-4af0-857b-fe64228f615e/expenses/balance",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"centers",
+								"48d0872b-9963-4af0-857b-fe64228f615e",
+								"expenses",
+								"balance"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "centers/:id/expenses/paid",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PATCH",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"month\": 1,\n    \"year\": 2024,\n    \"amount\": 130\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}/centers/48d0872b-9963-4af0-857b-fe64228f615e/expenses/paid",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"centers",
+								"48d0872b-9963-4af0-857b-fe64228f615e",
+								"expenses",
+								"paid"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "centers/:id/expenses",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"month\": 3,\n    \"year\": 2024,\n    \"expense\": \"Rent\",\n    \"amount\": 120,\n    \"isRecurring\": true\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}/centers/48d0872b-9963-4af0-857b-fe64228f615e/expenses",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"centers",
+								"48d0872b-9963-4af0-857b-fe64228f615e",
+								"expenses"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "centers/:id/expenses/:id",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PATCH",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"month\": 4,\n    \"year\": 2024,\n    \"amount\": 130,\n    \"isRecurring\": true\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}/centers/48d0872b-9963-4af0-857b-fe64228f615e/expenses/6a02788c-7b82-462a-9662-40493d647cda",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"centers",
+								"48d0872b-9963-4af0-857b-fe64228f615e",
+								"expenses",
+								"6a02788c-7b82-462a-9662-40493d647cda"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "centers/:id/expenses/:id",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}/centers/48d0872b-9963-4af0-857b-fe64228f615e/expenses/cc783427-3128-4cda-905b-028a147c0553",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"centers",
+								"48d0872b-9963-4af0-857b-fe64228f615e",
+								"expenses",
+								"cc783427-3128-4cda-905b-028a147c0553"
 							]
 						}
 					},
@@ -5486,7 +5766,45 @@
 					"response": []
 				},
 				{
-					"name": "id/certificate_sent",
+					"name": "admin/students_certificates/create",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}/admin/students_certificates/create",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"admin",
+								"students_certificates",
+								"create"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "admin/students_certificates/create",
 					"request": {
 						"auth": {
 							"type": "bearer",
@@ -5530,7 +5848,7 @@
 			"name": "Partners",
 			"item": [
 				{
-					"name": "partners/id/mentors",
+					"name": "partners/:id/mentors",
 					"request": {
 						"auth": {
 							"type": "bearer",
@@ -5559,7 +5877,36 @@
 					"response": []
 				},
 				{
-					"name": "partners/id/mentors/stats",
+					"name": "partners/:id/students",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{url}}/partners/82360ca6-ce95-45f6-a0e3-1c846ee5616b/students",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"partners",
+								"82360ca6-ce95-45f6-a0e3-1c846ee5616b",
+								"students"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "partners/:id/mentors/stats",
 					"request": {
 						"auth": {
 							"type": "bearer",
@@ -5589,7 +5936,7 @@
 					"response": []
 				},
 				{
-					"name": "partners/id/projects",
+					"name": "partners/:id/projects",
 					"request": {
 						"auth": {
 							"type": "bearer",
@@ -5604,13 +5951,51 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{url}}/partners/d4a4f7c2-3257-40c3-8ea7-771a83355990/projects",
+							"raw": "{{url}}/partners/82360ca6-ce95-45f6-a0e3-1c846ee5616b/projects",
 							"host": [
 								"{{url}}"
 							],
 							"path": [
 								"partners",
-								"d4a4f7c2-3257-40c3-8ea7-771a83355990",
+								"82360ca6-ce95-45f6-a0e3-1c846ee5616b",
+								"projects"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "partners/:id/projects",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Project X\",\n    \"startDate\": \"03-05-2024\",\n    \"duration\": 3\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}/partners/82360ca6-ce95-45f6-a0e3-1c846ee5616b/projects",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"partners",
+								"82360ca6-ce95-45f6-a0e3-1c846ee5616b",
 								"projects"
 							]
 						}
@@ -5745,13 +6130,13 @@
 							}
 						},
 						"url": {
-							"raw": "{{url}}/test/d4c98320-22ee-4b77-9c2f-81337b94e885/send_push_notification",
+							"raw": "{{url}}/test/37df213d-cce3-406d-b453-854df7273ccb/send_push_notification",
 							"host": [
 								"{{url}}"
 							],
 							"path": [
 								"test",
-								"d4c98320-22ee-4b77-9c2f-81337b94e885",
+								"37df213d-cce3-406d-b453-854df7273ccb",
 								"send_push_notification"
 							]
 						}
