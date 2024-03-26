@@ -1,9 +1,14 @@
-import User from "../../src/models/user.model";
+import User from '../../src/models/user.model';
 
 declare global {
   namespace Express {
     interface Request {
-      user: Pick<User, "id"> & { orgId?: string };
+      user: UserType;
     }
   }
 }
+
+type UserType = Pick<
+  User,
+  'id' | 'isOrgManager' | 'isAdmin' | 'isCenterManager'
+> & { orgId?: string };

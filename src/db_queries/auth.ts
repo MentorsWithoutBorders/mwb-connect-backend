@@ -250,15 +250,33 @@ export class Auth {
     }
     try {
       const decoded = await jwt.verify(token, process.env.JWT_SECRET_KEY as string) as Token;
-      const getUsersQuery = 'SELECT id, organization_id FROM users WHERE id = $1';
+      const getUsersQuery = `
+        SELECT 
+          u.id, 
+          u.organization_id, 
+          ap.is_org_manager,
+          ap.is_center_manager,
+          ap.is_admin 
+        FROM 
+          users u
+        LEFT JOIN
+          admin_permissions ap ON u.id = ap.user_id
+        WHERE 
+          u.id = $1`;
       const { rows }: pg.QueryResult = await pool.query(getUsersQuery, [decoded.userId]);
       if (!rows[0]) {
         response.status(401).send({'message': 'The token you provided is invalid'});
         return ;
       }
       
-      const { id, organization_id: orgId } = rows[0];
-      request.user = { id, orgId };
+      const {
+        id,
+        organization_id: orgId,
+        is_org_manager: isOrgManager,
+        is_center_manager: isCenterManager,
+        is_admin: isAdmin
+      } = rows[0];
+      request.user = { id, orgId, isAdmin, isOrgManager, isCenterManager };
       next();
     } catch (error) {
       response.status(401).send(error);
