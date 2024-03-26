@@ -1,3 +1,5 @@
+// @ts-nocheck
+
 import { Request, Response } from 'express';
 import moment from 'moment';
 import pg from 'pg';
@@ -31,12 +33,20 @@ export class MentorsPartnershipRequests {
     helpers.autoBind(this);
   }
 
-  async getCurrentMentorPartnershipRequest(request: Request, response: Response): Promise<void> {
+  async getCurrentMentorPartnershipRequest(
+    request: Request,
+    response: Response
+  ): Promise<void> {
     const userId = request.user.id as string;
     const client = await pool.connect();
     try {
       await client.query(constants.READ_ONLY_TRANSACTION);
-      const mentorPartnershipRequest = await this.getCurrentMentorPartnershipRequestFromDB(userId, undefined, client);
+      const mentorPartnershipRequest =
+        await this.getCurrentMentorPartnershipRequestFromDB(
+          userId,
+          undefined,
+          client
+        );
       response.status(200).json(mentorPartnershipRequest);
     } catch (error) {
       response.status(400).send(error);
@@ -45,7 +55,11 @@ export class MentorsPartnershipRequests {
     }
   }
 
-  async getCurrentMentorPartnershipRequestFromDB(userId: string | undefined, mentorPartnershipRequestId: string | undefined, client: pg.PoolClient): Promise<MentorPartnershipRequest> {
+  async getCurrentMentorPartnershipRequestFromDB(
+    userId: string | undefined,
+    mentorPartnershipRequestId: string | undefined,
+    client: pg.PoolClient
+  ): Promise<MentorPartnershipRequest> {
     const getMentorPartnershipRequestQuery = `SELECT mpr.id, mpr.mentor_id, mpr.partner_mentor_id, mpr.subfield_id, mpr.partner_subfield_id, mpr.course_type_id, ct.duration AS course_duration, ct.is_with_partner, ct.index, mpr.course_utc_day_of_week, mpr.course_utc_start_time, mpr.is_canceled, mpr.is_rejected, mpr.is_expired, mpr.was_canceled_shown, mpr.was_expired_shown
       FROM mentors_partnership_requests mpr
       JOIN course_types ct
@@ -54,31 +68,52 @@ export class MentorsPartnershipRequests {
          OR mpr.mentor_id = $2
          OR mpr.partner_mentor_id = $2
       ORDER BY mpr.sent_date_time DESC LIMIT 1`;
-    const { rows }: pg.QueryResult = await client.query(getMentorPartnershipRequestQuery, [mentorPartnershipRequestId, userId]);
-		const allFields = await fields.getFieldsFromDB(client);
+    const { rows }: pg.QueryResult = await client.query(
+      getMentorPartnershipRequestQuery,
+      [mentorPartnershipRequestId, userId]
+    );
+    const allFields = await fields.getFieldsFromDB(client);
     let mentorPartnershipRequest: MentorPartnershipRequest = {};
     if (rows[0]) {
       const mentor = await users.getUserFromDB(rows[0].mentor_id, client);
       const mentorSubfields = mentor?.field?.subfields;
-			const courseField = allFields.find(field => field.subfields?.find(subfield => subfield.id == rows[0].subfield_id));
+      const courseField = allFields.find((field) =>
+        field.subfields?.find((subfield) => subfield.id == rows[0].subfield_id)
+      );
       if (mentor && mentor.field && courseField) {
-        mentor.field.subfields = mentorSubfields?.filter(subfield => subfield.id == rows[0].subfield_id);
-				if (!mentor.field.subfields || mentor.field.subfields.length == 0) {
-					mentor.field = {...courseField};
-					mentor.field.subfields = mentor.field.subfields?.filter(subfield => subfield.id == rows[0].subfield_id);						
-					mentor.field.subfields?.forEach(subfield => subfield.skills = []);
-				}				
+        mentor.field.subfields = mentorSubfields?.filter(
+          (subfield) => subfield.id == rows[0].subfield_id
+        );
+        if (!mentor.field.subfields || mentor.field.subfields.length == 0) {
+          mentor.field = { ...courseField };
+          mentor.field.subfields = mentor.field.subfields?.filter(
+            (subfield) => subfield.id == rows[0].subfield_id
+          );
+          mentor.field.subfields?.forEach((subfield) => (subfield.skills = []));
+        }
       }
-      const partnerMentor = await users.getUserFromDB(rows[0].partner_mentor_id, client);
+      const partnerMentor = await users.getUserFromDB(
+        rows[0].partner_mentor_id,
+        client
+      );
       const partnerMentorSubfields = partnerMentor?.field?.subfields;
       if (partnerMentor && partnerMentor.field && courseField) {
-        partnerMentor.field.subfields = partnerMentorSubfields?.filter(subfield => subfield.id == rows[0].partner_subfield_id);
-				if (!partnerMentor.field.subfields || partnerMentor.field.subfields.length == 0) {
-					partnerMentor.field = {...courseField};
-					partnerMentor.field.subfields = partnerMentor.field.subfields?.filter(subfield => subfield.id == rows[0].partner_subfield_id);						
-					partnerMentor.field.subfields?.forEach(subfield => subfield.skills = []);
-				}					
-      }          
+        partnerMentor.field.subfields = partnerMentorSubfields?.filter(
+          (subfield) => subfield.id == rows[0].partner_subfield_id
+        );
+        if (
+          !partnerMentor.field.subfields ||
+          partnerMentor.field.subfields.length == 0
+        ) {
+          partnerMentor.field = { ...courseField };
+          partnerMentor.field.subfields = partnerMentor.field.subfields?.filter(
+            (subfield) => subfield.id == rows[0].partner_subfield_id
+          );
+          partnerMentor.field.subfields?.forEach(
+            (subfield) => (subfield.skills = [])
+          );
+        }
+      }
       const courseType: CourseType = {
         id: rows[0].course_type_id,
         duration: rows[0].course_duration,
@@ -91,20 +126,33 @@ export class MentorsPartnershipRequests {
         partnerMentor: partnerMentor,
         courseType: courseType,
         courseDayOfWeek: rows[0].course_utc_day_of_week,
-        courseStartTime: moment(rows[0].course_utc_start_time, 'HH:mm').format('h:mma'),
-        sentDateTime: moment.utc(rows[0].sent_date_time).format(constants.DATE_TIME_FORMAT),
+        courseStartTime: moment(rows[0].course_utc_start_time, 'HH:mm').format(
+          'h:mma'
+        ),
+        sentDateTime: moment
+          .utc(rows[0].sent_date_time)
+          .format(constants.DATE_TIME_FORMAT),
         isRejected: rows[0].is_rejected,
         isCanceled: rows[0].is_canceled,
         isExpired: rows[0].is_expired,
         wasCanceledShown: rows[0].was_canceled_shown,
         wasExpiredShown: rows[0].was_expired_shown
-      }
+      };
     }
     return mentorPartnershipRequest;
   }
-  
-  async sendMentorPartnershipRequest(request: Request, response: Response): Promise<void> {
-    const { mentor, partnerMentor, courseType, courseDayOfWeek, courseStartTime }: MentorPartnershipRequest = request.body;
+
+  async sendMentorPartnershipRequest(
+    request: Request,
+    response: Response
+  ): Promise<void> {
+    const {
+      mentor,
+      partnerMentor,
+      courseType,
+      courseDayOfWeek,
+      courseStartTime
+    }: MentorPartnershipRequest = request.body;
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
@@ -115,13 +163,27 @@ export class MentorsPartnershipRequests {
         courseDayOfWeek: courseDayOfWeek,
         courseStartTime: courseStartTime
       };
-      mentorPartnershipRequest = await this.sendMentorPartnershipRequestFromDB(mentorPartnershipRequest, client);
-      await mentorsWaitingRequests.deleteMentorWaitingRequest(mentor?.id as string, client);
-      await mentorsWaitingRequests.deleteMentorWaitingRequest(partnerMentor?.id as string, client);
+      mentorPartnershipRequest = await this.sendMentorPartnershipRequestFromDB(
+        mentorPartnershipRequest,
+        client
+      );
+      await mentorsWaitingRequests.deleteMentorWaitingRequest(
+        mentor?.id as string,
+        client
+      );
+      await mentorsWaitingRequests.deleteMentorWaitingRequest(
+        partnerMentor?.id as string,
+        client
+      );
       await client.query('COMMIT');
       response.status(200).send(mentorPartnershipRequest);
-      usersPushNotifications.sendPNMentorPartnershipRequest(mentorPartnershipRequest);
-      await usersSendEmails.sendEmailMentorPartnershipRequest(mentorPartnershipRequest, client);
+      usersPushNotifications.sendPNMentorPartnershipRequest(
+        mentorPartnershipRequest
+      );
+      await usersSendEmails.sendEmailMentorPartnershipRequest(
+        mentorPartnershipRequest,
+        client
+      );
     } catch (error) {
       await client.query('ROLLBACK');
       response.status(400).send(error);
@@ -130,16 +192,23 @@ export class MentorsPartnershipRequests {
     }
   }
 
-  async sendMentorPartnershipRequestFromDB(mentorPartnershipRequest: MentorPartnershipRequest, client: pg.PoolClient): Promise<MentorPartnershipRequest> {
+  async sendMentorPartnershipRequestFromDB(
+    mentorPartnershipRequest: MentorPartnershipRequest,
+    client: pg.PoolClient
+  ): Promise<MentorPartnershipRequest> {
     const mentor = mentorPartnershipRequest.mentor;
     const partnerMentor = mentorPartnershipRequest.partnerMentor;
     const courseType = mentorPartnershipRequest.courseType;
     const courseDayOfWeek = mentorPartnershipRequest.courseDayOfWeek;
     const courseStartTime = mentorPartnershipRequest.courseStartTime;
     const mentorSubfields = mentor?.field?.subfields;
-    const mentorSubfield = mentorSubfields && mentorSubfields.length > 0 ? mentorSubfields[0] : {};
+    const mentorSubfield =
+      mentorSubfields && mentorSubfields.length > 0 ? mentorSubfields[0] : {};
     const partnerMentorSubfields = partnerMentor?.field?.subfields;
-    const partnerMentorSubfield = partnerMentorSubfields && partnerMentorSubfields.length > 0 ? partnerMentorSubfields[0] : {};
+    const partnerMentorSubfield =
+      partnerMentorSubfields && partnerMentorSubfields.length > 0
+        ? partnerMentorSubfields[0]
+        : {};
     const insertMentorPartnershipRequestQuery = `INSERT INTO mentors_partnership_requests 
       (mentor_id, partner_mentor_id, subfield_id, partner_subfield_id, course_type_id, course_utc_day_of_week, course_utc_start_time, sent_date_time) 
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`;
@@ -153,43 +222,83 @@ export class MentorsPartnershipRequests {
       moment(courseStartTime, 'h:mma').format('HH:mm'),
       moment.utc().format(constants.DATE_TIME_FORMAT)
     ];
-    const { rows }: pg.QueryResult = await client.query(insertMentorPartnershipRequestQuery, values);
-    mentorPartnershipRequest.partnerMentor = await users.getUserFromDB(rows[0].partner_mentor_id, client);
+    const { rows }: pg.QueryResult = await client.query(
+      insertMentorPartnershipRequestQuery,
+      values
+    );
+    mentorPartnershipRequest.partnerMentor = await users.getUserFromDB(
+      rows[0].partner_mentor_id,
+      client
+    );
     mentorPartnershipRequest.partnerMentor.field = partnerMentor?.field;
     mentorPartnershipRequest.id = rows[0].id;
-    mentorPartnershipRequest.sentDateTime = moment.utc(rows[0].sent_date_time).format(constants.DATE_TIME_FORMAT);
+    mentorPartnershipRequest.sentDateTime = moment
+      .utc(rows[0].sent_date_time)
+      .format(constants.DATE_TIME_FORMAT);
     return mentorPartnershipRequest;
   }
 
-  async acceptMentorPartnershipRequest(request: Request, response: Response): Promise<void> {
+  async acceptMentorPartnershipRequest(
+    request: Request,
+    response: Response
+  ): Promise<void> {
     const mentorPartnershipRequestId = request.params.id;
-    const { meetingUrl }: CourseMentor = request.body
+    const { meetingUrl }: CourseMentor = request.body;
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
-      const mentorPartnershipRequest = await this.getCurrentMentorPartnershipRequestFromDB(undefined, mentorPartnershipRequestId, client);
+      const mentorPartnershipRequest =
+        await this.getCurrentMentorPartnershipRequestFromDB(
+          undefined,
+          mentorPartnershipRequestId,
+          client
+        );
       let course: Course = {};
-      if (!mentorPartnershipRequest.isCanceled && !mentorPartnershipRequest.isExpired) {
+      if (
+        !mentorPartnershipRequest.isCanceled &&
+        !mentorPartnershipRequest.isExpired
+      ) {
         const courseType = mentorPartnershipRequest?.courseType;
-        const partnerMentor = mentorPartnershipRequest?.partnerMentor as CourseMentor;
+        const partnerMentor =
+          mentorPartnershipRequest?.partnerMentor as CourseMentor;
         partnerMentor.meetingUrl = meetingUrl;
-        const mentors = [mentorPartnershipRequest?.mentor as CourseMentor, partnerMentor];
+        const mentors = [
+          mentorPartnershipRequest?.mentor as CourseMentor,
+          partnerMentor
+        ];
         let courseStartDateTime = moment.utc().add(2, 'd');
-        while (courseStartDateTime.format(constants.DAY_OF_WEEK_FORMAT) != mentorPartnershipRequest.courseDayOfWeek) {
+        while (
+          courseStartDateTime.format(constants.DAY_OF_WEEK_FORMAT) !=
+          mentorPartnershipRequest.courseDayOfWeek
+        ) {
           courseStartDateTime = courseStartDateTime.add(1, 'd');
         }
-        const hours = moment(mentorPartnershipRequest.courseStartTime, ['h:mma']).format("HH");
-        const minutes = moment(mentorPartnershipRequest.courseStartTime, ['h:mma']).format("mm");
-        courseStartDateTime = courseStartDateTime.set('hour', parseInt(hours)).set('minute', parseInt(minutes)).set('second', 0);      
+        const hours = moment(mentorPartnershipRequest.courseStartTime, [
+          'h:mma'
+        ]).format('HH');
+        const minutes = moment(mentorPartnershipRequest.courseStartTime, [
+          'h:mma'
+        ]).format('mm');
+        courseStartDateTime = courseStartDateTime
+          .set('hour', parseInt(hours))
+          .set('minute', parseInt(minutes))
+          .set('second', 0);
         course = {
           type: courseType,
           mentors: mentors,
           startDateTime: courseStartDateTime.format(constants.DATE_TIME_FORMAT)
-        }
+        };
         course = await usersCourses.addCourseFromDB(course, client);
-        await this.deleteMentorPartnershipRequest(mentorPartnershipRequestId, client);
-				usersPushNotifications.sendPNMentorPartnershipRequestAccepted(mentorPartnershipRequest);
-				usersSendEmails.sendEmailMentorPartnershipRequestAccepted(mentorPartnershipRequest);
+        await this.deleteMentorPartnershipRequest(
+          mentorPartnershipRequestId,
+          client
+        );
+        usersPushNotifications.sendPNMentorPartnershipRequestAccepted(
+          mentorPartnershipRequest
+        );
+        usersSendEmails.sendEmailMentorPartnershipRequestAccepted(
+          mentorPartnershipRequest
+        );
       }
       await client.query('COMMIT');
       response.status(200).json(course);
@@ -201,27 +310,57 @@ export class MentorsPartnershipRequests {
     }
   }
 
-  async deleteMentorPartnershipRequest(mentorPartnershipRequestId: string, client: pg.PoolClient): Promise<void> {
-    const deleteMentorPartnershipRequestQuery = 'DELETE FROM mentors_partnership_requests WHERE id = $1';
-    await client.query(deleteMentorPartnershipRequestQuery, [mentorPartnershipRequestId]);
+  async deleteMentorPartnershipRequest(
+    mentorPartnershipRequestId: string,
+    client: pg.PoolClient
+  ): Promise<void> {
+    const deleteMentorPartnershipRequestQuery =
+      'DELETE FROM mentors_partnership_requests WHERE id = $1';
+    await client.query(deleteMentorPartnershipRequestQuery, [
+      mentorPartnershipRequestId
+    ]);
   }
-  
-  async rejectMentorPartnershipRequest(request: Request, response: Response): Promise<void> {
+
+  async rejectMentorPartnershipRequest(
+    request: Request,
+    response: Response
+  ): Promise<void> {
     const mentorPartnershipRequestId = request.params.id;
     const { text }: InAppMessage = request.body;
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
-      const mentorPartnershipRequest = await this.getCurrentMentorPartnershipRequestFromDB(undefined, mentorPartnershipRequestId, client);
+      const mentorPartnershipRequest =
+        await this.getCurrentMentorPartnershipRequestFromDB(
+          undefined,
+          mentorPartnershipRequestId,
+          client
+        );
       if (!mentorPartnershipRequest.isCanceled) {
-        const updateMentorPartnershipRequestQuery = 'UPDATE mentors_partnership_requests SET is_rejected = true WHERE id = $1';
-        await client.query(updateMentorPartnershipRequestQuery, [mentorPartnershipRequestId]);
-        await mentorsWaitingRequests.addMentorWaitingRequestFromDB(mentorPartnershipRequest.partnerMentor?.id as string, mentorPartnershipRequest.courseType?.id as string, client);
-        usersPushNotifications.sendPNMentorPartnershipRequestRejected(mentorPartnershipRequest);
-        usersSendEmails.sendEmailMentorPartnershipRequestRejected(mentorPartnershipRequest, text);
+        const updateMentorPartnershipRequestQuery =
+          'UPDATE mentors_partnership_requests SET is_rejected = true WHERE id = $1';
+        await client.query(updateMentorPartnershipRequestQuery, [
+          mentorPartnershipRequestId
+        ]);
+        await mentorsWaitingRequests.addMentorWaitingRequestFromDB(
+          mentorPartnershipRequest.partnerMentor?.id as string,
+          mentorPartnershipRequest.courseType?.id as string,
+          client
+        );
+        usersPushNotifications.sendPNMentorPartnershipRequestRejected(
+          mentorPartnershipRequest
+        );
+        usersSendEmails.sendEmailMentorPartnershipRequestRejected(
+          mentorPartnershipRequest,
+          text
+        );
       }
       await client.query('COMMIT');
-      response.status(200).send(`Mentor partnership request modified with ID: ${mentorPartnershipRequestId}`);
+      response
+        .status(200)
+        .send(
+          `Mentor partnership request modified with ID: ${mentorPartnershipRequestId}`
+        );
     } catch (error) {
       await client.query('ROLLBACK');
       response.status(400).send(error);
@@ -230,17 +369,36 @@ export class MentorsPartnershipRequests {
     }
   }
 
-  async cancelMentorPartnershipRequest(request: Request, response: Response): Promise<void> {
+  async cancelMentorPartnershipRequest(
+    request: Request,
+    response: Response
+  ): Promise<void> {
     const mentorPartnershipRequestId = request.params.id;
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
-      const mentorPartnershipRequest = await this.getCurrentMentorPartnershipRequestFromDB(undefined, mentorPartnershipRequestId, client);
-      const updateMentorPartnershipRequestQuery = 'UPDATE mentors_partnership_requests SET is_canceled = true WHERE id = $1';
-      await client.query(updateMentorPartnershipRequestQuery, [mentorPartnershipRequestId]);
-      await mentorsWaitingRequests.addMentorWaitingRequestFromDB(mentorPartnershipRequest.partnerMentor?.id as string, mentorPartnershipRequest.courseType?.id as string, client);
+      const mentorPartnershipRequest =
+        await this.getCurrentMentorPartnershipRequestFromDB(
+          undefined,
+          mentorPartnershipRequestId,
+          client
+        );
+      const updateMentorPartnershipRequestQuery =
+        'UPDATE mentors_partnership_requests SET is_canceled = true WHERE id = $1';
+      await client.query(updateMentorPartnershipRequestQuery, [
+        mentorPartnershipRequestId
+      ]);
+      await mentorsWaitingRequests.addMentorWaitingRequestFromDB(
+        mentorPartnershipRequest.partnerMentor?.id as string,
+        mentorPartnershipRequest.courseType?.id as string,
+        client
+      );
       await client.query('COMMIT');
-      response.status(200).send(`Mentor partnership request modified with ID: ${mentorPartnershipRequestId}`);
+      response
+        .status(200)
+        .send(
+          `Mentor partnership request modified with ID: ${mentorPartnershipRequestId}`
+        );
     } catch (error) {
       await client.query('ROLLBACK');
       response.status(400).send(error);
@@ -249,17 +407,28 @@ export class MentorsPartnershipRequests {
     }
   }
 
-  async updateMentorPartnershipRequest(request: Request, response: Response): Promise<void> {
+  async updateMentorPartnershipRequest(
+    request: Request,
+    response: Response
+  ): Promise<void> {
     const mentorPartnershipRequestId = request.params.id;
-    const { wasCanceledShown, wasExpiredShown }: MentorPartnershipRequest = request.body;
+    const { wasCanceledShown, wasExpiredShown }: MentorPartnershipRequest =
+      request.body;
     try {
       const updateMentorPartnershipRequestQuery = `UPDATE mentors_partnership_requests SET was_canceled_shown = $1, was_expired_shown = $2
         WHERE id = $3`;
-      await pool.query(updateMentorPartnershipRequestQuery, [wasCanceledShown, wasExpiredShown, mentorPartnershipRequestId]);
-      response.status(200).send(`Mentor partnership request modified with ID: ${mentorPartnershipRequestId}`);
+      await pool.query(updateMentorPartnershipRequestQuery, [
+        wasCanceledShown,
+        wasExpiredShown,
+        mentorPartnershipRequestId
+      ]);
+      response
+        .status(200)
+        .send(
+          `Mentor partnership request modified with ID: ${mentorPartnershipRequestId}`
+        );
     } catch (error) {
       response.status(400).send(error);
     }
   }
 }
-

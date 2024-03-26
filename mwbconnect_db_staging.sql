@@ -1,10 +1,10 @@
 -- -------------------------------------------------------------
--- TablePlus 5.8.4(532)
+-- TablePlus 5.4.2(506)
 --
 -- https://tableplus.com/
 --
 -- Database: mwbconnect_db
--- Generation Time: 2024-02-08 19:25:02.7610
+-- Generation Time: 2023-10-15 00:01:39.7390
 -- -------------------------------------------------------------
 
 
@@ -49,7 +49,7 @@ CREATE TABLE "public"."admin_permissions" (
     "user_id" uuid NOT NULL,
     "is_mentor" bool,
     "is_org_manager" bool,
-    "is_center_manager" bool,
+    "is_centre_manager" bool,
     "is_admin" bool,
     PRIMARY KEY ("id")
 );
@@ -110,7 +110,7 @@ CREATE TABLE "public"."approved_users" (
     "organization_id" uuid NOT NULL,
     "is_mentor" bool,
     "is_org_manager" bool,
-    "is_center_manager" bool,
+    "is_centre_manager" bool,
     "goal" varchar(255),
     PRIMARY KEY ("id")
 );
@@ -252,45 +252,17 @@ CREATE TABLE "public"."organizations" (
     "name" varchar(255) NOT NULL,
     "country" varchar(255),
     "has_mentors" bool,
-    "manager_id" uuid,
     PRIMARY KEY ("id")
 );
 
 -- This script only contains the table creation statements and does not fully represent the table in the database. It's still missing: indices, triggers. Do not use it as a backup.
 
 -- Table Definition
-CREATE TABLE "public"."organizations_centers" (
+CREATE TABLE "public"."organizations_centres" (
     "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
     "name" varchar NOT NULL,
     "address" text NOT NULL,
     "organization_id" uuid NOT NULL,
-    "manager_id" uuid,
-    PRIMARY KEY ("id")
-);
-
--- This script only contains the table creation statements and does not fully represent the table in the database. It's still missing: indices, triggers. Do not use it as a backup.
-
--- Table Definition
-CREATE TABLE "public"."organizations_centers_expenses" (
-    "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
-    "expense" varchar NOT NULL,
-    "amount" float8 NOT NULL,
-    "month" int2 NOT NULL,
-    "year" int4 NOT NULL,
-    "is_recurring" bool,
-    "center_id" uuid NOT NULL,
-    PRIMARY KEY ("id")
-);
-
--- This script only contains the table creation statements and does not fully represent the table in the database. It's still missing: indices, triggers. Do not use it as a backup.
-
--- Table Definition
-CREATE TABLE "public"."organizations_centers_expenses_paid" (
-    "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
-    "amount" float8 NOT NULL,
-    "month" int2 NOT NULL,
-    "year" int4 NOT NULL,
-    "center_id" uuid NOT NULL,
     PRIMARY KEY ("id")
 );
 
@@ -808,7 +780,7 @@ CREATE TABLE "public"."users_timezones" (
 INSERT INTO "public"."admin_available_users" ("id", "user_id", "should_contact", "last_contacted_date_time", "is_inactive") VALUES
 ('a6b7307d-2ee0-472d-a243-be296fee98bd', 'dfffbad3-0cad-493e-a66d-cf3161616323', 't', '2021-11-29 12:17:49+00', NULL);
 
-INSERT INTO "public"."admin_permissions" ("id", "user_id", "is_mentor", "is_org_manager", "is_center_manager", "is_admin") VALUES
+INSERT INTO "public"."admin_permissions" ("id", "user_id", "is_mentor", "is_org_manager", "is_centre_manager", "is_admin") VALUES
 ('0de8a621-8576-43fe-ac64-0bc2e3a03116', 'a67df461-e05b-42fc-ba70-1e79a8a25a40', 't', 't', 't', 'f'),
 ('1007bbdc-cc3d-4572-a117-814d47fa0bb1', '16648dec-350e-4091-8256-9b78788a4a90', 'f', 'f', 'f', 'f'),
 ('38727fe7-649e-47e8-b3d1-76a38663a925', 'd4c98320-22ee-4b77-9c2f-81337b94e885', 't', 'f', 'f', 'f'),
@@ -825,18 +797,18 @@ INSERT INTO "public"."admin_permissions" ("id", "user_id", "is_mentor", "is_org_
 ('d32f93a6-7293-4ac2-a64d-b34e4a8c4042', 'b2e9059b-fb54-41d6-ae28-18162073787a', 't', 'f', 'f', 'f');
 
 INSERT INTO "public"."admin_training_reminders" ("id", "user_id", "is_step_added", "remaining_quizzes", "last_reminder_date_time", "reminder_to_send", "last_contacted_date_time") VALUES
-('306f9c8c-57a7-4d96-8eb8-2fa8d5e8bf12', '24f7f19c-5262-45bb-8ab5-bae9df67ab66', 't', 12, '2024-02-04 19:00:01+00', 's1', NULL),
-('44037c81-af2a-4dd6-94ed-8d865d765a24', '7af316a9-ce4b-4036-9b9e-d7f127b6b252', 't', 12, '2024-02-04 19:00:00+00', 's1', NULL),
-('4d3f7fa1-7494-4856-a49b-47943d1b8530', '16648dec-350e-4091-8256-9b78788a4a90', 't', 12, '2024-02-04 19:00:01+00', 's1', NULL),
+('306f9c8c-57a7-4d96-8eb8-2fa8d5e8bf12', '24f7f19c-5262-45bb-8ab5-bae9df67ab66', 'f', 3, '2023-10-08 18:00:00+00', 's1', NULL),
+('44037c81-af2a-4dd6-94ed-8d865d765a24', '7af316a9-ce4b-4036-9b9e-d7f127b6b252', 't', 12, '2023-10-08 18:00:00+00', 's1', NULL),
+('4d3f7fa1-7494-4856-a49b-47943d1b8530', '16648dec-350e-4091-8256-9b78788a4a90', 't', 12, '2023-10-08 18:00:00+00', 's1', NULL),
 ('51e3a656-868e-44a3-b82e-1715d06f592b', 'a67df461-e05b-42fc-ba70-1e79a8a25a40', 'f', 3, '2023-07-23 15:30:00+00', 'm1', NULL),
-('59778ea9-b0ea-41ab-8448-f9a2e7b5bf6c', '063842ae-799b-4171-990f-397029d2647f', 't', 12, '2024-02-02 19:02:00+00', 's1', NULL),
+('59778ea9-b0ea-41ab-8448-f9a2e7b5bf6c', '063842ae-799b-4171-990f-397029d2647f', 't', 12, '2023-10-13 18:02:00+00', 's1', NULL),
 ('8ee09250-72f4-45f8-9a33-09bea75524c6', 'd4c98320-22ee-4b77-9c2f-81337b94e885', 't', 0, '2021-12-19 19:50:00+00', 'm1', NULL),
 ('b56c97a3-6260-4f7c-ac99-3a3adbc5467f', 'd8827495-376a-4bf1-93f5-6f93e1b38453', 'f', 3, '2023-07-23 15:30:00+00', 'm1', NULL),
 ('b7565cd5-aa05-4e2e-9434-9727ff4d5c0e', 'b2e9059b-fb54-41d6-ae28-18162073787a', 'f', 3, '2023-05-07 18:10:00+00', 'm1', NULL),
-('bd8ca0b2-e3fd-4bbe-a4d0-29e7efc09325', '04e7ec49-bfbe-425b-8c58-e4f1f60e1735', 't', 12, '2024-01-30 18:00:00+00', 's1', NULL),
+('bd8ca0b2-e3fd-4bbe-a4d0-29e7efc09325', '04e7ec49-bfbe-425b-8c58-e4f1f60e1735', 't', 12, '2023-10-10 17:00:00+00', 's1', NULL),
 ('be9b9df8-0ce9-4196-b634-791878574220', 'eab5a0d4-3fc0-4915-8a7e-df771c9a9975', 'f', 3, '2023-05-14 18:00:00+00', 'm1', NULL),
 ('e0a57f36-0028-475e-8e4a-1156903fc85c', '9590839b-b450-40f2-b1cc-b9a677711489', 'f', 3, '2023-05-12 18:00:00+00', 'm1', NULL),
-('fbee67bc-dcec-4d42-9fc9-c3d36a526e9f', 'c9682d5f-a104-4229-b8b1-0ccfef35e5f6', 't', 12, '2024-02-02 07:34:00+00', 's1', NULL),
+('fbee67bc-dcec-4d42-9fc9-c3d36a526e9f', 'c9682d5f-a104-4229-b8b1-0ccfef35e5f6', 't', 12, '2023-10-13 06:34:00+00', 's1', NULL),
 ('fc54f11c-5aa9-420f-8c6f-c7d1275d983f', '725a0e8d-d712-4542-affb-e66a93cb16c5', 'f', 3, '2023-07-20 15:30:01+00', 'm1', NULL),
 ('fd13f1d1-0b09-4ad6-bc32-fc34d5b0961e', 'dfffbad3-0cad-493e-a66d-cf3161616323', 't', 3, '2021-12-20 19:00:00+00', 'm1', NULL);
 
@@ -892,7 +864,7 @@ In the meantime, please remember to add at least one step to your plan and solve
 <text>Please always take these email reminders into consideration because we will only be able to send you the MWB certificate on {certificate_date} if you add at least one step to your plan and solve the {weekly_quizzes} each week in the MWB Connect app.
 I''m always happy to assist if you''re experiencing any difficulties with these tasks.</text>');
 
-INSERT INTO "public"."approved_users" ("id", "name", "email", "phone_number", "field_id", "organization_id", "is_mentor", "is_org_manager", "is_center_manager", "goal") VALUES
+INSERT INTO "public"."approved_users" ("id", "name", "email", "phone_number", "field_id", "organization_id", "is_mentor", "is_org_manager", "is_centre_manager", "goal") VALUES
 ('00eaadb4-d709-4794-b177-02b519ae81dd', 'Mentor 3', 'm3@test.fake', NULL, 'b021984a-c02c-4fd4-87a7-1aec84c68d6b', 'aac344ee-6cdf-4acd-8e60-609bfbc589b7', 't', NULL, NULL, NULL),
 ('2aa1be96-7d13-42bf-ac08-131d10f2a753', 'Student 3', 's3@test.fake', NULL, 'b021984a-c02c-4fd4-87a7-1aec84c68d6b', '82360ca6-ce95-45f6-a0e3-1c846ee5616b', 'f', NULL, NULL, 'I want to work as a programmer (freelancer or in a company) and have an income of at least $1000 USD per month.'),
 ('2f7345b8-9317-49c4-8640-e1129bebb654', 'Student 2', 's2@test.fake', NULL, 'b021984a-c02c-4fd4-87a7-1aec84c68d6b', '82360ca6-ce95-45f6-a0e3-1c846ee5616b', 'f', NULL, NULL, 'I want to work as a programmer (freelancer or in a company) and have an income of at least $1000 USD per month.'),
@@ -919,7 +891,6 @@ INSERT INTO "public"."fields" ("id", "name", "index") VALUES
 ('62a9dce6-2e92-45cc-a580-035d64a65b5b', 'Other', 1),
 ('87677250-2753-47e4-9798-f25ec621ec8f', 'Product Management', 7),
 ('b021984a-c02c-4fd4-87a7-1aec84c68d6b', 'Programming', 2),
-('c8ed1af8-02cb-4117-b9e2-c65166b82f13', 'Digital Marketing', 9),
 ('c90c53f8-20dc-4260-b589-885bd79071ef', 'Design', 3),
 ('dbf77b14-96d4-48e4-b071-0c0c3be4378e', 'Customer Support', 5),
 ('fd7d7763-7fa6-49d9-9fbb-c635696ce5cc', 'Human Resources', 6);
@@ -934,26 +905,14 @@ INSERT INTO "public"."fields_goals" ("id", "field_id", "goal", "why_choose_url")
 ('e47b3f7f-49a6-43ce-a019-2cdae5a1f716', 'fd7d7763-7fa6-49d9-9fbb-c635696ce5cc', 'I want to work in human resources and have an income of at least $1000 USD per month.', 'https://www.indeed.com/career-advice/finding-a-job/why-work-in-hr');
 
 INSERT INTO "public"."fields_subfields" ("id", "field_id", "subfield_index", "subfield_id") VALUES
-('0c296e6c-6083-4820-a826-c394b6d4ab44', 'fd7d7763-7fa6-49d9-9fbb-c635696ce5cc', 4, '5703b94a-8ac1-41b7-9128-d143e801b824'),
-('1aef7212-8585-44d8-9232-260bd2a89684', 'fd7d7763-7fa6-49d9-9fbb-c635696ce5cc', 3, '2ab31243-8bbc-4794-bde2-c03bc2925c9a'),
 ('207908c6-91d0-4588-8600-44fd2e9e1f38', 'c90c53f8-20dc-4260-b589-885bd79071ef', 7, '8af48039-1517-4e1b-9e97-f9a99f3ef8b7'),
-('2d96c5e0-79a8-43a2-ab8e-31e28d146634', '87677250-2753-47e4-9798-f25ec621ec8f', 2, 'cd0f2a7d-f14b-4886-a4bd-b3a09fdd1b6b'),
-('30a9226b-8a48-4c76-896c-06b72bd2f570', 'dbf77b14-96d4-48e4-b071-0c0c3be4378e', 2, 'dd3b7dc3-d79a-40fa-91fc-2558bee8cd15'),
-('30e13f1e-4dda-4b8d-a6f7-4871bcae4ede', 'c8ed1af8-02cb-4117-b9e2-c65166b82f13', 4, 'fcd9c5a4-8f02-45d1-832a-86f5ce724d31'),
 ('463b097b-eb7a-4ac6-988e-90924e310431', '39297445-cb62-4f38-8a62-25b96dbea8ce', 2, '4c962a78-c253-440d-89e0-faf7be7187e6'),
-('53b322dc-7cf6-423f-b858-88c8295be814', 'c8ed1af8-02cb-4117-b9e2-c65166b82f13', 3, 'd9c70096-4527-426b-951a-631a6b83afef'),
-('5906789f-af66-4dca-a210-4aa9eaf27ed4', '87677250-2753-47e4-9798-f25ec621ec8f', 1, '65fdabbf-771d-4935-89e3-4bf0060836c8'),
 ('597969e4-81a6-490a-a74b-9c65213551aa', 'b021984a-c02c-4fd4-87a7-1aec84c68d6b', 8, '3691f807-90dd-4715-a74c-4ea21bd642a2'),
 ('5c49329e-ecd1-4f1d-a258-a1bc292a7928', 'c90c53f8-20dc-4260-b589-885bd79071ef', 5, '71ffadb3-4115-41c6-8599-f73ca94072d8'),
-('66853feb-0191-402e-972e-02eaf9e6141e', 'dbf77b14-96d4-48e4-b071-0c0c3be4378e', 1, '6a19a38e-bcc1-4d86-9cc3-212f8698686e'),
 ('67b01def-5ce8-4b05-a0eb-39bccfef8f10', 'b021984a-c02c-4fd4-87a7-1aec84c68d6b', 2, 'd0a76ab3-93a6-4c3c-bb80-7aad85fa071d'),
 ('6cb172a8-9ccd-4acc-b5e9-ebba82f78225', 'c90c53f8-20dc-4260-b589-885bd79071ef', 2, '1b087dc6-df78-40b7-a814-0090303038d1'),
-('87b81514-0a6f-49c2-b24f-045ad3ad8d8a', 'fd7d7763-7fa6-49d9-9fbb-c635696ce5cc', 2, '17338935-93f0-4f6f-ae5d-cbb144e4368f'),
 ('9141b62d-995c-47f6-be1f-334d091813cd', '39297445-cb62-4f38-8a62-25b96dbea8ce', 1, '51b0d446-ac2c-4c96-bd4c-a9b72fe6ba7b'),
 ('9caaf7cc-a214-4064-9aa0-f1eed3354014', 'c90c53f8-20dc-4260-b589-885bd79071ef', 6, 'b3747dcb-5bc9-49de-8e38-cce68c7a2919'),
-('a7ef1bd9-7b48-45ac-86b0-df9284e16ebe', 'fd7d7763-7fa6-49d9-9fbb-c635696ce5cc', 1, 'f31a8105-6576-4a13-a59d-e03b56362049'),
-('aa90a592-6b51-4b27-a3c3-706134702f0c', 'fd7d7763-7fa6-49d9-9fbb-c635696ce5cc', 5, 'ad7e3f3a-ebb7-4744-afca-cc1bdb81e38d'),
-('aee74ca2-085f-4860-a062-d6cd05d5d5fb', 'c8ed1af8-02cb-4117-b9e2-c65166b82f13', 1, 'c3225b3b-eea4-4c57-909f-473220e14ca4'),
 ('b0a441a1-5b96-4eaf-9522-d72082383319', 'b021984a-c02c-4fd4-87a7-1aec84c68d6b', 7, '5fcc21e1-570d-442f-9a68-ca23d12d69f4'),
 ('b4b0738a-5068-4ed2-a78b-629e6df70498', 'b021984a-c02c-4fd4-87a7-1aec84c68d6b', 5, '413c149a-ca8c-48c5-82ce-67af2c403d52'),
 ('c07cd198-35c7-48fe-b2e1-cdf25a2153ae', 'c90c53f8-20dc-4260-b589-885bd79071ef', 3, '459d9ede-24f2-4169-b22f-031001c67c6f'),
@@ -966,8 +925,7 @@ INSERT INTO "public"."fields_subfields" ("id", "field_id", "subfield_index", "su
 ('ef973760-6e4f-4134-8ba6-90aa23599bc3', 'b021984a-c02c-4fd4-87a7-1aec84c68d6b', 6, 'e9a7b096-7adc-422f-9023-f9c68190487b'),
 ('f2232eef-9bb5-4e32-b678-bef8b5f9040e', 'b021984a-c02c-4fd4-87a7-1aec84c68d6b', 3, '54857cae-a17d-43a3-abbb-c3bdf79a1dd6'),
 ('f26695d0-f880-40ae-9c6c-8338f7d11e6a', '281c2f07-b3fa-4d91-9c25-9e38524e5836', 1, 'c9df554a-c2c1-435c-bc4c-5c5ac95b60ab'),
-('f423928d-eb8a-4507-80d3-164299d6189a', 'c90c53f8-20dc-4260-b589-885bd79071ef', 4, '7b589ba7-8ca3-4875-93f6-7bc1d865383a'),
-('f52ccbd0-e0eb-4522-8359-f338da1fac76', 'c8ed1af8-02cb-4117-b9e2-c65166b82f13', 2, '6b12dced-4c8a-4cb1-90fe-7a8691e8a013');
+('f423928d-eb8a-4507-80d3-164299d6189a', 'c90c53f8-20dc-4260-b589-885bd79071ef', 4, '7b589ba7-8ca3-4875-93f6-7bc1d865383a');
 
 INSERT INTO "public"."guides_recommendations" ("id", "field_id", "subfield_id", "text") VALUES
 ('579406dc-8011-4c13-bb34-17cd8f3a08be', NULL, NULL, 'each lesson can be 1/1.5 hrs long
@@ -994,115 +952,17 @@ INSERT INTO "public"."guides_tutorials" ("id", "tutorial_url") VALUES
 ('c890bbd6-b614-48fa-a488-2ab661c9cd82', 'https://www.w3schools.com/'),
 ('dccb7a86-ed3a-45a5-8800-8c14938a3e5a', 'https://www.freecodecamp.org/');
 
-INSERT INTO "public"."logger" ("id", "user_id", "log_entry", "date_time") VALUES
-('152418e5-de02-4a87-99a0-e8e373a163f2', 'c9682d5f-a104-4229-b8b1-0ccfef35e5f6', 'connect_with_mentor_view attempt 0
-goal: null
-last step added: null
-quizzes: 
-course: null
-', '2024-01-19 21:07:16+00'),
-('22ca80f3-93f5-40b1-aebc-d627bf062654', 'c9682d5f-a104-4229-b8b1-0ccfef35e5f6', 'connect_with_mentor_view attempt 0
-goal: e3475418-46f2-43b8-b235-300913d308da
-last step added: trainingCompletedId
-quizzes: 
-course: null
-', '2024-01-19 18:39:42+00'),
-('51e417ee-8444-4e60-a651-8d67d5b97cdf', 'c9682d5f-a104-4229-b8b1-0ccfef35e5f6', 'requesting permission', '2024-01-19 21:07:16+00'),
-('54996e7c-4344-4c69-b39a-1c4e2663c9c7', 'c9682d5f-a104-4229-b8b1-0ccfef35e5f6', 'add step:
-I will attend the sessions with my mentor', '2024-01-19 21:09:05+00'),
-('5c42b441-ef4c-4f8c-b72d-0497293e3561', 'c9682d5f-a104-4229-b8b1-0ccfef35e5f6', 'requesting permission', '2024-01-19 18:09:23+00'),
-('6e373629-b2f9-4c54-9e5a-474434c8e271', 'c9682d5f-a104-4229-b8b1-0ccfef35e5f6', 'connect_with_mentor_view attempt 0
-goal: e3475418-46f2-43b8-b235-300913d308da
-last step added: trainingCompletedId
-quizzes: 
-course: null
-', '2024-01-20 20:11:07+00'),
-('77115137-f4a8-43fa-b322-92c486edf360', 'c9682d5f-a104-4229-b8b1-0ccfef35e5f6', 'add step:
-I will do the homework that I’m being assigned', '2024-01-19 21:09:26+00'),
-('777d6b73-d854-4059-9714-69e9de11543f', 'c9682d5f-a104-4229-b8b1-0ccfef35e5f6', 'connect_with_mentor_view attempt 0
-goal: null
-last step added: null
-quizzes: 
-course: null
-', '2024-01-19 18:09:23+00'),
-('7a10cd36-eb13-4109-b568-c87187b1f890', 'c9682d5f-a104-4229-b8b1-0ccfef35e5f6', 'add step:
-I will prepare my CV', '2024-01-19 21:09:34+00'),
-('7d2b5552-dacd-4d9a-9cc3-c99beedf4a99', 'c9682d5f-a104-4229-b8b1-0ccfef35e5f6', 'connect_with_mentor_view attempt 0
-goal: e3475418-46f2-43b8-b235-300913d308da
-last step added: trainingCompletedId
-quizzes: 
-course: null
-', '2024-01-19 21:07:18+00'),
-('89c0b5d1-9d61-4fe5-9983-685371553279', 'c9682d5f-a104-4229-b8b1-0ccfef35e5f6', 'requesting permission', '2024-01-20 20:11:04+00'),
-('8ff5f51c-9322-4829-a941-b886afe4b063', 'c9682d5f-a104-4229-b8b1-0ccfef35e5f6', 'connect_with_mentor_view attempt 0
-goal: e3475418-46f2-43b8-b235-300913d308da
-last step added: trainingCompletedId
-quizzes: 
-course: null
-', '2024-01-19 18:59:48+00'),
-('97e632e6-ed23-4cf1-bb0c-e29c0bfd9db5', 'c9682d5f-a104-4229-b8b1-0ccfef35e5f6', 'token added: dsvYd4SYSomUXRcLv1MRea:APA91bFJVkOK9LnK95ThbytgcoJqFQy_OyBNr8Ht62NHzdLmCuoRo9qEeRtWC0VNp8NaQ7F4w3GyQtJV6EHVFGEdECdMMT-jmuT6N3L-uP1Wb-GAHGp8c3kPJkL_b_pl62QsfbwxhHS-', '2024-01-19 18:09:25+00'),
-('9c27fba7-0eac-4dd6-a1e3-3fb4ed113ebe', 'c9682d5f-a104-4229-b8b1-0ccfef35e5f6', 'connect_with_mentor_view attempt 0
-goal: null
-last step added: null
-quizzes: 
-course: null
-', '2024-01-21 10:29:30+00'),
-('a7ca77fa-f6bb-4577-b6df-b97550566a81', 'c9682d5f-a104-4229-b8b1-0ccfef35e5f6', 'connect_with_mentor_view attempt 0
-goal: null
-last step added: null
-quizzes: 
-course: null
-', '2024-01-20 20:11:04+00'),
-('b5b3d2ca-d3bc-470f-9621-1c7626f3e125', 'c9682d5f-a104-4229-b8b1-0ccfef35e5f6', 'connect_with_mentor_view attempt 0
-goal: e3475418-46f2-43b8-b235-300913d308da
-last step added: trainingCompletedId
-quizzes: 
-course: null
-', '2024-01-19 19:01:38+00'),
-('bd34dc72-f4ba-4801-9f81-3c8180baaa3d', 'c9682d5f-a104-4229-b8b1-0ccfef35e5f6', 'connect_with_mentor_view attempt 0
-goal: e3475418-46f2-43b8-b235-300913d308da
-last step added: trainingCompletedId
-quizzes: 
-course: 61836523-40ce-4044-b071-e0e2b3eced09
-', '2024-01-19 18:25:27+00'),
-('d04b3ee7-a3f0-4ab9-8b74-fc3c3181ba78', 'c9682d5f-a104-4229-b8b1-0ccfef35e5f6', 'connect_with_mentor_view attempt 0
-goal: e3475418-46f2-43b8-b235-300913d308da
-last step added: trainingCompletedId
-quizzes: 
-course: null
-', '2024-01-19 21:08:26+00'),
-('d5461a14-0294-421e-b5a7-6e5059cba9fa', 'c9682d5f-a104-4229-b8b1-0ccfef35e5f6', 'token added: dbxOpz5ubki0qEptLGjyTk:APA91bFWipuPXBEb73hUkrDjXa2zANTdLOd0VERTW3xe4WJpZQwCQJZ7U8r9g7omfwYkN3k4bEwydlnZ0IKS1P5nM0ste6KKAFi5lnHiUMSkgnkVKbK2eKYI5cqMwVfoHP5DfDJdY9N1', '2024-01-19 21:07:16+00'),
-('db5d5564-71ab-46f9-8879-9ea88563bdb5', 'c9682d5f-a104-4229-b8b1-0ccfef35e5f6', 'token added: fwSGcJvpTED-ot-r4c7qnS:APA91bFBQPYq_RHe8aVU0tEb5uSEko4OW81vKRTdGxH6FCRufx_Q9arRy6UZBSioq8tgvW90Pg0c2JB_i_iJLdNLh4Ok5EERY3p2R5uWLK5RjWoVK4NlvfzbXGb5HO6ea5cBe9HKGmmd', '2024-01-20 20:11:07+00'),
-('f2cd25b8-18d2-4db1-9223-8b4ef7c48a89', 'c9682d5f-a104-4229-b8b1-0ccfef35e5f6', 'connect_with_mentor_view attempt 0
-goal: e3475418-46f2-43b8-b235-300913d308da
-last step added: trainingCompletedId
-quizzes: 
-course: null
-', '2024-01-19 21:08:35+00'),
-('f4c83aa6-cc72-4e45-bbba-e69f30a16800', 'c9682d5f-a104-4229-b8b1-0ccfef35e5f6', 'connect_with_mentor_view attempt 0
-goal: e3475418-46f2-43b8-b235-300913d308da
-last step added: trainingCompletedId
-quizzes: 
-course: null
-', '2024-01-19 19:02:17+00'),
-('fa6b1e40-f589-49d8-89fc-7c4cb81291b7', 'c9682d5f-a104-4229-b8b1-0ccfef35e5f6', 'connect_with_mentor_view attempt 0
-goal: e3475418-46f2-43b8-b235-300913d308da
-last step added: a7e3bb6a-51a1-4b94-8fdf-cd14f99efc4a
-quizzes: 
-course: null
-', '2024-01-19 21:11:07+00');
+INSERT INTO "public"."organizations" ("id", "name", "country", "has_mentors") VALUES
+('572f4822-bccd-4b44-b48b-1b958bf1e052', 'Literacy', 'India', 'f'),
+('82360ca6-ce95-45f6-a0e3-1c846ee5616b', 'Education for All Children', 'Kenya', 'f'),
+('aac344ee-6cdf-4acd-8e60-609bfbc589b7', 'MWB', NULL, 'f'),
+('ca920041-e697-4588-a47b-1bdb2cd60528', 'Anchor of Hope', 'Ghana', 'f'),
+('d0b45a28-3640-4867-ad68-faf1c09b3983', 'FundLife', 'Philippines', 'f'),
+('d4a4f7c2-3257-40c3-8ea7-771a83355990', 'Toptal', NULL, 't'),
+('d8bdf3eb-faf1-4247-880b-68e5c5560f7c', 'Atlassian', NULL, 't');
 
-INSERT INTO "public"."organizations" ("id", "name", "country", "has_mentors", "manager_id") VALUES
-('572f4822-bccd-4b44-b48b-1b958bf1e052', 'Literacy', 'India', 'f', NULL),
-('82360ca6-ce95-45f6-a0e3-1c846ee5616b', 'Education for All Children', 'Kenya', 'f', NULL),
-('aac344ee-6cdf-4acd-8e60-609bfbc589b7', 'MWB', NULL, 'f', NULL),
-('ca920041-e697-4588-a47b-1bdb2cd60528', 'Anchor of Hope', 'Ghana', 'f', NULL),
-('d0b45a28-3640-4867-ad68-faf1c09b3983', 'FundLife', 'Philippines', 'f', NULL),
-('d4a4f7c2-3257-40c3-8ea7-771a83355990', 'Toptal', NULL, 't', NULL),
-('d8bdf3eb-faf1-4247-880b-68e5c5560f7c', 'Atlassian', NULL, 't', NULL);
-
-INSERT INTO "public"."organizations_centers" ("id", "name", "address", "organization_id", "manager_id") VALUES
-('00a6fa25-df29-4701-9077-557932591766', 'Leon Testing', 'Testing', 'd0b45a28-3640-4867-ad68-faf1c09b3983', NULL);
+INSERT INTO "public"."organizations_centres" ("id", "name", "address", "organization_id") VALUES
+('00a6fa25-df29-4701-9077-557932591766', 'Leon Testing', 'Testing', 'd0b45a28-3640-4867-ad68-faf1c09b3983');
 
 INSERT INTO "public"."projects" ("id", "name", "duration", "start_date", "organization_id") VALUES
 ('19ac3dfe-0415-424d-bd5d-c5cacd030619', 'Project 1', 3, '2023-07-10 15:55:00.008824+00', '82360ca6-ce95-45f6-a0e3-1c846ee5616b'),
@@ -1155,40 +1015,27 @@ INSERT INTO "public"."students_testimonials" ("id", "user_id", "url", "uploaded_
 ('a2c66b0c-4585-4d6e-8b15-b1cfbb0a763b', 'c9682d5f-a104-4229-b8b1-0ccfef35e5f6', 'https://www.youtube.com/watch?v=Q77ikiTIAS0&t=2s', '2023-07-10 18:18:35.554481+00');
 
 INSERT INTO "public"."subfields" ("id", "name") VALUES
-('17338935-93f0-4f6f-ae5d-cbb144e4368f', 'Compensation and Benefits'),
 ('1b087dc6-df78-40b7-a814-0090303038d1', 'Marketing & Advertising'),
-('2ab31243-8bbc-4794-bde2-c03bc2925c9a', 'Recruiting / Talent Acquisition'),
 ('3691f807-90dd-4715-a74c-4ea21bd642a2', 'Cryptography'),
 ('413c149a-ca8c-48c5-82ce-67af2c403d52', 'Artificial Intelligence / Machine Learning'),
 ('459d9ede-24f2-4169-b22f-031001c67c6f', 'User Interface'),
 ('4c962a78-c253-440d-89e0-faf7be7187e6', 'Elicitation and Collaboration '),
 ('51b0d446-ac2c-4c96-bd4c-a9b72fe6ba7b', 'Business Analysis Planning and Monitoring '),
 ('54857cae-a17d-43a3-abbb-c3bdf79a1dd6', 'Game Development'),
-('5703b94a-8ac1-41b7-9128-d143e801b824', 'Organizational Leadership'),
 ('5fcc21e1-570d-442f-9a68-ca23d12d69f4', 'Database Management'),
-('65fdabbf-771d-4935-89e3-4bf0060836c8', 'Technical Project'),
-('6a19a38e-bcc1-4d86-9cc3-212f8698686e', 'Technical Support'),
-('6b12dced-4c8a-4cb1-90fe-7a8691e8a013', 'Search Engine Optimization'),
 ('71ffadb3-4115-41c6-8599-f73ca94072d8', 'Packaging'),
 ('7b589ba7-8ca3-4875-93f6-7bc1d865383a', 'Publication'),
 ('8af48039-1517-4e1b-9e97-f9a99f3ef8b7', 'Art & Illustration'),
 ('94734828-d235-44bd-860f-9948562bd4bc', 'Visual Identity'),
 ('9c237ccf-8dd2-44a9-96ba-dd9c3a364533', 'Environmental'),
-('ad7e3f3a-ebb7-4744-afca-cc1bdb81e38d', 'Financial Management'),
 ('b3747dcb-5bc9-49de-8e38-cce68c7a2919', 'Motion'),
 ('b4af2e6c-1bb0-4fb2-9134-bba28c652348', 'Desktop Application Development'),
-('c3225b3b-eea4-4c57-909f-473220e14ca4', 'Digital Marketing Basics'),
 ('c9df554a-c2c1-435c-bc4c-5c5ac95b60ab', 'Project Integration Management'),
-('cd0f2a7d-f14b-4886-a4bd-b3a09fdd1b6b', 'Product Management Fundamentals'),
 ('d0a76ab3-93a6-4c3c-bb80-7aad85fa071d', 'Mobile Development'),
-('d9c70096-4527-426b-951a-631a6b83afef', 'Social Media Marketing'),
-('dd3b7dc3-d79a-40fa-91fc-2558bee8cd15', 'General Support'),
 ('e7193774-3310-4c71-a85e-409d3e213fac', 'Test Automation'),
 ('e9a7b096-7adc-422f-9023-f9c68190487b', 'Embedded Systems'),
 ('ef1e8355-7abe-457a-93e5-ca877d133c20', 'Web Development'),
-('f31a8105-6576-4a13-a59d-e03b56362049', 'Training and Development'),
-('fa8221d7-9bd8-43b2-bdd0-5e52bbd1f464', 'Requirements Life Cycle Management'),
-('fcd9c5a4-8f02-45d1-832a-86f5ce724d31', 'Pay-Per-Click');
+('fa8221d7-9bd8-43b2-bdd0-5e52bbd1f464', 'Requirements Life Cycle Management');
 
 INSERT INTO "public"."subfields_skills" ("id", "subfield_id", "skill_index", "skill_id") VALUES
 ('102579b4-b1e9-40ac-a47b-40ff238ae053', 'b4af2e6c-1bb0-4fb2-9134-bba28c652348', 1, 'c1bbe60b-e54e-47cd-8665-cd926f243f85'),
@@ -1290,8 +1137,8 @@ INSERT INTO "public"."users" ("id", "name", "email", "password", "phone_number",
 ('b2e9059b-fb54-41d6-ae28-18162073787a', 'Edmond MWB', 'edmond@mentorswithoutborders.net', '$2b$08$.D.HOR/8Aq5bwAwsaOY3H.CsvXLE.TK8qDswAqzkqbMX1uDSNc1tC', '+40 742805665', '281c2f07-b3fa-4d91-9c25-9e38524e5836', 'aac344ee-6cdf-4acd-8e60-609bfbc589b7', 't', 't', '2023-04-30 15:45:55+00', '2023-04-30 15:45:55+00'),
 ('c9682d5f-a104-4229-b8b1-0ccfef35e5f6', 'Student 1', 's1@test.fake', '$2b$08$evxCx.5nEH8j/rTdFPlrWu8W2QrAm/xAmPb0wagrnxRU5ixP53CnK', NULL, 'b021984a-c02c-4fd4-87a7-1aec84c68d6b', '82360ca6-ce95-45f6-a0e3-1c846ee5616b', 'f', 't', '2021-08-29 18:05:48+00', '2023-04-07 18:15:00+00'),
 ('d4c98320-22ee-4b77-9c2f-81337b94e885', 'Mentor 1', 'm1@test.fake', '$2b$08$s/oUWnN.p.s.taN.kLilOuKCjfkpRao7D8v9/UpgbXrTkyQhdTT/y', NULL, '39297445-cb62-4f38-8a62-25b96dbea8ce', 'aac344ee-6cdf-4acd-8e60-609bfbc589b7', 't', 't', '2023-04-27 17:10:28+00', '2023-04-28 18:15:00+00'),
-('d8827495-376a-4bf1-93f5-6f93e1b38453', 'Mentor mb3', 'mb3@test.fake', '$2b$08$w8Rhigp/ycQvGcKUgyB2GOVmKQGr4nM1YutXrIPJ1tCEjNxQlT.la', NULL, 'b021984a-c02c-4fd4-87a7-1aec84c68d6b', 'd4a4f7c2-3257-40c3-8ea7-771a83355990', 't', 't', '2023-07-16 05:10:35+00', '2023-07-16 05:10:35+00'),
-('dfffbad3-0cad-493e-a66d-cf3161616323', 'Mentor 2', 'm2@test.fake', '$2b$08$xepPjzhh972n6tcuYm7thu7d.V1WIjRs1hw..A6QYYgQLhEROe1dy', NULL, 'b021984a-c02c-4fd4-87a7-1aec84c68d6b', 'aac344ee-6cdf-4acd-8e60-609bfbc589b7', 't', 't', '2023-04-27 21:03:29+00', '2023-04-25 18:15:00+00'),
+('d8827495-376a-4bf1-93f5-6f93e1b38453', 'Mentor mb2', 'mb3@test.fake', '$2b$08$w8Rhigp/ycQvGcKUgyB2GOVmKQGr4nM1YutXrIPJ1tCEjNxQlT.la', NULL, 'b021984a-c02c-4fd4-87a7-1aec84c68d6b', 'd4a4f7c2-3257-40c3-8ea7-771a83355990', 't', 't', '2023-07-16 05:10:35+00', '2023-07-16 05:10:35+00'),
+('dfffbad3-0cad-493e-a66d-cf3161616323', 'Mentor 2', 'm2@test.fake', '$2b$08$xepPjzhh972n6tcuYm7thu7d.V1WIjRs1hw..A6QYYgQLhEROe1dy', NULL, 'c90c53f8-20dc-4260-b589-885bd79071ef', 'aac344ee-6cdf-4acd-8e60-609bfbc589b7', 't', 't', '2023-04-27 21:03:29+00', '2023-04-25 18:15:00+00'),
 ('eab5a0d4-3fc0-4915-8a7e-df771c9a9975', 'Edmond Pruteanu', 'edmondpr@gmail.com', '$2b$08$/3PptRIAqoDpf6jhzYSMkemGAGN8AqWroDOGKx/b.HhCPfS82PQn.', '+40 742805664', 'c90c53f8-20dc-4260-b589-885bd79071ef', 'aac344ee-6cdf-4acd-8e60-609bfbc589b7', 't', 't', '2023-05-07 01:02:31+00', '2023-05-07 01:02:31+00');
 
 INSERT INTO "public"."users_app_flags" ("id", "user_id", "is_training_enabled", "is_mentoring_enabled") VALUES
@@ -1315,8 +1162,8 @@ INSERT INTO "public"."users_app_versions" ("id", "user_id", "major", "minor", "r
 ('5169ce21-599a-4390-a6e5-600d06bd00d8', 'd4c98320-22ee-4b77-9c2f-81337b94e885', 2, 0, 1, 44),
 ('59306491-282b-421e-b100-14b65205cd9e', '7af316a9-ce4b-4036-9b9e-d7f127b6b252', 2, 0, 1, 43),
 ('5caeb08d-362c-4b4e-9b11-06c7876595e9', '04e7ec49-bfbe-425b-8c58-e4f1f60e1735', 1, 6, 0, 43),
-('74b4966c-0876-4f12-883e-d39c2a817aa3', 'c9682d5f-a104-4229-b8b1-0ccfef35e5f6', 2, 0, 3, 46),
 ('7652e48c-a4c6-4267-b89f-eed8928061c9', 'eab5a0d4-3fc0-4915-8a7e-df771c9a9975', 2, 0, 1, 43),
+('8549025b-a0e9-4e9d-b290-503a37c7059c', 'c9682d5f-a104-4229-b8b1-0ccfef35e5f6', 1, 6, 0, 43),
 ('cd45379e-a75b-461b-949e-e21646c310b0', 'b2e9059b-fb54-41d6-ae28-18162073787a', 2, 0, 1, 43),
 ('ff091d9f-0b72-487a-8c22-2a57862d59cb', '16648dec-350e-4091-8256-9b78788a4a90', 2, 0, 1, 43);
 
@@ -1332,31 +1179,48 @@ INSERT INTO "public"."users_availabilities" ("id", "user_id", "utc_day_of_week",
 ('9aa7b85c-dfc5-4214-88e7-e3fe09500250', 'dfffbad3-0cad-493e-a66d-cf3161616323', 'Friday', '04:00:00', '14:00:00', NULL);
 
 INSERT INTO "public"."users_courses" ("id", "start_date_time", "course_type_id", "whatsapp_group_url", "notes", "has_started", "is_canceled", "canceled_date_time") VALUES
-('16fd0ec9-1645-4bf6-8c25-e338c0b09528', '2024-01-15 07:00:00+00', '67ccff8b-646e-4e0b-b425-e0ec19552ceb', NULL, NULL, 't', NULL, NULL),
-('25128b33-dddb-435b-bdb4-71befcd8b2fb', '2024-01-02 12:00:00+00', '67ccff8b-646e-4e0b-b425-e0ec19552ceb', 'mentor mb2', NULL, NULL, NULL, NULL),
-('28b42be6-1fb0-48b7-8a11-d1011784432c', '2024-01-02 12:00:00+00', '67ccff8b-646e-4e0b-b425-e0ec19552ceb', 'mentor mb1', NULL, NULL, NULL, NULL),
-('36b4df95-ace2-46fd-a352-87b5704f543e', '2024-01-02 12:00:00+00', '67ccff8b-646e-4e0b-b425-e0ec19552ceb', 'mentor3', NULL, NULL, NULL, NULL),
-('55921787-eeae-43fb-bf94-925932fcc76c', '2024-01-02 12:00:00+00', '67ccff8b-646e-4e0b-b425-e0ec19552ceb', 'mentor mb3', NULL, NULL, NULL, NULL),
-('61836523-40ce-4044-b071-e0e2b3eced09', '2024-01-12 09:00:00+00', 'c72ac14b-4258-4e53-89ca-7401317f54c4', NULL, NULL, 't', NULL, NULL),
-('73a9d90d-6555-404d-ad43-d8ffff95ce25', '2024-01-02 12:00:00+00', '67ccff8b-646e-4e0b-b425-e0ec19552ceb', 'mentor2', NULL, NULL, NULL, NULL),
-('a27389b0-1a84-4545-873f-55657d4dc7eb', '2024-01-02 12:00:00+00', '5a64abf0-eaa2-48b4-be48-d0708f010526', NULL, NULL, 't', NULL, NULL);
+('16fd0ec9-1645-4bf6-8c25-e338c0b09528', '2023-02-27 07:00:00+00', '67ccff8b-646e-4e0b-b425-e0ec19552ceb', NULL, NULL, 't', NULL, NULL),
+('61836523-40ce-4044-b071-e0e2b3eced09', '2023-07-02 09:00:00+00', 'c72ac14b-4258-4e53-89ca-7401317f54c4', NULL, NULL, 't', NULL, NULL),
+('a27389b0-1a84-4545-873f-55657d4dc7eb', '2022-09-17 12:00:00+00', '5a64abf0-eaa2-48b4-be48-d0708f010526', NULL, NULL, 't', NULL, NULL);
+
+INSERT INTO "public"."users_courses_lessons_canceled" ("id", "user_id", "course_id", "lesson_date_time", "canceled_date_time") VALUES
+('1a71bc41-1a0f-4098-890a-b59228e48bac', '063842ae-799b-4171-990f-397029d2647f', '16fd0ec9-1645-4bf6-8c25-e338c0b09528', '2023-02-27 07:00:00+00', NULL);
 
 INSERT INTO "public"."users_courses_mentors" ("id", "course_id", "mentor_id", "subfield_id", "meeting_url", "is_canceled", "canceled_date_time") VALUES
-('0a0e010e-7dd7-4158-98e4-e99688663c74', '61836523-40ce-4044-b071-e0e2b3eced09', 'd4c98320-22ee-4b77-9c2f-81337b94e885', '413c149a-ca8c-48c5-82ce-67af2c403d52', NULL, NULL, NULL),
-('4ef4443c-bc21-437e-85d8-03ca63c32615', 'a27389b0-1a84-4545-873f-55657d4dc7eb', 'd4c98320-22ee-4b77-9c2f-81337b94e885', '413c149a-ca8c-48c5-82ce-67af2c403d52', NULL, NULL, NULL),
-('93e838ab-65e7-48de-8224-c9ecbdba6ffc', '16fd0ec9-1645-4bf6-8c25-e338c0b09528', 'd4c98320-22ee-4b77-9c2f-81337b94e885', '413c149a-ca8c-48c5-82ce-67af2c403d52', NULL, NULL, NULL),
-('9670246d-c388-4eae-b9ec-513197e70f34', '28b42be6-1fb0-48b7-8a11-d1011784432c', '725a0e8d-d712-4542-affb-e66a93cb16c5', '6a19a38e-bcc1-4d86-9cc3-212f8698686e', NULL, NULL, NULL),
-('b007fc84-2b6c-49fc-9ea8-cca68c7f6f4e', '36b4df95-ace2-46fd-a352-87b5704f543e', '9590839b-b450-40f2-b1cc-b9a677711489', '65fdabbf-771d-4935-89e3-4bf0060836c8', NULL, NULL, NULL),
-('beabbb76-92a0-4022-8e86-928a7ad584e1', '73a9d90d-6555-404d-ad43-d8ffff95ce25', 'dfffbad3-0cad-493e-a66d-cf3161616323', '1b087dc6-df78-40b7-a814-0090303038d1', NULL, NULL, NULL),
-('e8b73162-5a1e-4083-afda-914e44c301b7', '25128b33-dddb-435b-bdb4-71befcd8b2fb', 'a67df461-e05b-42fc-ba70-1e79a8a25a40', 'c3225b3b-eea4-4c57-909f-473220e14ca4', NULL, NULL, NULL),
-('fbd647b8-726c-4554-b407-6ad7f0759a80', '55921787-eeae-43fb-bf94-925932fcc76c', 'd8827495-376a-4bf1-93f5-6f93e1b38453', 'f31a8105-6576-4a13-a59d-e03b56362049', NULL, NULL, NULL);
+('00c99ab4-b4b1-4472-a61f-e9eec5d0a45d', '61836523-40ce-4044-b071-e0e2b3eced09', 'd4c98320-22ee-4b77-9c2f-81337b94e885', '51b0d446-ac2c-4c96-bd4c-a9b72fe6ba7b', 'https://meet.google.com/mentor1', NULL, NULL),
+('4c5df55c-77ac-420b-9ceb-b30ba2c8faee', '16fd0ec9-1645-4bf6-8c25-e338c0b09528', 'd4c98320-22ee-4b77-9c2f-81337b94e885', '94734828-d235-44bd-860f-9948562bd4bc', 'https://meet.google.com/mentor1', NULL, NULL),
+('517a4e80-bdfa-4d2d-a463-3ecc14a09d8f', 'a27389b0-1a84-4545-873f-55657d4dc7eb', 'd4c98320-22ee-4b77-9c2f-81337b94e885', '51b0d446-ac2c-4c96-bd4c-a9b72fe6ba7b', 'https://meet.google.com/mentor1', NULL, NULL),
+('e1486184-c747-428e-9af5-16a60c891803', 'a27389b0-1a84-4545-873f-55657d4dc7eb', 'dfffbad3-0cad-493e-a66d-cf3161616323', '94734828-d235-44bd-860f-9948562bd4bc', 'https://meet.google.com/mentor2', NULL, NULL);
+
+INSERT INTO "public"."users_courses_partnership_schedule" ("id", "course_id", "mentor_id", "lesson_date_time") VALUES
+('025e9ea0-d191-40a9-9a28-fe2e945c086d', 'a27389b0-1a84-4545-873f-55657d4dc7eb', 'dfffbad3-0cad-493e-a66d-cf3161616323', '2022-11-18 12:00:00+00'),
+('0d70f8c3-584a-49c1-99aa-58bdd244da1c', 'a27389b0-1a84-4545-873f-55657d4dc7eb', 'd4c98320-22ee-4b77-9c2f-81337b94e885', '2022-09-24 12:00:00+00'),
+('2a0522d5-98fb-4b05-a36e-a8bdb5599e3f', 'a27389b0-1a84-4545-873f-55657d4dc7eb', 'd4c98320-22ee-4b77-9c2f-81337b94e885', '2022-10-07 12:00:00+00'),
+('387c9b3d-2b35-465c-8229-0b7338adf809', 'a27389b0-1a84-4545-873f-55657d4dc7eb', 'dfffbad3-0cad-493e-a66d-cf3161616323', '2022-11-11 12:00:00+00'),
+('3e440197-4796-41f6-89dd-ce4ca5eaa046', 'a27389b0-1a84-4545-873f-55657d4dc7eb', 'd4c98320-22ee-4b77-9c2f-81337b94e885', '2022-10-21 12:00:00+00'),
+('412c8389-2343-42aa-892d-1b332d8126a5', 'a27389b0-1a84-4545-873f-55657d4dc7eb', 'dfffbad3-0cad-493e-a66d-cf3161616323', '2022-11-04 12:00:00+00'),
+('4273c041-59d4-4bc9-bb53-ed4d979e6e15', 'a27389b0-1a84-4545-873f-55657d4dc7eb', 'd4c98320-22ee-4b77-9c2f-81337b94e885', '2022-10-14 12:00:00+00'),
+('5240376c-78e7-41b6-bd2b-b2346df76a2e', 'a27389b0-1a84-4545-873f-55657d4dc7eb', 'dfffbad3-0cad-493e-a66d-cf3161616323', '2022-12-09 12:00:00+00'),
+('66b7075c-f016-446e-83e4-285783cbdfa4', 'a27389b0-1a84-4545-873f-55657d4dc7eb', 'd4c98320-22ee-4b77-9c2f-81337b94e885', '2022-10-28 12:00:00+00'),
+('765b7c56-6e40-47bc-973f-829b9fc0187d', 'a27389b0-1a84-4545-873f-55657d4dc7eb', 'd4c98320-22ee-4b77-9c2f-81337b94e885', '2022-09-30 12:00:00+00'),
+('8c39481b-3e1d-40fe-b008-70d88d86f9c0', 'a27389b0-1a84-4545-873f-55657d4dc7eb', 'dfffbad3-0cad-493e-a66d-cf3161616323', '2022-11-25 12:00:00+00'),
+('97ac28c5-f22e-4e84-b833-828b0d15d388', 'a27389b0-1a84-4545-873f-55657d4dc7eb', 'dfffbad3-0cad-493e-a66d-cf3161616323', '2022-12-02 12:00:00+00'),
+('c5dc677f-5824-44ae-98d2-89c79708dffd', 'a27389b0-1a84-4545-873f-55657d4dc7eb', 'd4c98320-22ee-4b77-9c2f-81337b94e885', '2022-09-17 12:00:00+00'),
+('ff4226ea-3c43-4412-a355-44be3b48bef9', 'a27389b0-1a84-4545-873f-55657d4dc7eb', 'dfffbad3-0cad-493e-a66d-cf3161616323', '2022-12-16 12:00:00+00');
 
 INSERT INTO "public"."users_courses_students" ("id", "course_id", "student_id", "is_canceled", "canceled_date_time") VALUES
-('3ccc6eeb-5ce6-49bc-b683-794c32075827', '16fd0ec9-1645-4bf6-8c25-e338c0b09528', '04e7ec49-bfbe-425b-8c58-e4f1f60e1735', NULL, NULL),
-('9f09e9b9-806b-4586-a165-ea5777ce18f4', 'a27389b0-1a84-4545-873f-55657d4dc7eb', '063842ae-799b-4171-990f-397029d2647f', NULL, NULL);
+('53af09c1-73f3-47e1-944e-d3b08b32b421', '61836523-40ce-4044-b071-e0e2b3eced09', 'c9682d5f-a104-4229-b8b1-0ccfef35e5f6', NULL, NULL),
+('04cc4502-b5d9-4ee7-bb20-3752132a00d8', '61836523-40ce-4044-b071-e0e2b3eced09', '04e7ec49-bfbe-425b-8c58-e4f1f60e1735', NULL, NULL),
+('ad65ba5d-4a3d-4d7f-ad1f-b5a8eb3be9ee', '16fd0ec9-1645-4bf6-8c25-e338c0b09528', '063842ae-799b-4171-990f-397029d2647f', NULL, NULL),
+('d90972f2-1d22-4fb8-8a36-140a86a695ce', 'a27389b0-1a84-4545-873f-55657d4dc7eb', '063842ae-799b-4171-990f-397029d2647f', NULL, NULL),
+('aa666bc7-40c8-4671-812d-4f9282623104', 'a27389b0-1a84-4545-873f-55657d4dc7eb', 'c9682d5f-a104-4229-b8b1-0ccfef35e5f6', NULL, NULL),
+('baa5513d-ae2f-4aef-8ca8-ff47d7e1b0be', 'a27389b0-1a84-4545-873f-55657d4dc7eb', '04e7ec49-bfbe-425b-8c58-e4f1f60e1735', NULL, NULL),
+('60c1e349-6925-4ed1-aa0f-4ecb26219b38', '16fd0ec9-1645-4bf6-8c25-e338c0b09528', '7af316a9-ce4b-4036-9b9e-d7f127b6b252', 't', NULL),
+('6aab7b19-9aa5-40bc-a7a5-1b1a300b6bf7', 'a27389b0-1a84-4545-873f-55657d4dc7eb', '7af316a9-ce4b-4036-9b9e-d7f127b6b252', 't', NULL);
 
 INSERT INTO "public"."users_fcm_tokens" ("id", "user_id", "fcm_token") VALUES
 ('06ebdbc3-ee1b-40dc-9607-915ddaa7dbc2', 'd4c98320-22ee-4b77-9c2f-81337b94e885', 'cBLkLWfkzEdrnGBwCvmh2n:APA91bHQfMCfiNsWs_qoHTALkuwpQLzoTokh_iXnEplOCaPmWyrmnYx-hkfSrcB7jsIAbnagUF7TU1i49hKbEbQBYREZqsGKHHjjlJs7rjINaslOIxaHHG2dIer3Ho3SPk3-ZzfHoUM-'),
+('4d086ec3-3c1b-4a6b-9bbe-7b2bb2697358', 'c9682d5f-a104-4229-b8b1-0ccfef35e5f6', 'dfI8fyO0TJao9zpVjkwFY1:APA91bE2duzKZTDYwBPUzB1kPtCQqxj17mCfanabTSh79OU2jsg_P8FtvA7bzYOJqMh12cdgg7qz7xn5LC3SuVELSxZmiMmEGdHHfX1J9zJisA_8hTD5zkLCF9q3YVinX3-DpWyHoF4k'),
 ('4e3d6df7-8b24-4f8e-b488-a34414fe2295', '7af316a9-ce4b-4036-9b9e-d7f127b6b252', 'erGFxuV3_UpimclYkyblkr:APA91bEPTWiKqOX8V9oClYmM0IWNZ6-Q15qyCun3KdkTRut3wpmwefTsU5Fev6xPFWA22nn-70boYi_XeEZgihbAzJeI7uUPI4znAHxTMLKmS93rzVu6HkFZ6SA3rozOVYu9cQL-eP8v');
 
 INSERT INTO "public"."users_goals" ("id", "user_id", "text", "index", "date_time") VALUES
@@ -1415,10 +1279,8 @@ INSERT INTO "public"."users_notifications_settings" ("id", "user_id", "training_
 INSERT INTO "public"."users_quizzes" ("id", "user_id", "number", "is_correct", "is_closed", "date_time") VALUES
 ('035cdf3d-ac78-46b2-953d-ef64732d1125', 'c9682d5f-a104-4229-b8b1-0ccfef35e5f6', 1, 't', NULL, '2023-04-09 22:19:08.562+00'),
 ('11f53658-157e-4ddb-9ab5-76a4c3c461ed', 'c9682d5f-a104-4229-b8b1-0ccfef35e5f6', 8, 't', NULL, '2023-04-23 22:21:38.247+00'),
-('1571d153-7c83-4d50-9835-1beb3ea865d7', 'c9682d5f-a104-4229-b8b1-0ccfef35e5f6', 1, NULL, 't', '2024-01-19 21:11:11.375+00'),
 ('1e47c69d-b5c9-41f3-844a-13d2931b5142', 'c9682d5f-a104-4229-b8b1-0ccfef35e5f6', 4, 't', NULL, '2023-04-16 22:20:26.121+00'),
 ('2e7f1cd8-69dc-42a0-9bec-785e9200415f', 'c9682d5f-a104-4229-b8b1-0ccfef35e5f6', 3, 't', NULL, '2023-04-09 22:19:20.534+00'),
-('33731a09-b15c-4d3f-94dc-3b341004daea', 'c9682d5f-a104-4229-b8b1-0ccfef35e5f6', 1, NULL, 't', '2024-01-19 21:08:38.628+00'),
 ('72212b29-173c-4348-ba04-abfcded2d159', 'c9682d5f-a104-4229-b8b1-0ccfef35e5f6', 10, 't', NULL, '2023-04-30 22:23:17.153+00'),
 ('74b92515-8540-4d1e-8c89-924eeaa4c000', 'c9682d5f-a104-4229-b8b1-0ccfef35e5f6', 5, 't', NULL, '2023-04-16 22:20:31.13+00'),
 ('8f7ab781-192f-4a72-83c6-b3cc3d1299d8', 'c9682d5f-a104-4229-b8b1-0ccfef35e5f6', 7, 't', NULL, '2023-04-23 22:21:32.737+00'),
@@ -1427,19 +1289,20 @@ INSERT INTO "public"."users_quizzes" ("id", "user_id", "number", "is_correct", "
 ('c584f482-8629-46f3-b736-66e2cff7ed43', '7af316a9-ce4b-4036-9b9e-d7f127b6b252', 1, NULL, 't', '2023-05-06 22:00:28.947+00'),
 ('db6cfb47-9c12-493b-99b7-cbfd4157a5ab', 'c9682d5f-a104-4229-b8b1-0ccfef35e5f6', 12, 't', NULL, '2023-04-30 22:24:07.327+00'),
 ('dcf7ee2a-c26a-4c0f-982f-c6fb1315fb36', 'c9682d5f-a104-4229-b8b1-0ccfef35e5f6', 2, 't', NULL, '2023-04-09 22:19:13.534+00'),
-('e2348d95-d467-4490-9a3d-c8f3e39414ad', 'c9682d5f-a104-4229-b8b1-0ccfef35e5f6', 1, NULL, 't', '2024-01-20 20:11:54.672+00'),
 ('e3b941dc-1a4c-4fcc-900f-5a3410efc14e', 'c9682d5f-a104-4229-b8b1-0ccfef35e5f6', 11, 't', NULL, '2023-04-30 22:23:20.632+00'),
 ('fc2bdca6-dccb-4e15-80ea-5e47a97868c0', 'c9682d5f-a104-4229-b8b1-0ccfef35e5f6', 6, 't', NULL, '2023-04-16 22:20:50.766+00');
 
 INSERT INTO "public"."users_refresh_tokens" ("id", "user_id", "refresh_token") VALUES
-('163c1853-feea-44ba-826f-7a6134750111', 'dfffbad3-0cad-493e-a66d-cf3161616323', 'f05a52cb-3e16-49a0-b683-048a97978777'),
+('163c1853-feea-44ba-826f-7a6134750111', 'dfffbad3-0cad-493e-a66d-cf3161616323', '798ef304-538a-4457-b6e4-c04c35e484e5'),
+('21c1f421-0280-4afa-b2ff-3fe61cd7d4e1', 'c9682d5f-a104-4229-b8b1-0ccfef35e5f6', 'e24c9852-808e-4cad-b808-073e9c3b2bbf'),
 ('53cd4643-3b8a-4bd5-a92c-ddf51ffe233f', 'a67df461-e05b-42fc-ba70-1e79a8a25a40', '2089b9be-15dc-4cc2-ac12-fd8f45b4df11'),
 ('63a82dcb-3b7e-47c4-975e-c4f76255fcb7', '063842ae-799b-4171-990f-397029d2647f', '3476f259-831c-417b-9260-68ca81fafaf5'),
 ('6faddc46-b403-4eeb-8e62-d45fa9e54b1c', '9590839b-b450-40f2-b1cc-b9a677711489', 'dafe5acd-f37b-4c34-b634-382e7658c467'),
-('93b7d830-6c3e-4f2b-8b5e-ec43b4e51c0c', '725a0e8d-d712-4542-affb-e66a93cb16c5', '8c9ddd6b-8c29-471c-99cb-01969af1a454'),
+('93b7d830-6c3e-4f2b-8b5e-ec43b4e51c0c', '725a0e8d-d712-4542-affb-e66a93cb16c5', 'eb91d01a-4a18-4edb-b9d1-e46e6e284878'),
 ('a003fc6c-56a0-4aa1-a8f0-30a1fe46a5ed', '24f7f19c-5262-45bb-8ab5-bae9df67ab66', 'c0e3aead-b4e8-4879-a1fa-22c3544c9b3f'),
 ('afa850ca-a102-4b26-8ff8-fcfac15ac949', '7af316a9-ce4b-4036-9b9e-d7f127b6b252', '39415e7d-7ac6-4ca9-a346-612d2fca33b9'),
 ('cf6a0e71-6af2-4323-863d-ab2b724387aa', 'd8827495-376a-4bf1-93f5-6f93e1b38453', 'cd6a441e-ea8f-4451-9509-bb253dee9753'),
+('d81a616f-2df5-412f-bd2d-58ed5e2b7a68', 'd4c98320-22ee-4b77-9c2f-81337b94e885', '732387e1-6404-4911-afd2-57c1f0638078'),
 ('de1bf7a3-e270-446a-998f-5cfb8dcb7e66', '04e7ec49-bfbe-425b-8c58-e4f1f60e1735', '2c80601f-0354-44ed-b7fb-a5e3132f50f2');
 
 INSERT INTO "public"."users_reset_password" ("id", "email", "date_time") VALUES
@@ -1454,10 +1317,10 @@ INSERT INTO "public"."users_skills" ("id", "user_id", "subfield_id", "skill_inde
 ('674d45fa-0e32-41b9-ba14-a118400cb935', 'eab5a0d4-3fc0-4915-8a7e-df771c9a9975', '94734828-d235-44bd-860f-9948562bd4bc', 1, '044e2dd5-8569-4196-bdc7-be48f1148fc3');
 
 INSERT INTO "public"."users_steps" ("id", "user_id", "goal_id", "text", "index", "level", "parent_id", "date_time") VALUES
-('722314e3-9aa2-437a-a3a6-2ba23b89343a', 'c9682d5f-a104-4229-b8b1-0ccfef35e5f6', 'e3475418-46f2-43b8-b235-300913d308da', 'I will attend the sessions with my mentor', 0, 0, NULL, '2024-01-19 21:09:05.186+00'),
+('05253945-bc94-4051-b2ee-72710168dae4', 'c9682d5f-a104-4229-b8b1-0ccfef35e5f6', 'e3475418-46f2-43b8-b235-300913d308da', 'S1', 0, 0, NULL, '2022-09-02 18:00:54.054365+00'),
 ('91debe3f-d8a6-4f40-98fd-30660dca10ee', 'd4c98320-22ee-4b77-9c2f-81337b94e885', 'b192b53b-7157-4aea-9a86-c2544b162a44', 'S1', 0, 0, NULL, '2023-04-30 09:01:01.481+00'),
-('a7e3bb6a-51a1-4b94-8fdf-cd14f99efc4a', 'c9682d5f-a104-4229-b8b1-0ccfef35e5f6', 'e3475418-46f2-43b8-b235-300913d308da', 'I will prepare my CV', 2, 0, NULL, '2024-01-19 21:09:34.568+00'),
-('eaaf9e27-fc81-44bc-8197-aa9244965b2c', 'c9682d5f-a104-4229-b8b1-0ccfef35e5f6', 'e3475418-46f2-43b8-b235-300913d308da', 'I will do the homework that I’m being assigned', 1, 0, NULL, '2024-01-19 21:09:26.067+00');
+('ba7e3583-8d88-48bf-ad4f-79c270e3bd1c', 'c9682d5f-a104-4229-b8b1-0ccfef35e5f6', 'e3475418-46f2-43b8-b235-300913d308da', 'S11', 0, 1, '05253945-bc94-4051-b2ee-72710168dae4', '2022-09-02 18:01:16.956102+00'),
+('d2d9e72d-208b-4960-8d04-4224ad1e8de5', 'c9682d5f-a104-4229-b8b1-0ccfef35e5f6', 'e3475418-46f2-43b8-b235-300913d308da', 'S2', 0, 0, NULL, '2022-09-02 18:01:54.054365+00');
 
 INSERT INTO "public"."users_subfields" ("id", "user_id", "subfield_index", "subfield_id") VALUES
 ('0a7132a3-2409-4840-9ce6-7d605d36e427', 'dfffbad3-0cad-493e-a66d-cf3161616323', 1, '94734828-d235-44bd-860f-9948562bd4bc'),
@@ -1480,12 +1343,12 @@ INSERT INTO "public"."users_timezones" ("id", "user_id", "name", "abbreviation",
 ('b359a0fa-c5e1-4c6a-8b66-62088ae4afb5', '24f7f19c-5262-45bb-8ab5-bae9df67ab66', 'Europe/Bucharest', 'EEST', '3:00'),
 ('b7375ac8-fe30-42e4-8919-f1dc746c1e2c', '16648dec-350e-4091-8256-9b78788a4a90', 'Europe/Bucharest', 'EEST', '3:00'),
 ('c86dd174-0d04-4d57-87b3-23b1597c2f3a', 'd8827495-376a-4bf1-93f5-6f93e1b38453', 'Asia/Kolkata', 'IST', '5:30'),
-('d637072c-fbc6-43d8-8c70-fbeb994b0db1', 'c9682d5f-a104-4229-b8b1-0ccfef35e5f6', 'Europe/Bucharest', 'EET', '2:00'),
+('d637072c-fbc6-43d8-8c70-fbeb994b0db1', 'c9682d5f-a104-4229-b8b1-0ccfef35e5f6', 'Europe/Bucharest', 'EEST', '3:00'),
 ('e1579c8d-3a17-45de-b77b-43988ccadda0', '9590839b-b450-40f2-b1cc-b9a677711489', 'Europe/Bucharest', 'EEST', '3:00'),
 ('ec806bb8-a64d-436b-a339-191f019f7cf4', 'eab5a0d4-3fc0-4915-8a7e-df771c9a9975', 'Europe/Bucharest', 'EEST', '3:00');
 
-ALTER TABLE "public"."admin_assigned_users" ADD FOREIGN KEY ("trainer_id") REFERENCES "public"."users"("id");
 ALTER TABLE "public"."admin_assigned_users" ADD FOREIGN KEY ("assigned_user_id") REFERENCES "public"."users"("id");
+ALTER TABLE "public"."admin_assigned_users" ADD FOREIGN KEY ("trainer_id") REFERENCES "public"."users"("id");
 ALTER TABLE "public"."admin_available_users" ADD FOREIGN KEY ("user_id") REFERENCES "public"."users"("id");
 ALTER TABLE "public"."admin_conversations" ADD FOREIGN KEY ("user_id") REFERENCES "public"."users"("id");
 ALTER TABLE "public"."admin_permissions" ADD FOREIGN KEY ("user_id") REFERENCES "public"."users"("id");
@@ -1494,33 +1357,29 @@ ALTER TABLE "public"."admin_trainers_workdays" ADD FOREIGN KEY ("trainer_id") RE
 ALTER TABLE "public"."admin_training_reminders" ADD FOREIGN KEY ("user_id") REFERENCES "public"."users"("id");
 ALTER TABLE "public"."approved_users" ADD FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id");
 ALTER TABLE "public"."approved_users" ADD FOREIGN KEY ("field_id") REFERENCES "public"."fields"("id");
-ALTER TABLE "public"."fields_subfields" ADD FOREIGN KEY ("field_id") REFERENCES "public"."fields"("id");
 ALTER TABLE "public"."fields_subfields" ADD FOREIGN KEY ("subfield_id") REFERENCES "public"."subfields"("id");
+ALTER TABLE "public"."fields_subfields" ADD FOREIGN KEY ("field_id") REFERENCES "public"."fields"("id");
 ALTER TABLE "public"."fields_tutorials" ADD FOREIGN KEY ("tutorial_id") REFERENCES "public"."tutorials_lessons"("id");
 ALTER TABLE "public"."fields_tutorials" ADD FOREIGN KEY ("field_id") REFERENCES "public"."fields"("id");
-ALTER TABLE "public"."guides_recommendations" ADD FOREIGN KEY ("subfield_id") REFERENCES "public"."subfields"("id");
 ALTER TABLE "public"."guides_recommendations" ADD FOREIGN KEY ("field_id") REFERENCES "public"."fields"("id");
-ALTER TABLE "public"."guides_skills_tutorials" ADD FOREIGN KEY ("skill_id") REFERENCES "public"."skills"("id");
+ALTER TABLE "public"."guides_recommendations" ADD FOREIGN KEY ("subfield_id") REFERENCES "public"."subfields"("id");
 ALTER TABLE "public"."guides_skills_tutorials" ADD FOREIGN KEY ("tutorial_id") REFERENCES "public"."guides_tutorials"("id");
+ALTER TABLE "public"."guides_skills_tutorials" ADD FOREIGN KEY ("skill_id") REFERENCES "public"."skills"("id");
 ALTER TABLE "public"."logger" ADD FOREIGN KEY ("user_id") REFERENCES "public"."users"("id");
+ALTER TABLE "public"."mentors_partnership_requests" ADD FOREIGN KEY ("partner_subfield_id") REFERENCES "public"."subfields"("id");
+ALTER TABLE "public"."mentors_partnership_requests" ADD FOREIGN KEY ("subfield_id") REFERENCES "public"."subfields"("id");
 ALTER TABLE "public"."mentors_partnership_requests" ADD FOREIGN KEY ("partner_mentor_id") REFERENCES "public"."users"("id");
 ALTER TABLE "public"."mentors_partnership_requests" ADD FOREIGN KEY ("course_type_id") REFERENCES "public"."course_types"("id");
 ALTER TABLE "public"."mentors_partnership_requests" ADD FOREIGN KEY ("mentor_id") REFERENCES "public"."users"("id");
-ALTER TABLE "public"."mentors_partnership_requests" ADD FOREIGN KEY ("partner_subfield_id") REFERENCES "public"."subfields"("id");
-ALTER TABLE "public"."mentors_partnership_requests" ADD FOREIGN KEY ("subfield_id") REFERENCES "public"."subfields"("id");
 ALTER TABLE "public"."mentors_waiting_requests" ADD FOREIGN KEY ("mentor_id") REFERENCES "public"."users"("id");
-ALTER TABLE "public"."organizations" ADD FOREIGN KEY ("manager_id") REFERENCES "public"."users"("id");
-ALTER TABLE "public"."organizations_centers" ADD FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id");
-ALTER TABLE "public"."organizations_centers" ADD FOREIGN KEY ("manager_id") REFERENCES "public"."users"("id");
-ALTER TABLE "public"."organizations_centers_expenses" ADD FOREIGN KEY ("center_id") REFERENCES "public"."organizations_centers"("id");
-ALTER TABLE "public"."organizations_centers_expenses_paid" ADD FOREIGN KEY ("center_id") REFERENCES "public"."organizations_centers"("id");
+ALTER TABLE "public"."organizations_centres" ADD FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id");
 ALTER TABLE "public"."projects" ADD FOREIGN KEY ("organization_id") REFERENCES "public"."organizations"("id");
 ALTER TABLE "public"."projects_courses" ADD FOREIGN KEY ("project_id") REFERENCES "public"."projects"("id");
 ALTER TABLE "public"."projects_courses" ADD FOREIGN KEY ("course_id") REFERENCES "public"."users_courses"("id");
-ALTER TABLE "public"."skills_tutorials" ADD FOREIGN KEY ("skill_id") REFERENCES "public"."skills"("id");
 ALTER TABLE "public"."skills_tutorials" ADD FOREIGN KEY ("tutorial_id") REFERENCES "public"."tutorials_lessons"("id");
-ALTER TABLE "public"."subfields_skills" ADD FOREIGN KEY ("subfield_id") REFERENCES "public"."subfields"("id");
+ALTER TABLE "public"."skills_tutorials" ADD FOREIGN KEY ("skill_id") REFERENCES "public"."skills"("id");
 ALTER TABLE "public"."subfields_skills" ADD FOREIGN KEY ("skill_id") REFERENCES "public"."skills"("id");
+ALTER TABLE "public"."subfields_skills" ADD FOREIGN KEY ("subfield_id") REFERENCES "public"."subfields"("id");
 ALTER TABLE "public"."subfields_tutorials" ADD FOREIGN KEY ("tutorial_id") REFERENCES "public"."tutorials_lessons"("id");
 ALTER TABLE "public"."subfields_tutorials" ADD FOREIGN KEY ("subfield_id") REFERENCES "public"."subfields"("id");
 ALTER TABLE "public"."tutorials_sections" ADD FOREIGN KEY ("tutorial_id") REFERENCES "public"."tutorials"("id");
@@ -1535,35 +1394,35 @@ ALTER TABLE "public"."users_courses_lessons_canceled" ADD FOREIGN KEY ("course_i
 ALTER TABLE "public"."users_courses_mentors" ADD FOREIGN KEY ("subfield_id") REFERENCES "public"."subfields"("id");
 ALTER TABLE "public"."users_courses_mentors" ADD FOREIGN KEY ("course_id") REFERENCES "public"."users_courses"("id");
 ALTER TABLE "public"."users_courses_mentors" ADD FOREIGN KEY ("mentor_id") REFERENCES "public"."users"("id");
-ALTER TABLE "public"."users_courses_partnership_schedule" ADD FOREIGN KEY ("mentor_id") REFERENCES "public"."users"("id");
 ALTER TABLE "public"."users_courses_partnership_schedule" ADD FOREIGN KEY ("course_id") REFERENCES "public"."users_courses"("id");
+ALTER TABLE "public"."users_courses_partnership_schedule" ADD FOREIGN KEY ("mentor_id") REFERENCES "public"."users"("id");
 ALTER TABLE "public"."users_courses_students" ADD FOREIGN KEY ("student_id") REFERENCES "public"."users"("id");
 ALTER TABLE "public"."users_courses_students" ADD FOREIGN KEY ("course_id") REFERENCES "public"."users_courses"("id");
 ALTER TABLE "public"."users_fcm_tokens" ADD FOREIGN KEY ("user_id") REFERENCES "public"."users"("id");
 ALTER TABLE "public"."users_goals" ADD FOREIGN KEY ("user_id") REFERENCES "public"."users"("id");
 ALTER TABLE "public"."users_in_app_messages" ADD FOREIGN KEY ("user_id") REFERENCES "public"."users"("id");
-ALTER TABLE "public"."users_lesson_requests" ADD FOREIGN KEY ("mentor_id") REFERENCES "public"."users"("id");
-ALTER TABLE "public"."users_lesson_requests" ADD FOREIGN KEY ("subfield_id") REFERENCES "public"."subfields"("id");
 ALTER TABLE "public"."users_lesson_requests" ADD FOREIGN KEY ("student_id") REFERENCES "public"."users"("id");
+ALTER TABLE "public"."users_lesson_requests" ADD FOREIGN KEY ("subfield_id") REFERENCES "public"."subfields"("id");
+ALTER TABLE "public"."users_lesson_requests" ADD FOREIGN KEY ("mentor_id") REFERENCES "public"."users"("id");
 ALTER TABLE "public"."users_lessons" ADD FOREIGN KEY ("subfield_id") REFERENCES "public"."subfields"("id");
 ALTER TABLE "public"."users_lessons" ADD FOREIGN KEY ("mentor_id") REFERENCES "public"."users"("id");
 ALTER TABLE "public"."users_lessons_availabilities" ADD FOREIGN KEY ("user_id") REFERENCES "public"."users"("id");
 ALTER TABLE "public"."users_lessons_canceled" ADD FOREIGN KEY ("user_id") REFERENCES "public"."users"("id");
 ALTER TABLE "public"."users_lessons_canceled" ADD FOREIGN KEY ("lesson_id") REFERENCES "public"."users_lessons"("id");
-ALTER TABLE "public"."users_lessons_notes" ADD FOREIGN KEY ("lesson_id") REFERENCES "public"."users_lessons"("id");
 ALTER TABLE "public"."users_lessons_notes" ADD FOREIGN KEY ("student_id") REFERENCES "public"."users"("id");
+ALTER TABLE "public"."users_lessons_notes" ADD FOREIGN KEY ("lesson_id") REFERENCES "public"."users_lessons"("id");
 ALTER TABLE "public"."users_lessons_stopped" ADD FOREIGN KEY ("student_id") REFERENCES "public"."users"("id");
 ALTER TABLE "public"."users_lessons_students" ADD FOREIGN KEY ("lesson_id") REFERENCES "public"."users_lessons"("id");
 ALTER TABLE "public"."users_lessons_students" ADD FOREIGN KEY ("student_id") REFERENCES "public"."users"("id");
 ALTER TABLE "public"."users_notifications_settings" ADD FOREIGN KEY ("user_id") REFERENCES "public"."users"("id");
 ALTER TABLE "public"."users_quizzes" ADD FOREIGN KEY ("user_id") REFERENCES "public"."users"("id");
 ALTER TABLE "public"."users_refresh_tokens" ADD FOREIGN KEY ("user_id") REFERENCES "public"."users"("id");
+ALTER TABLE "public"."users_skills" ADD FOREIGN KEY ("subfield_id") REFERENCES "public"."subfields"("id");
 ALTER TABLE "public"."users_skills" ADD FOREIGN KEY ("skill_id") REFERENCES "public"."skills"("id");
 ALTER TABLE "public"."users_skills" ADD FOREIGN KEY ("user_id") REFERENCES "public"."users"("id");
-ALTER TABLE "public"."users_skills" ADD FOREIGN KEY ("subfield_id") REFERENCES "public"."subfields"("id");
-ALTER TABLE "public"."users_steps" ADD FOREIGN KEY ("user_id") REFERENCES "public"."users"("id");
 ALTER TABLE "public"."users_steps" ADD FOREIGN KEY ("goal_id") REFERENCES "public"."users_goals"("id");
-ALTER TABLE "public"."users_subfields" ADD FOREIGN KEY ("subfield_id") REFERENCES "public"."subfields"("id");
+ALTER TABLE "public"."users_steps" ADD FOREIGN KEY ("user_id") REFERENCES "public"."users"("id");
 ALTER TABLE "public"."users_subfields" ADD FOREIGN KEY ("user_id") REFERENCES "public"."users"("id");
+ALTER TABLE "public"."users_subfields" ADD FOREIGN KEY ("subfield_id") REFERENCES "public"."subfields"("id");
 ALTER TABLE "public"."users_support_requests" ADD FOREIGN KEY ("user_id") REFERENCES "public"."users"("id");
 ALTER TABLE "public"."users_timezones" ADD FOREIGN KEY ("user_id") REFERENCES "public"."users"("id");

@@ -1,3 +1,5 @@
+// @ts-nocheck
+
 import { Request, Response } from 'express';
 import pg from 'pg';
 import { Conn } from '../db/conn';
@@ -13,32 +15,42 @@ export class UsersInAppMessages {
     helpers.autoBind(this);
   }
 
-  async getUserInAppMessage(request: Request, response: Response): Promise<void> {
+  async getUserInAppMessage(
+    request: Request,
+    response: Response
+  ): Promise<void> {
     const userId = request.user.id as string;
     try {
       const inAppMessage = await this.getUserInAppMessageFromDB(userId);
       response.status(200).json(inAppMessage);
     } catch (error) {
       response.status(400).send(error);
-    } 
+    }
   }
-  
+
   async getUserInAppMessageFromDB(userId: string): Promise<InAppMessage> {
-    const getUserInAppMessageQuery = 'SELECT text FROM users_in_app_messages WHERE user_id = $1';
-    const { rows }: pg.QueryResult = await pool.query(getUserInAppMessageQuery, [userId]);
+    const getUserInAppMessageQuery =
+      'SELECT text FROM users_in_app_messages WHERE user_id = $1';
+    const { rows }: pg.QueryResult = await pool.query(
+      getUserInAppMessageQuery,
+      [userId]
+    );
     let inAppMessage: InAppMessage = {};
     if (rows[0]) {
       inAppMessage = {
         userId: userId,
         text: rows[0].text
-      }
+      };
     }
     return inAppMessage;
-  }  
+  }
 
-  async addUserInAppMessage(request: Request, response: Response): Promise<void> {
+  async addUserInAppMessage(
+    request: Request,
+    response: Response
+  ): Promise<void> {
     const userId = request.user.id as string;
-    const { text }: InAppMessage = request.body
+    const { text }: InAppMessage = request.body;
     try {
       await this.deleteUserInAppMessageFromDB(userId);
       await this.addUserInAppMessageFromDB(userId, text);
@@ -47,27 +59,33 @@ export class UsersInAppMessages {
       response.status(400).send(error);
     }
   }
-  
-  async addUserInAppMessageFromDB(userId: string, text: string | undefined): Promise<void> {
+
+  async addUserInAppMessageFromDB(
+    userId: string,
+    text: string | undefined
+  ): Promise<void> {
     const insertInAppMessageQuery = `INSERT INTO users_in_app_messages (user_id, text)
       VALUES ($1, $2)`;
     const values = [userId, text];
-    await pool.query(insertInAppMessageQuery, values);    
+    await pool.query(insertInAppMessageQuery, values);
   }
 
-  async deleteUserInAppMessage(request: Request, response: Response): Promise<void> {
+  async deleteUserInAppMessage(
+    request: Request,
+    response: Response
+  ): Promise<void> {
     const userId = request.user.id as string;
     try {
       await this.deleteUserInAppMessageFromDB(userId);
       response.status(200).json(`In-app message has been deleted successfully`);
     } catch (error) {
       response.status(400).send(error);
-    } 
+    }
   }
-  
+
   async deleteUserInAppMessageFromDB(userId: string): Promise<void> {
-    const deleteUserInAppMessageQuery = 'DELETE FROM users_in_app_messages WHERE user_id = $1';
+    const deleteUserInAppMessageQuery =
+      'DELETE FROM users_in_app_messages WHERE user_id = $1';
     await pool.query(deleteUserInAppMessageQuery, [userId]);
   }
 }
-

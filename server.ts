@@ -529,10 +529,10 @@ app.put(
   adminStudentsCertificates.updateCertificateSent
 );
 
-app.post(
-  '/api/v1/admin/students_certificates/create',
-  adminStudentsCertificates.createCertificate
-);
+// app.post(
+//   '/api/v1/admin/students_certificates/create',
+//   adminStudentsCertificates.createCertificate
+// );
 
 // Admin training reminders
 app.get(

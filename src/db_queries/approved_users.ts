@@ -1,3 +1,5 @@
+// @ts-nocheck
+
 import { Request, Response } from 'express';
 import pg from 'pg';
 import dotenv from 'dotenv';
@@ -17,21 +19,27 @@ export class ApprovedUsers {
     helpers.autoBind(this);
   }
 
-  async getApprovedUser(email: string, client: pg.PoolClient): Promise<ApprovedUser> {
+  async getApprovedUser(
+    email: string,
+    client: pg.PoolClient
+  ): Promise<ApprovedUser> {
     let approvedUser: ApprovedUser = {
       email: email
     };
-    const getApprovedUserQuery = 'SELECT field_id, organization_id, name, phone_number, is_mentor, is_center_manager, is_org_manager, goal FROM approved_users WHERE LOWER(email) = $1';
-    const { rows }: pg.QueryResult = await client.query(getApprovedUserQuery, [email.toLowerCase()]);
+    const getApprovedUserQuery =
+      'SELECT field_id, organization_id, name, phone_number, is_mentor, is_center_manager, is_org_manager, goal FROM approved_users WHERE LOWER(email) = $1';
+    const { rows }: pg.QueryResult = await client.query(getApprovedUserQuery, [
+      email.toLowerCase()
+    ]);
     if (!rows[0]) {
       approvedUser.email = '';
     } else {
       const field: Field = {
         id: rows[0].field_id
-      }
+      };
       const organization: Organization = {
         id: rows[0].organization_id
-      }      
+      };
       approvedUser = {
         email: email,
         name: rows[0].name,
@@ -48,13 +56,18 @@ export class ApprovedUsers {
   }
 
   async addApprovedUser(request: Request, response: Response): Promise<void> {
-    const { email, phoneNumber, organization, isMentor }: ApprovedUser = request.body;
+    const { email, phoneNumber, organization, isMentor }: ApprovedUser =
+      request.body;
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
       let approvedUserExists = false;
-      const getApprovedUsersQuery = 'SELECT id FROM approved_users WHERE email = $1';
-      const { rows }: pg.QueryResult = await client.query(getApprovedUsersQuery, [email]);
+      const getApprovedUsersQuery =
+        'SELECT id FROM approved_users WHERE email = $1';
+      const { rows }: pg.QueryResult = await client.query(
+        getApprovedUsersQuery,
+        [email]
+      );
       if (rows[0]) {
         approvedUserExists = true;
       }
@@ -70,10 +83,18 @@ export class ApprovedUsers {
           VALUES ($1, $2, $3, $4)`;
           values = [email, fieldId, organization?.id, isMentor];
         } else {
-          const goal = 'I want to have an income of at least $1000 USD per month';
+          const goal =
+            'I want to have an income of at least $1000 USD per month';
           insertApprovedUserQuery = `INSERT INTO approved_users (email, phone_number, field_id, organization_id, is_mentor, goal)
             VALUES ($1, $2, $3, $4, $5, $6)`;
-          values = [email, phoneNumber, fieldId, organization?.id, isMentor, goal];        
+          values = [
+            email,
+            phoneNumber,
+            fieldId,
+            organization?.id,
+            isMentor,
+            goal
+          ];
         }
         await client.query(insertApprovedUserQuery, values);
         response.status(200).send('Approved user has been added');
@@ -87,6 +108,5 @@ export class ApprovedUsers {
     } finally {
       client.release();
     }
-  }  
+  }
 }
-

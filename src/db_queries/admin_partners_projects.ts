@@ -1,9 +1,11 @@
-import { Request, Response } from "express";
-import pg from "pg";
-import { Conn } from "../db/conn";
-import { Helpers } from "../utils/helpers";
-import PartnerProject from "../models/partner_project.model";
-import { Organizations } from "../db_queries/organizations";
+// @ts-nocheck
+
+import { Request, Response } from 'express';
+import pg from 'pg';
+import { Conn } from '../db/conn';
+import { Helpers } from '../utils/helpers';
+import PartnerProject from '../models/partner_project.model';
+import { Organizations } from '../db_queries/organizations';
 
 const conn = new Conn();
 const pool = conn.pool;
@@ -29,12 +31,12 @@ export class AdminPartnersProjects {
       );
       if (!helpers.isEmptyObject(organization)) {
         await this.createProjectInDB(partnerId, client, project);
-        response.status(201).send("New project created");
+        response.status(201).send('New project created');
       } else {
-        response.status(400).send("Invalid organization id");
+        response.status(400).send('Invalid organization id');
       }
     } catch (error) {
-      await client.query("ROLLBACK");
+      await client.query('ROLLBACK');
       response.status(400).send(error);
     } finally {
       client.release();
@@ -53,11 +55,11 @@ export class AdminPartnersProjects {
       project.name,
       project.startDate,
       project.duration,
-      partnerId,
+      partnerId
     ];
-    await client.query("BEGIN");
+    await client.query('BEGIN');
     await client.query(insertProjectQuery, values);
-    await client.query("COMMIT");
+    await client.query('COMMIT');
   }
 
   async getAllProjectsOfOnePartner(
@@ -95,7 +97,7 @@ export class AdminPartnersProjects {
     const projects: Array<PartnerProject> = rows.map((row) => {
       return {
         id: row.id,
-        name: row.name,
+        name: row.name
       };
     });
 

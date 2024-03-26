@@ -1,3 +1,5 @@
+// @ts-nocheck
+
 import type CenterExpense from '../models/center_expense.model';
 import { Helpers } from '../utils/helpers';
 import { Request, Response } from 'express';

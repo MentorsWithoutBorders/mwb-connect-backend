@@ -1,3 +1,5 @@
+// @ts-nocheck
+
 import { Request, Response } from 'express';
 import pg from 'pg';
 import { Conn } from '../db/conn';
@@ -28,17 +30,22 @@ export class Skills {
       await client.query('ROLLBACK');
     } finally {
       client.release();
-    }  
+    }
   }
 
-  async getSkillsFromDB(subfieldId: string, client: pg.PoolClient): Promise<Array<Skill>> {
+  async getSkillsFromDB(
+    subfieldId: string,
+    client: pg.PoolClient
+  ): Promise<Array<Skill>> {
     const getSkillsQuery = `SELECT s.id, s.name, ss.skill_index
       FROM skills s
       JOIN subfields_skills ss
         ON ss.skill_id = s.id
       WHERE ss.subfield_id = $1
       ORDER BY ss.skill_index`;
-    const { rows }: pg.QueryResult = await client.query(getSkillsQuery, [subfieldId]);
+    const { rows }: pg.QueryResult = await client.query(getSkillsQuery, [
+      subfieldId
+    ]);
     const skills: Array<Skill> = [];
     for (const row of rows) {
       const skill: Skill = {
@@ -47,8 +54,8 @@ export class Skills {
         index: row.skill_index
       };
       skills.push(skill);
-    }   
-    return skills; 
+    }
+    return skills;
   }
 
   async getSkillById(request: Request, response: Response): Promise<void> {
@@ -60,7 +67,9 @@ export class Skills {
           ON ss.skill_id = s.id
         WHERE s.id = $1
         ORDER BY ss.skill_index`;
-      const { rows }: pg.QueryResult = await pool.query(getSkillsQuery, [skillId]);
+      const { rows }: pg.QueryResult = await pool.query(getSkillsQuery, [
+        skillId
+      ]);
       const skill: Skill = {
         id: skillId,
         name: rows[0].name,
@@ -71,7 +80,7 @@ export class Skills {
       response.status(400).send(error);
     }
   }
-  
+
   async addSkill(request: Request, response: Response): Promise<void> {
     const subfieldId = request.params.id;
     const { name }: Skill = request.body;
@@ -81,19 +90,21 @@ export class Skills {
       const skills = await this.getSkillsFromDB(subfieldId, client);
       let insertSkillQuery = `INSERT INTO skills (name)
         VALUES ($1) RETURNING *`;
-      const { rows }: pg.QueryResult = await client.query(insertSkillQuery, [name]);
+      const { rows }: pg.QueryResult = await client.query(insertSkillQuery, [
+        name
+      ]);
       let index = 0;
       if (skills.length > 0) {
-        index = skills[skills.length-1].index as number + 1;
-      }       
+        index = (skills[skills.length - 1].index as number) + 1;
+      }
       const skill: Skill = {
         id: rows[0].id,
         name: rows[0].name,
         index: index
-      }
+      };
       insertSkillQuery = `INSERT INTO subfields_skills (subfield_id, skill_index, skill_id)
         VALUES ($1, $2, $3)`;
-      await client.query(insertSkillQuery, [subfieldId, index, skill.id]);         
+      await client.query(insertSkillQuery, [subfieldId, index, skill.id]);
       response.status(200).send(skill);
       await client.query('COMMIT');
     } catch (error) {
@@ -111,9 +122,10 @@ export class Skills {
     try {
       await client.query('BEGIN');
       let updateSkillQuery = 'UPDATE skills SET name = $1 WHERE id = $2';
-      await client.query(updateSkillQuery, [name, skillId]);  
-      updateSkillQuery = 'UPDATE subfields_skills SET skill_index = $1 WHERE skill_id = $2';
-      await client.query(updateSkillQuery, [index, skillId]);             
+      await client.query(updateSkillQuery, [name, skillId]);
+      updateSkillQuery =
+        'UPDATE subfields_skills SET skill_index = $1 WHERE skill_id = $2';
+      await client.query(updateSkillQuery, [index, skillId]);
       response.status(200).send(`Skill modified with ID: ${skillId}`);
       await client.query('COMMIT');
     } catch (error) {
@@ -132,7 +144,7 @@ export class Skills {
       let deleteSkillQuery = 'DELETE FROM subfields_skills WHERE skill_id = $1';
       await client.query(deleteSkillQuery, [skillId]);
       deleteSkillQuery = 'DELETE FROM skills WHERE id = $1';
-      await client.query(deleteSkillQuery, [skillId]);      
+      await client.query(deleteSkillQuery, [skillId]);
       response.status(200).send(`Skill deleted with ID: ${skillId}`);
       await client.query('COMMIT');
     } catch (error) {
@@ -142,6 +154,5 @@ export class Skills {
     } finally {
       client.release();
     }
-  }   
+  }
 }
-

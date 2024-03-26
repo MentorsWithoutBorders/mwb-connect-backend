@@ -1,3 +1,5 @@
+// @ts-nocheck
+
 import { Helpers } from '../utils/helpers';
 import { Request, Response } from 'express';
 import { dbClient } from '../db/conn';

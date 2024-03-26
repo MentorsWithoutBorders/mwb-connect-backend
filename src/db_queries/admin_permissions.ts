@@ -1,5 +1,7 @@
-import pg from "pg";
-import { Permissions } from "../models/admin_permissions.model";
+// @ts-nocheck
+
+import pg from 'pg';
+import { Permissions } from '../models/admin_permissions.model';
 
 export class AdminPermissions {
   async addPermission(
@@ -14,7 +16,7 @@ export class AdminPermissions {
       !!permissions.isMentor,
       !!permissions.isCenterManager,
       !!permissions.isOrgManager,
-      !!permissions.isAdmin,
+      !!permissions.isAdmin
     ]);
   }
 }

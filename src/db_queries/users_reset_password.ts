@@ -1,6 +1,8 @@
+// @ts-nocheck
+
 import { Request, Response } from 'express';
 import pg from 'pg';
-import moment from 'moment'
+import moment from 'moment';
 import dotenv from 'dotenv';
 import { Conn } from '../db/conn';
 import { UsersSendEmails } from './users_send_emails';
@@ -19,18 +21,22 @@ export class UsersResetPassword {
   }
 
   async resetPassword(request: Request, response: Response): Promise<void> {
-    const { id, newPassword }: ResetPassword = request.body
+    const { id, newPassword }: ResetPassword = request.body;
     const client = await pool.connect();
     try {
       const getEmailQuery = `SELECT email FROM users_reset_password
         WHERE id = $1`;
       const { rows }: pg.QueryResult = await client.query(getEmailQuery, [id]);
       if (rows[0]) {
-        const updatePasswordQuery = 'UPDATE users SET password = $1 WHERE email = $2';
-        const hashPassword: string = helpers.hashPassword(newPassword as string); 
+        const updatePasswordQuery =
+          'UPDATE users SET password = $1 WHERE email = $2';
+        const hashPassword: string = helpers.hashPassword(
+          newPassword as string
+        );
         await client.query(updatePasswordQuery, [hashPassword, rows[0].email]);
-        const deleteResetPasswordQuery = 'DELETE FROM users_reset_password WHERE id = $1';
-        await client.query(deleteResetPasswordQuery, [id]);        
+        const deleteResetPasswordQuery =
+          'DELETE FROM users_reset_password WHERE id = $1';
+        await client.query(deleteResetPasswordQuery, [id]);
       }
       await client.query('COMMIT');
       response.status(200).send({});
@@ -40,9 +46,12 @@ export class UsersResetPassword {
     } finally {
       client.release();
     }
-  }   
+  }
 
-  async addUserResetPassword(request: Request, response: Response): Promise<void> {
+  async addUserResetPassword(
+    request: Request,
+    response: Response
+  ): Promise<void> {
     const email = request.params.email;
     const client = await pool.connect();
     try {
@@ -52,11 +61,11 @@ export class UsersResetPassword {
       if (rows[0]) {
         const deleteResetPasswordQuery = `DELETE FROM users_reset_password 
           WHERE email = $1`;
-        await client.query(deleteResetPasswordQuery, [email]);      
+        await client.query(deleteResetPasswordQuery, [email]);
         const insertResetPasswordQuery = `INSERT INTO users_reset_password (email, date_time)
           VALUES ($1, $2) RETURNING id`;
         const dateTime = moment.utc();
-        const values = [email, dateTime];        
+        const values = [email, dateTime];
         ({ rows } = await client.query(insertResetPasswordQuery, values));
         usersSendEmails.sendEmailResetPassword(email, rows[0].id);
       }
@@ -70,4 +79,3 @@ export class UsersResetPassword {
     }
   }
 }
-
