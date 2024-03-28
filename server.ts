@@ -50,6 +50,7 @@ import { AdminPartnersStudents } from './src/db_queries/admin_partners_students'
 import { AdminPartnersOrganizationCenters } from './src/db_queries/admin_partners_organization_centers';
 import { CenterExpenses } from './src/db_queries/center_expenses';
 import { CenterExpensesPaid } from './src/db_queries/center_expenses_paid';
+import { reqValidator } from './src/middelwares/req_validator';
 
 dotenv.config();
 const port = process.env.PORT;
@@ -600,6 +601,7 @@ app.get(
 );
 app.patch(
   '/api/v1/centers/:center_id/expenses/paid',
+  reqValidator(centerExpensesPaid.updateCenterExpensesPaidSchema),
   centerExpensesPaid.updateCenterExpensesPaid
 );
 
@@ -610,10 +612,12 @@ app.get(
 );
 app.post(
   '/api/v1/centers/:center_id/expenses',
+  reqValidator(centerExpenses.createCenterExpensesValidationSchema),
   centerExpenses.createCenterExpense
 );
 app.patch(
   '/api/v1/centers/:center_id/expenses/:expense_id',
+  reqValidator(centerExpenses.updateCenterExpensesValidationSchema),
   centerExpenses.updateCenterExpense
 );
 app.delete(
