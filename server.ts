@@ -50,7 +50,7 @@ import { AdminPartnersStudents } from './src/db_queries/admin_partners_students'
 import { AdminPartnersOrganizationCenters } from './src/db_queries/admin_partners_organization_centers';
 import { CenterExpenses } from './src/db_queries/center_expenses';
 import { CenterExpensesPaid } from './src/db_queries/center_expenses_paid';
-import { reqValidator } from './src/middelwares/reqValidator';
+import { reqValidator } from './src/middelwares/req_validator';
 
 dotenv.config();
 const port = process.env.PORT;
