@@ -1157,5 +1157,44 @@ export class UsersCourses {
       return skillACount < skillBCount ? 1 : reverseCompare;
     }); 
     return field;
-  } 
+  }
+	
+	async getAttendedCoursesSubfieldsByStudentId(studentId: string): Promise<string[]> {
+		const client = await pool.connect();
+		try {
+			const query = `
+				WITH canceled_lessons AS (
+					SELECT course_id, COUNT(*) AS count
+					FROM users_courses_lessons_canceled
+					WHERE user_id = $1
+					GROUP BY course_id
+				)
+				SELECT DISTINCT sf.name
+				FROM users_courses_students ucs
+				JOIN users_courses uc ON ucs.course_id = uc.id
+				JOIN users_courses_mentors ucm ON ucs.course_id = ucm.course_id
+				JOIN subfields sf ON ucm.subfield_id = sf.id
+				LEFT JOIN canceled_lessons cl ON uc.id = cl.course_id
+				WHERE ucs.student_id = $1
+					AND (
+						(uc.is_canceled IS DISTINCT FROM true AND ucs.is_canceled IS DISTINCT FROM true AND ucm.is_canceled IS DISTINCT FROM true)
+						OR
+						(
+							uc.canceled_date_time > uc.start_date_time + interval '1 week' * (3 + COALESCE(cl.count, 0))
+							OR (uc.is_canceled IS NOT TRUE AND (ucs.canceled_date_time > uc.start_date_time + interval '1 week' * (3 + COALESCE(cl.count, 0)) OR ucm.canceled_date_time > uc.start_date_time + interval '1 week' * (3 + COALESCE(cl.count, 0))))
+						)
+					)
+					AND uc.start_date_time + interval '1 week' * (3 + COALESCE(cl.count, 0)) < CURRENT_TIMESTAMP
+				ORDER BY sf.name;
+			`;
+			const { rows } = await client.query(query, [studentId]);
+			const subfields = rows.map(row => row.name);
+			return subfields;
+		} catch (error) {
+			console.error('Error getting attended courses subfields:', error);
+			throw error;
+		} finally {
+			client.release();
+		}
+	}
 }

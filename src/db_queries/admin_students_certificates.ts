@@ -4,10 +4,12 @@ import pg from 'pg';
 import path from 'path';
 import moment from 'moment';
 import 'moment-timezone';
-import { PDFDocument, StandardFonts, rgb } from 'pdf-lib';
+import { PDFDocument, PDFFont, PDFPage, StandardFonts, rgb, Color } from 'pdf-lib';
 import { Conn } from '../db/conn';
 import { constants } from '../utils/constants';
 import { Helpers } from '../utils/helpers';
+import { Users } from './users';
+import { UsersCourses } from './users_courses';
 import { QuizzesSettings } from './quizzes_settings';
 import { UsersBackgroundProcesses } from './users_background_processes';
 import User from '../models/user.model';
@@ -17,6 +19,8 @@ import StudentCertificate from '../models/student_certificate.model';
 const conn = new Conn();
 const pool = conn.pool;
 const helpers = new Helpers();
+const users = new Users();
+const usersCourses = new UsersCourses();
 const quizzesSettings = new QuizzesSettings();
 const usersBackgroundProcesses = new UsersBackgroundProcesses();
 
@@ -161,64 +165,190 @@ export class AdminStudentsCertificates {
 		return fs.readFileSync(pngPath);
 	}
 
-	async customizeCertificatePdf(originalPdfPath: string, newPdfPath: string, imagePath: string) {
-		const existingPdfBytes = fs.readFileSync(originalPdfPath);
-		const pdfDoc = await PDFDocument.load(existingPdfBytes);
-		const timesRomanFont = await pdfDoc.embedFont(StandardFonts.TimesRoman)
-	
-		// Load the image
-		const imageData = await this.loadPng(imagePath);
-		const image = await pdfDoc.embedPng(imageData);
-	
-		const pages = pdfDoc.getPages();
-		const firstPage = pages[0];
-	
-		// Image dimensions and position (top right corner)
-		const imgHeight = 80;
-		const scaleFactor = imgHeight / image.height;
-		const imgWidth = image.width * scaleFactor;		
-		firstPage.drawImage(image, {
-			x: firstPage.getWidth() - imgWidth - 190,
-			y: firstPage.getHeight() - imgHeight - 80,
-			width: imgWidth,
-			height: imgHeight
-		});
-	
-		// Add red text in the middle
-		const redText = "Edmond Claudiu Pruteanu";
-		const redTextSize = 60;
-		const textWidth = timesRomanFont.widthOfTextAtSize(redText, redTextSize);
-		console.log('textWidth:', textWidth);
-		firstPage.drawText(redText, {
-			x: firstPage.getWidth() / 2 - textWidth / 2,
-			y: firstPage.getHeight() / 2,
-			font: timesRomanFont,
-			size: redTextSize,
-			color: rgb(1, 0, 0)
-		});
-	
-		// Add black text on the bottom left corner
-		const blackText = "Mar 19, 2024";
-		firstPage.drawText(blackText, {
+	async customizeCertificatePdf(originalPdfPath: string, newPdfPath: string, mwbLogoPath: string, orgLogoPath: string, studentName: string, studentSubfields: Array<string>) {
+    const existingPdfBytes = fs.readFileSync(originalPdfPath);
+    const pdfDoc = await PDFDocument.load(existingPdfBytes);
+    const helveticaFont = await pdfDoc.embedFont(StandardFonts.Helvetica);
+
+    // Load the MWB logo
+    const mwbLogoData = await this.loadPng(mwbLogoPath); // Make sure to implement loadPng method for mwbLogoPath
+    const mwbLogo = await pdfDoc.embedPng(mwbLogoData);		
+
+    // Load the organization logo
+    const orgLogoData = await this.loadPng(orgLogoPath);
+    const orgLogo = await pdfDoc.embedPng(orgLogoData);
+
+    const pages = pdfDoc.getPages();
+    const firstPage = pages[0];
+
+    // MWB logo dimensions and position (top left corner)
+    const mwbLogoHeight = 90;
+    const scaleFactorMwb = mwbLogoHeight / mwbLogo.height;
+    const mwbLogoWidth = mwbLogo.width * scaleFactorMwb;
+    firstPage.drawImage(mwbLogo, {
+        x: 170, 
+        y: firstPage.getHeight() - mwbLogoHeight - 85,
+        width: mwbLogoWidth,
+        height: mwbLogoHeight
+    });		
+
+    // Organization logo dimensions and position (top right corner)
+    const orgLogoHeight = 80;
+    const scaleFactor = orgLogoHeight / orgLogo.height;
+    const orgLogoWidth = orgLogo.width * scaleFactor;      
+    firstPage.drawImage(orgLogo, {
+			x: firstPage.getWidth() - orgLogoWidth - 190,
+			y: firstPage.getHeight() - orgLogoHeight - 80,
+			width: orgLogoWidth,
+			height: orgLogoHeight
+    });
+		
+		studentName = studentName.replace(/-/g, ' ');
+    const studentNameSize = 60;		
+
+    // Calculate position for the awarded text
+		const awardedToText = "This certificate is awarded to";
+		const awardedToTextSize = 18;
+		const awardedToTextSpacing = 2;
+		const awardedToTextWidth =
+			helveticaFont.widthOfTextAtSize(awardedToText, awardedToTextSize) +
+			(awardedToText.length - 1) * awardedToTextSpacing;
+		const awardedToTextYPosition = firstPage.getHeight() / 2 + studentNameSize / 2 + 50;
+		
+		// Calculate starting position for the new text to be centered
+		const awardedToTextXPosition = firstPage.getWidth() / 2 - awardedToTextWidth / 2;
+		
+		// Use the custom function to draw the new text with spacing
+		this.drawTextWithSpacing(
+			firstPage,
+			awardedToText,
+			awardedToTextXPosition,
+			awardedToTextYPosition,
+			awardedToTextSpacing,
+			helveticaFont,
+			awardedToTextSize,
+			rgb(0, 0, 0) // Correct use of rgb function to create a Color
+		);
+
+    // Add student name in the middle
+    const studentNameWidth = helveticaFont.widthOfTextAtSize(studentName, studentNameSize);
+    const studentNameYPosition = awardedToTextYPosition - awardedToTextSize - 60;
+    firstPage.drawText(studentName, {
+			x: firstPage.getWidth() / 2 - studentNameWidth / 2,
+			y: studentNameYPosition,
+			font: helveticaFont,
+			size: studentNameSize,
+			color: rgb(0.9686, 0.3451, 0.1804)
+    });
+
+    // Calculate the starting Y position for the subfields text
+    const subfieldsStartYPosition = studentNameYPosition - studentNameSize;
+
+    // Add customized text for student subfields
+    let subfieldsText = 'for having completed the 3-month MWB ';
+    if (studentSubfields.length > 1) {
+      subfieldsText += studentSubfields.join(' and ');
+    } else if (studentSubfields.length === 1) {
+      subfieldsText += studentSubfields[0];
+    }
+    subfieldsText += ' course.';
+
+    // Assuming a function to split text into lines based on width and font size
+    const { lines, fontSize } = await this.splitSubfieldsTextToFitWidth(subfieldsText, helveticaFont, firstPage.getWidth() - 350);
+
+    lines.forEach((line: string, index: number) => {
+			const textWidth = helveticaFont.widthOfTextAtSize(line, fontSize);
+			firstPage.drawText(line, {
+				x: (firstPage.getWidth() / 2) - (textWidth / 2),
+				y: subfieldsStartYPosition - (index * (fontSize + 10)),
+				size: fontSize,
+				font: helveticaFont,
+				color: rgb(0, 0, 0)
+			});
+    });      
+
+    // Add current date on the bottom left corner
+    const currentDate = moment().format('MMM DD, YYYY');
+    firstPage.drawText(currentDate, {
 			x: 295,
 			y: 178,
 			size: 16,
 			color: rgb(0, 0, 0)
-		});
+    });
+
+    const pdfBytes = await pdfDoc.save();
+    fs.writeFileSync(newPdfPath, pdfBytes);
+	}
+
+	async splitSubfieldsTextToFitWidth(text: string, font: PDFFont, maxWidth: number): Promise<{ lines: string[], fontSize: number }> {
+		let fontSize = 20;
+		let lines = [text];
+		const isTextTooWide = () => font.widthOfTextAtSize(lines[lines.length - 1], fontSize) > maxWidth;
 	
-		const pdfBytes = await pdfDoc.save();
-		fs.writeFileSync(newPdfPath, pdfBytes);
+		while (fontSize > 10 && isTextTooWide()) {
+			fontSize -= 1;
+			const words = text.split(' ');
+			lines = [];
+			let currentLine = words.shift() || '';
+	
+			words.forEach((word) => {
+				const testLine = `${currentLine} ${word}`;
+				if (font.widthOfTextAtSize(testLine, fontSize) <= maxWidth) {
+					currentLine = testLine;
+				} else {
+					lines.push(currentLine);
+					currentLine = word;
+				}
+			});
+	
+			lines.push(currentLine);
+		}
+	
+		return { lines, fontSize };
+	}
+
+	drawTextWithSpacing(
+		page: PDFPage,
+		text: string,
+		startPosition: number,
+		yPosition: number,
+		spacing: number,
+		font: PDFFont,
+		fontSize: number,
+		color: Color
+	): void {
+		let currentPosition: number = startPosition;
+		for (let i = 0; i < text.length; i++) {
+			const letter: string = text[i];
+			page.drawText(letter, {
+				x: currentPosition,
+				y: yPosition,
+				font: font,
+				size: fontSize,
+				color: color,
+			});
+			// Move the currentPosition for the next letter by the width of the current letter plus spacing
+			if (i < text.length - 1) {
+				currentPosition += font.widthOfTextAtSize(letter, fontSize) + spacing;
+			}
+		}
 	}
 
   async createCertificate(request: Request, response: Response): Promise<void> {
     const userId = request.user.id as string;
+		const { id }: User = request.body;
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
+			const student = await users.getUserFromDB(id as string, client);
 			const certificateModelPath = path.join('src', 'certificates', 'certificate-model.pdf');
-			const certificatePath = path.join('src', 'certificates', 'certificate-Edmond-Pruteanu.pdf'); 
-			const imagePath = path.join('src', 'certificates', 'partner-logos', 'Education-for-All-Children.png');
-			await this.customizeCertificatePdf(certificateModelPath, certificatePath, imagePath)
+			const studentName = student?.name?.replace(/\s/g, '-') || '';
+			const certificatePath = path.join('src', 'certificates', `certificate-${studentName}.pdf`);
+			const studentOrganizationName = student?.organization?.name?.replace(/\s/g, '-');
+			const studentSubfields = await usersCourses.getAttendedCoursesSubfieldsByStudentId(id as string);
+			const mwbLogoPath = path.join('src', 'certificates', 'partner-logos', `MWB.png`);
+			const orgLogoPath = path.join('src', 'certificates', 'partner-logos', `${studentOrganizationName}.png`);
+			await this.customizeCertificatePdf(certificateModelPath, certificatePath, mwbLogoPath, orgLogoPath, studentName, studentSubfields)
 			.then(() => console.log('New PDF created successfully with the customizations.'));
       response.status(200).send(`Certificate has been created for user: ${userId}`);
       await client.query('COMMIT');
