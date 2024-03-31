@@ -1,15 +1,10 @@
 import { Request, Response } from 'express';
-import pg from 'pg';
 import { UserType } from '../../@types/express';
-import { Conn } from '../db/conn';
-import OrganizationCenter, {
-  Centers
-} from '../models/organizationcenter.model';
-import OrganizationCenterSearch from '../models/organizationcenter_search.model';
+import { dbClient } from '../db/conn';
+import OrganizationCenter from '../models/organization_center.model';
+import OrganizationCenterSearch from '../models/organization_center_search.model';
 import { Helpers } from '../utils/helpers';
 
-const conn = new Conn();
-const pool = conn.pool;
 const helpers = new Helpers();
 
 export class OrganizationCenters {
@@ -83,30 +78,23 @@ export class OrganizationCenters {
     const user = request.user;
     const searchParameters: OrganizationCenterSearch = request.query;
 
-    const client = await pool.connect();
     try {
-      await client.query('BEGIN');
       const organization = await this.getOrganizationCentersFromDB(
         user,
-        searchParameters,
-        client
+        searchParameters
       );
       response.status(200).json(organization);
-      await client.query('COMMIT');
     } catch (error) {
       response.status(400).send(error);
-      await client.query('ROLLBACK');
     } finally {
-      client.release();
     }
   }
 
   async getOrganizationCentersFromDB(
     user: UserType,
-    searchParameters: OrganizationCenterSearch,
-    client: pg.PoolClient
+    searchParameters: OrganizationCenterSearch
   ): Promise<OrganizationCenter[]> {
-    const organizationCenters: Centers[] = [];
+    const organizationCenters: OrganizationCenter[] = [];
 
     if (
       !user ||
@@ -120,9 +108,9 @@ export class OrganizationCenters {
         searchParameters,
         user
       );
-      const { rows } = await client.query(getOrganizationCenterQuery);
+      const { rows } = await dbClient.query(getOrganizationCenterQuery);
       rows.forEach(function (row) {
-        const center: Centers = {
+        const center: OrganizationCenter = {
           id: row.id,
           name: row.name,
           country: row.country,
