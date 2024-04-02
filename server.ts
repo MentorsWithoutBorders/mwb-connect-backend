@@ -51,6 +51,7 @@ import { UsersSkills } from './src/db_queries/users_skills';
 import { UsersSteps } from './src/db_queries/users_steps';
 import { UsersSupportRequests } from './src/db_queries/users_support_requests';
 import { UsersTimeZones } from './src/db_queries/users_timezones';
+import { reqValidator } from './src/middelwares/req_validator';
 
 dotenv.config();
 const port = process.env.PORT;
@@ -602,6 +603,7 @@ app.get(
 );
 app.patch(
   '/api/v1/centers/:center_id/expenses/paid',
+  reqValidator(centerExpensesPaid.updateCenterExpensesPaidSchema),
   centerExpensesPaid.updateCenterExpensesPaid
 );
 
@@ -612,10 +614,12 @@ app.get(
 );
 app.post(
   '/api/v1/centers/:center_id/expenses',
+  reqValidator(centerExpenses.createCenterExpensesValidationSchema),
   centerExpenses.createCenterExpense
 );
 app.patch(
   '/api/v1/centers/:center_id/expenses/:expense_id',
+  reqValidator(centerExpenses.updateCenterExpensesValidationSchema),
   centerExpenses.updateCenterExpense
 );
 app.delete(
