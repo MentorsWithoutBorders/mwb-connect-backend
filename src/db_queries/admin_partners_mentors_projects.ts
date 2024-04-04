@@ -3,7 +3,6 @@ import pg from 'pg';
 import 'moment-timezone';
 import { Conn } from '../db/conn';
 import { Helpers, getCourseCompletedWeeks } from '../utils/helpers';
-import { AdminPartnersProjects } from './admin_partners_projects';
 import {
   MentorDetailsWithProjectsDbRawResult,
   MentorDetailsWithProjectsResponse
@@ -12,7 +11,6 @@ import {
 const conn = new Conn();
 const pool = conn.pool;
 const helpers = new Helpers();
-const adminPartnersProjects = new AdminPartnersProjects();
 
 export class AdminPartnersMentorsProjects {
   constructor() {

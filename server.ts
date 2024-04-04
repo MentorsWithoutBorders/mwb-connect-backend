@@ -48,6 +48,7 @@ import { AdminPartnersMentorStats } from './src/db_queries/admin_partners_mentor
 import { AdminPartnersProjects } from './src/db_queries/admin_partners_projects';
 import { AdminPartnersStudents } from './src/db_queries/admin_partners_students';
 import { AdminPartnersOrganizationCenters } from './src/db_queries/admin_partners_organization_centers';
+import { AdminPartnersMentorsProjects } from './src/db_queries/admin_partners_mentors_projects';
 import { CenterExpenses } from './src/db_queries/center_expenses';
 import { CenterExpensesPaid } from './src/db_queries/center_expenses_paid';
 
@@ -100,6 +101,7 @@ const adminPartnersMentorStats = new AdminPartnersMentorStats();
 const adminPartnersProjects = new AdminPartnersProjects();
 const adminPartnersStudents = new AdminPartnersStudents();
 const adminPartnersCenters = new AdminPartnersOrganizationCenters();
+const adminPartnersMentorsProjects = new AdminPartnersMentorsProjects();
 const centerExpenses = new CenterExpenses();
 const centerExpensesPaid = new CenterExpensesPaid();
 
@@ -572,6 +574,11 @@ app.get(
 app.get(
   '/api/v1/partners/:partner_id/mentors/:mentor_id',
   adminPartnersMentors.getMentorDetails
+);
+//Mentor details with partner projects
+app.get(
+  '/api/v1/partners/{partner_id}/mentors/{mentor_id}/project',
+  adminPartnersMentorsProjects.getMentorProjectDetails
 );
 // Admin partners' students
 app.get(
