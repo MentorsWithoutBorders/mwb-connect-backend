@@ -11,11 +11,32 @@ const dbClient = conn.db;
 const helpers = new Helpers();
 
 export class CenterExpenses {
-  private getExpensesQuery({ centerId }: { centerId: string }): QueryArgs {
-    return [
-      `SELECT * FROM organizations_centers_expenses WHERE center_id = $1`,
-      [centerId]
-    ];
+  private getExpensesQuery({
+    centerId,
+    month,
+    year
+  }: {
+    centerId: string;
+    month?: number;
+    year?: number;
+  }): QueryArgs {
+    let paramCounter = 1;
+    let query = `SELECT * FROM organizations_centers_expenses WHERE center_id = $${paramCounter}`;
+    const values: Array<string | number> = [centerId];
+
+    if (Number.isInteger(month)) {
+      paramCounter += 1;
+      query += ` and month=$${paramCounter}`;
+      values.push(month as number);
+    }
+
+    if (Number.isInteger(year)) {
+      paramCounter += 1;
+      query += ` and year=$${paramCounter}`;
+      values.push(year as number);
+    }
+
+    return [query, values];
   }
 
   private createExpenseQuery = ({
@@ -79,9 +100,11 @@ export class CenterExpenses {
   }
 
   private async getCenterExpensesQuery(
-    centerId: string
+    centerId: string,
+    month?: number,
+    year?: number
   ): Promise<CenterExpense[]> {
-    const [query, values] = this.getExpensesQuery({ centerId });
+    const [query, values] = this.getExpensesQuery({ centerId, month, year });
     const result = await dbClient.query(query, values);
     return result.rows.map((row) => ({
       id: row.id,
@@ -114,7 +137,11 @@ export class CenterExpenses {
     const centerId = request.params.center_id;
 
     try {
-      const result = await this.getCenterExpensesQuery(centerId);
+      const result = await this.getCenterExpensesQuery(
+        centerId,
+        parseInt(request.query.month as string),
+        parseInt(request.query.year as string)
+      );
       response.status(200).json(result);
     } catch (error) {
       response.status(400).send(error);
@@ -170,7 +197,7 @@ export class CenterExpenses {
     bodySchema: yup.object({
       expense: yup.string(),
       amount: yup.number(),
-      month: yup.number().min(1).max(12),
+      month: yup.number().min(0).max(11),
       year: yup.number().min(999).max(9999),
       isRecurring: yup.boolean()
     })
@@ -216,7 +243,7 @@ export class CenterExpenses {
     bodySchema: yup.object({
       expense: yup.string().required(),
       amount: yup.number().required(),
-      month: yup.number().min(1).max(12).required(),
+      month: yup.number().min(0).max(11).required(),
       year: yup.number().min(999).max(9999).required(),
       isRecurring: yup.boolean().required()
     })
