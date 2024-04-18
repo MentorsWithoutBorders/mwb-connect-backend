@@ -309,11 +309,10 @@ export class AdminStudentsCertificates {
 
   async sendCertificate(request: Request, response: Response): Promise<void> {
     const userId = request.user.id as string;
-		const { id }: User = request.body;
+		const studentId = request.params.student_id || userId;
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
-			const studentId = id || userId;
 			const student = await users.getUserFromDB(studentId, client);
 			const certificatePath = await this.createCertificateFromDB(student);
 			if (certificatePath) {
@@ -333,11 +332,11 @@ export class AdminStudentsCertificates {
 	
   async createCertificate(request: Request, response: Response): Promise<void> {
     const userId = request.user.id as string;
-		const { id }: User = request.body;
+		const studentId = request.params.student_id;
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
-			const student = await users.getUserFromDB(id as string, client);
+			const student = await users.getUserFromDB(studentId as string, client);
 			await this.createCertificateFromDB(student);
       response.status(200).send(`Certificate has been created for user: ${userId}`);
       await client.query('COMMIT');
@@ -367,4 +366,35 @@ export class AdminStudentsCertificates {
 			return certificatePath;
     }
 	}
+
+  async downloadCertificate(request: Request, response: Response): Promise<void> {
+		const studentId = request.params.student_id;
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+			const student = await users.getUserFromDB(studentId as string, client);
+			const studentName = student?.name?.replace(/\s/g, '-') || '';
+			const certificatePath = path.join('src', 'certificates', `certificate-${studentName}.pdf`);
+			const fileName = `MWB-certificate-${studentName}.pdf`;
+			if (fs.existsSync(certificatePath)) {
+        response.download(certificatePath, fileName, (err: string) => {
+					if (err) {
+						response.status(500).send({
+							message: "Could not download the file. " + err,
+						});
+					}
+        });
+			} else {
+				response.status(404).send({
+					message: "File not found."
+				});
+			}			
+      await client.query('COMMIT');
+    } catch (error) {
+      response.status(400).send(error);
+      await client.query('ROLLBACK');
+    } finally {
+      client.release();
+    }
+  }	
 }

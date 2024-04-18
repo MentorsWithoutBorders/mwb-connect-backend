@@ -530,13 +530,18 @@ app.put(
 );
 
 app.post(
-  '/api/v1/admin/students_certificates/create',
+  '/api/v1/admin/students_certificates/:student_id/create',
   adminStudentsCertificates.createCertificate
 );
 
 app.post(
-  '/api/v1/admin/students_certificates/send',
+  '/api/v1/admin/students_certificates/:student_id/send',
   adminStudentsCertificates.sendCertificate
+);
+
+app.get(
+  '/api/v1/admin/students_certificates/:student_id/download',
+  adminStudentsCertificates.downloadCertificate
 );
 
 // Admin training reminders
