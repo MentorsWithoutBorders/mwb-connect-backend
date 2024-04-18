@@ -10,8 +10,8 @@ import { constants } from '../utils/constants';
 import { Helpers } from '../utils/helpers';
 import { Users } from './users';
 import { UsersCourses } from './users_courses';
-import { QuizzesSettings } from './quizzes_settings';
-import { UsersBackgroundProcesses } from './users_background_processes';
+import { UsersSendEmails } from './users_send_emails';
+import { AdminTrainingReminders } from './admin_training_reminders';
 import User from '../models/user.model';
 import Field from '../models/field.model';
 import StudentCertificate from '../models/student_certificate.model';
@@ -21,8 +21,8 @@ const pool = conn.pool;
 const helpers = new Helpers();
 const users = new Users();
 const usersCourses = new UsersCourses();
-const quizzesSettings = new QuizzesSettings();
-const usersBackgroundProcesses = new UsersBackgroundProcesses();
+const usersSendEmails = new UsersSendEmails();
+const adminTrainingReminders = new AdminTrainingReminders();
 
 export class AdminStudentsCertificates {
   constructor() {
@@ -62,7 +62,7 @@ export class AdminStudentsCertificates {
           registeredOn: moment.utc(row.registered_on).format(constants.DATE_TIME_FORMAT)
         }
         const certificateDate = moment.utc(row.registered_on).tz(row.timezone_name).add(3, 'months').format(constants.SHORT_DATE_FORMAT);
-        const isTrainingCompleted = await this.getIsTrainingCompleted(student, client);
+        const isTrainingCompleted = await adminTrainingReminders.getIsTrainingCompleted(student, client);
         const studentCertificate: StudentCertificate = {
           student: student,
           certificateDate: certificateDate,
@@ -79,33 +79,6 @@ export class AdminStudentsCertificates {
     } finally {
       client.release();
     }
-  }
-
-  async getIsTrainingCompleted(student: User, client: pg.PoolClient): Promise<boolean> {
-    const isStepAdded = !(await usersBackgroundProcesses.getShowStepReminder(student, client));
-    if (!isStepAdded) {
-      return false;
-    }
-    let isCompleted = true;
-    const getQuizzesQuery = 'SELECT number, is_correct FROM users_quizzes WHERE user_id = $1';
-    const { rows }: pg.QueryResult = await client.query(getQuizzesQuery, [student.id]);
-    const quizSettings = await quizzesSettings.getQuizzesSettingsFromDB(client);
-    const solvedQuizzes: Array<number> = [];
-    for (let i = 1; i <= quizSettings.studentWeeklyCount * 4; i++) {
-      solvedQuizzes[i] = 0;
-    }
-    for (const row of rows) {
-      if (row.is_correct) {
-        solvedQuizzes[row.number]++; 
-      }
-    }
-    for (let i = 1; i <= quizSettings.studentWeeklyCount * 4; i++) {
-      if (solvedQuizzes[i] < 2) {
-        isCompleted = false;
-        break;
-      }
-    }
-    return isCompleted;
   }
 
   async updateCertificateSent(request: Request, response: Response): Promise<void> {
@@ -186,10 +159,10 @@ export class AdminStudentsCertificates {
     const scaleFactorMwb = mwbLogoHeight / mwbLogo.height;
     const mwbLogoWidth = mwbLogo.width * scaleFactorMwb;
     firstPage.drawImage(mwbLogo, {
-        x: 170, 
-        y: firstPage.getHeight() - mwbLogoHeight - 85,
-        width: mwbLogoWidth,
-        height: mwbLogoHeight
+			x: 170, 
+			y: firstPage.getHeight() - mwbLogoHeight - 85,
+			width: mwbLogoWidth,
+			height: mwbLogoHeight
     });		
 
     // Organization logo dimensions and position (top right corner)
@@ -227,7 +200,7 @@ export class AdminStudentsCertificates {
 			awardedToTextSpacing,
 			helveticaFont,
 			awardedToTextSize,
-			rgb(0, 0, 0) // Correct use of rgb function to create a Color
+			rgb(0, 0, 0)
 		);
 
     // Add student name in the middle
@@ -334,6 +307,30 @@ export class AdminStudentsCertificates {
 		}
 	}
 
+  async sendCertificate(request: Request, response: Response): Promise<void> {
+    const userId = request.user.id as string;
+		const { id }: User = request.body;
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+			const studentId = id || userId;
+			const student = await users.getUserFromDB(studentId, client);
+			const certificatePath = await this.createCertificateFromDB(student);
+			if (certificatePath) {
+				const course = await usersCourses.getCurrentCourseFromDB(student.id as string, client);
+				const nextLessonDateTime = await usersCourses.getNextLessonDateTime(student.id as string, course, client);
+				await usersSendEmails.sendEmailCertificate(student, nextLessonDateTime, certificatePath);
+			}
+      response.status(200).send(`Certificate has been sent for user: ${studentId}`);
+      await client.query('COMMIT');
+    } catch (error) {
+      response.status(400).send(error);
+      await client.query('ROLLBACK');
+    } finally {
+      client.release();
+    }
+  }
+	
   async createCertificate(request: Request, response: Response): Promise<void> {
     const userId = request.user.id as string;
 		const { id }: User = request.body;
@@ -341,15 +338,7 @@ export class AdminStudentsCertificates {
     try {
       await client.query('BEGIN');
 			const student = await users.getUserFromDB(id as string, client);
-			const certificateModelPath = path.join('src', 'certificates', 'certificate-model.pdf');
-			const studentName = student?.name?.replace(/\s/g, '-') || '';
-			const certificatePath = path.join('src', 'certificates', `certificate-${studentName}.pdf`);
-			const studentOrganizationName = student?.organization?.name?.replace(/\s/g, '-');
-			const studentSubfields = await usersCourses.getAttendedCoursesSubfieldsByStudentId(id as string);
-			const mwbLogoPath = path.join('src', 'certificates', 'partner-logos', `MWB.png`);
-			const orgLogoPath = path.join('src', 'certificates', 'partner-logos', `${studentOrganizationName}.png`);
-			await this.customizeCertificatePdf(certificateModelPath, certificatePath, mwbLogoPath, orgLogoPath, studentName, studentSubfields)
-			.then(() => console.log('New PDF created successfully with the customizations.'));
+			await this.createCertificateFromDB(student);
       response.status(200).send(`Certificate has been created for user: ${userId}`);
       await client.query('COMMIT');
     } catch (error) {
@@ -358,5 +347,24 @@ export class AdminStudentsCertificates {
     } finally {
       client.release();
     }
-  }	
+  }
+	
+	async createCertificateFromDB(student: User): Promise<string> {
+		const certificateModelPath = path.join('src', 'certificates', 'certificate-model.pdf');
+		const studentName = student?.name?.replace(/\s/g, '-') || '';
+		const certificatePath = path.join('src', 'certificates', `certificate-${studentName}.pdf`);
+    try {
+      await fs.promises.access(certificatePath);
+      console.log('Certificate already exists. No need to recreate it.');
+			return '';
+    } catch (error) {
+      const studentOrganizationName = student?.organization?.name?.replace(/\s/g, '-');
+      const studentSubfields = await usersCourses.getAttendedCoursesSubfieldsByStudentId(student.id as string);
+      const mwbLogoPath = path.join('src', 'certificates', 'partner-logos', `MWB.png`);
+      const orgLogoPath = path.join('src', 'certificates', 'partner-logos', `${studentOrganizationName}.png`);
+      await this.customizeCertificatePdf(certificateModelPath, certificatePath, mwbLogoPath, orgLogoPath, studentName, studentSubfields)
+        .then(() => console.log('New PDF created successfully with the customizations.'));
+			return certificatePath;
+    }
+	}
 }

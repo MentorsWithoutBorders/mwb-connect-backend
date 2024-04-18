@@ -12,6 +12,7 @@ import { QuizzesSettings } from './quizzes_settings';
 import User from '../models/user.model';
 import TrainingReminder from '../models/training_reminder.model';
 import TimeZone from '../models/timezone.model';
+import Step from '../models/step.model';
 import Quiz from '../models/quiz.model';
 import QuizSettings from '../models/quiz_settings.model';
 
@@ -248,7 +249,51 @@ export class AdminTrainingReminders {
     } else {
       return 'quizzes';
     }
-  }  
+  }
+
+	async getShowStepReminder(user: User, client: pg.PoolClient): Promise<boolean> {
+    const userTimeZone = await usersTimeZones.getUserTimeZone(user.id as string, client);
+    const lastStepAdded = await this.getLastStepAddedFromDB(user.id as string, client);
+    let nextDeadline = moment.utc(user.registeredOn).tz(userTimeZone.name).startOf('day');
+    while (nextDeadline.isBefore(moment.utc().tz(userTimeZone.name).startOf('day'))) {
+      nextDeadline = nextDeadline.add(7, 'd');
+    }
+    const lastStepAddedDateTime = moment.utc(lastStepAdded.dateTime).tz(userTimeZone.name).startOf('day');    
+    let showStepReminder = false;
+    const timeSinceRegistration = moment.utc().tz(userTimeZone.name).startOf('day').diff(moment.utc(user.registeredOn).tz(userTimeZone.name).startOf('day'));
+    const limit = helpers.getDSTAdjustedDifferenceInDays(timeSinceRegistration) > 7 ? 7 : 8;
+    if (Object.keys(lastStepAdded).length == 0 || helpers.getDSTAdjustedDifferenceInDays(nextDeadline.diff(lastStepAddedDateTime)) >= limit) {
+      showStepReminder = true;
+    }
+    return showStepReminder;
+  }	
+	
+  async getIsTrainingCompleted(student: User, client: pg.PoolClient): Promise<boolean> {
+    const isStepAdded = !(await this.getShowStepReminder(student, client));
+    if (!isStepAdded) {
+      return false;
+    }
+    let isCompleted = true;
+    const getQuizzesQuery = 'SELECT number, is_correct FROM users_quizzes WHERE user_id = $1';
+    const { rows }: pg.QueryResult = await client.query(getQuizzesQuery, [student.id]);
+    const quizSettings = await quizzesSettings.getQuizzesSettingsFromDB(client);
+    const solvedQuizzes: Array<number> = [];
+    for (let i = 1; i <= quizSettings.studentWeeklyCount * 4; i++) {
+      solvedQuizzes[i] = 0;
+    }
+    for (const row of rows) {
+      if (row.is_correct) {
+        solvedQuizzes[row.number]++; 
+      }
+    }
+    for (let i = 1; i <= quizSettings.studentWeeklyCount * 4; i++) {
+      if (solvedQuizzes[i] < 2) {
+        isCompleted = false;
+        break;
+      }
+    }
+    return isCompleted;
+  }	
 
   getReminderToSend(trainingReminder: TrainingReminder, lastReminderDateTime: string, reminderText: string, trainer: User, user: User, weeklyQuizzesText: string, stepQuizzesText: string): string {
     if (!reminderText || trainingReminder.lastConversationDateTime != '' && moment.utc(trainingReminder.lastConversationDateTime).format(constants.DATE_FORMAT) == moment.utc().format(constants.DATE_FORMAT)) {
@@ -293,6 +338,33 @@ export class AdminTrainingReminders {
     reminderText = reminderText.split('{last_reminder_day}').join(lastReminderDay);
     return reminderText;
   }
+
+  async getLastStepAddedFromDB(userId: string, client: pg.PoolClient): Promise<Step> {
+    const getStepQuery = `SELECT id, text, index, level, parent_id, date_time FROM users_steps 
+      WHERE user_id = $1
+      ORDER BY date_time DESC LIMIT 1`;
+    const { rows }: pg.QueryResult = await client.query(getStepQuery, [userId]);
+    let step: Step = {};
+    if (rows[0]) {
+      step = {
+        id: rows[0].id,
+        text: rows[0].text,
+        index: rows[0].index,
+        level: rows[0].level,
+        parentId: rows[0].parent_id,
+        dateTime: moment.utc(rows[0].date_time).format(constants.DATE_TIME_FORMAT)
+      } 
+    }
+    const user = await users.getUserFromDB(userId, client);
+    const userTimeZone = await usersTimeZones.getUserTimeZone(userId, client);
+    const timeSinceRegistration = moment.utc().tz(userTimeZone.name).startOf('day').diff(moment.utc(user.registeredOn).tz(userTimeZone.name).startOf('day'));
+    if (user.isMentor && helpers.getDSTAdjustedDifferenceInDays(timeSinceRegistration) > constants.MENTOR_WEEKS_TRAINING * 7 ||
+        !user.isMentor && helpers.getDSTAdjustedDifferenceInDays(timeSinceRegistration) > constants.STUDENT_WEEKS_TRAINING * 7) {
+      step.id = constants.TRAINING_COMPLETED_ID;
+      step.dateTime = moment.utc().format(constants.DATE_TIME_FORMAT);
+    }    
+    return step;  
+  }	
 
   getShouldShowTrainingReminder(lastReminderDateTime: string, lastConversationDateTime: string, userTimeZone: TimeZone, trainerWorkdays: number): boolean {
     let shouldShowTrainingReminder = false;

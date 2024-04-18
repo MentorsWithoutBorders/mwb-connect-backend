@@ -534,6 +534,11 @@ app.post(
   adminStudentsCertificates.createCertificate
 );
 
+app.post(
+  '/api/v1/admin/students_certificates/send',
+  adminStudentsCertificates.sendCertificate
+);
+
 // Admin training reminders
 app.get(
   '/api/v1/admin/training_reminders',

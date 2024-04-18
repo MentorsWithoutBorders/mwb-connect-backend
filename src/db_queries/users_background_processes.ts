@@ -10,9 +10,7 @@ import { Users } from './users';
 import { UsersLessons } from './users_lessons';
 import { UsersCourses } from './users_courses';
 import { UsersAvailableMentors } from './users_available_mentors';
-import { UsersSteps } from './users_steps';
 import { UsersQuizzes } from './users_quizzes';
-import { UsersTimeZones } from './users_timezones';
 import { UsersPushNotifications } from './users_push_notifications';
 import { UsersSendEmails } from './users_send_emails';
 import { UsersWhatsAppMessages } from './users_whatsapp_messages';
@@ -29,9 +27,7 @@ const users = new Users();
 const usersLessons = new UsersLessons();
 const usersCourses = new UsersCourses();
 const usersAvailableMentors = new UsersAvailableMentors();
-const usersSteps = new UsersSteps();
 const usersQuizzes = new UsersQuizzes();
-const usersTimeZones = new UsersTimeZones();
 const usersPushNotifications = new UsersPushNotifications();
 const usersSendEmails = new UsersSendEmails();
 const usersWhatsAppMessages = new UsersWhatsAppMessages();
@@ -449,7 +445,7 @@ export class UsersBackgroundProcesses {
           isMentor: row.is_mentor,
           registeredOn: row.registered_on
         }
-        const showStepReminder = await this.getShowStepReminder(user, client);
+        const showStepReminder = await adminTrainingReminders.getShowStepReminder(user, client);
 				const quizzes = await usersQuizzes.getQuizzesFromDB(user.id as string, client);
 				const remainingQuizzes = helpers.getRemainingQuizzes(quizzes);
 				const showQuizReminder = remainingQuizzes > 0 ? true : false;
@@ -481,23 +477,6 @@ export class UsersBackgroundProcesses {
         adminTrainingReminders.addTrainingReminder(user, !showStepReminder, remainingQuizzes, client);
       }
     }
-  }
-
-  async getShowStepReminder(user: User, client: pg.PoolClient): Promise<boolean> {
-    const userTimeZone = await usersTimeZones.getUserTimeZone(user.id as string, client);
-    const lastStepAdded = await usersSteps.getLastStepAddedFromDB(user.id as string, client);
-    let nextDeadline = moment.utc(user.registeredOn).tz(userTimeZone.name).startOf('day');
-    while (nextDeadline.isBefore(moment.utc().tz(userTimeZone.name).startOf('day'))) {
-      nextDeadline = nextDeadline.add(7, 'd');
-    }
-    const lastStepAddedDateTime = moment.utc(lastStepAdded.dateTime).tz(userTimeZone.name).startOf('day');    
-    let showStepReminder = false;
-    const timeSinceRegistration = moment.utc().tz(userTimeZone.name).startOf('day').diff(moment.utc(user.registeredOn).tz(userTimeZone.name).startOf('day'));
-    const limit = helpers.getDSTAdjustedDifferenceInDays(timeSinceRegistration) > 7 ? 7 : 8;
-    if (Object.keys(lastStepAdded).length == 0 || helpers.getDSTAdjustedDifferenceInDays(nextDeadline.diff(lastStepAddedDateTime)) >= limit) {
-      showStepReminder = true;
-    }
-    return showStepReminder;
   }
 
   async setAvailableCoursesFields(request: Request, response: Response): Promise<void> {
