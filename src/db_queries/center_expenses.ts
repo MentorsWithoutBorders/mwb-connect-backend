@@ -3,6 +3,7 @@ import { Helpers } from '../utils/helpers';
 import { Request, Response } from 'express';
 import { Conn } from '../db/conn';
 import * as yup from 'yup';
+import moment from 'moment';
 
 type QueryArgs = [string, (string | number | boolean)[]];
 
@@ -14,15 +15,19 @@ export class CenterExpenses {
   private getExpensesQuery({
     centerId,
     month,
-    year
+    year,
+    isRecurring,
+    expenseId
   }: {
     centerId: string;
     month?: number;
     year?: number;
+    isRecurring?: boolean;
+    expenseId?: string;
   }): QueryArgs {
     let paramCounter = 1;
     let query = `SELECT * FROM organizations_centers_expenses WHERE center_id = $${paramCounter}`;
-    const values: Array<string | number> = [centerId];
+    const values: Array<string | number | boolean> = [centerId];
 
     if (Number.isInteger(month)) {
       paramCounter += 1;
@@ -36,7 +41,38 @@ export class CenterExpenses {
       values.push(year as number);
     }
 
+    if (isRecurring !== undefined) {
+      paramCounter += 1;
+      query += ` and is_recurring=$${paramCounter}`;
+      values.push(isRecurring);
+    }
+
+    if (expenseId) {
+      paramCounter += 1;
+      query += ` and id=$${paramCounter}`;
+      values.push(expenseId);
+    }
+
     return [query, values];
+  }
+
+  private getRecurringExpenseQuery({
+    centerId,
+    month,
+    year
+  }: {
+    centerId: string;
+    month?: number;
+    year?: number;
+  }): QueryArgs {
+    const currentDate = new Date();
+    const monthQuery = month === undefined ? currentDate.getMonth() : month;
+    const yearQuery = year == undefined ? currentDate.getFullYear() : year;
+
+    return [
+      'SELECT * FROM organizations_centers_expenses WHERE center_id = $1 AND is_recurring = true AND month <= $2 AND year <= $3',
+      [centerId, monthQuery, yearQuery]
+    ];
   }
 
   private createExpenseQuery = ({
@@ -82,7 +118,7 @@ export class CenterExpenses {
   }: {
     centerId: string;
   }): QueryArgs => [
-    'SELECT SUM(amount) FROM organizations_centers_expenses WHERE center_id = $1',
+    'SELECT SUM(amount) FROM organizations_centers_expenses WHERE center_id = $1 and is_recurring = false',
     [centerId]
   ];
 
@@ -104,9 +140,18 @@ export class CenterExpenses {
     month?: number,
     year?: number
   ): Promise<CenterExpense[]> {
-    const [query, values] = this.getExpensesQuery({ centerId, month, year });
-    const result = await dbClient.query(query, values);
-    return result.rows.map((row) => ({
+    let [query, values] = this.getExpensesQuery({
+      centerId,
+      month,
+      year,
+      isRecurring: false
+    });
+    const expensesForMonth = await dbClient.query(query, values);
+
+    [query, values] = this.getRecurringExpenseQuery({ centerId, month, year });
+    const recurringExpenses = await dbClient.query(query, values);
+
+    return [...expensesForMonth.rows, ...recurringExpenses.rows].map((row) => ({
       id: row.id,
       expense: row.expense,
       amount: row.amount,
@@ -199,7 +244,9 @@ export class CenterExpenses {
       amount: yup.number(),
       month: yup.number().min(0).max(11),
       year: yup.number().min(999).max(9999),
-      isRecurring: yup.boolean()
+      isRecurring: yup.boolean(),
+      monthOfUpdate: yup.number().required().min(0).max(11), // This can be different from expense month in case of recurring expenses
+      yearOfUpdate: yup.number().required().min(0).max(11) // This can be different from expense year in case of recurring expenses
     })
   };
 
@@ -209,15 +256,57 @@ export class CenterExpenses {
   ): Promise<void> {
     const { center_id, expense_id } = request.params;
 
-    const expenseResult = await this.getCenterExpensesQuery(center_id);
+    const [query, values] = this.getExpensesQuery({
+      centerId: center_id,
+      expenseId: expense_id
+    });
+    const expenseResult = await dbClient.query(query, values);
 
-    if (expenseResult.length === 0) {
+    if (expenseResult.rows.length === 0) {
       response.status(404).send('No expenses found');
       return;
     }
 
+    const existingExpense = expenseResult.rows[0] as CenterExpense;
+
+    if (
+      existingExpense.isRecurring === true &&
+      request.body.isRecurring === false
+    ) {
+      // add non recurring expense for all months starting from existingExpense month to monthOfUpdate
+      const { yearOfUpdate, monthOfUpdate, month, year, expense, amount } =
+        request.body as CenterExpense & {
+          monthOfUpdate: number;
+          yearOfUpdate: number;
+        };
+
+      const expensesToCreate = [];
+      const numberOfMonths = this.calculateMonths({
+        fromMonth: month,
+        fromYear: year,
+        toMonth: monthOfUpdate,
+        toYear: yearOfUpdate
+      });
+
+      for (let i = 1; i <= numberOfMonths; i++) {
+        const newExpenseMonth = moment({ year: year, month: month }).add(
+          i,
+          'months'
+        );
+        const [query, values] = this.createExpenseQuery({
+          centerId: center_id,
+          month: newExpenseMonth.get('month'),
+          year: newExpenseMonth.get('year'),
+          expense,
+          amount,
+          isRecurring: false
+        });
+        expensesToCreate.push(dbClient.query(query, values));
+      }
+    }
+
     const { month, year, expense, amount, isRecurring } = this.mergeExpenses(
-      expenseResult[0],
+      existingExpense,
       request.body as CenterExpense
     );
 
@@ -249,6 +338,23 @@ export class CenterExpenses {
     })
   };
 
+  calculateMonths({
+    fromMonth,
+    fromYear,
+    toMonth,
+    toYear
+  }: {
+    fromMonth: number;
+    fromYear: number;
+    toMonth: number;
+    toYear: number;
+  }): number {
+    const fromDate = moment({ year: fromYear, month: fromMonth });
+    const toDate = moment({ year: toYear, month: toMonth });
+
+    return toDate.diff(fromDate, 'months');
+  }
+
   async getCenterExpensesBalance(
     request: Request,
     response: Response
@@ -256,26 +362,55 @@ export class CenterExpenses {
     const { center_id } = request.params;
     try {
       dbClient.withClient(async (client) => {
-        const [query, values] = this.getTotalExpensesQuery({
+        let [query, values] = this.getTotalExpensesQuery({
           centerId: center_id
         });
-        const totalExpenses = await client.query(query, values);
+        const totalNonRecurringExpenses = await client.query(query, values);
+
+        [query, values] = this.getRecurringExpenseQuery({
+          centerId: center_id
+        });
+
+        const recurringExpenses = await client.query(query, values);
+        const currentDate = new Date();
+        const currentYear = currentDate.getFullYear();
+        const currentMonth = currentDate.getMonth();
+
+        let totalRecurringExpenses = 0;
+        for (const expense of recurringExpenses.rows) {
+          const expenseYear = expense.year;
+          const expenseMonth = expense.month;
+          const monthsPassed = this.calculateMonths({
+            fromMonth: expenseMonth,
+            fromYear: expenseYear,
+            toMonth: currentMonth,
+            toYear: currentYear
+          });
+          const recurringExpense = expense.amount * monthsPassed;
+          totalRecurringExpenses += recurringExpense;
+        }
 
         const [expensesPaidQuery, expensesPaidValues] =
           this.getTotalExpensesPaidQuery({
             centerId: center_id
           });
+
         const totalExpensesPaid = await client.query(
           expensesPaidQuery,
           expensesPaidValues
         );
 
-        const totalExpensesSum = totalExpenses.rows[0].sum || 0;
+        const totalNonRecurringExpensesSum =
+          totalNonRecurringExpenses.rows[0].sum || 0;
+        const totalExpense =
+          totalNonRecurringExpensesSum + totalRecurringExpenses;
+
         const totalExpensesPaidSum = totalExpensesPaid.rows[0].sum || 0;
-        const balance = totalExpensesPaidSum - totalExpensesSum;
+
+        const balance = totalExpensesPaidSum - totalExpense;
 
         response.status(200).json({
-          totalExpenses: totalExpensesSum,
+          totalExpenses: totalExpense,
           totalExpensesPaid: totalExpensesPaidSum,
           balance
         });
