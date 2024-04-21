@@ -355,7 +355,7 @@ export class AdminStudentsCertificates {
     try {
       await fs.promises.access(certificatePath);
       console.log('Certificate already exists. No need to recreate it.');
-			return '';
+			return certificatePath;
     } catch (error) {
       const studentOrganizationName = student?.organization?.name?.replace(/\s/g, '-');
       const studentSubfields = await usersCourses.getAttendedCoursesSubfieldsByStudentId(student.id as string);
@@ -374,7 +374,7 @@ export class AdminStudentsCertificates {
       await client.query('BEGIN');
 			const student = await users.getUserFromDB(studentId as string, client);
 			const studentName = student?.name?.replace(/\s/g, '-') || '';
-			const certificatePath = path.join('src', 'certificates', `certificate-${studentName}.pdf`);
+			const certificatePath = await this.createCertificateFromDB(student);
 			const fileName = `MWB-certificate-${studentName}.pdf`;
 			if (fs.existsSync(certificatePath)) {
         response.download(certificatePath, fileName, (err: string) => {
