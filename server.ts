@@ -531,6 +531,18 @@ app.put(
   '/api/v1/admin/students_certificates/:student_id/certificate_sent',
   adminStudentsCertificates.updateCertificateSent
 );
+app.post(
+  '/api/v1/admin/students_certificates/:student_id/create',
+  adminStudentsCertificates.createCertificate
+);
+app.post(
+  '/api/v1/admin/students_certificates/:student_id/send',
+  adminStudentsCertificates.sendCertificate
+);
+app.get(
+  '/api/v1/admin/students_certificates/:student_id/download',
+  adminStudentsCertificates.downloadCertificate
+);
 
 // Admin training reminders
 app.get(

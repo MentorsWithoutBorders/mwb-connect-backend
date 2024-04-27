@@ -36,9 +36,11 @@
     "node-cron": "3.0.2",
     "nodemailer": "^6.9.1",
     "os-utils": "0.0.14",
-    "pg": "^8.10.0",
+    "pdf-lib": "^1.17.1",
     "uuid": "^9.0.0",
-    "yup": "^1.4.0"
+    "pg": "^8.10.0",
+    "yup": "^1.4.0",
+    "pngjs": "^7.0.0"
   },
   "devDependencies": {
     "@babel/plugin-proposal-class-properties": "^7.18.6",

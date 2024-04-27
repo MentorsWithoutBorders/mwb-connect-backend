@@ -4,15 +4,13 @@ import pg from 'pg';
 import { Conn } from '../db/conn';
 import { constants } from '../utils/constants';
 import { Helpers } from '../utils/helpers';
-import { Users } from './users';
-import { UsersTimeZones } from './users_timezones';
+import { AdminTrainingReminders } from './admin_training_reminders';
 import Step from '../models/step.model';
 
 const conn = new Conn();
 const pool = conn.pool;
 const helpers = new Helpers();
-const users = new Users();
-const usersTimeZones = new UsersTimeZones();
+const adminTrainingReminders = new AdminTrainingReminders();
 
 export class UsersSteps {
   constructor() {
@@ -104,40 +102,13 @@ export class UsersSteps {
     const client = await pool.connect();
     try {
       await client.query(constants.READ_ONLY_TRANSACTION);
-      const step: Step = await this.getLastStepAddedFromDB(userId, client);
+      const step: Step = await adminTrainingReminders.getLastStepAddedFromDB(userId, client);
       response.status(200).json(step);
     } catch (error) {
       response.status(400).send(error);
     } finally {
       client.release();
     }
-  }
-  
-  async getLastStepAddedFromDB(userId: string, client: pg.PoolClient): Promise<Step> {
-    const getStepQuery = `SELECT id, text, index, level, parent_id, date_time FROM users_steps 
-      WHERE user_id = $1
-      ORDER BY date_time DESC LIMIT 1`;
-    const { rows }: pg.QueryResult = await client.query(getStepQuery, [userId]);
-    let step: Step = {};
-    if (rows[0]) {
-      step = {
-        id: rows[0].id,
-        text: rows[0].text,
-        index: rows[0].index,
-        level: rows[0].level,
-        parentId: rows[0].parent_id,
-        dateTime: moment.utc(rows[0].date_time).format(constants.DATE_TIME_FORMAT)
-      } 
-    }
-    const user = await users.getUserFromDB(userId, client);
-    const userTimeZone = await usersTimeZones.getUserTimeZone(userId, client);
-    const timeSinceRegistration = moment.utc().tz(userTimeZone.name).startOf('day').diff(moment.utc(user.registeredOn).tz(userTimeZone.name).startOf('day'));
-    if (user.isMentor && helpers.getDSTAdjustedDifferenceInDays(timeSinceRegistration) > constants.MENTOR_WEEKS_TRAINING * 7 ||
-        !user.isMentor && helpers.getDSTAdjustedDifferenceInDays(timeSinceRegistration) > constants.STUDENT_WEEKS_TRAINING * 7) {
-      step.id = constants.TRAINING_COMPLETED_ID;
-      step.dateTime = moment.utc().format(constants.DATE_TIME_FORMAT);
-    }    
-    return step;  
   }
 
   async addStep(request: Request, response: Response): Promise<void> {
@@ -166,7 +137,7 @@ export class UsersSteps {
       };
       await this.updateTrainingReminderStepAdded(userId, client);
       await client.query('COMMIT');
-      response.status(200).send(step);
+      response.status(200).send(step);	
     } catch (error) {
       await client.query('ROLLBACK');
       response.status(400).send(error);
@@ -215,11 +186,11 @@ export class UsersSteps {
       await client.query('BEGIN');
       const stepToDelete = await this.getStepByIdFromDB(userId, stepId, client);
       const { dateTime }: Step = stepToDelete;
-      const lastStepAddedBeforeDelete = await this.getLastStepAddedFromDB(userId, client);
+      const lastStepAddedBeforeDelete = await adminTrainingReminders.getLastStepAddedFromDB(userId, client);
       const deleteStepQuery = 'DELETE FROM users_steps WHERE user_id = $1 AND id = $2';
       await client.query(deleteStepQuery, [userId, stepId]);
       if (lastStepAddedBeforeDelete.id == stepId) {
-        const lastStepAdded = await this.getLastStepAddedFromDB(userId, client);
+        const lastStepAdded = await adminTrainingReminders.getLastStepAddedFromDB(userId, client);
         const { id, text, index, level, parentId }: Step = lastStepAdded;
         const step: Step = {
           id: id, 

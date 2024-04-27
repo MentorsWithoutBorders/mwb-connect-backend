@@ -30,27 +30,37 @@ export class UsersSendEmails {
     helpers.autoBind(this);
   }
 
-  sendEmail(recipientEmailAddress: string, email: Email): void {
-    const transporter = nodemailer.createTransport({
-      host: process.env.SMTP_SERVER as string,
-      port: parseInt(process.env.SMTP_PORT as string),
-      auth: {
-        user: process.env.SMTP_USERNAME,
-        pass: process.env.SMTP_PASSWORD
-      }
-    });
-
-    if (recipientEmailAddress && recipientEmailAddress.indexOf('fake') == -1) {
-      transporter.sendMail({
-        to: recipientEmailAddress,
-        from: process.env.SMTP_SENDER,
-        subject: email.subject,
-        html: email.body
-      })
-        .then(() => console.log(`Email successfully sent: ${recipientEmailAddress}`))
-        .catch(() => console.log(`Email hasn't been sent successfully: ${recipientEmailAddress}`))
-    }
-  }
+	sendEmail(recipientEmailAddress: string, email: Email): void {
+		const transporter = nodemailer.createTransport({
+			host: process.env.SMTP_SERVER as string,
+			port: parseInt(process.env.SMTP_PORT as string),
+			auth: {
+				user: process.env.SMTP_USERNAME,
+				pass: process.env.SMTP_PASSWORD
+			}
+		});
+	
+		const mailOptions: nodemailer.SendMailOptions = {
+			to: recipientEmailAddress,
+			from: process.env.SMTP_SENDER,
+			subject: email.subject,
+			html: email.body
+		};
+	
+		if (email.attachment) {
+			mailOptions.attachments = [
+				{
+					path: email.attachment
+				}
+			];
+		}
+	
+		if (recipientEmailAddress && recipientEmailAddress.indexOf('fake') === -1) {
+			transporter.sendMail(mailOptions)
+				.then(() => console.log(`Email successfully sent: ${recipientEmailAddress}`))
+				.catch(() => console.log(`Email hasn't been sent successfully: ${recipientEmailAddress}`));
+		}
+	}
 
   sendEmailFirstTrainingReminder(user: User, showStepReminder: boolean, showQuizReminder: boolean, remainingQuizzes: number): void {
     const userFirstName = helpers.getUserFirstName(user);
@@ -772,6 +782,24 @@ export class UsersSendEmails {
     }
     this.sendEmail('edmond@mentorswithoutborders.net', email);  
   }
+
+  sendEmailCertificate(student: User, nextLessonDateTime: string | null, certificatePath: string): void {
+		const studentFirstName = helpers.getUserFirstName(student);
+		let courseMessage = '';
+		if (nextLessonDateTime) {
+			courseMessage = 'feel free to continue the lessons with your mentor.';
+		} else {
+			courseMessage = 'thank you for participating in our mentorship program.';
+		}
+    let body = `Congratulations! You have successfully completed the MWB training. Please find attached your MWB certificate and ${courseMessage}`;
+    body = this.setEmailBody(studentFirstName, body);
+    const email: Email = {
+      subject: 'MWB certificate',
+      body: body,
+			attachment: certificatePath
+    }
+    this.sendEmail(student?.email as string, email);
+  }		
   
   async sendEmailTest(request: Request, response: Response): Promise<void> {
     const userId = request.params.user_id;
