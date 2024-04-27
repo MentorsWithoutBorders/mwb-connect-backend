@@ -30,23 +30,50 @@ export class AdminStudentsCertificates {
   }
 
   async getStudentsCertificates(request: Request, response: Response): Promise<void> {
-    const client = await pool.connect();    
+    const userId = request.user.id as string;
+		const client = await pool.connect();
     try {
       await client.query('BEGIN');
-      const getStudentsCertificatesQuery = `SELECT u.id AS student_id, u.name AS student_name, u.email, u.phone_number, u.registered_on, u.field_id, f.name AS field_name, astc.is_certificate_sent, ut.name AS timezone_name
-        FROM users u
-        JOIN fields f
-          ON u.field_id = f.id
-        JOIN users_timezones AS ut
-          ON u.id = ut.user_id        
-        LEFT OUTER JOIN admin_available_users aau
-          ON u.id = aau.user_id        
-        LEFT OUTER JOIN admin_students_certificates astc
-          ON u.id = astc.user_id
-        WHERE u.is_mentor IS false
-          AND aau.is_inactive IS DISTINCT FROM true
-          AND DATE_PART('month', AGE((now() AT TIME ZONE ut.name)::date, (u.registered_on AT TIME ZONE ut.name)::date)) >= 3`;
-      const { rows }: pg.QueryResult = await client.query(getStudentsCertificatesQuery);
+			const user = await users.getUserFromDB(userId, client);
+			let getStudentsCertificatesQuery = `
+				SELECT 
+					u.id AS student_id, 
+					u.name AS student_name, 
+					u.email, 
+					u.phone_number, 
+					u.registered_on, 
+					u.field_id, 
+					f.name AS field_name, 
+					astc.is_certificate_sent, 
+					ut.name AS timezone_name
+				FROM users u
+				JOIN fields f ON u.field_id = f.id
+				JOIN users_timezones AS ut ON u.id = ut.user_id        
+				LEFT OUTER JOIN admin_available_users aau ON u.id = aau.user_id        
+				LEFT OUTER JOIN admin_students_certificates astc ON u.id = astc.user_id`;
+			
+			if (!user.isAdmin) {
+				getStudentsCertificatesQuery += `
+					LEFT OUTER JOIN admin_assigned_users aasu ON u.id = aasu.assigned_user_id`;
+			}
+			
+			getStudentsCertificatesQuery += `
+				WHERE u.is_mentor IS false`;
+
+			if (!user.isAdmin) {
+				getStudentsCertificatesQuery += `
+					AND aasu.trainer_id = $1`;
+			}				
+
+			getStudentsCertificatesQuery += `
+					AND aau.is_inactive IS DISTINCT FROM true
+					AND DATE_PART('month', AGE((now() AT TIME ZONE ut.name)::date, (u.registered_on AT TIME ZONE ut.name)::date)) >= 3`;
+			
+			let values: string[] = [];
+			if (!user.isAdmin) {
+				values = [userId];
+			}
+      const { rows }: pg.QueryResult = await client.query(getStudentsCertificatesQuery, values);
       const studentsCertificates: Array<StudentCertificate> = [];
       for (const row of rows) {
         const field: Field = {
