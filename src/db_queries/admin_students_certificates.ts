@@ -250,7 +250,9 @@ export class AdminStudentsCertificates {
       subfieldsText += studentSubfields.join(' and ');
     } else if (studentSubfields.length === 1) {
       subfieldsText += studentSubfields[0];
-    }
+    } else {
+			subfieldsText += 'Goal-setting, Planning, and Execution';
+		}
     subfieldsText += ' course.';
 
     // Assuming a function to split text into lines based on width and font size
