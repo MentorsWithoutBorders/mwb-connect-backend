@@ -73,7 +73,6 @@ export class CenterExpensesPaid {
         month &&
         year
       ) {
-        // To be replaced with param validation like joi/yup
         const [query, values] = this.getExpensesPaidQuery({
           centerId: center_id,
           month: parseInt(month),
