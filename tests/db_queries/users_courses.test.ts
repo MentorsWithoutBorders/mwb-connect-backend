@@ -6,7 +6,7 @@ import { constants } from '../../src/utils/constants';
 import { UsersCourses } from '../../src/db_queries/users_courses';
 import { UsersCoursesTestHelpers } from '../utils/users_courses_test_helpers';
 
-const conn = new Conn();
+const conn = new Conn(process.env.DB_TEST_NAME);
 const pool = conn.pool;
 const usersCourses = new UsersCourses();
 const usersCoursesTestHelpers = new UsersCoursesTestHelpers();

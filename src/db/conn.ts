@@ -5,11 +5,11 @@ dotenv.config();
 class DBClient {
   private poolInstance: pg.Pool;
 
-  constructor() {
+  constructor(databaseName?: string) {
     this.poolInstance = new pg.Pool({
       user: process.env.DB_USER,
       host: process.env.DB_HOST,
-      database: process.env.DB_NAME,
+      database: databaseName || process.env.DB_NAME,
       password: process.env.DB_PASS,
       port: 5432,
       idleTimeoutMillis: 3000
@@ -20,12 +20,12 @@ class DBClient {
     return this.poolInstance;
   }
 
-  /**
+	/**
    * If you need to execute multiple queries, using client = pool.connect() can be faster because it allows
    * you to reuse the same client for all the queries, avoiding the overhead of acquiring and releasing a client for each query.
    * @param callback (client: pg.PoolClient) => Promise<T>
    * @returns Promise
-   */
+  */
   async withClient<T>(
     callback: (client: pg.PoolClient) => Promise<T>
   ): Promise<T> {
@@ -81,10 +81,18 @@ class DBClient {
   }
 }
 
-export const dbClient = new DBClient();
-
 export class Conn {
+  private dbClient: DBClient;
+
+  constructor(databaseName?: string) {
+    this.dbClient = new DBClient(databaseName);
+  }
+
+  get db() {
+    return this.dbClient;
+  }
+
   get pool() {
-    return dbClient.pool;
+    return this.dbClient.pool;
   }
 }

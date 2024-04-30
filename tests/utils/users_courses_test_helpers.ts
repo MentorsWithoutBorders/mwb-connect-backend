@@ -9,7 +9,7 @@ import Course from '../../src/models/course.model';
 import CourseMentor from '../../src/models/course_mentor.model';
 import CourseStudent from '../../src/models/course_student.model';
 
-const conn = new Conn();
+const conn = new Conn(process.env.DB_TEST_NAME);
 const pool = conn.pool;
 const helpers = new Helpers();
 const users = new Users();

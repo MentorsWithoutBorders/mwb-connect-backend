@@ -1,11 +1,13 @@
 import type CenterExpense from '../models/center_expense.model';
 import { Helpers } from '../utils/helpers';
 import { Request, Response } from 'express';
-import { dbClient } from '../db/conn';
+import { Conn } from '../db/conn';
 import * as yup from 'yup';
 
 type QueryArgs = [string, (string | number | boolean)[]];
 
+const conn = new Conn();
+const dbClient = conn.db;
 const helpers = new Helpers();
 
 export class CenterExpenses {

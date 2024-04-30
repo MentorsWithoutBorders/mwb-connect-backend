@@ -1,10 +1,12 @@
 import { Request, Response } from 'express';
 import { UserType } from '../../@types/express';
-import { dbClient } from '../db/conn';
+import { Conn } from '../db/conn';
 import OrganizationCenter from '../models/organization_center.model';
 import OrganizationCenterSearch from '../models/organization_center_search.model';
 import { Helpers } from '../utils/helpers';
 
+const conn = new Conn();
+const dbClient = conn.db;
 const helpers = new Helpers();
 
 export class OrganizationCenters {
